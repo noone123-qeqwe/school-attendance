@@ -81,6 +81,8 @@
         </div>
     </div>
 
+    @include('partials.parent-child-context', ['children' => $children, 'selectedChild' => $child, 'contextSection' => 'records'])
+
     {{-- Stats --}}
     <div class="ent-grid ent-grid-5 ent-mb-lg">
         <x-card type="kpi" accent="gold" label="Attendance Rate" value="{{ $rate }}%" icon="bi bi-graph-up" />

@@ -494,18 +494,18 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
             <span class="parent-hero-badge">
-                <i class="bi bi-shield-check"></i> Parent &amp; Guardian Portal
+                <i class="bi bi-people-fill"></i> Parent workspace
             </span>
             <h1 class="parent-hero-title">
-                <span>Family overview</span>
+                <span>Your students, at a glance</span>
             </h1>
             <p class="parent-hero-sub">
-                Attendance, school updates, and support for your linked students.
+                Choose a student to see attendance, the weekly schedule, school notices, and support tasks.
             </p>
         </div>
         <div>
             <a href="{{ route('parent.link.form') }}" class="btn-modern-gold" style="white-space: nowrap;">
-                <i class="bi bi-person-plus-fill"></i> Link Student
+                <i class="bi bi-person-plus-fill"></i> Add student
             </a>
         </div>
     </div>
@@ -518,10 +518,10 @@
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-people-fill text-gold" style="font-size: 1.1rem;"></i>
             <span style="font-size: 0.85rem; font-weight: 700; color: #f3e7cd; text-transform: uppercase; letter-spacing: 0.5px;">
-                Your Linked Students ({{ count($childrenData) }})
+                Choose a student ({{ count($childrenData) }})
             </span>
         </div>
-        <span style="font-size: 0.75rem; color: #8f826f;">Tap student to view details</span>
+        <span style="font-size: 0.75rem; color: #8f826f;">Everything below changes for the student you choose.</span>
     </div>
     <div class="student-tabs-scroller" role="tablist" aria-label="Select a linked student">
         @foreach($childrenData as $index => $data)
@@ -532,7 +532,10 @@
                     ? (str_starts_with($data->child->profile_image, 'http') ? $data->child->profile_image : public_storage_url($data->child->profile_image))
                     : 'https://ui-avatars.com/api/?name='.urlencode($data->child->name).'&background=800000&color=fff&size=52';
             @endphp
-            <button type="button" class="student-tab-pill {{ $index === 0 ? 'active' : '' }}" id="tabBtn_{{ $data->child->id }}" role="tab" data-parent-child-tab="{{ $data->child->id }}" aria-controls="childView_{{ $data->child->id }}" aria-selected="{{ $index === 0 ? 'true' : 'false' }}" tabindex="{{ $index === 0 ? 0 : -1 }}">
+            @php
+                $isSelectedChild = $selectedChild && $selectedChild->id === $data->child->id;
+            @endphp
+            <button type="button" class="student-tab-pill {{ $isSelectedChild ? 'active' : '' }}" id="tabBtn_{{ $data->child->id }}" role="tab" data-parent-child-tab="{{ $data->child->id }}" aria-controls="childView_{{ $data->child->id }}" aria-selected="{{ $isSelectedChild ? 'true' : 'false' }}" tabindex="{{ $isSelectedChild ? 0 : -1 }}">
                 <img src="{{ $cImg }}" alt="{{ $data->child->name }}" class="student-pill-avatar">
                 <span>{{ $data->child->name }}</span>
                 <span class="student-pill-rate {{ $rClass }}">{{ $rRate }}%</span>
@@ -543,13 +546,13 @@
         @endforeach
     </div>
     <div class="parent-child-picker"><label for="parentChildPicker">Viewing student</label><select id="parentChildPicker" class="ent-input" data-parent-child-picker>
-        @foreach($childrenData as $data)<option value="{{ $data->child->id }}">{{ $data->child->name }} — {{ $data->child->student_number }}</option>@endforeach
+        @foreach($childrenData as $data)<option value="{{ $data->child->id }}" {{ $selectedChild && $selectedChild->id === $data->child->id ? 'selected' : '' }}>{{ $data->child->name }} — {{ $data->child->student_number }}</option>@endforeach
     </select></div>
 </div>
 @endif
 
 @forelse($childrenData as $index => $data)
-<div class="child-view-content" id="childView_{{ $data->child->id }}" data-parent-child-panel="{{ $data->child->id }}" role="tabpanel" @if(count($childrenData) > 1) aria-labelledby="tabBtn_{{ $data->child->id }}" @else aria-label="Student overview: {{ $data->child->name }}" @endif @if($index !== 0) hidden inert @endif>
+<div class="child-view-content" id="childView_{{ $data->child->id }}" data-parent-child-panel="{{ $data->child->id }}" data-parent-selected-child="{{ $selectedChild?->id }}" role="tabpanel" @if(count($childrenData) > 1) aria-labelledby="tabBtn_{{ $data->child->id }}" @else aria-label="Student overview: {{ $data->child->name }}" @endif @if(!$selectedChild || $selectedChild->id !== $data->child->id) hidden inert @endif>
     @php
         $child = $data->child;
         $cImg = $child->profile_image
@@ -589,6 +592,16 @@
 
             <!-- Quick Action Shortcuts -->
             <div class="parent-actions-row">
+                <a href="{{ route('parent.attendance.calendar', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-primary" title="View attendance calendar">
+                    <i class="bi bi-calendar-check"></i>
+                    <span>Attendance</span>
+                </a>
+
+                <a href="{{ route('parent.schedule', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-ghost" title="View weekly schedule">
+                    <i class="bi bi-clock"></i>
+                    <span>Schedule</span>
+                </a>
+
                 <a href="{{ route('parent.child', $child) }}" class="parent-btn-action btn-action-ghost" title="Detailed Attendance History">
                     <i class="bi bi-clock-history"></i>
                     <span>Records</span>

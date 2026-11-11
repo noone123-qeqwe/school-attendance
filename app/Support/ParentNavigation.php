@@ -4,6 +4,9 @@ namespace App\Support;
 
 use App\Models\Notification;
 use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class ParentNavigation
 {
@@ -11,15 +14,69 @@ class ParentNavigation
     public static function items(): array
     {
         return [
-            ['Overview', 'parent.dashboard', 'bi-grid', ['parent.dashboard', 'parent.child', 'parent.child.warnings'], 'gold'],
-            ['Linked students', 'parent.link.form', 'bi-people', ['parent.link*'], 'green'],
-            ['Attendance calendar', 'parent.attendance.calendar', 'bi-calendar-check', ['parent.attendance.calendar'], 'green'],
-            ['Weekly schedule', 'parent.schedule', 'bi-clock', ['parent.schedule'], 'purple'],
-            ['School calendar', 'parent.calendar', 'bi-calendar-event', ['parent.calendar*'], 'gold'],
-            ['Excuse letters', 'parent.excuses', 'bi-file-earmark-text', ['parent.excuses*', 'parent.excuse*', 'parent.child.excuse'], 'red'],
-            ['Notifications', 'parent.notifications', 'bi-bell', ['parent.notifications*'], 'amber'],
-            ['Account settings', 'parent.profile', 'bi-gear', ['parent.profile'], 'blue'],
+            ['Home', 'parent.dashboard', 'bi-house-door', ['parent.dashboard'], 'gold', 'Your child at a glance'],
+            ['Attendance', 'parent.attendance.calendar', 'bi-calendar-check', ['parent.attendance.calendar', 'parent.child', 'parent.child.warnings'], 'green', 'Calendar, records and warnings'],
+            ['Schedule', 'parent.schedule', 'bi-clock', ['parent.schedule'], 'purple', 'Weekly classes and rooms'],
+            ['School calendar', 'parent.calendar', 'bi-calendar-event', ['parent.calendar*'], 'gold', 'Holidays and school events'],
+            ['Excuse letters', 'parent.excuses', 'bi-file-earmark-text', ['parent.excuses*', 'parent.excuse*', 'parent.child.excuse'], 'red', 'Submit a letter or check its status'],
+            ['Alerts', 'parent.notifications', 'bi-bell', ['parent.notifications*'], 'amber', 'Attendance alerts and messages'],
+            ['My children', 'parent.link.form', 'bi-people', ['parent.link*'], 'green', 'Link a student or manage connections'],
+            ['Account Settings', 'parent.profile', 'bi-gear', ['parent.profile'], 'blue', 'Profile, sign-in and preferences'],
         ];
+    }
+
+    public static function groups(): array
+    {
+        $items = self::items();
+        return [
+            ['label' => 'Your child', 'items' => array_slice($items, 0, 3)],
+            ['label' => 'School & messages', 'items' => array_slice($items, 3, 3)],
+            ['label' => 'Family & account', 'items' => array_slice($items, 6)],
+        ];
+    }
+
+    public static function context(?string $routeName): array
+    {
+        foreach (self::groups() as $group) {
+            foreach ($group['items'] as $item) {
+                foreach ($item[3] as $pattern) {
+                    if (Str::is($pattern, $routeName ?? '')) return ['title' => $item[0], 'group' => $group['label']];
+                }
+            }
+        }
+        return ['title' => 'Parent portal', 'group' => 'Family'];
+    }
+
+    public static function selectionKey(User $parent): string
+    {
+        return 'parent_selected_child.'.$parent->id;
+    }
+
+    /** Choose only from the authenticated parent's already-authorized children. */
+    public static function selectChild(Collection $children, Request $request): ?User
+    {
+        $key = self::selectionKey($request->user());
+        $id = $request->query('child_id', $request->session()->get($key));
+        $selected = is_scalar($id) ? $children->firstWhere('id', (string) $id) : null;
+        $selected ??= $children->first();
+        if ($selected) $request->session()->put($key, $selected->id);
+        else $request->session()->forget($key);
+        return $selected;
+    }
+
+    public static function url(string $destination, ?int $childId = null): string
+    {
+        $withChild = in_array($destination, ['parent.dashboard', 'parent.attendance.calendar', 'parent.schedule', 'parent.calendar'], true);
+        return route($destination, $withChild && $childId ? ['child_id' => $childId] : []);
+    }
+
+    public static function searchItems(?int $childId = null): array
+    {
+        return array_map(fn ($item) => [
+            'id' => $item[1], 'label' => $item[0], 'hint' => $item[5], 'icon' => $item[2],
+            'category' => 'navigation', 'badge' => 'Parent', 'color' => '#cfa46f',
+            'bg' => 'rgba(207,164,111,0.12)', 'url' => self::url($item[1], $childId),
+        ], self::items());
     }
 
     public static function unreadCount(User $parent): int

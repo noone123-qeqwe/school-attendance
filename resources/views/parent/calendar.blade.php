@@ -962,6 +962,11 @@ function scalSelectChild(btn, childId) {
         scheduleUrl.searchParams.set('child_id', scalChildId);
         scheduleLink.href = scheduleUrl.toString();
     }
+    document.querySelectorAll('[data-parent-child-context]').forEach(link => {
+        const contextUrl = new URL(link.href, window.location.origin);
+        contextUrl.searchParams.set('child_id', scalChildId);
+        link.href = contextUrl.toString();
+    });
     scalLoadAndRender();
 }
 

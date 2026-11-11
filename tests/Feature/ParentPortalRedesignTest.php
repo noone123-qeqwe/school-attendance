@@ -62,7 +62,7 @@ class ParentPortalRedesignTest extends TestCase
             $ids = [];
             foreach ($xpath->query('//*[@id]') as $node) $ids[] = $node->getAttribute('id');
             $this->assertSame([], array_values(array_diff_assoc($ids, array_unique($ids))), "Duplicate IDs on {$name}");
-            $this->assertSame(1, $xpath->query('//nav[@aria-label="Parent navigation"]//a[@href="'.route('parent.attendance.calendar').'"]')->length);
+            $this->assertSame(1, $xpath->query('//aside//nav[@aria-label="Parent navigation"]//a[@href="'.route('parent.attendance.calendar').'"]')->length);
             $this->capture($name, $html);
         }
         foreach (ParentNavigation::items() as [$label, $route]) $this->assertTrue(Route::has($route), $label);
@@ -105,7 +105,7 @@ class ParentPortalRedesignTest extends TestCase
         $xpath = $this->xpath($html);
         $this->assertSame(1, $xpath->query('//nav[@aria-label="Parent navigation"]//a[@href="'.route('parent.profile').'"]')->length);
         $this->assertSame(0, $xpath->query('//nav[@aria-label="Parent navigation"]//a[@href="'.route('settings').'"]')->length);
-        $this->assertStringContainsString("label: 'Account Settings'", $html);
+        $this->assertStringContainsString('Account Settings', $html);
     }
 
     public function test_sunday_classes_and_the_chosen_child_appear_in_the_weekly_schedule(): void
@@ -117,6 +117,53 @@ class ParentPortalRedesignTest extends TestCase
         $this->assertSame(1, $xpath->query('//label[@for="parentContextChild"]')->length);
         $response->assertViewHas('selectedChild', fn ($child) => $child->id === $this->firstChild->id);
         $this->capture('schedule-sunday', $response->getContent());
+    }
+
+    public function test_selected_child_stays_consistent_across_parent_attendance_and_schedule_pages(): void
+    {
+        $key = ParentNavigation::selectionKey($this->parent);
+        $this->withSession([$key => $this->secondChild->id]);
+
+        $dashboard = $this->get(route('parent.dashboard'))->assertOk();
+        $dashboard->assertViewHas('selectedChild', fn ($child) => $child->id === $this->secondChild->id);
+        $dashboardXpath = $this->xpath($dashboard->getContent());
+        $this->assertSame('true', $dashboardXpath->query('//*[@data-parent-child-tab="'.$this->secondChild->id.'"]')->item(0)?->getAttribute('aria-selected'));
+
+        foreach (['parent.schedule', 'parent.attendance.calendar', 'parent.calendar'] as $route) {
+            $response = $this->get(route($route))->assertOk();
+            $response->assertViewHas('selectedChild', fn ($child) => $child->id === $this->secondChild->id);
+        }
+    }
+
+    public function test_parent_navigation_is_grouped_without_removing_any_parent_destination(): void
+    {
+        $html = $this->get(route('parent.dashboard'))->assertOk()->getContent();
+        $xpath = $this->xpath($html);
+        $this->assertSame(3, $xpath->query('//nav[@aria-label="Parent navigation"]//*[contains(concat(" ", normalize-space(@class), " "), " parent-nav-group ")]')->length);
+        $this->assertSame(1, $xpath->query('//aside//nav[@aria-label="Parent navigation"]//a[@href="'.route('parent.attendance.calendar').'"]')->length);
+        $this->assertSame(1, $xpath->query('//nav[@aria-label="Parent navigation"]//a[@href="'.route('parent.profile').'"]')->length);
+        $this->assertStringContainsString('Parent pages', $html);
+    }
+
+    public function test_child_detail_context_switcher_targets_the_newly_selected_child(): void
+    {
+        $html = $this->get(route('parent.child', $this->firstChild))->assertOk()->getContent();
+        $xpath = $this->xpath($html);
+        $picker = $xpath->query('//*[@data-parent-child-context-switch]')->item(0);
+        $this->assertNotNull($picker);
+        $this->assertStringContainsString('__parent_child__', $picker->getAttribute('data-parent-child-context-template'));
+        $this->assertStringContainsString('/parent/child/', $picker->getAttribute('data-parent-child-context-template'));
+    }
+
+    public function test_child_detail_context_switcher_has_a_safe_server_side_fallback(): void
+    {
+        $this->get(route('parent.child', ['child' => $this->firstChild, 'child_id' => $this->secondChild->id]))
+            ->assertRedirect(route('parent.child', $this->secondChild));
+
+        $unlinked = User::factory()->create(['role' => 'student']);
+        $this->get(route('parent.child', ['child' => $this->firstChild, 'child_id' => $unlinked->id]))
+            ->assertOk()
+            ->assertViewHas('child', fn ($child) => $child->id === $this->firstChild->id);
     }
 
     public function test_alert_badges_use_each_guardians_read_state_and_exclude_archived_alerts(): void

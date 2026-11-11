@@ -1,0 +1,232 @@
+/* A calmer parent workspace. This keeps the existing maroon, gold, and dark palette. */
+@media screen {
+    body.parent-portal .sidebar-nav { padding: 14px 12px 28px !important; }
+    body.parent-portal .parent-nav-group { display: grid; gap: 3px; margin: 0 0 18px; }
+    body.parent-portal .parent-nav-group:last-child { margin-bottom: 0; }
+    body.parent-portal .parent-nav-group-title {
+        margin: 0 10px 7px;
+        color: var(--text-secondary, #b39b82);
+        font-size: .67rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+    body.parent-portal .sidebar .parent-nav-group .nav-link {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        column-gap: 11px;
+        row-gap: 1px;
+        align-items: center;
+        min-height: 55px;
+        padding: 9px 11px;
+    }
+    body.parent-portal .sidebar .parent-nav-group .nav-link > i {
+        grid-row: 1 / span 2;
+        margin: 0;
+    }
+    body.parent-portal .sidebar .parent-nav-group .nav-link-text {
+        min-width: 0;
+        font-size: .83rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    body.parent-portal .parent-nav-link-description {
+        grid-column: 2;
+        color: var(--text-secondary, #b39b82);
+        font-size: .68rem;
+        line-height: 1.25;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    body.parent-portal .sidebar .parent-nav-group .nav-link.active .parent-nav-link-description { color: inherit; opacity: .78; }
+    body.parent-portal .sidebar.collapsed .parent-nav-group-title,
+    body.parent-portal .sidebar.collapsed .parent-nav-link-description { display: none; }
+    body.parent-portal .sidebar.collapsed .parent-nav-group { margin-bottom: 9px; }
+    body.parent-portal .sidebar.collapsed .parent-nav-group .nav-link { display: flex; min-height: 46px; justify-content: center; }
+
+    body.parent-portal .main-content > .page-enter { max-width: 1360px; }
+    body.parent-portal .parent-page-heading {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 22px 24px;
+        margin-bottom: 18px;
+        background: rgba(36, 21, 18, .58);
+        border: 1px solid rgba(207, 164, 111, .18);
+        border-radius: 15px;
+    }
+    body.parent-portal .parent-page-heading > * { min-width: 0; }
+    body.parent-portal .parent-page-heading > :last-child { margin-left: auto; }
+    body.parent-portal .parent-page-heading h1,
+    body.parent-portal .parent-page-heading h2 { margin: 0 !important; }
+    body.parent-portal .parent-page-heading p { margin-bottom: 0; }
+    body.parent-portal .parent-page > .student-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 42px;
+        margin: 0 0 14px;
+        color: var(--gold, #cfa46f);
+        font-size: .84rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    body.parent-portal .parent-child-context {
+        display: grid;
+        gap: 14px;
+        padding: 16px 18px;
+        margin: 0 0 22px;
+        background: rgba(30, 19, 16, .7);
+        border: 1px solid rgba(207, 164, 111, .18);
+        border-radius: 14px;
+    }
+    body.parent-portal .parent-child-context-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    body.parent-portal .parent-child-context-avatar {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        border: 1px solid rgba(207, 164, 111, .38);
+        border-radius: 12px;
+        background: rgba(128, 0, 0, .35);
+        color: var(--gold, #cfa46f);
+        font-size: .94rem;
+        font-weight: 800;
+    }
+    body.parent-portal .parent-child-context-copy { display: grid; min-width: 0; line-height: 1.3; }
+    body.parent-portal .parent-child-context-copy strong { overflow: hidden; color: #f3e7cd; font-size: .92rem; text-overflow: ellipsis; white-space: nowrap; }
+    body.parent-portal .parent-child-context-copy > span:last-child { color: #b39b82; font-size: .74rem; }
+    body.parent-portal .parent-child-context-eyebrow { color: var(--gold, #cfa46f); font-size: .65rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    body.parent-portal .parent-child-context-select { display: grid; gap: 4px; min-width: min(100%, 230px); margin-left: auto; }
+    body.parent-portal .parent-child-context-select label { color: #b39b82; font-size: .7rem; font-weight: 700; }
+    body.parent-portal .parent-child-context-select select { min-height: 40px; padding-block: 7px; font-size: .82rem; }
+    body.parent-portal .parent-child-context-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    body.parent-portal .parent-child-context-links a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: 39px;
+        padding: 8px 11px;
+        border: 1px solid rgba(255,255,255,.09);
+        border-radius: 9px;
+        color: #d9cdb9;
+        font-size: .78rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+    body.parent-portal .parent-child-context-links a:hover,
+    body.parent-portal .parent-child-context-links a.active { border-color: rgba(207, 164, 111, .55); background: rgba(207, 164, 111, .12); color: #f3e7cd; }
+
+    body.parent-portal .parent-hero-banner { padding: 28px !important; margin-bottom: 18px !important; }
+    body.parent-portal .parent-hero-title { max-width: 19ch; font-size: clamp(1.65rem, 3vw, 2.25rem) !important; line-height: 1.15; }
+    body.parent-portal .parent-hero-sub { margin-bottom: 0; }
+    body.parent-portal .student-switcher-wrap { margin-bottom: 18px; }
+    body.parent-portal .student-switcher-wrap > .d-flex { align-items: flex-start !important; }
+    body.parent-portal .student-profile-showcase { padding: 24px !important; }
+    body.parent-portal .parent-actions-row {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: min(100%, 620px);
+        gap: 8px !important;
+    }
+    body.parent-portal .parent-actions-row .parent-btn-action {
+        min-height: 44px;
+        padding: 9px 10px !important;
+        text-align: center;
+        white-space: nowrap;
+    }
+    body.parent-portal .parent-kpi-grid { gap: 12px !important; }
+    body.parent-portal .parent-section-card .parent-section-head { min-height: 64px; }
+    body.parent-portal .parent-section-title { font-size: 1rem; }
+
+    body.parent-portal .parent-page :is(.adm-card, .ent-section, .parent-section-card, .link-wizard-card, .linked-children-card) { border-color: rgba(207, 164, 111, .15); }
+    body.parent-portal .parent-page :is(.adm-card-head, .ent-section-header, .parent-section-head) { border-bottom-color: rgba(207, 164, 111, .12); }
+    body.parent-portal .parent-page .parent-filter-toolbar { padding: 0; }
+    body.parent-portal .parent-page .ent-empty { border-radius: 14px; }
+    body.parent-portal .parent-feedback { min-height: 0; margin: -4px 0 12px; }
+    body.parent-portal .sp { max-width: 1160px; }
+    body.parent-portal .stabs-wrapper {
+        padding: 8px;
+        margin-bottom: 22px;
+        background: rgba(36, 21, 18, .58);
+        border: 1px solid rgba(207, 164, 111, .18);
+        border-radius: 14px;
+    }
+    body.parent-portal .stabs {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 7px !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        border: 0 !important;
+    }
+    body.parent-portal .stab {
+        flex: 1 1 150px;
+        justify-content: center;
+        min-height: 42px;
+        margin: 0 !important;
+        padding: 9px 12px !important;
+        border: 1px solid rgba(255,255,255,.09) !important;
+        border-radius: 9px !important;
+    }
+    body.parent-portal .stab.active { background: rgba(207, 164, 111, .13); border-color: rgba(207, 164, 111, .5) !important; }
+    body.parent-portal :is(.stabs-arrow, .stabs-floating-hint) { display: none !important; }
+    body.parent-portal .link-wizard-container { max-width: 900px; }
+    body.parent-portal :is(.link-wizard-card, .linked-children-card) { padding: 26px !important; }
+}
+
+@media (max-width: 991px) {
+    body.parent-portal .parent-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    body.parent-portal .parent-kpi-grid > .kpi-rate-card { grid-column: span 3; }
+    body.parent-portal .parent-actions-row { width: 100%; }
+}
+
+@media (max-width: 767.98px) {
+    body.parent-portal .main-content > .page-enter { padding: 16px 14px calc(100px + env(safe-area-inset-bottom)) !important; }
+    body.parent-portal .parent-page-heading { align-items: flex-start; gap: 12px; padding: 17px; margin-bottom: 14px; }
+    body.parent-portal .parent-page-heading > :last-child { margin-left: 0; }
+    body.parent-portal .parent-page-heading .ent-btn { min-height: 40px; }
+    body.parent-portal .parent-child-context { padding: 14px; margin-bottom: 16px; }
+    body.parent-portal .parent-child-context-main { align-items: flex-start; flex-wrap: wrap; }
+    body.parent-portal .parent-child-context-select { width: 100%; min-width: 0; margin-left: 0; }
+    body.parent-portal .parent-child-context-links { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+    body.parent-portal .parent-child-context-links a { min-width: 0; padding-inline: 8px; }
+    body.parent-portal .parent-hero-banner { padding: 20px !important; margin-bottom: 14px !important; }
+    body.parent-portal .parent-hero-banner .btn-modern-gold { width: 100%; min-height: 44px; }
+    body.parent-portal .parent-hero-title { max-width: 100%; font-size: 1.65rem !important; }
+    body.parent-portal .student-switcher-wrap { padding: 14px !important; margin-bottom: 14px; }
+    body.parent-portal .student-tabs-scroller { display: none !important; }
+    body.parent-portal .parent-child-picker { display: grid !important; gap: 6px; }
+    body.parent-portal .parent-child-picker label { color: #b39b82; font-size: .75rem; font-weight: 700; }
+    body.parent-portal .student-profile-showcase { padding: 18px !important; }
+    body.parent-portal .student-profile-showcase > .d-flex { align-items: flex-start !important; }
+    body.parent-portal .student-name-title { font-size: 1.2rem !important; }
+    body.parent-portal .parent-actions-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px !important; }
+    body.parent-portal .parent-actions-row .parent-btn-action { min-width: 0; font-size: .78rem; }
+    body.parent-portal .parent-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px !important; margin-bottom: 16px; }
+    body.parent-portal .parent-kpi-grid > .kpi-rate-card { grid-column: span 2; }
+    body.parent-portal .kpi-stat-card { padding: 15px !important; }
+    body.parent-portal .kpi-stat-val { font-size: 1.5rem !important; }
+    body.parent-portal .parent-section-card .parent-section-head { padding: 16px !important; min-height: auto; }
+    body.parent-portal .parent-section-card .parent-section-head .ent-btn { min-height: 36px; }
+    body.parent-portal .parent-nav-group-mobile { display: contents; }
+    body.parent-portal #moreSheetContent .more-sheet-item { min-height: 86px; }
+    body.parent-portal .mobile-bottom-nav .mbn-item { min-width: 0; padding-inline: 3px; }
+    body.parent-portal .mobile-bottom-nav .mbn-item span:last-child { font-size: .64rem; white-space: nowrap; }
+    body.parent-portal .sp { margin-inline: 0; }
+    body.parent-portal .stabs-wrapper { padding: 7px; margin-bottom: 18px; }
+    body.parent-portal .stab { flex: 1 1 calc(50% - 7px); min-width: 0; font-size: .78rem !important; }
+    body.parent-portal :is(.link-wizard-card, .linked-children-card) { padding: 18px !important; }
+}
+
+@media (max-width: 390px) {
+    body.parent-portal .parent-child-context-links a { font-size: .72rem; }
+    body.parent-portal .parent-actions-row .parent-btn-action { font-size: .72rem; }
+    body.parent-portal .parent-page-heading { padding: 15px; }
+}

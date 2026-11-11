@@ -6,6 +6,22 @@
     const picker = document.querySelector('[data-parent-child-picker]');
     const account = document.querySelector('meta[name="auth-user-id"]')?.content || '';
     const storageKey = `parentSelectedChild:${account}`;
+    const serverSelectedChild = document.querySelector('[data-parent-selected-child]')?.dataset.parentSelectedChild || '';
+    function updateChildAwareLinks(id) {
+        document.querySelectorAll('[data-parent-child-context]').forEach(link => {
+            try {
+                const url = new URL(link.href, window.location.origin);
+                url.searchParams.set('child_id', id);
+                link.href = url.toString();
+            } catch (_) { /* A missing URL API must not block the parent workspace. */ }
+        });
+        if (!window.location || !window.history?.replaceState || !/\/parent\/dashboard\/?$/.test(window.location.pathname)) return;
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('child_id', id);
+            window.history.replaceState({}, '', url);
+        } catch (_) { /* Keep the selected child in the visible page when URL updates are unavailable. */ }
+    }
     function selectChild(value, focus = false) {
         const id = String(value);
         if (!panels.some(panel => panel.dataset.parentChildPanel === id)) return false;
@@ -23,12 +39,15 @@
         });
         if (picker) picker.value = id;
         try { localStorage.setItem(storageKey, id); } catch (_) { /* Selection works when storage is unavailable. */ }
+        updateChildAwareLinks(id);
         return true;
     }
     if (panels.length) {
         let saved;
         try { saved = localStorage.getItem(storageKey); } catch (_) { /* Use the first linked child. */ }
-        if (!saved || !selectChild(saved)) selectChild(panels[0].dataset.parentChildPanel);
+        if (!(serverSelectedChild && selectChild(serverSelectedChild)) && (!saved || !selectChild(saved))) {
+            selectChild(panels[0].dataset.parentChildPanel);
+        }
         tabs.forEach((tab, index) => {
             tab.addEventListener('click', () => selectChild(tab.dataset.parentChildTab));
             tab.addEventListener('keydown', event => {
@@ -45,6 +64,13 @@
         picker?.addEventListener('change', () => selectChild(picker.value));
         window.switchDashboardChild = selectChild;
     }
+
+    const childContextPicker = document.querySelector('[data-parent-child-context-switch]');
+    childContextPicker?.addEventListener('change', () => {
+        const template = childContextPicker.dataset.parentChildContextTemplate;
+        if (!template) return;
+        window.location.href = template.replace('__parent_child__', encodeURIComponent(childContextPicker.value));
+    });
 
     const main = document.getElementById('mainContent');
     const accountTabs = [...document.querySelectorAll('[data-parent-profile-tab]')];

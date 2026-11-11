@@ -14,21 +14,9 @@
         </div>
     </div>
     
-    @if($children->count() > 1)
-    <div class="parent-context-picker">
-        <label for="parentContextChild">Viewing student</label>
-        <form id="child-select-form" method="GET" action="{{ route('parent.schedule') }}" class="m-0 p-0 d-flex align-items-center">
-            <select id="parentContextChild" name="child_id" onchange="document.getElementById('child-select-form').submit()" class="form-select form-select-sm premium-select" style="min-width: 200px; background-color: rgba(0,0,0,0.2); color: #f3e7cd; border-color: rgba(255,255,255,0.1);">
-                @foreach($children as $child)
-                    <option value="{{ $child->id }}" {{ $selectedChild && $selectedChild->id == $child->id ? 'selected' : '' }}>
-                        {{ $child->name }}
-                    </option>
-                @endforeach
-            </select>
-        </form>
-    </div>
-    @endif
 </div>
+
+@include('partials.parent-child-context', ['children' => $children, 'selectedChild' => $selectedChild, 'contextSection' => 'schedule'])
 
 @if(!$selectedChild)
     <div class="alert alert-warning" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #fbbf24;">

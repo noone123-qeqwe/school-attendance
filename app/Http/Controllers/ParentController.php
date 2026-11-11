@@ -14,6 +14,7 @@ use App\Services\ParentService;
 use Exception;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Subject;
+use App\Support\ParentNavigation;
 
 class ParentController extends Controller
 {
@@ -33,12 +34,37 @@ class ParentController extends Controller
         if (!$parent->children()->where('student_id', $child->id)->exists()) {
             abort(403, 'You do not have access to this student\'s records.');
         }
+        request()->session()->put(ParentNavigation::selectionKey($parent), $child->id);
+    }
+
+    /**
+     * Let the shared child selector work as a normal GET form as well as with JavaScript.
+     * The target is always looked up through the authenticated parent's own relationship.
+     */
+    private function childContextRedirect(Request $request, User $currentChild, string $destination)
+    {
+        $requestedChildId = $request->integer('child_id');
+        if (!$requestedChildId || $requestedChildId === (int) $currentChild->id) {
+            return null;
+        }
+
+        $requestedChild = Auth::user()->children()->whereKey($requestedChildId)->first();
+        if (!$requestedChild) {
+            return null;
+        }
+
+        $request->session()->put(ParentNavigation::selectionKey(Auth::user()), $requestedChild->id);
+
+        return redirect()->route($destination, array_merge(
+            ['child' => $requestedChild],
+            $request->except(['child_id', 'page'])
+        ));
     }
 
     /**
      * Enhanced parent dashboard with stats, charts, and warnings per child.
      */
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $user = Auth::user();
         $children = $user->children()->with([
@@ -137,7 +163,8 @@ class ParentController extends Controller
             ];
         });
 
-        return view('parent.dashboard', compact('user', 'childrenData'));
+        $selectedChild = ParentNavigation::selectChild($children, $request);
+        return view('parent.dashboard', compact('user', 'childrenData', 'children', 'selectedChild'));
     }
 
     /**
@@ -259,6 +286,9 @@ class ParentController extends Controller
     public function childDetail(Request $request, User $child)
     {
         $this->authorizeChild($child);
+        if ($redirect = $this->childContextRedirect($request, $child, 'parent.child')) {
+            return $redirect;
+        }
 
         $query = Attendance::with('subject')
             ->where('user_id', $child->id)
@@ -310,24 +340,30 @@ class ParentController extends Controller
                 return (object) ['code' => $code, 'name' => $subject->name ?? $code];
             });
 
+        $children = Auth::user()->children()->orderBy('name')->get();
+
         return view('parent.child-detail', compact(
-            'child', 'records', 'total', 'present', 'late', 'absent', 'rate', 'subjects'
+            'child', 'children', 'records', 'total', 'present', 'late', 'absent', 'rate', 'subjects'
         ));
     }
 
     /**
      * View warnings for a specific child.
      */
-    public function childWarnings(User $child)
+    public function childWarnings(Request $request, User $child)
     {
         $this->authorizeChild($child);
+        if ($redirect = $this->childContextRedirect($request, $child, 'parent.child.warnings')) {
+            return $redirect;
+        }
 
         $warnings = Warning::where('user_id', $child->id)
             ->with('subject')
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('parent.child-warnings', compact('child', 'warnings'));
+        $children = Auth::user()->children()->orderBy('name')->get();
+        return view('parent.child-warnings', compact('child', 'children', 'warnings'));
     }
 
     /**
@@ -628,11 +664,7 @@ class ParentController extends Controller
     {
         $parent = Auth::user();
         $children = $parent->children()->get();
-        $childId = $request->query('child_id');
-        $selectedChild = $childId ? $children->firstWhere('id', $childId) : $children->first();
-        if (!$selectedChild && $children->isNotEmpty()) {
-            $selectedChild = $children->first();
-        }
+        $selectedChild = ParentNavigation::selectChild($children, $request);
         return view('parent.calendar', compact('children', 'selectedChild'));
     }
 
@@ -658,13 +690,7 @@ class ParentController extends Controller
             return view('parent.schedule', ['children' => $children, 'selectedChild' => null, 'weeklySchedule' => [], 'days' => []]);
         }
 
-        $childId = $request->query('child_id');
-        $selectedChild = $childId ? $children->firstWhere('id', $childId) : $children->first();
-
-        // Fallback to first child if invalid ID
-        if (!$selectedChild) {
-            $selectedChild = $children->first();
-        }
+        $selectedChild = ParentNavigation::selectChild($children, $request);
 
         $subjects = app(\App\Services\StudentScheduleService::class)->subjectsFor($selectedChild);
 
@@ -701,13 +727,7 @@ class ParentController extends Controller
             return view('parent.attendance-calendar', ['children' => $children, 'selectedChild' => null, 'records' => collect()]);
         }
 
-        $childId = $request->query('child_id');
-        $selectedChild = $childId ? $children->firstWhere('id', $childId) : $children->first();
-
-        // Fallback to first child if invalid ID
-        if (!$selectedChild) {
-            $selectedChild = $children->first();
-        }
+        $selectedChild = ParentNavigation::selectChild($children, $request);
 
         // Fetch all attendance records with subject relation for the selected child
         $records = Attendance::with('subject')

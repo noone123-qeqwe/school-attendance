@@ -54,6 +54,7 @@
     @endif
     @if(Auth::user()?->isParent() && !request()->routeIs('parent.*.report'))
         <link rel="stylesheet" href="{{ asset('css/parent-portal-redesign.css') }}?v={{ filemtime(public_path('css/parent-portal-redesign.css')) }}">
+        <link rel="stylesheet" href="{{ asset('css/parent-simple.css') }}?v={{ filemtime(public_path('css/parent-simple.css')) }}">
     @endif
     @if(Auth::user()?->isStudent() && request()->routeIs('settings'))
         <link rel="stylesheet" href="{{ asset('css/student-settings.css') }}?v={{ filemtime(public_path('css/student-settings.css')) }}">
@@ -123,6 +124,8 @@
                         <div class="header-page-title">
                             @if(Auth::user()?->isAdmin())
                                 {{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['title'] }}
+                            @elseif(Auth::user()?->isParent())
+                                {{ \App\Support\ParentNavigation::context(request()->route()?->getName())['title'] }}
                             @elseif(View::hasSection('page-title'))
                                 @yield('page-title')
                             @else
@@ -135,7 +138,7 @@
                                 @endif
                             @endif
                         </div>
-                        <div class="header-page-sub">@if(Auth::user()?->isAdmin()){{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['group'] }}@elseif(View::hasSection('page-sub'))@yield('page-sub')@else{{ now()->format('l, F j, Y') }}@endif</div>
+                        <div class="header-page-sub">@if(Auth::user()?->isAdmin()){{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['group'] }}@elseif(Auth::user()?->isParent()){{ \App\Support\ParentNavigation::context(request()->route()?->getName())['group'] }}@elseif(View::hasSection('page-sub'))@yield('page-sub')@else{{ now()->format('l, F j, Y') }}@endif</div>
                     </div>
                 </div>
 
@@ -855,7 +858,7 @@
         <div class="more-sheet d-md-none {{ Auth::user()->isAdmin() ? 'admin-navigation-sheet' : '' }}" id="moreSheet" role="dialog" aria-modal="true" aria-labelledby="moreSheetTitle" aria-hidden="true" inert>
             <div class="more-sheet-handle"></div>
             <div class="more-sheet-header">
-                <span class="more-sheet-title" id="moreSheetTitle">{{ Auth::user()->isAdmin() ? 'All admin pages' : 'More' }}</span>
+                <span class="more-sheet-title" id="moreSheetTitle">{{ Auth::user()->isAdmin() ? 'All admin pages' : (Auth::user()->isParent() ? 'Parent pages' : 'More') }}</span>
                 <button type="button" class="more-sheet-close" id="moreSheetCloseBtn" onclick="closeMoreSheet()" aria-label="Close More Menu">
                     <i class="bi bi-x-lg" style="pointer-events:none;"></i>
                 </button>

@@ -19,6 +19,8 @@
         </div>
     </div>
 
+    @include('partials.parent-child-context', ['children' => $children, 'selectedChild' => $child, 'contextSection' => 'attendance'])
+
     {{-- Warnings List --}}
     <div class="adm-card">
         <div class="adm-card-head">

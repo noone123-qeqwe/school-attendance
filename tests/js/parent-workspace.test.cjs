@@ -8,7 +8,7 @@ const calendar = fs.readFileSync(path.join(__dirname, '../../resources/views/par
 const calendarText = fs.readFileSync(path.join(__dirname, '../../resources/views/partials/parent-calendar-text.blade.php'), 'utf8');
 
 // DOM fixtures verify state transitions; visual browser checks remain a separate step.
-function fixture({ admin = false, account = '7', saved = null } = {}) {
+function fixture({ admin = false, account = '7', saved = null, contextTemplate = null } = {}) {
     const ids = new Map(), requests = [], storage = new Map();
     if (saved !== null) storage.set(`parentSelectedChild:${account}`, saved);
     let refreshes = 0;
@@ -30,18 +30,19 @@ function fixture({ admin = false, account = '7', saved = null } = {}) {
     document.body = element(); document.body.classList.toggle('parent-portal', !admin);
     const panels = ['11', '12'].map(id => { const node = element(); node.dataset.parentChildPanel = id; return node; });
     const tabs = ['11', '12'].map(id => { const node = element(); node.dataset.parentChildTab = id; return node; });
-    const picker = element(), main = element(), button = element(), feedback = element();
+    const picker = element(), contextPicker = element(), main = element(), button = element(), feedback = element();
+    if (contextTemplate) contextPicker.dataset.parentChildContextTemplate = contextTemplate;
     button.dataset.readUrl = '/parent/notifications/read';
     const counts = [element(), element()], unread = element(), newBadge = element();
     const field = element(), verify = element();
     ids.set('mainContent', main); ids.set('markAllReadBtn', button); ids.set('parentNotificationFeedback', feedback);
     ids.set('instant_code', field); ids.set('btn-verify-code', verify);
     document.getElementById = id => ids.get(id) ?? null;
-    document.querySelector = selector => selector.includes('auth-user-id') ? { content: account } : selector.includes('csrf-token') ? { content: 'fixture-token' } : selector.includes('child-picker') ? picker : null;
+    document.querySelector = selector => selector.includes('auth-user-id') ? { content: account } : selector.includes('csrf-token') ? { content: 'fixture-token' } : selector.includes('child-context-switch') && contextTemplate ? contextPicker : selector.includes('child-picker') ? picker : null;
     document.querySelectorAll = selector => selector.includes('child-panel') ? panels : selector.includes('child-tab') ? tabs : selector.includes('unread-count') ? [...counts, newBadge] : selector.includes('alert-unread') ? [unread] : [];
-    const context = { document, window: { refreshNotificationBell() { refreshes++; } }, localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) }, fetch: (...args) => new Promise(resolve => requests.push({ args, resolve })) };
+    const context = { document, window: { location: { origin: 'https://attendance.test', pathname: '/parent/child/11', href: 'https://attendance.test/parent/child/11' }, history: { replaceState() {} }, refreshNotificationBell() { refreshes++; } }, localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) }, fetch: (...args) => new Promise(resolve => requests.push({ args, resolve })) };
     vm.runInNewContext(workspace, context);
-    return { ...context, panels, tabs, picker, main, button, feedback, counts, unread, newBadge, field, verify, requests, storage, get refreshes() { return refreshes; } };
+    return { ...context, panels, tabs, picker, contextPicker, main, button, feedback, counts, unread, newBadge, field, verify, requests, storage, get refreshes() { return refreshes; } };
 }
 
 test('mobile child selection updates visible content and the matching desktop tab', async () => {
@@ -70,6 +71,13 @@ test('a stale saved child falls back to a linked student and storage is separate
     assert.equal(app.picker.value, '11');
     assert.equal(app.storage.get('parentSelectedChild:8'), '11');
     assert.equal(app.storage.has('parentSelectedChild:7'), false);
+});
+
+test('a child-detail picker navigates to the selected child rather than staying on the old record page', async () => {
+    const app = fixture({ contextTemplate: 'https://attendance.test/parent/child/__parent_child__' });
+    app.contextPicker.value = '12';
+    await app.contextPicker.fire('change');
+    assert.equal(app.window.location.href, 'https://attendance.test/parent/child/12');
 });
 
 test('mark-read waits for success and prevents duplicate requests', async () => {
@@ -169,6 +177,33 @@ test('a calendar timeout ends the loading state and exposes retry', async () => 
     assert.equal(app.requests[0].options.signal.aborted, true);
     assert.equal(rendered, true);
     assert.equal(app.retry.hidden, false);
+});
+
+test('school-calendar child changes keep the surrounding parent navigation on that same child', () => {
+    const start = calendar.indexOf('function scalSelectChild('), end = calendar.indexOf('function scalSwitchChild(', start);
+    assert.ok(start > 0 && end > start);
+    const classList = { toggle() {} };
+    const pickerItem = { getAttribute: name => ({ 'data-child-id': '12' })[name], classList, querySelector: () => null };
+    const navLink = { href: 'https://attendance.test/parent/attendance-calendar' };
+    const scheduleLink = { href: 'https://attendance.test/parent/schedule' };
+    const fields = {
+        activeStudentName: { textContent: '' }, activeStudentAvatar: { textContent: '' }, activeStudentSub: { textContent: '' },
+        parentCalendarScheduleLink: scheduleLink,
+    };
+    const context = {
+        scalChildId: 11,
+        window: { location: { href: 'https://attendance.test/parent/calendar?child_id=11', origin: 'https://attendance.test' }, history: { replaceState() {} } },
+        URL,
+        document: {
+            getElementById: id => fields[id] ?? null,
+            querySelectorAll: selector => selector === '.scal-picker-item' ? [pickerItem] : selector === '[data-parent-child-context]' ? [navLink] : [],
+        },
+        scalLoadAndRender() {},
+    };
+    vm.createContext(context); vm.runInContext(calendar.slice(start, end), context);
+    context.scalSelectChild({ getAttribute: name => ({ 'data-name': 'Second child', 'data-initials': 'SC', 'data-number': '5558872' })[name] }, 12);
+    assert.match(scheduleLink.href, /child_id=12/);
+    assert.match(navLink.href, /child_id=12/);
 });
 
 test('school calendar dialogs render special-character names and titles as text', () => {
