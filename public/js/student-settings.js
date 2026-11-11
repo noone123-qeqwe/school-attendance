@@ -9,7 +9,7 @@
         credentials: ['Password & email', 'Keep your sign-in details up to date. Changes require an email verification code.', 'security', 'credentials'],
         'change-email': ['Change email address', 'Verify the new address before it becomes your account email.', 'account-email'],
         'change-password': ['Change password', 'Confirm your email and choose a new password.', 'account-password'],
-        'change-phone': ['Change phone number', 'Update the number used for emergency contact and account recovery.', 'account-phone'],
+        'change-phone': ['Change phone number', 'Update the phone number listed on your school account.', 'account-phone'],
         biometrics: ['Biometrics', 'Register your face for attendance and manage the secure ways you sign in to your account.', 'security', 'biometrics'],
         device: ['Attendance device', 'Manage the phone or computer you use to record attendance.', 'security', 'device'],
         recovery: ['Recovery codes', 'Save backup codes somewhere safe in case you lose access to your account.', 'security', 'recovery'],
@@ -137,6 +137,17 @@
     root.addEventListener('submit', event => {
         if (event.target instanceof HTMLFormElement && event.target.checkValidity()) {
             window.studentSettingsRememberReturn();
+            if (event.target.id === 'personalInfoForm') {
+                const button = document.getElementById('savePhoneBtn');
+                if (button && !button.disabled) {
+                    if (typeof window.setAccountEditStatus === 'function') {
+                        window.setAccountEditStatus('phoneFormStatus', 'Saving your phone number…', 'info');
+                    }
+                    button.disabled = true;
+                    button.setAttribute('aria-busy', 'true');
+                    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Saving…';
+                }
+            }
         }
     });
     function syncHistory() { navigate(location.hash.replace(/^#(?:tab-)?/, '') || defaultPage(), { fromHistory: true }); }
@@ -149,6 +160,33 @@
         let returned = null;
         try { returned = sessionStorage.getItem(returnKey); sessionStorage.removeItem(returnKey); } catch (e) {}
         // Preserve the section after a form redirects with validation or success feedback.
-        if (root.dataset.settingsFeedback === 'true') navigate(returned || (root.dataset.settingsPhoneError === 'true' ? 'profile' : 'credentials'));
+        if (root.dataset.settingsFeedback === 'true') {
+            const destination = returned || (root.dataset.settingsPhoneError === 'true' ? 'profile' : 'credentials');
+            navigate(destination);
+
+            if (destination === 'change-email' && root.dataset.settingsEmailError === 'true') {
+                const addressError = root.dataset.settingsEmailAddressError === 'true';
+                const firstStep = document.getElementById('emailStep1');
+                const secondStep = document.getElementById('emailStep2');
+                if (firstStep && secondStep) {
+                    firstStep.style.display = addressError ? 'block' : 'none';
+                    secondStep.style.display = addressError ? 'none' : 'block';
+                    setAccountEditProgress('emailEditProgress', addressError ? 1 : 2);
+                    setAccountEditStatus('emailFormStatus', root.dataset.settingsEmailErrorMessage || 'Check the address or code and try again.', 'error');
+                    document.getElementById(addressError ? 'inputNewEmail' : 'ed1')?.focus();
+                }
+            }
+            if (destination === 'change-password' && root.dataset.settingsPasswordError === 'true') {
+                document.getElementById('otpStep1').style.display = 'none';
+                document.getElementById('otpStep2').style.display = 'block';
+                setAccountEditProgress('passwordEditProgress', 2);
+                setAccountEditStatus('passwordFormStatus', root.dataset.settingsPasswordErrorMessage || 'Check your code and password details, then try again.', 'error');
+                document.getElementById('sd1')?.focus();
+            }
+            if (root.dataset.settingsPhoneError === 'true') {
+                setAccountEditStatus('phoneFormStatus', root.dataset.settingsPhoneErrorMessage || 'Check the phone number and try again.', 'error');
+                document.getElementById('phoneInput')?.focus();
+            }
+        }
     }, { once: true });
 })();

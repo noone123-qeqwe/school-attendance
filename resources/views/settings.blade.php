@@ -3512,11 +3512,67 @@
 .student-settings .student-account-shortcut button:hover,
 .student-settings .student-phone-shortcut button:hover { background:rgba(207,164,111,.2); }
 .student-settings .student-phone-shortcut { justify-content:space-between; margin-bottom:18px; }
-.student-settings .student-account-edit-panel { padding:0; border:0; background:transparent; box-shadow:none; }
+.student-settings .student-account-edit-panel { max-width:780px; margin:0 auto; padding:0; border:0; background:transparent; box-shadow:none; }
 .student-settings .student-account-edit-panel > .student-account-edit-intro {
     margin-bottom:16px; padding:18px 20px; border:1px solid rgba(207,164,111,.18);
     border-radius:15px; background:rgba(207,164,111,.055); color:#b39b82; line-height:1.5;
 }
+.student-settings .student-account-edit-card { border-radius:18px; }
+.student-settings .account-edit-progress {
+    display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;
+    margin:0 0 20px; padding:0; list-style:none;
+}
+.student-settings .account-edit-progress li {
+    display:flex; align-items:center; gap:10px; min-width:0; min-height:48px;
+    padding:9px 12px; border:1px solid rgba(207,164,111,.14); border-radius:12px;
+    color:#8f806d; background:rgba(255,255,255,.018); font-size:.8rem; font-weight:650;
+}
+.student-settings .account-edit-progress li > .account-step-number {
+    display:grid; place-items:center; flex:0 0 27px; width:27px; height:27px;
+    border-radius:50%; border:1px solid rgba(207,164,111,.2); color:#b39b82; font-size:.74rem;
+}
+.student-settings .account-edit-progress li[aria-current="step"] {
+    border-color:rgba(207,164,111,.4); color:#f5dfa8; background:rgba(207,164,111,.09);
+}
+.student-settings .account-edit-progress li[aria-current="step"] > .account-step-number,
+.student-settings .account-edit-progress li.is-complete > .account-step-number {
+    border-color:#cfa46f; color:#120e0b; background:#cfa46f;
+}
+.student-settings .account-edit-progress li.is-complete { color:#d7c3a4; }
+.student-settings .account-edit-status {
+    margin:0 0 14px; padding:11px 13px; border:1px solid rgba(207,164,111,.24);
+    border-radius:12px; color:#f3e7cd; background:rgba(207,164,111,.07); font-size:.84rem; line-height:1.45;
+}
+.student-settings .account-edit-status[hidden] { display:none !important; }
+.student-settings .account-edit-status[data-tone="error"] { border-color:rgba(248,113,113,.3); color:#fca5a5; background:rgba(239,68,68,.08); }
+.student-settings .account-edit-status[data-tone="success"] { border-color:rgba(74,222,128,.28); color:#86efac; background:rgba(34,197,94,.08); }
+.student-settings .account-edit-current-value {
+    display:flex; align-items:center; gap:10px; min-width:0; margin:12px 0 18px;
+    padding:12px 14px; border:1px solid rgba(207,164,111,.16); border-radius:12px;
+    background:rgba(207,164,111,.045); color:#cbb697; font-size:.86rem;
+}
+.student-settings .account-edit-current-value i { flex:0 0 auto; color:#cfa46f; }
+.student-settings .account-edit-current-value strong { color:#f3e7cd; overflow-wrap:anywhere; }
+.student-settings .account-edit-help { margin:7px 0 16px; color:#b39b82; font-size:.8rem; line-height:1.5; }
+.student-settings .account-otp-grid {
+    display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px;
+    max-width:390px; margin:8px 0 7px;
+}
+.student-settings .account-otp-input {
+    width:100%; min-width:0; height:50px; padding:0; border:1px solid rgba(207,164,111,.24);
+    border-radius:12px; color:#f3e7cd; background:rgba(255,235,190,.045);
+    font-size:1.15rem; font-weight:800; text-align:center; outline:none;
+    transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.student-settings .account-otp-input:focus-visible {
+    border-color:#cfa46f; background:rgba(207,164,111,.08); box-shadow:0 0 0 3px rgba(207,164,111,.16);
+}
+.student-settings .account-form-actions { display:flex; align-items:center; gap:10px; margin-top:16px; }
+.student-settings .account-form-actions > * { min-height:46px; }
+.student-settings .account-form-actions .sec-action-btn { flex:1; }
+.student-settings .student-account-edit-card .sec-card-content { min-width:0; }
+.student-settings .student-account-edit-card .si { min-height:48px; }
+.student-settings .student-account-edit-panel .student-phone-shortcut { margin-bottom:0; }
 .student-settings .student-account-edit-panel .sec-card,
 .student-settings .student-account-edit-panel .sc { margin:0; }
 .student-settings .sec-card-top { margin-bottom: 14px; }
@@ -3669,6 +3725,12 @@
     .student-settings .student-account-shortcut button { flex:0 0 auto; padding:9px 10px; }
     .student-settings .student-phone-shortcut { padding:14px; align-items:flex-start; }
     .student-settings .student-account-edit-panel > .student-account-edit-intro { padding:15px; }
+    .student-settings .account-edit-progress { gap:7px; }
+    .student-settings .account-edit-progress li { gap:7px; min-height:44px; padding:7px 9px; font-size:.74rem; }
+    .student-settings .account-otp-grid { gap:6px; }
+    .student-settings .account-otp-input { height:46px; border-radius:10px; }
+    .student-settings .account-form-actions { flex-direction:column-reverse; align-items:stretch; }
+    .student-settings .account-form-actions > * { width:100%; }
     .student-settings .bio-method-grid { grid-template-columns: 1fr; gap: 18px; }
     .student-settings .bio-method-card { padding: 22px 16px 20px; }
     .student-settings .bio-action-row { align-items: stretch; flex-direction: column; gap: 12px; }
@@ -3889,7 +3951,7 @@
 }
 </style>
 
-<div class="sp {{ $user?->isStudent() ? 'student-settings' : '' }}" @if($user?->isStudent()) data-student-settings="{{ $user->id }}" data-student-view="overview" data-settings-feedback="{{ $errors->any() || session('success') ? 'true' : 'false' }}" data-settings-phone-error="{{ $errors->has('phone') ? 'true' : 'false' }}" @endif>
+<div class="sp {{ $user?->isStudent() ? 'student-settings' : '' }}" @if($user?->isStudent()) data-student-settings="{{ $user->id }}" data-student-view="overview" data-settings-feedback="{{ $errors->any() || session('success') ? 'true' : 'false' }}" data-settings-phone-error="{{ $errors->has('phone') ? 'true' : 'false' }}" data-settings-phone-error-message="{{ $errors->first('phone') }}" data-settings-email-error="{{ $errors->has('new_email') || $errors->has('otp') ? 'true' : 'false' }}" data-settings-email-address-error="{{ $errors->has('new_email') ? 'true' : 'false' }}" data-settings-email-error-message="{{ $errors->first('new_email') ?: $errors->first('otp') }}" data-settings-password-error="{{ $errors->has('password') || $errors->has('password_confirmation') || $errors->has('otp') ? 'true' : 'false' }}" data-settings-password-error-message="{{ $errors->first('password') ?: $errors->first('password_confirmation') ?: $errors->first('otp') }}" @endif>
 
     @if($user->isStudent())
     <header class="student-settings-heading">
@@ -4143,12 +4205,12 @@
         </div>
 
         <!-- Personal Information (Editable) -->
-        <div class="sc" @if($user->isStudent()) data-account-edit-source="phone" @endif>
+        <div class="sc {{ $user->isStudent() ? 'student-account-edit-card' : '' }}" @if($user->isStudent()) data-account-edit-source="phone" @endif>
             <div class="sc-head">
                 <div class="sc-icon" style="background:rgba(207,164,111,0.14);color:#cfa46f;"><i class="bi bi-person-lines-fill"></i></div>
                 <div>
                     <div class="sc-title">{{ $user->isStudent() ? 'Phone number' : 'Personal Information' }}</div>
-                    <div class="sc-sub">{{ $user->isStudent() ? 'Update your emergency contact and account recovery number.' : 'Update your contact details and emergency recovery info' }}</div>
+                    <div class="sc-sub">{{ $user->isStudent() ? 'Add or update the phone number listed on your school account.' : 'Update your contact details and emergency recovery info' }}</div>
                 </div>
             </div>
             <div class="sc-body">
@@ -4156,26 +4218,33 @@
                     @csrf
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="sl" for="phoneInput">Phone Number</label>
+                            <label class="sl" for="phoneInput">Phone number</label>
                             <div class="input-icon-wrap">
                                 <i class="bi bi-telephone-fill input-icon-prefix"></i>
-                                <input type="text"
+                                <input type="tel"
                                        id="phoneInput"
                                        name="phone"
                                        class="si with-icon"
                                        style="padding-left: 44px !important;"
                                        value="{{ old('phone', Auth::user()->phone) }}"
                                        placeholder="+63 900 000 0000"
-                                       maxlength="20">
+                                       inputmode="tel"
+                                       autocomplete="tel"
+                                       maxlength="20"
+                                       pattern="[0-9+\s-]{0,20}"
+                                       aria-describedby="phoneInputHelp">
                             </div>
-                            <div class="mt-2 d-flex align-items-center gap-1" style="font-size:0.75rem;color:#b39b82;">
+                            <div id="phoneInputHelp" class="account-edit-help">
                                 <i class="bi bi-shield-check text-warning"></i>
-                                <span>Used for emergency guardian contact and two-factor account recovery.</span>
+                                Include your country code if needed. Use digits, spaces, +, or hyphens; leave it blank to remove the saved number.
                             </div>
                         </div>
                     </div>
+                    @if($user->isStudent())
+                        <div id="phoneFormStatus" class="account-edit-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+                    @endif
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <button type="submit" class="sbtn btn-gold" style="width:auto;padding:11px 28px;">
+                        <button type="submit" id="savePhoneBtn" class="sbtn btn-gold" style="width:auto;padding:11px 28px;">
                             <i class="bi bi-save me-2"></i>{{ $user->isStudent() ? 'Save phone number' : 'Save Changes' }}
                         </button>
                     </div>
@@ -4187,7 +4256,7 @@
         <div class="sc student-phone-shortcut" id="studentPhoneShortcut" hidden>
             <div>
                 <div class="sc-title">Phone number</div>
-                <div class="sc-sub">{{ Auth::user()->phone ?: 'Add a number for account recovery and emergency contact.' }}</div>
+                <div class="sc-sub">{{ Auth::user()->phone ?: 'Add a number for school contact.' }}</div>
             </div>
             <button type="button" data-account-page="change-phone"><i class="bi bi-pencil-square" aria-hidden="true"></i>Change</button>
         </div>
@@ -4361,7 +4430,7 @@
 
             <div class="sec-cards-grid" @if($user->isStudent()) id="studentCredentialFormGrid" @endif>
                 <!-- Card 1: Email address Management -->
-                <div class="sec-card" @if($user->isStudent()) data-account-edit-source="email" @endif style="--card-accent: #3b82f6;">
+                <div class="sec-card {{ $user->isStudent() ? 'student-account-edit-card' : '' }}" @if($user->isStudent()) data-account-edit-source="email" @endif style="--card-accent: #3b82f6;">
                     <div class="sec-card-top">
                         <div class="sec-card-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
                             <i class="bi bi-envelope-check-fill"></i>
@@ -4376,6 +4445,13 @@
                     </div>
 
                     <div class="sec-card-content">
+                        @if($user->isStudent())
+                        <ol class="account-edit-progress" id="emailEditProgress" aria-label="Email change steps">
+                            <li aria-current="step" data-account-step="1"><span class="account-step-number">1</span><span>New email</span></li>
+                            <li data-account-step="2"><span class="account-step-number">2</span><span>Verify code</span></li>
+                        </ol>
+                        <div id="emailFormStatus" class="account-edit-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+                        @endif
                         <div id="emailStep1">
                             <div class="sec-input-display mb-2">
                                 <i class="bi bi-envelope-at-fill text-primary me-2"></i>
@@ -4385,36 +4461,37 @@
                                 </button>
                             </div>
                             <div style="margin: 10px 0 12px;">
-                                <label class="sl" style="font-size:0.75rem;margin-bottom:4px;color:#f3e7cd;display:block;">New Email Address (where OTP will be sent)</label>
-                                <input type="email" id="inputNewEmail" class="si" placeholder="Enter new email address (e.g. name@gmail.com)" style="padding:9px 12px;font-size:0.84rem;width:100%;">
+                                <label class="sl" for="inputNewEmail" style="font-size:0.82rem;margin-bottom:6px;color:#f3e7cd;display:block;">New email address</label>
+                                <input type="email" id="inputNewEmail" class="si" placeholder="name@gmail.com" value="{{ old('new_email') }}" autocomplete="email" inputmode="email" maxlength="254" aria-describedby="emailAddressHelp" required style="padding:11px 13px;font-size:0.94rem;width:100%;">
                             </div>
-                            <p class="sec-card-hint">
-                                A 6-digit security code will be sent to this email address to verify ownership before updating.
+                            <p class="account-edit-help sec-card-hint" id="emailAddressHelp">
+                                Enter a Gmail address you can open. We’ll send a one-time code there to verify the change.
                             </p>
                             <button type="button" onclick="requestEmailOtp()" id="sendEmailOtpBtn" class="sec-action-btn sec-btn-blue">
-                                <i class="bi bi-send-fill me-2"></i>Send Verification OTP
+                                <i class="bi bi-send-fill me-2" aria-hidden="true"></i>Send code
                             </button>
                         </div>
 
                         <div id="emailStep2" style="display:none;">
-                            <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:10px;padding:10px 12px;font-size:0.78rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                            <div class="account-edit-current-value sec-status-tile" role="status">
                                 <i class="bi bi-envelope-check-fill" style="font-size:1.05rem;"></i>
-                                <span>Code sent to <strong id="emailSentDestination">{{ Auth::user()->email }}</strong></span>
+                                <span>Code sent to <strong id="emailSentDestination">{{ old('new_email', Auth::user()->email) }}</strong></span>
                             </div>
                             <form action="{{ route('otp.email.change') }}" method="POST">
                                 @csrf
-                                <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Enter 6-Digit Code</label>
-                                <div style="display:flex;gap:6px;margin-bottom:12px;justify-content:space-between;">
+                                <label class="sl" for="ed1" style="font-size:0.82rem;margin-bottom:6px;">6-digit verification code</label>
+                                <div class="account-otp-grid" role="group" aria-label="Email verification code">
                                     @for($j=1;$j<=6;$j++)
-                                    <input type="text" class="email-otp-digit" maxlength="1" inputmode="numeric" id="ed{{$j}}" style="flex:1;min-width:0;max-width:44px;height:42px;border-radius:8px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.15rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
+                                    <input type="text" class="email-otp-digit account-otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]" id="ed{{$j}}" aria-label="Digit {{$j}} of 6" @if($j === 1) autocomplete="one-time-code" @endif required>
                                     @endfor
                                 </div>
+                                <p class="account-edit-help sec-card-hint" id="emailOtpHelp">Enter the code we sent. You can paste all six digits into the first box.</p>
                                 <input type="hidden" name="otp" id="emailOtpHidden">
-                                <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">New Email Address</label>
-                                <input type="email" name="new_email" id="confirmNewEmailInput" class="si" placeholder="name@example.com" style="margin-bottom:12px;padding:9px 12px;font-size:0.84rem;" required>
-                                <div style="display:flex;gap:8px;">
-                                    <button type="button" onclick="cancelEmailOtp()" class="cancel-btn" style="flex:0 0 auto;padding:8px 14px;font-size:0.8rem;">Cancel</button>
-                                    <button type="button" class="sec-action-btn sec-btn-blue" style="flex:1;" onclick="collectEmailOtp(this)"><i class="bi bi-check2-circle me-1"></i>Confirm Email</button>
+                                <label class="sl" for="confirmNewEmailInput" style="font-size:0.82rem;margin:14px 0 6px;">New email address</label>
+                                <input type="email" name="new_email" id="confirmNewEmailInput" class="si" placeholder="name@gmail.com" value="{{ old('new_email') }}" readonly required style="margin-bottom:8px;padding:11px 13px;font-size:0.94rem;">
+                                <div class="account-form-actions">
+                                    <button type="button" onclick="cancelEmailOtp()" class="cancel-btn">Back</button>
+                                    <button type="button" class="sec-action-btn sec-btn-blue" onclick="collectEmailOtp(this)"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Verify and update email</button>
                                 </div>
                             </form>
                         </div>
@@ -4422,7 +4499,7 @@
                 </div>
 
                 <!-- Card 2: Password -->
-                <div class="sec-card" @if($user->isStudent()) data-account-edit-source="password" @endif style="--card-accent: #f59e0b;">
+                <div class="sec-card {{ $user->isStudent() ? 'student-account-edit-card' : '' }}" @if($user->isStudent()) data-account-edit-source="password" @endif style="--card-accent: #f59e0b;">
                     <div class="sec-card-top">
                         <div class="sec-card-icon" style="background:rgba(207,164,111,0.12);color:#f5dfa8;border:1px solid rgba(207,164,111,0.25);">
                             <i class="bi bi-key-fill"></i>
@@ -4437,46 +4514,55 @@
                     </div>
 
                     <div class="sec-card-content">
+                        @if($user->isStudent())
+                        <ol class="account-edit-progress" id="passwordEditProgress" aria-label="Password change steps">
+                            <li aria-current="step" data-account-step="1"><span class="account-step-number">1</span><span>Request code</span></li>
+                            <li data-account-step="2"><span class="account-step-number">2</span><span>Verify &amp; update</span></li>
+                        </ol>
+                        <div id="passwordFormStatus" class="account-edit-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+                        @endif
                         <div id="otpStep1">
                             <div class="sec-status-tile">
                                 <i class="bi bi-shield-check text-warning"></i>
-                                <span>Your password is securely stored</span>
+                                <span>Your current password stays private</span>
                             </div>
-                            <p class="sec-card-hint">
-                                A verification code is required before creating a new password.
+                            <p class="account-edit-help">
+                                We’ll send a one-time code to <strong>{{ Auth::user()->email }}</strong>. Verify it to choose a new password.
                             </p>
                             <button type="button" onclick="requestOtp()" id="sendOtpBtn" class="sec-action-btn sec-btn-amber">
-                                <i class="bi bi-shield-lock-fill me-2"></i>Change password
+                                <i class="bi bi-shield-lock-fill me-2" aria-hidden="true"></i>Send verification code
                             </button>
                         </div>
 
                         <div id="otpStep2" style="display:none;">
-                            <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:10px;padding:10px 12px;font-size:0.78rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-                                <i class="bi bi-check-circle-fill" style="font-size:1.05rem;"></i>
-                                <span>OTP sent to <strong>{{ Auth::user()->email }}</strong></span>
+                            <div class="account-edit-current-value sec-status-tile" role="status">
+                                <i class="bi bi-envelope-check-fill" aria-hidden="true"></i>
+                                <span>Code sent to <strong>{{ Auth::user()->email }}</strong></span>
                             </div>
                             <form action="{{ route('otp.change') }}" method="POST">
                                 @csrf
-                                <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Enter 6-Digit Code</label>
-                                <div style="display:flex;gap:6px;margin-bottom:12px;justify-content:space-between;">
+                                <label class="sl" for="sd1" style="font-size:0.82rem;margin-bottom:6px;">6-digit verification code</label>
+                                <div class="account-otp-grid" role="group" aria-label="Password verification code">
                                     @for($i=1;$i<=6;$i++)
-                                    <input type="text" class="otp-digit-s" maxlength="1" inputmode="numeric" id="sd{{$i}}" style="flex:1;min-width:0;max-width:44px;height:42px;border-radius:8px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.15rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
+                                    <input type="text" class="otp-digit-s account-otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]" id="sd{{$i}}" aria-label="Digit {{$i}} of 6" @if($i === 1) autocomplete="one-time-code" @endif required>
                                     @endfor
                                 </div>
+                                <p class="account-edit-help sec-card-hint">Enter the code we sent. You can paste all six digits into the first box.</p>
                                 <input type="hidden" name="otp" id="settingsOtpHidden">
-                                <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">New Password</label>
+                                <label class="sl" for="spw1" style="font-size:0.82rem;margin-bottom:6px;">New password</label>
                                 <div class="pw-wrap" style="margin-bottom:10px;">
-                                    <input type="password" name="password" id="spw1" class="si" placeholder="12+ chars, mixed case, number, symbol" minlength="12" style="padding:9px 12px;font-size:0.84rem;" required>
+                                    <input type="password" name="password" id="spw1" class="si" placeholder="Create a strong password" minlength="12" autocomplete="new-password" aria-describedby="passwordRequirements" style="padding:11px 13px;font-size:0.94rem;" required>
                                     <button type="button" class="eye-btn" onclick="togglePw('spw1',this,event)" data-toggle-password="spw1" aria-controls="spw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
-                                <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Confirm Password</label>
-                                <div class="pw-wrap" style="margin-bottom:14px;">
-                                    <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" minlength="12" style="padding:9px 12px;font-size:0.84rem;" required>
+                                <p class="account-edit-help sec-card-hint" id="passwordRequirements">Use at least 12 characters with uppercase and lowercase letters, a number, and a symbol.</p>
+                                <label class="sl" for="spw2" style="font-size:0.82rem;margin-bottom:6px;">Confirm new password</label>
+                                <div class="pw-wrap" style="margin-bottom:10px;">
+                                    <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Enter the new password again" minlength="12" autocomplete="new-password" style="padding:11px 13px;font-size:0.94rem;" required>
                                     <button type="button" class="eye-btn" onclick="togglePw('spw2',this,event)" data-toggle-password="spw2" aria-controls="spw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
-                                <div style="display:flex;gap:8px;">
-                                    <button type="button" onclick="cancelOtp()" class="cancel-btn" style="flex:0 0 auto;padding:8px 14px;font-size:0.8rem;">Cancel</button>
-                                    <button type="button" class="sec-action-btn sec-btn-amber" style="flex:1;" onclick="collectOtp(this)"><i class="bi bi-check2-circle me-1"></i>Update Password</button>
+                                <div class="account-form-actions">
+                                    <button type="button" onclick="cancelOtp()" class="cancel-btn">Back</button>
+                                    <button type="button" class="sec-action-btn sec-btn-amber" onclick="collectOtp(this)"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Update password</button>
                                 </div>
                             </form>
                         </div>
@@ -5340,7 +5426,7 @@
 
     @if($user->isStudent())
     <div id="tab-account-email" class="spanel student-account-edit-panel" aria-label="Change email address">
-        <div class="student-account-edit-intro">Enter the new email address you can access. We’ll send a verification code there before changing your account email.</div>
+        <div class="student-account-edit-intro">Enter a Gmail address you can open. We’ll send a verification code there before changing your account email.</div>
         <div id="accountEmailFormSlot"></div>
     </div>
     <div id="tab-account-password" class="spanel student-account-edit-panel" aria-label="Change password">
@@ -5348,7 +5434,7 @@
         <div id="accountPasswordFormSlot"></div>
     </div>
     <div id="tab-account-phone" class="spanel student-account-edit-panel" aria-label="Change phone number">
-        <div class="student-account-edit-intro">Update the phone number used for emergency contact and account recovery.</div>
+        <div class="student-account-edit-intro">Update the phone number listed on your school account.</div>
         <div id="accountPhoneFormSlot"></div>
     </div>
     @endif
@@ -6151,148 +6237,218 @@ function isInAppBrowser() {
 @include('partials.device-biometric-registration-script')
 @endunless
 
-// OTP digit handling in settings
-const sDigits = document.querySelectorAll('.otp-digit-s');
-sDigits.forEach((input, idx) => {
-    input.addEventListener('input', (e) => {
-        e.target.value = e.target.value.replace(/\D/g, '');
-        if (e.target.value && idx < sDigits.length - 1) sDigits[idx + 1].focus();
-    });
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !e.target.value && idx > 0) sDigits[idx - 1].focus();
-    });
-    input.addEventListener('paste', (e) => {
-        const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
-        paste.split('').forEach((ch, i) => { if (sDigits[i]) sDigits[i].value = ch; });
-        e.preventDefault();
-    });
-});
-
-function collectOtp(btn) {
-    document.getElementById('settingsOtpHidden').value = Array.from(sDigits).map(d => d.value).join('');
-    if(btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-        if (typeof window.studentSettingsRememberReturn === 'function') window.studentSettingsRememberReturn();
-        btn.closest('form').submit();
-    }
+// Small, inline feedback keeps account changes clear without interrupting the form.
+function setAccountEditStatus(id, message, tone = 'info') {
+    const region = document.getElementById(id);
+    if (!region) return false;
+    region.textContent = message || '';
+    region.dataset.tone = tone;
+    region.hidden = !message;
+    return true;
 }
 
-function requestOtp() {
-    const btn = document.getElementById('sendOtpBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sending...';
-    fetch('{{ route("otp.change.send") }}', {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
-    }).then(r => {
-        if (!r.ok) {
-            return r.text().then(text => { throw new Error('HTTP ' + r.status + ': ' + text.substring(0, 300)); });
-        }
-        return r.json();
-    }).then(data => {
-        if (data.success) {
-            document.getElementById('otpStep1').style.display = 'none';
-            document.getElementById('otpStep2').style.display = 'block';
-            if (data.dev_otp && sDigits) {
-                const str = String(data.dev_otp).trim();
-                sDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
-                const hiddenInput = document.getElementById('settingsOtpHidden');
-                if (hiddenInput) hiddenInput.value = data.dev_otp;
-            }
-            if (sDigits[0]) sDigits[0].focus();
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send OTP to Email';
-            alert(data.message || 'Failed to send OTP.');
-        }
-    }).catch(err => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send OTP to Email';
-        console.error('OTP fetch error:', err.message);
-        alert('Error: ' + err.message);
+function announceAccountEditStatus(id, message, tone = 'info') {
+    if (!setAccountEditStatus(id, message, tone) && message) window.alert(message);
+}
+
+function setAccountEditProgress(id, currentStep) {
+    const progress = document.getElementById(id);
+    if (!progress) return;
+    progress.querySelectorAll('[data-account-step]').forEach((item) => {
+        const step = Number(item.dataset.accountStep);
+        if (step === currentStep) item.setAttribute('aria-current', 'step');
+        else item.removeAttribute('aria-current');
+        item.classList.toggle('is-complete', step < currentStep);
     });
+}
+
+function setAccountButtonBusy(button, busy, busyLabel) {
+    if (!button) return;
+    if (!button.dataset.idleHtml) button.dataset.idleHtml = button.innerHTML;
+    button.disabled = busy;
+    button.setAttribute('aria-busy', busy ? 'true' : 'false');
+    button.innerHTML = busy
+        ? '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>' + busyLabel
+        : button.dataset.idleHtml;
+}
+
+function setupAccountOtpInputs(inputs) {
+    inputs.forEach((input, index) => {
+        input.addEventListener('input', (event) => {
+            const digits = event.target.value.replace(/\D/g, '').slice(0, inputs.length);
+            if (digits.length > 1) {
+                digits.split('').forEach((digit, offset) => {
+                    if (inputs[index + offset]) inputs[index + offset].value = digit;
+                });
+            } else {
+                event.target.value = digits;
+            }
+            const next = Array.from(inputs).slice(index + 1).find((field) => !field.value)
+                || Array.from(inputs).find((field) => !field.value);
+            (next || inputs[inputs.length - 1]).focus();
+        });
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Backspace' && !input.value && index > 0) inputs[index - 1].focus();
+            if (event.key === 'ArrowLeft' && index > 0) inputs[index - 1].focus();
+            if (event.key === 'ArrowRight' && index < inputs.length - 1) inputs[index + 1].focus();
+        });
+        input.addEventListener('paste', (event) => {
+            const pasted = (event.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, inputs.length);
+            if (!pasted) return;
+            pasted.split('').forEach((digit, offset) => { if (inputs[offset]) inputs[offset].value = digit; });
+            event.preventDefault();
+            (inputs[Math.min(pasted.length, inputs.length) - 1] || inputs[0]).focus();
+        });
+    });
+}
+
+async function parseAccountOtpResponse(response) {
+    let data = {};
+    try { data = await response.json(); } catch (error) {}
+    if (!response.ok || data.success === false) {
+        throw new Error(data.message || 'We could not send the code. Please try again in a moment.');
+    }
+    return data;
+}
+
+const sDigits = document.querySelectorAll('.otp-digit-s');
+const eDigits = document.querySelectorAll('.email-otp-digit');
+setupAccountOtpInputs(sDigits);
+setupAccountOtpInputs(eDigits);
+
+function collectOtp(btn) {
+    const otp = Array.from(sDigits).map((digit) => digit.value).join('');
+    const firstMissing = Array.from(sDigits).find((digit) => !digit.value);
+    if (!/^\d{6}$/.test(otp)) {
+        announceAccountEditStatus('passwordFormStatus', 'Enter all 6 digits from the email code.', 'error');
+        (firstMissing || sDigits[0])?.focus();
+        return;
+    }
+    const password = document.getElementById('spw1');
+    const confirmation = document.getElementById('spw2');
+    const value = password?.value || '';
+    if (value.length < 12 || !/[a-z]/.test(value) || !/[A-Z]/.test(value) || !/\d/.test(value) || !/[^A-Za-z0-9]/.test(value)) {
+        announceAccountEditStatus('passwordFormStatus', 'Use at least 12 characters with uppercase and lowercase letters, a number, and a symbol.', 'error');
+        password?.focus();
+        return;
+    }
+    if (value !== (confirmation?.value || '')) {
+        announceAccountEditStatus('passwordFormStatus', 'The passwords do not match yet. Check the confirmation field.', 'error');
+        confirmation?.focus();
+        return;
+    }
+    const form = btn?.closest('form');
+    if (!form || !form.reportValidity()) return;
+    document.getElementById('settingsOtpHidden').value = otp;
+    setAccountEditStatus('passwordFormStatus', '', 'info');
+    if (typeof window.studentSettingsRememberReturn === 'function') window.studentSettingsRememberReturn();
+    setAccountButtonBusy(btn, true, 'Updating password…');
+    if (form.requestSubmit) form.requestSubmit(); else form.submit();
+}
+
+async function requestOtp() {
+    const btn = document.getElementById('sendOtpBtn');
+    if (!btn || btn.disabled) return;
+    setAccountEditStatus('passwordFormStatus', '', 'info');
+    setAccountButtonBusy(btn, true, 'Sending code…');
+    try {
+        const response = await fetch('{{ route("otp.change.send") }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' }
+        });
+        const data = await parseAccountOtpResponse(response);
+        document.getElementById('otpStep1').style.display = 'none';
+        document.getElementById('otpStep2').style.display = 'block';
+        setAccountEditProgress('passwordEditProgress', 2);
+        setAccountButtonBusy(btn, false);
+        announceAccountEditStatus('passwordFormStatus', 'Code sent. Enter it below to continue.', 'success');
+        if (data.dev_otp) {
+            const value = String(data.dev_otp).trim();
+            sDigits.forEach((digit, index) => { digit.value = value[index] || ''; });
+            const hiddenInput = document.getElementById('settingsOtpHidden');
+            if (hiddenInput) hiddenInput.value = value;
+        }
+        sDigits[0]?.focus();
+    } catch (error) {
+        setAccountButtonBusy(btn, false);
+        announceAccountEditStatus('passwordFormStatus', error.message || 'We could not send the code. Please try again.', 'error');
+    }
 }
 
 function cancelOtp() {
     document.getElementById('otpStep1').style.display = 'block';
     document.getElementById('otpStep2').style.display = 'none';
-    sDigits.forEach(d => d.value = '');
+    sDigits.forEach((digit) => { digit.value = ''; });
+    document.getElementById('settingsOtpHidden').value = '';
+    document.getElementById('spw1').value = '';
+    document.getElementById('spw2').value = '';
+    setAccountEditProgress('passwordEditProgress', 1);
+    setAccountEditStatus('passwordFormStatus', '', 'info');
+    document.getElementById('sendOtpBtn')?.focus();
 }
-
-// ── Email change via SMS/Email OTP ──
-const eDigits = document.querySelectorAll('.email-otp-digit');
-eDigits.forEach((input, idx) => {
-    input.addEventListener('input', (e) => {
-        e.target.value = e.target.value.replace(/\D/g, '');
-        if (e.target.value && idx < eDigits.length - 1) eDigits[idx + 1].focus();
-    });
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !e.target.value && idx > 0) eDigits[idx - 1].focus();
-    });
-    input.addEventListener('paste', (e) => {
-        const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
-        paste.split('').forEach((ch, i) => { if (eDigits[i]) eDigits[i].value = ch; });
-        e.preventDefault();
-    });
-});
 
 function collectEmailOtp(btn) {
-    document.getElementById('emailOtpHidden').value = Array.from(eDigits).map(d => d.value).join('');
-    if(btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-        if (typeof window.studentSettingsRememberReturn === 'function') window.studentSettingsRememberReturn();
-        btn.closest('form').submit();
-    }
-}
-
-function requestEmailOtp() {
-    const newEmailInput = document.getElementById('inputNewEmail');
-    const newEmail = newEmailInput ? newEmailInput.value.trim() : '';
-    if (newEmailInput && !newEmail) {
-        alert('Please enter your new email address.');
-        newEmailInput.focus();
+    const otp = Array.from(eDigits).map((digit) => digit.value).join('');
+    const firstMissing = Array.from(eDigits).find((digit) => !digit.value);
+    if (!/^\d{6}$/.test(otp)) {
+        announceAccountEditStatus('emailFormStatus', 'Enter all 6 digits from the email code.', 'error');
+        (firstMissing || eDigits[0])?.focus();
         return;
     }
+    const form = btn?.closest('form');
+    if (!form || !form.reportValidity()) return;
+    document.getElementById('emailOtpHidden').value = otp;
+    setAccountEditStatus('emailFormStatus', '', 'info');
+    if (typeof window.studentSettingsRememberReturn === 'function') window.studentSettingsRememberReturn();
+    setAccountButtonBusy(btn, true, 'Updating email…');
+    if (form.requestSubmit) form.requestSubmit(); else form.submit();
+}
+
+async function requestEmailOtp() {
+    const newEmailInput = document.getElementById('inputNewEmail');
+    const newEmail = newEmailInput ? newEmailInput.value.trim() : '';
+    if (!newEmailInput || !newEmailInput.reportValidity()) return;
     const btn = document.getElementById('sendEmailOtpBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sending...';
-    fetch('{{ route("otp.email.send") }}', {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ new_email: newEmail })
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            document.getElementById('emailStep1').style.display = 'none';
-            document.getElementById('emailStep2').style.display = 'block';
-            const destEl = document.getElementById('emailSentDestination');
-            if (destEl) destEl.textContent = data.target_email || newEmail || '{{ Auth::user()->email }}';
-            const confirmInput = document.getElementById('confirmNewEmailInput');
-            if (confirmInput && newEmail) confirmInput.value = newEmail;
-            if (data.dev_otp && eDigits) {
-                const str = String(data.dev_otp).trim();
-                eDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
-                const hiddenInput = document.getElementById('emailOtpHidden');
-                if (hiddenInput) hiddenInput.value = data.dev_otp;
-            }
-            if (eDigits[0]) eDigits[0].focus();
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send Verification OTP';
-            alert(data.message || 'Failed to send OTP.');
+    if (!btn || btn.disabled) return;
+    setAccountEditStatus('emailFormStatus', '', 'info');
+    setAccountButtonBusy(btn, true, 'Sending code…');
+    try {
+        const response = await fetch('{{ route("otp.email.send") }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ new_email: newEmail })
+        });
+        const data = await parseAccountOtpResponse(response);
+        document.getElementById('emailStep1').style.display = 'none';
+        document.getElementById('emailStep2').style.display = 'block';
+        setAccountEditProgress('emailEditProgress', 2);
+        setAccountButtonBusy(btn, false);
+        announceAccountEditStatus('emailFormStatus', 'Code sent. Enter it below to verify the new address.', 'success');
+        const destination = document.getElementById('emailSentDestination');
+        if (destination) destination.textContent = data.target_email || newEmail;
+        const confirmInput = document.getElementById('confirmNewEmailInput');
+        if (confirmInput) confirmInput.value = newEmail;
+        if (data.dev_otp) {
+            const value = String(data.dev_otp).trim();
+            eDigits.forEach((digit, index) => { digit.value = value[index] || ''; });
+            const hiddenInput = document.getElementById('emailOtpHidden');
+            if (hiddenInput) hiddenInput.value = value;
         }
-    }).catch(() => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send Verification OTP';
-        alert('Network error. Please try again.');
-    });
+        eDigits[0]?.focus();
+    } catch (error) {
+        setAccountButtonBusy(btn, false);
+        announceAccountEditStatus('emailFormStatus', error.message || 'We could not send the code. Please check the address and try again.', 'error');
+    }
 }
 
 function cancelEmailOtp() {
     document.getElementById('emailStep1').style.display = 'block';
     document.getElementById('emailStep2').style.display = 'none';
-    eDigits.forEach(d => d.value = '');
+    eDigits.forEach((digit) => { digit.value = ''; });
+    document.getElementById('emailOtpHidden').value = '';
+    setAccountEditProgress('emailEditProgress', 1);
+    setAccountEditStatus('emailFormStatus', '', 'info');
+    document.getElementById('inputNewEmail')?.focus();
 }
 
 function generateRecoveryCodes() {

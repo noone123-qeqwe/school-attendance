@@ -39,7 +39,11 @@ function mount(mobile = true) {
     const panels = ['profile', 'security', 'account-email', 'account-password', 'account-phone'].map(key => element('tab-' + key));
     const groups = ['biometrics', 'credentials', 'device', 'recovery'].map(key => element('sec-section-' + key));
     const menuGroup = { querySelectorAll: () => buttons };
-    for (const id of ['studentSettingsPageTitle', 'studentSettingsPageDescription', 'studentSettingsFilter', 'studentSettingsNoResults']) element(id);
+    for (const id of [
+        'studentSettingsPageTitle', 'studentSettingsPageDescription', 'studentSettingsFilter', 'studentSettingsNoResults',
+        'emailStep1', 'emailStep2', 'otpStep1', 'otpStep2', 'emailEditProgress', 'passwordEditProgress',
+        'emailFormStatus', 'passwordFormStatus', 'phoneFormStatus', 'inputNewEmail', 'ed1', 'sd1', 'phoneInput',
+    ]) element(id);
     element('studentFaceRegistrationLink').href = '/settings/biometrics/face';
     element('studentFingerprintRegistrationLink').href = '/settings/biometrics/fingerprint';
     const root = element('root');
@@ -77,6 +81,13 @@ function mount(mobile = true) {
         },
         sessionStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
         HTMLFormElement: class {},
+        setAccountEditProgress: (id, step) => { ids.get(id).dataset.currentStep = String(step); },
+        setAccountEditStatus: (id, message, tone) => {
+            const status = ids.get(id);
+            status.textContent = message;
+            status.dataset.tone = tone;
+            status.hidden = !message;
+        },
     });
     return { window, root, ids, buttons, location, listeners, rootListeners, documentListeners, storage, redirects };
 }
@@ -136,4 +147,24 @@ test('form feedback still reopens the originating Settings panel', () => {
     app.documentListeners.DOMContentLoaded();
     assert.equal(app.root.dataset.studentView, 'profile');
     assert.deepEqual(app.redirects, []);
+});
+
+test('email verification errors return to the code step with a clear inline message', () => {
+    const app = mount();
+    app.storage.set('student_settings_return_7', 'change-email');
+    Object.assign(app.root.dataset, {
+        settingsFeedback: 'true',
+        settingsEmailError: 'true',
+        settingsEmailAddressError: 'false',
+        settingsEmailErrorMessage: 'The verification code has expired.',
+    });
+
+    app.documentListeners.DOMContentLoaded();
+
+    assert.equal(app.root.dataset.studentView, 'change-email');
+    assert.equal(app.ids.get('emailStep1').style.display, 'none');
+    assert.equal(app.ids.get('emailStep2').style.display, 'block');
+    assert.equal(app.ids.get('emailEditProgress').dataset.currentStep, '2');
+    assert.equal(app.ids.get('emailFormStatus').textContent, 'The verification code has expired.');
+    assert.equal(app.ids.get('emailFormStatus').dataset.tone, 'error');
 });

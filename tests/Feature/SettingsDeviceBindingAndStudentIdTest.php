@@ -87,6 +87,18 @@ class SettingsDeviceBindingAndStudentIdTest extends TestCase
         $response->assertSee('data-account-page="change-email"', false);
         $response->assertSee('data-account-page="change-password"', false);
         $response->assertSee('data-account-page="change-phone"', false);
+        $response->assertSee('aria-label="Email change steps"', false);
+        $response->assertSee('aria-label="Password change steps"', false);
+        $response->assertSee('id="emailFormStatus"', false);
+        $response->assertSee('id="passwordFormStatus"', false);
+        $response->assertSee('id="phoneFormStatus"', false);
+        $response->assertSee('placeholder="name@gmail.com"', false);
+        $response->assertSee('id="confirmNewEmailInput"', false);
+        $response->assertSee('autocomplete="new-password"', false);
+        $response->assertSee('pattern="[0-9+\s-]{0,20}"', false);
+        $response->assertSee('paste all six digits', false);
+        $response->assertSee('Verify and update email');
+        $response->assertSee('Update password');
         $response->assertSee('Password &amp; email', false);
         $response->assertSee('Biometrics');
         $response->assertSee('Fingerprint registration');
