@@ -389,55 +389,12 @@ class SystemUpdateController extends Controller
             try { Artisan::call('route:clear'); } catch (\Throwable $ex) {}
         } catch (\Throwable $e) {}
 
-        // 6. Broadcast Push Announcement to All Registered User Devices
-        try {
-            $resolvedAppVer = $newAppVer ?? app(\App\Services\VersionService::class)->getVersion();
-            $updateTitle = '🚀 System Update Complete (v' . $resolvedAppVer . ')';
-            $updateBody = 'Smart Attendance v' . $resolvedAppVer . ' is live! All features, security protections, and performance optimizations are now active.';
-            
-            app(\App\Services\WebPushService::class)->broadcastAnnouncement(
-                $updateTitle,
-                $updateBody,
-                ['url' => route('intro'), 'tag' => 'sys-update-' . time()]
-            );
-
-            // Create in-app notification records for all active users
-            try {
-                $activeUserIds = \App\Models\User::pluck('id');
-                $senderId = Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id');
-                $notifBatch = [];
-                $now = now();
-                foreach ($activeUserIds as $uId) {
-                    $notifBatch[] = [
-                        'user_id' => $uId,
-                        'sent_by' => $senderId,
-                        'type' => 'system_update',
-                        'subject_code' => 'SYS',
-                        'message' => "Smart Attendance updated to v{$resolvedAppVer}. Anti-escape security, continuous presence guardian, and speed optimizations are live.",
-                        'is_read' => false,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ];
-                }
-                if (!empty($notifBatch)) {
-                    \App\Models\Notification::insert($notifBatch);
-                }
-            } catch (\Throwable $notifErr) {
-                Log::warning('In-app system update notification insert error: ' . $notifErr->getMessage());
-            }
-
-            $results[] = [
-                'step' => 'Live User Broadcast & Push Announcement',
-                'status' => 'success',
-                'message' => 'Instant push notification broadcast dispatched to all connected student, teacher, and parent devices.'
-            ];
-        } catch (\Throwable $e) {
-            $results[] = [
-                'step' => 'Live User Broadcast & Push Announcement',
-                'status' => 'warning',
-                'message' => 'Push broadcast notice: ' . $e->getMessage()
-            ];
-        }
+        // Maintenance is quiet. Announcements are an explicit release-publishing choice.
+        $results[] = [
+            'step' => 'Quiet client update',
+            'status' => 'success',
+            'message' => 'Fresh assets will load on the next visit without interrupting active work.'
+        ];
 
         $finalAppVer = $newAppVer ?? app(\App\Services\VersionService::class)->getVersion();
         $currentBuild = app(\App\Services\VersionService::class)->getBuild();
@@ -525,52 +482,11 @@ class SystemUpdateController extends Controller
             // Clear compiled view cache so new asset query hashes take effect immediately
             try { Artisan::call('view:clear'); } catch (\Throwable $ex) {}
 
-            // Broadcast Web Push announcement to all registered user devices (mobile & desktop)
-            $pushedCount = 0;
-            try {
-                $pushedCount = app(\App\Services\WebPushService::class)->broadcastAnnouncement(
-                    '⚡ System Update Available (' . $newVer . ')',
-                    "A new application update ({$newVer}) is live! Tap to reload the latest features and optimizations.",
-                    [
-                        'url' => route('intro'),
-                        'tag' => 'pwa-broadcast-' . time(),
-                        'version' => $newVer
-                    ]
-                );
-            } catch (\Throwable $pushErr) {
-                Log::warning('PWA broadcast push error: ' . $pushErr->getMessage());
-            }
-
-            // Create in-app notification records for all active users
-            try {
-                $activeUserIds = \App\Models\User::pluck('id');
-                $senderId = Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id');
-                $notifBatch = [];
-                $now = now();
-                foreach ($activeUserIds as $uId) {
-                    $notifBatch[] = [
-                        'user_id' => $uId,
-                        'sent_by' => $senderId,
-                        'type' => 'system_update',
-                        'subject_code' => 'SYS',
-                        'message' => "Smart Attendance updated to build {$newVer}. New features, security improvements, and speed optimizations are live.",
-                        'is_read' => false,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ];
-                }
-                if (!empty($notifBatch)) {
-                    \App\Models\Notification::insert($notifBatch);
-                }
-            } catch (\Throwable $notifErr) {
-                Log::warning('In-app system update notification insert error: ' . $notifErr->getMessage());
-            }
-
             return response()->json([
                 'success' => true,
                 'version' => $newVer,
-                'pushed_count' => $pushedCount,
-                'message' => "Client app version successfully bumped to {$newVer}! Web Push notification dispatched to {$pushedCount} registered mobile and desktop devices. Connected devices will reload updated code immediately."
+                'pushed_count' => 0,
+                'message' => "Client assets refreshed to {$newVer}. Changes will load quietly on the next visit."
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -752,24 +668,27 @@ class SystemUpdateController extends Controller
     public function bumpAppVersion(Request $request)
     {
         abort_if(!Auth::user()->isSuperAdmin(), 403);
+        $request->validate(['update_mode' => ['sometimes', 'in:silent,announcement,critical']]);
         try {
             $specified = $request->input('version');
             $type = $request->input('type', 'patch');
-            $release = app(\App\Services\VersionService::class)->createRelease($type, $specified);
+            $release = app(\App\Services\VersionService::class)->createRelease($type, $specified, true, $request->input('update_mode', 'silent'));
             $newAppVer = $release['version'];
 
             try { Artisan::call('view:clear'); } catch (\Throwable $ex) {}
 
             try {
-                app(\App\Services\WebPushService::class)->broadcastAnnouncement(
-                    '⚡ Smart Attendance Release v' . $newAppVer,
-                    "Application update v{$newAppVer} (Build {$release['build']}) is now live with enhanced security and performance optimizations.",
-                    [
-                        'url' => route('intro'),
-                        'tag' => 'app-release-' . time(),
-                        'version' => 'v' . $newAppVer
-                    ]
-                );
+                if ($release['update']['mode'] !== 'silent') {
+                    app(\App\Services\WebPushService::class)->broadcastAnnouncement(
+                        'Smart Attendance Release v' . $newAppVer,
+                        "Application update v{$newAppVer} is available. Open the app to review this release.",
+                        [
+                            'url' => route('intro'),
+                            'tag' => 'app-release-' . $newAppVer,
+                            'version' => 'v' . $newAppVer
+                        ]
+                    );
+                }
             } catch (\Throwable $pushErr) {
                 Log::warning('App version bump push error', ['exception_class' => get_class($pushErr)]);
             }
@@ -780,6 +699,7 @@ class SystemUpdateController extends Controller
                 'build' => $release['build'],
                 'sw_version' => $release['sw_version'],
                 'release_date' => $release['release_date'],
+                'update' => $release['update'],
                 'message' => "Application release version successfully bumped to v{$newAppVer} (Build {$release['build']})."
             ]);
         } catch (\Exception $e) {

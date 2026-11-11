@@ -38,6 +38,7 @@ class VersionController extends Controller
             'installed_version'  => $metadata['installed_version'],
             'latest_version'     => $metadata['latest_version'],
             'is_up_to_date'      => $metadata['is_up_to_date'],
+            'update'             => $metadata['update'],
         ], 200, [
             'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
         ]);
@@ -66,11 +67,12 @@ class VersionController extends Controller
      */
     public function release(\Illuminate\Http\Request $request): JsonResponse
     {
+        $request->validate(['update_mode' => ['sometimes', 'in:silent,announcement,critical']]);
         $explicitVer = $request->input('version');
         $type = $request->input('type', 'patch');
         $installImmediately = (bool)$request->input('install', false);
 
-        $release = $this->versionService->createRelease($type, $explicitVer, $installImmediately);
+        $release = $this->versionService->createRelease($type, $explicitVer, $installImmediately, $request->input('update_mode', 'silent'));
 
         return response()->json([
             'success'           => true,

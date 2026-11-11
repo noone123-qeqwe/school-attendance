@@ -176,8 +176,8 @@
                 </div>
                 <div class="telemetry-value-row">
                     <div class="telemetry-value-lg gold-gradient-text" id="currentAppReleaseBadge">{{ $appVersionTag }}</div>
-                    <button type="button" onclick="bumpAppVersion()" class="mini-action-btn" id="quickAppBumpBtn" title="Increment semantic version release">
-                        <i class="bi bi-arrow-up-circle"></i> Bump
+                    <button type="button" onclick="document.getElementById('releaseUpdateMode').focus()" class="mini-action-btn" id="quickAppBumpBtn" title="Choose how to publish the next release">
+                        <i class="bi bi-arrow-up-circle"></i> New release
                     </button>
                     <span class="version-chip {{ $appEnvironment === 'production' ? 'chip-prod' : 'chip-dev' }}">
                         {{ strtoupper($appEnvironment) }}
@@ -457,7 +457,26 @@
                 </div>
             </div>
 
-            <!-- Operation 3: Client PWA Broadcast -->
+            <div class="operation-card" id="opCardRelease">
+                <div class="op-card-header">
+                    <div class="op-icon-wrap icon-amber"><i class="bi bi-tags"></i></div>
+                    <div class="op-header-info">
+                        <h3 class="op-title">Publish a release</h3>
+                        <p class="op-desc" id="releaseModeHelp">Routine changes stay quiet. Announcements appear once per release and notify subscribed devices. Use Critical only for urgent security or compatibility updates; active forms and cameras are protected.</p>
+                    </div>
+                </div>
+                <div class="op-card-footer">
+                    <label for="releaseUpdateMode" class="d-block mb-2">How should users be notified?</label>
+                    <select id="releaseUpdateMode" class="form-select mb-3" aria-describedby="releaseModeHelp">
+                        <option value="silent" selected>Quiet — apply on the next visit</option>
+                        <option value="announcement">Announcement — optional banner once</option>
+                        <option value="critical">Critical — require an update when safe</option>
+                    </select>
+                    <button type="button" onclick="bumpAppVersion()" class="saas-btn saas-btn-primary op-btn-full" id="publishReleaseBtn">Publish next release</button>
+                </div>
+            </div>
+
+            <!-- Operation 3: Client PWA Cache Refresh -->
             <div class="operation-card" id="opCardPwa">
                 <div class="op-card-header">
                     <div class="op-icon-wrap icon-purple">
@@ -465,10 +484,10 @@
                     </div>
                     <div class="op-header-info">
                         <div class="op-title-row">
-                            <h3 class="op-title">Client PWA Broadcast</h3>
+                            <h3 class="op-title">Client cache refresh</h3>
                             <span class="op-status-badge badge-cyan" id="pwaVersionTag">{{ $swVersion }}</span>
                         </div>
-                        <p class="op-desc">Increment Service Worker cache version. Forces student & faculty devices to download latest assets on visit.</p>
+                        <p class="op-desc">Refresh assets quietly on the next visit. Active pages and unfinished work stay open.</p>
                     </div>
                 </div>
 
@@ -477,7 +496,7 @@
                 <div class="op-card-footer">
                     <div class="op-actions-row">
                         <button type="button" onclick="bumpPwa()" id="pwaBtn" class="saas-btn saas-btn-secondary op-btn-full">
-                            <i class="bi bi-send-fill me-1"></i> Broadcast Update to Clients
+                            <i class="bi bi-arrow-repeat me-1"></i> Refresh client assets quietly
                         </button>
                     </div>
                 </div>
@@ -3633,14 +3652,17 @@ async function bumpPwa() {
 // Granular Operations: Semantic Application Release Bump
 async function bumpAppVersion() {
     const quickBtn = document.getElementById('quickAppBumpBtn');
+    const publishBtn = document.getElementById('publishReleaseBtn');
     const badge = document.getElementById('currentAppReleaseBadge');
 
     if (quickBtn) quickBtn.disabled = true;
+    if (publishBtn) publishBtn.disabled = true;
 
     try {
         const res = await fetch('{{ route("admin.system-update.app-bump") }}', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            body: JSON.stringify({ update_mode: document.getElementById('releaseUpdateMode').value })
         });
         const data = await res.json();
         if (data.success && data.app_version) {
@@ -3656,6 +3678,7 @@ async function bumpAppVersion() {
         showToast('Error bumping application version: ' + e.message, 'error');
     } finally {
         if (quickBtn) quickBtn.disabled = false;
+        if (publishBtn) publishBtn.disabled = false;
     }
 }
 

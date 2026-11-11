@@ -184,6 +184,7 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
             'is_up_to_date'         => $versionService->isUpToDate(),
             'timestamp'             => $swMtime,
             'changelog'             => $changelog,
+            'update'                => $versionService->getUpdatePolicy(),
         ];
     };
 

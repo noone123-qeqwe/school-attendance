@@ -185,8 +185,8 @@ class VersionService
     }
 
     /**
-     * Return the commit recorded for the published web release. Ordinary
-     * source deployments must not masquerade as a new app update.
+     * Return the deployed revision for diagnostics and asset freshness.
+     * User-facing announcements are controlled separately by getUpdatePolicy().
      */
     public function getCommit(): string
     {
@@ -243,6 +243,30 @@ class VersionService
     {
         $file = $this->getFileData();
         return config('version.release_date') ?: ($file['release_date'] ?? date('Y-m-d'));
+    }
+
+    /**
+     * A deployment is quiet unless its exact release explicitly announces an update.
+     *
+     * @return array{version: string, mode: 'silent'|'announcement'|'critical', minimum_supported_version: ?string}
+     */
+    public function getUpdatePolicy(): array
+    {
+        $version = $this->getLatestVersion();
+        $policy = $this->getFileData()['update'] ?? [];
+        $mode = is_array($policy) && ($policy['version'] ?? null) === $version
+            ? ($policy['mode'] ?? 'silent')
+            : 'silent';
+        $minimum = is_array($policy) ? ($policy['minimum_supported_version'] ?? null) : null;
+        if (!is_string($minimum) || !preg_match('/^\d+(\.\d+)*$/', $minimum) || version_compare($minimum, $version, '>')) {
+            $minimum = null;
+        }
+
+        return [
+            'version' => $version,
+            'mode' => in_array($mode, ['silent', 'announcement', 'critical'], true) ? $mode : 'silent',
+            'minimum_supported_version' => $minimum,
+        ];
     }
 
     /**
@@ -473,6 +497,7 @@ class VersionService
             'current_version'          => $this->getInstalledVersion(),
             'latest_version'           => $this->getLatestVersion(),
             'is_up_to_date'            => $this->isUpToDate(),
+            'update'                   => $this->getUpdatePolicy(),
             'database_migrations_count'=> $this->getMigrationsCount(),
         ];
     }
@@ -548,12 +573,17 @@ class VersionService
      * @param string $type 'patch' | 'minor' | 'major' | 'custom'
      * @param string|null $explicitVersion Optional custom version (e.g. '2', '3.0.0')
      * @param bool $installImmediately Whether to mark as installed on this machine
+     * @param string $updateMode 'silent' | 'announcement' | 'critical'
      * @return array Resulting release telemetry
      */
-    public function createRelease(string $type = 'patch', ?string $explicitVersion = null, bool $installImmediately = true): array
+    public function createRelease(string $type = 'patch', ?string $explicitVersion = null, bool $installImmediately = true, string $updateMode = 'silent'): array
     {
+        if (!in_array($updateMode, ['silent', 'announcement', 'critical'], true)) {
+            throw new \InvalidArgumentException('Invalid update notification mode.');
+        }
         $this->refresh();
         $currentLatest = $this->getLatestVersion();
+        $previousPolicy = $this->getUpdatePolicy();
 
         if (!empty($explicitVersion)) {
             $targetVer = ltrim(trim($explicitVersion), 'vV ');
@@ -599,6 +629,11 @@ class VersionService
             'release_date'      => $targetDate,
             'channel'           => 'stable',
             'name'              => config('version.name', 'Smart Classroom Attendance System'),
+            'update'            => [
+                'version' => $targetVer,
+                'mode' => $updateMode,
+                'minimum_supported_version' => $updateMode === 'critical' ? $targetVer : $previousPolicy['minimum_supported_version'],
+            ],
         ];
 
         if (!app()->runningUnitTests()) {
@@ -646,6 +681,7 @@ class VersionService
             'current_version'   => $this->getInstalledVersion(),
             'latest_version'    => $targetVer,
             'is_up_to_date'     => $this->isUpToDate(),
+            'update'            => $this->getUpdatePolicy(),
         ];
     }
 

@@ -718,6 +718,29 @@
     .pwa-update-banner.show {
         display: flex !important;
     }
+
+    /* Feature announcements stay compact and leave the page usable. */
+    .pwa-update-banner[data-update-mode] { overflow-y: auto !important; overscroll-behavior: contain; }
+    .pwa-update-banner[data-update-mode="announcement"] {
+        top: auto !important;
+        bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+        transform: translateX(-50%) !important;
+        animation: none !important;
+        border-radius: 16px !important;
+        max-height: calc(100dvh - 180px) !important;
+    }
+    .pwa-update-banner[data-update-mode="announcement"] .pwa-update-inner { padding: 16px; gap: 14px; }
+    .pwa-update-banner[data-update-mode="announcement"] .pwa-update-icon-container,
+    .pwa-update-banner[data-update-mode="announcement"] .pwa-update-app-icon { width: 36px; height: 36px; animation: none; }
+    .pwa-update-banner[data-update-mode="announcement"] .pwa-update-accent-bar { animation: none; }
+    .pwa-update-banner[data-update-mode="announcement"] .pwa-update-title { font-size: 1rem; }
+    @media (min-width: 769px) {
+        .pwa-update-banner[data-update-mode="announcement"] { bottom: 24px !important; }
+    }
+    .pwa-update-banner[data-update-mode="announcement"] .pwa-update-glow,
+    .pwa-update-banner[data-update-mode="announcement"] .pwa-update-icon-glow-ring {
+        display: none;
+    }
     .pwa-update-accent-bar {
         height: 3px; width: 100%;
         background: linear-gradient(90deg, transparent 0%, rgba(232,192,100,0.4) 20%, #e8c064 40%, #fff8e1 50%, #e8c064 60%, rgba(232,192,100,0.4) 80%, transparent 100%);
@@ -1472,7 +1495,7 @@
     let latestDetectedBuildId = null;
     let latestDetectedCommitHash = null;
     let currentChangelogData = null;
-    let lastNotifiedVersion = null;
+    let latestUpdatePolicy = { mode: 'silent', version: null };
     let isCheckingVersion = false;
     let checkVersionPromise = null;
     let lastVersionCheckTime = 0;
@@ -1517,6 +1540,36 @@
             return false;
         }
         return latest !== '||';
+    }
+
+    // Announcement identity is the published version, never a build or git commit.
+    function getUpdateAnnouncementKey(version) {
+        return 'release:' + String(version).replace(/^[vV]/, '');
+    }
+
+    function readUpdatePreference(key) {
+        try { return localStorage.getItem(key) || sessionStorage.getItem(key) || ''; } catch (e) {
+            try { return sessionStorage.getItem(key) || ''; } catch (ignored) { return ''; }
+        }
+    }
+
+    function writeUpdatePreference(key, value) {
+        try { localStorage.setItem(key, value); } catch (e) {}
+        try { sessionStorage.setItem(key, value); } catch (e) {}
+    }
+
+    function updatePromptMode(version, isManualCheck = false) {
+        const minimum = latestUpdatePolicy.minimum_supported_version;
+        if (typeof minimum === 'string' && /^\d+(\.\d+)*$/.test(minimum)
+                && compareSemver(minimum, version) <= 0 && compareSemver(getInstalledVersion(), minimum) < 0) {
+            return 'critical';
+        }
+        if (latestUpdatePolicy.version !== version || !['announcement', 'critical'].includes(latestUpdatePolicy.mode)) {
+            return isManualCheck ? 'announcement' : 'silent';
+        }
+        // Rebuilding the same release never repeats its announcement or critical prompt.
+        if (compareSemver(version, getInstalledVersion()) <= 0) return isManualCheck ? 'announcement' : 'silent';
+        return latestUpdatePolicy.mode;
     }
 
     // Cross-tab synchronization via BroadcastChannel
@@ -1697,7 +1750,7 @@
         return false;
     }
 
-    // ── Fallback Pill Helpers (Shows subtle pill when modal is dismissed or snoozed) ──
+    // Legacy manual-update pill. Automatic announcements do not leave a floating reminder.
     function showUpdateFallbackPill(version = null) {
         // Do not show pill if already up to date
         const installedVer = getInstalledVersion();
@@ -1773,7 +1826,33 @@
         }, 300);
     }
 
+    const dirtyUpdateForms = new Set();
+    document.addEventListener('input', trackUpdateFormChanges, true);
+    document.addEventListener('change', trackUpdateFormChanges, true);
+    document.addEventListener('reset', event => dirtyUpdateForms.delete(event.target), true);
+    document.addEventListener('keydown', event => {
+        const popup = document.getElementById('pwaSystemUpdatePopup');
+        if (event.key === 'Tab' && popup?.dataset.updateMode === 'critical' && popup.classList.contains('show')) {
+            event.preventDefault();
+            document.getElementById('pwaApplyUpdateBtn')?.focus({ preventScroll: true });
+        }
+    });
+
+    function trackUpdateFormChanges(event) {
+        const field = event.target;
+        if (!field.form || field.form.method.toLowerCase() === 'get' || field.type === 'search') return;
+        dirtyUpdateForms.add(field.form);
+    }
+
     function activeAttendanceUpdateReason() {
+        for (const form of dirtyUpdateForms) {
+            if (form.isConnected) return 'Save your changes or leave this page before updating.';
+            dirtyUpdateForms.delete(form);
+        }
+        const cameraActive = Array.from(document.querySelectorAll('video')).some(video =>
+            video.srcObject?.getVideoTracks?.().some(track => track.readyState === 'live')
+        );
+        if (cameraActive) return 'Finish using the camera before updating.';
         const scanner = document.getElementById('studentScannerModal');
         if (scanner && scanner.style.display === 'flex') {
             return 'Close the attendance scanner before updating.';
@@ -1803,11 +1882,17 @@
     }
 
     // ── Toast/Prompt Helper: "Update Available" (When a newer version exists) ──
-    function showUpdateReadyPrompt(version = null, force = false, changelog = null, isManualCheck = false) {
+    async function showUpdateReadyPrompt(version = null, force = false, changelog = null, isManualCheck = false) {
         if (version) latestDetectedVersion = version;
 
         const targetVersion = version || latestDetectedVersion || getLatestVersion();
         const installedVer = getInstalledVersion();
+        let promptMode = updatePromptMode(targetVersion, isManualCheck);
+
+        if (promptMode === 'silent') {
+            hideModalElementsIfUpToDate();
+            return;
+        }
 
         // A newer build can need applying even when the display version is unchanged.
         if (!isManualCheck && compareSemver(targetVersion, installedVer) <= 0 && !hasUnappliedRelease()) {
@@ -1827,26 +1912,28 @@
 
         ensurePwaModalsInBody();
 
+        const activeWorkReason = await updateBlockReason();
+        if (activeWorkReason && !isManualCheck) {
+            hideModalElementsIfUpToDate();
+            return;
+        }
+        // A manual check during work can explain the update without trapping
+        // the user in a required dialog that prevents saving that same work.
+        if (activeWorkReason && isManualCheck) promptMode = 'announcement';
+
         // Prevent duplicate popup if already visible on screen unless forced or targetVersion changed
         const popup = document.getElementById('pwaSystemUpdatePopup');
-        if (popup && (popup.classList.contains('show') || popup.style.display === 'flex') && !force && !isManualCheck) {
+        if (popup && (popup.classList.contains('show') || popup.style.display === 'flex') && !force && !isManualCheck
+                && popup.dataset.updateMode === promptMode && popup.dataset.updateVersion === targetVersion) {
             return;
         }
 
-        const currentUpdateKey = (targetVersion || '') + '_' + getLatestReleaseKey();
+        const currentUpdateKey = getUpdateAnnouncementKey(targetVersion);
         // Check dismiss state in sessionStorage (within tab) OR localStorage (across navigations)
-        const dismissedTag = localStorage.getItem('pwa_update_dismissed_tag') || sessionStorage.getItem('pwa_update_dismissed_tag') || '';
-        if (!isManualCheck && !force && dismissedTag === currentUpdateKey) {
-            // "Later" means once per release, not another interruption in 15 minutes.
+        const dismissedTag = readUpdatePreference('pwa_update_dismissed_tag');
+        const announcedTag = readUpdatePreference('pwa_update_announced_tag');
+        if (!isManualCheck && promptMode !== 'critical' && (dismissedTag === currentUpdateKey || announcedTag === currentUpdateKey)) {
             hideModalElementsIfUpToDate();
-            showUpdateFallbackPill(targetVersion);
-            return;
-        }
-
-        // Do not interrupt a live classroom or QR scan. The unobtrusive pill
-        // remains available, and an explicit check can still explain why apply waits.
-        if (!isManualCheck && !force && activeAttendanceUpdateReason()) {
-            showUpdateFallbackPill(targetVersion);
             return;
         }
 
@@ -1868,7 +1955,7 @@
         }
 
         const titleEl = document.getElementById('pwaUpdateTitle');
-        if (titleEl) titleEl.textContent = 'Update Available';
+        if (titleEl) titleEl.textContent = promptMode === 'critical' ? 'Important update required' : 'Update Available';
 
         const badge = document.getElementById('pwaUpdateVersionBadge');
         if (badge) {
@@ -1877,43 +1964,54 @@
         }
 
         const subEl = document.getElementById('pwaUpdateSubtitle');
-        if (subEl) subEl.textContent = compareSemver(targetVersion, installedVer) > 0
+        if (subEl) subEl.textContent = promptMode === 'critical'
+            ? 'Please update to continue with this release. Your work will be protected before refreshing.'
+            : compareSemver(targetVersion, installedVer) > 0
             ? 'A new version (Version ' + targetVersion + ') is available to install.'
             : 'A new app update is ready to install.';
+        if (subEl && activeWorkReason) subEl.textContent = activeWorkReason;
 
         const btnText = document.getElementById('pwaApplyUpdateBtnText');
         if (btnText) btnText.textContent = 'Update Now';
 
         const backdrop = document.getElementById('pwaUpdateBackdrop');
         if (backdrop) {
-            backdrop.classList.add('show');
-            backdrop.style.setProperty('display', 'block', 'important');
+            backdrop.classList.toggle('show', promptMode === 'critical');
+            backdrop.style.setProperty('display', promptMode === 'critical' ? 'block' : 'none', 'important');
         }
 
+        for (const id of ['pwaLaterUpdateBtn', 'pwaDismissUpdatePopupBtn']) {
+            const button = document.getElementById(id);
+            if (button) button.style.setProperty('display', promptMode === 'critical' ? 'none' : '', 'important');
+        }
         if (popup) {
+            popup.dataset.updateMode = promptMode;
+            popup.dataset.updateVersion = targetVersion;
+            popup.setAttribute('role', promptMode === 'critical' ? 'dialog' : 'region');
+            if (promptMode === 'critical') popup.setAttribute('aria-modal', 'true');
+            else popup.removeAttribute('aria-modal');
+            popup.setAttribute('aria-labelledby', 'pwaUpdateTitle');
+            popup.setAttribute('aria-describedby', 'pwaUpdateSubtitle');
             popup.classList.add('show');
             popup.style.setProperty('display', 'flex', 'important');
         }
-
-        // Multi-channel alert once per new version
-        const isNewVersion = !lastNotifiedVersion || lastNotifiedVersion !== currentUpdateKey;
-        if (isNewVersion) {
-            lastNotifiedVersion = currentUpdateKey;
-            if (window.triggerHaptic) {
-                window.triggerHaptic('success');
-            } else if (navigator.vibrate) {
-                navigator.vibrate([100, 50, 100]);
-            }
+        if (promptMode === 'announcement' && !isManualCheck) {
+            writeUpdatePreference('pwa_update_announced_tag', currentUpdateKey);
+        }
+        if (promptMode === 'critical') {
+            document.getElementById('pwaApplyUpdateBtn')?.focus({ preventScroll: true });
         }
     }
 
     // Alias for backward compatibility with existing tests and scripts
     function showAppUpdatePopup(version, force = false, changelog = null) {
-        showUpdateReadyPrompt(version, force, changelog, force);
+        return showUpdateReadyPrompt(version, force, changelog, force);
     }
 
     function hideAppUpdatePopup(version) {
+        const targetVersion = version || latestDetectedVersion || getLatestVersion();
         const popup = document.getElementById('pwaSystemUpdatePopup');
+        if (popup?.dataset.updateMode === 'critical' && popup.classList.contains('show')) return;
         if (popup) {
             popup.classList.remove('show');
             popup.style.display = 'none';
@@ -1926,19 +2024,13 @@
         }
         hideUpdateFallbackPill();
 
-        const targetVersion = version || latestDetectedVersion || getLatestVersion();
-        const currentUpdateKey = (targetVersion || '') + '_' + getLatestReleaseKey();
+        const currentUpdateKey = getUpdateAnnouncementKey(targetVersion);
         
         // Suppress this exact release across reloads and browser restarts.
         const dismissNow = String(Date.now());
-        sessionStorage.setItem('pwa_update_dismissed_ver', targetVersion);
-        sessionStorage.setItem('pwa_update_dismissed_tag', currentUpdateKey);
-        sessionStorage.setItem('pwa_update_dismissed_at', dismissNow);
-        try {
-            localStorage.setItem('pwa_update_dismissed_ver', targetVersion);
-            localStorage.setItem('pwa_update_dismissed_tag', currentUpdateKey);
-            localStorage.setItem('pwa_update_dismissed_at', dismissNow);
-        } catch(e) {}
+        writeUpdatePreference('pwa_update_dismissed_ver', targetVersion);
+        writeUpdatePreference('pwa_update_dismissed_tag', currentUpdateKey);
+        writeUpdatePreference('pwa_update_dismissed_at', dismissNow);
     }
 
     async function applySystemUpdate() {
@@ -1964,7 +2056,7 @@
         sessionStorage.setItem('pwa_pending_version', targetVer);
         sessionStorage.setItem('pwa_updating', 'true');
         // If activation fails, retain a quiet retry pill instead of a modal loop.
-        localStorage.setItem('pwa_update_dismissed_tag', targetVer + '_' + targetKey);
+        writeUpdatePreference('pwa_update_dismissed_tag', getUpdateAnnouncementKey(targetVer));
 
         // Cross-tab broadcast
         if (pwaBroadcastChannel) {
@@ -1994,9 +2086,25 @@
 
         // Clear browser caches and reload with cache busting query while preserving existing query params
         let reloaded = false;
-        const doReload = () => {
+        const doReload = async () => {
             if (!reloaded) {
                 reloaded = true;
+                const reason = await updateBlockReason();
+                if (reason) {
+                    sessionStorage.removeItem('pwa_updating');
+                    sessionStorage.removeItem('pwa_pending_release_key');
+                    sessionStorage.removeItem('pwa_pending_version');
+                    if (applyBtn) {
+                        applyBtn.style.opacity = '';
+                        applyBtn.style.pointerEvents = '';
+                        const spinIcon = applyBtn.querySelector('.pwa-update-spin-icon');
+                        if (spinIcon) spinIcon.style.display = 'none';
+                    }
+                    await showUpdateReadyPrompt(targetVer, true, currentChangelogData, true);
+                    const subtitle = document.getElementById('pwaUpdateSubtitle');
+                    if (subtitle) subtitle.textContent = reason;
+                    return;
+                }
                 try {
                     const currentUrl = new URL(window.location.href);
                     currentUrl.searchParams.set('_v', targetVer);
@@ -2027,6 +2135,12 @@
             return { upToDate: true };
         }
         if (isCheckingVersion && checkVersionPromise) {
+            if (isManualCheck) {
+                return checkVersionPromise.then(async result => {
+                    if (result?.updateAvailable) await showUpdateReadyPrompt(result.version, true, currentChangelogData, true);
+                    return result;
+                });
+            }
             return checkVersionPromise;
         }
         lastVersionCheckTime = now;
@@ -2067,6 +2181,7 @@
                             // browser refresh. Compare only the deployed build.
                             latestVer = getLatestVersion(serverData);
                             latestDetectedVersion = latestVer;
+                            latestUpdatePolicy = serverData.update || { mode: 'silent', version: latestVer };
                             if (serverData.sw_version) {
                                 latestDetectedSwVersion = serverData.sw_version;
                             }
@@ -2107,7 +2222,7 @@
                 }
 
                 if (isUpdateAvailable) {
-                    showUpdateReadyPrompt(latestVer, isManualCheck, updateChangelog, isManualCheck);
+                    await showUpdateReadyPrompt(latestVer, isManualCheck, updateChangelog, isManualCheck);
                     return { upToDate: false, updateAvailable: true, version: latestVer };
                 } else {
                     // Up to date: close modal elements if currently showing, without writing false dismissal cooldown to storage
@@ -2209,14 +2324,10 @@
 
     // ── 2. Service Worker Registration & Real-Time Sync ──
     if ('serviceWorker' in navigator) {
-        let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (refreshing) return;
-            if (sessionStorage.getItem('pwa_updating') === 'true') {
-                sessionStorage.removeItem('pwa_updating');
-                refreshing = true;
-                window.location.reload(true);
-            } else {
+            // Only the explicit apply action owns a guarded reload. A worker
+            // activation, including one from another tab, never refreshes this page.
+            if (sessionStorage.getItem('pwa_updating') !== 'true') {
                 checkServerVersion(true);
             }
         });
