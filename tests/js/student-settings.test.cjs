@@ -39,11 +39,12 @@ function mount(mobile = true) {
     const panels = ['profile', 'security'].map(key => element('tab-' + key));
     const groups = ['biometrics', 'credentials', 'device', 'recovery'].map(key => element('sec-section-' + key));
     const menuGroup = { querySelectorAll: () => buttons };
-    for (const id of ['studentSettingsPageTitle', 'studentSettingsPageDescription', 'studentSettingsFilter', 'studentSettingsNoResults', 'cameraFaceEnrollment', 'studentPasskeySettings']) element(id);
+    for (const id of ['studentSettingsPageTitle', 'studentSettingsPageDescription', 'studentSettingsFilter', 'studentSettingsNoResults', 'cameraFaceEnrollment', 'studentPasskeySettings', 'studentBiometricChoices', 'back-label']) element(id);
     element('cameraFaceCancelBtn').click = () => { cameraCancels++; };
     const root = element('root');
     root.dataset = { studentSettings: '7', studentView: 'overview' };
     root.addEventListener = (event, fn) => { rootListeners[event] = fn; };
+    root.querySelector = () => ids.get('back-label');
     root.querySelectorAll = selector => ({
         '[data-settings-page]': buttons,
         '.student-settings-menu-group': [menuGroup],
@@ -72,48 +73,45 @@ function mount(mobile = true) {
 }
 
 for (const [screen, mobile] of [['mobile', true], ['desktop', false]]) {
-    test(`${screen}: the combined settings page shows both camera enrollment and device sign-in`, () => {
+    test(`${screen}: Biometrics offers separate face and fingerprint registration screens`, () => {
         const app = mount(mobile);
         app.window.studentSettingsNavigate('biometrics', { push: true, focus: true });
-        assert.equal(app.root.dataset.studentView, 'biometrics');
+        assert.equal(app.ids.get('studentBiometricChoices').hidden, false);
+        assert.equal(app.ids.get('cameraFaceEnrollment').hidden, true);
+        assert.equal(app.ids.get('studentPasskeySettings').hidden, true);
+        app.window.studentSettingsNavigate('face', { push: true });
         assert.equal(app.ids.get('cameraFaceEnrollment').hidden, false);
-        assert.equal(app.ids.get('studentPasskeySettings').hidden, false);
-        assert.equal(app.ids.get('tab-security').classList.contains('active'), true);
-        assert.equal(app.ids.get('sec-section-credentials').style.display, 'none');
-        assert.equal(app.ids.get('studentSettingsPageTitle').textContent, 'Biometrics');
+        assert.equal(app.ids.get('studentPasskeySettings').hidden, true);
+        assert.equal(app.ids.get('studentSettingsPageTitle').textContent, 'Face registration');
+        assert.equal(app.ids.get('back-label').textContent, 'Back to Biometrics');
         assert.equal(app.buttons[1].getAttribute('aria-current'), 'page');
-        assert.equal(app.location.hash, '#tab-biometrics');
+        app.window.studentSettingsNavigate('fingerprint', { push: true });
+        assert.equal(app.ids.get('cameraFaceEnrollment').hidden, true);
+        assert.equal(app.ids.get('studentPasskeySettings').hidden, false);
+        assert.equal(app.location.hash, '#tab-fingerprint');
+        assert.equal(app.counts().cameraCancels, 1);
     });
 }
 
-test('old face and passkey links reach the combined page and load credentials only once', () => {
-    const app = mount();
-    for (const alias of ['face', 'passkeys', 'fingerprint', 'security-biometrics', 'cameraFaceEnrollment']) {
-        app.window.studentSettingsNavigate(alias);
-        assert.equal(app.root.dataset.studentView, 'biometrics');
-        assert.equal(app.ids.get('cameraFaceEnrollment').hidden, false);
-        assert.equal(app.ids.get('studentPasskeySettings').hidden, false);
-    }
-    assert.deepEqual(app.counts(), { deviceLoads: 1, optionLoads: 1, cameraCancels: 0 });
-});
-
-test('leaving combined settings stops camera capture and hides both sections', () => {
+test('device credentials load only on the fingerprint screen and only once', () => {
     const app = mount();
     app.window.studentSettingsNavigate('biometrics');
+    app.window.studentSettingsNavigate('face');
+    assert.equal(app.counts().deviceLoads, 0);
+    app.window.studentSettingsNavigate('passkeys');
     app.window.studentSettingsNavigate('profile');
-    assert.equal(app.counts().cameraCancels, 1);
-    assert.equal(app.ids.get('cameraFaceEnrollment').hidden, true);
-    assert.equal(app.ids.get('studentPasskeySettings').hidden, true);
+    app.window.studentSettingsNavigate('fingerprint');
+    assert.equal(app.counts().deviceLoads, 1);
 });
 
-test('browser history and saved form returns support the old face settings link', () => {
+test('browser history and saved returns reach the appropriate registration screen', () => {
     const app = mount();
     app.location.hash = '#tab-face';
     app.listeners.hashchange();
-    assert.equal(app.root.dataset.studentView, 'biometrics');
+    assert.equal(app.root.dataset.studentView, 'face');
     app.window.studentSettingsNavigate('profile');
     app.storage.set('student_settings_return_7', 'passkeys');
     app.root.dataset.settingsFeedback = 'true';
     app.documentListeners.DOMContentLoaded();
-    assert.equal(app.root.dataset.studentView, 'biometrics');
+    assert.equal(app.root.dataset.studentView, 'fingerprint');
 });

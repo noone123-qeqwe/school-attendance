@@ -12,7 +12,7 @@ class LiveProfileFaceMatcher
         return $this->compareFrameSet($user, [$liveFrame], false);
     }
 
-    /** Compare two or three controlled camera samples against the registered photo. */
+    /** Compare two or three controlled camera samples against the encrypted enrollment. */
     public function compareFrames(User $user, array $liveFrames): array
     {
         if (count($liveFrames) < 2 || count($liveFrames) > 3) {
@@ -24,8 +24,8 @@ class LiveProfileFaceMatcher
 
     private function compareFrameSet(User $user, array $liveFrames, bool $requireConsistency): array
     {
-        $reference = app(ProfileFacePhotoService::class)->bytes($user);
-        if ($reference === null) {
+        $references = app(ProfileFacePhotoService::class)->referenceImages($user);
+        if ($references === []) {
             return $this->failure('NO_PROFILE_PHOTO');
         }
 
@@ -45,11 +45,24 @@ class LiveProfileFaceMatcher
 
         $temporaryPaths = [];
         try {
-            $referencePath = tempnam(sys_get_temp_dir(), 'face_ref_');
-            if ($referencePath === false) {
-                return $this->failure('MATCHER_UNAVAILABLE');
+            $referencePaths = [];
+            foreach ($references as $reference) {
+                $path = tempnam(sys_get_temp_dir(), 'face_ref_');
+                if ($path === false) return $this->failure('MATCHER_UNAVAILABLE');
+                $temporaryPaths[] = $path;
+                $referencePaths[] = $path;
+                if (file_put_contents($path, $reference) !== strlen($reference)) return $this->failure('MATCHER_UNAVAILABLE');
             }
-            $temporaryPaths[] = $referencePath;
+            $referencePath = $referencePaths[0];
+            $referenceOptions = [];
+            if (count($referencePaths) > 1) {
+                $referencePath = tempnam(sys_get_temp_dir(), 'face_refs_');
+                if ($referencePath === false) return $this->failure('MATCHER_UNAVAILABLE');
+                $temporaryPaths[] = $referencePath;
+                $manifest = json_encode($referencePaths, JSON_THROW_ON_ERROR);
+                if (file_put_contents($referencePath, $manifest) !== strlen($manifest)) return $this->failure('MATCHER_UNAVAILABLE');
+                $referenceOptions = ['--reference-set'];
+            }
 
             $framePaths = [];
             foreach ($liveBytes as $bytes) {
@@ -65,13 +78,10 @@ class LiveProfileFaceMatcher
                 }
             }
 
-            if (file_put_contents($referencePath, $reference) !== strlen($reference)) {
-                return $this->failure('MATCHER_UNAVAILABLE');
-            }
-
             $process = new Process([
                 config('face_match.python'),
                 base_path('scripts/match_profile_face.py'),
+                ...$referenceOptions,
                 $referencePath,
                 ...$framePaths,
                 config('face_match.detector_model'),
@@ -166,18 +176,18 @@ class LiveProfileFaceMatcher
     private function message(string $code): string
     {
         return match ($code) {
-            'MATCH' => 'Face samples matched the registered profile photo.',
+            'MATCH' => 'Face samples matched your registered face profile.',
             'NO_PROFILE_PHOTO', 'PROFILE_IMAGE_UNREADABLE', 'PROFILE_FACE_NOT_FOUND' =>
-                'Your profile photo is unavailable or has no clear face. Upload a new, front-facing photo in Settings.',
+                'Your face profile is unavailable or has no clear face. Register your face again in Settings > Biometrics > Face registration.',
             'PROFILE_MULTIPLE_FACES', 'PROFILE_FACE_TOO_SMALL', 'PROFILE_IMAGE_BLURRY', 'PROFILE_IMAGE_QUALITY' =>
-                'Your profile photo must show one clear, front-facing face. Upload a new photo in Settings.',
+                'Your face profile needs clear camera captures. Register your face again in Settings > Biometrics > Face registration.',
             'LIVE_FACE_NOT_FOUND', 'LIVE_FACE_TOO_SMALL', 'LIVE_IMAGE_BLURRY', 'LIVE_IMAGE_QUALITY' =>
                 'Move closer to the camera and keep your face clear and steady, then try again.',
             'LIVE_MULTIPLE_FACES' => 'Only one person can be in the camera frame. Please try again.',
             'LIVE_FRAME_INCONSISTENT' => 'Your face moved between the camera samples. Keep your face steady and retry.',
             'INCOMPLETE_MULTI_FRAME_CAPTURE' => 'The camera capture was incomplete. Please retry the face check.',
             'INVALID_LIVE_FRAME', 'LIVE_IMAGE_UNREADABLE' => 'The camera frame could not be read. Please retry the camera scan.',
-            'BIOMETRIC_MISMATCH' => 'Your face samples did not match your registered profile photo. Please try again in good lighting.',
+            'BIOMETRIC_MISMATCH' => 'Your face samples did not match your registered face profile. Please try again in good lighting.',
             default => 'Face matching is temporarily unavailable. Please use your registered fingerprint or ask your teacher for help.',
         };
     }

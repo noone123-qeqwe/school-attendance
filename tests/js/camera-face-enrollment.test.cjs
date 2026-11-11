@@ -4,16 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const blade = fs.readFileSync(path.join(__dirname, '../../resources/views/settings.blade.php'), 'utf8');
-const startMarker = '// ── Camera-based face enrollment for attendance ──';
-const endMarker = '// ── Device Passkey Registration ──';
-const startIndex = blade.indexOf(startMarker);
-const endIndex = blade.indexOf(endMarker, startIndex);
-assert.notEqual(startIndex, -1, 'camera enrollment script marker must exist');
-assert.notEqual(endIndex, -1, 'device passkey script marker must follow camera enrollment');
-const script = blade.slice(startIndex, endIndex)
-    .replace(/{{\s*route\("profile\.face\.enroll"\)\s*}}/g, '/profile/face-enrollment')
-    .replace(/{{\s*csrf_token\(\)\s*}}/g, 'test-csrf-token');
+const script = fs.readFileSync(path.join(__dirname, '../../public/js/camera-face-enrollment.js'), 'utf8');
 
 function deferred() {
     let resolve;
@@ -34,6 +25,10 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
                 disabled: false,
                 textContent: '',
                 listeners: {},
+                dataset: { enrollmentUrl: '/profile/face-enrollment' },
+                querySelectorAll: () => ['front', 'left', 'right'].map(pose => element('pose-' + pose)),
+                setAttribute() {}, removeAttribute() {},
+                click() { return this.listeners.click?.(); },
                 addEventListener(event, callback) { this.listeners[event] = callback; },
                 focus() {},
                 play: async () => {},
@@ -50,6 +45,7 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
     const document = {
         readyState: 'complete',
         getElementById: element,
+        querySelector: () => ({ content: 'test-csrf-token' }),
     };
     const window = {
         addEventListener(event, callback) { windowListeners[event] = callback; },
@@ -76,6 +72,7 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
         element,
         fetchCalls,
         windowListeners,
+        window,
         get trackStops() { return trackStops; },
         stream() { return { getTracks: () => [{ stop: () => { trackStops++; } }] }; },
     };
@@ -100,7 +97,25 @@ test('leaving settings while camera permission is pending stops the late stream'
     assert.match(app.element('cameraFaceStatus').textContent, /camera was closed when you left Settings/i);
 });
 
-test('student can capture and submit a camera face image through the enrollment flow', async () => {
+test('switching screens clears captures and ignores a late save response', async () => {
+    const gate = deferred();
+    const app = mount({ response: { ok: true, json: () => gate.promise } });
+    const opening = app.element('cameraFaceStartBtn').listeners.click();
+    app.cameraGate.resolve(app.stream());
+    await opening;
+    for (let i = 0; i < 3; i++) app.element('cameraFaceCaptureBtn').listeners.click();
+    const saving = app.element('cameraFaceSaveBtn').listeners.click();
+    assert.equal(app.element('cameraFaceCancelBtn').disabled, true);
+    app.window.cancelCameraFaceEnrollment();
+    gate.resolve({ success: true, message: 'Late success' });
+    await saving;
+    assert.match(app.element('cameraFaceStatus').textContent, /Capture closed/);
+    assert.equal(app.element('cameraFacePreviewWrap').style.display, 'none');
+    await app.element('cameraFaceSaveBtn').listeners.click();
+    assert.equal(app.fetchCalls.length, 1);
+});
+
+test('student must capture all three positions before submitting the camera enrollment', async () => {
     const app = mount();
     const startPromise = app.element('cameraFaceStartBtn').listeners.click();
     app.cameraGate.resolve(app.stream());
@@ -110,6 +125,13 @@ test('student can capture and submit a camera face image through the enrollment 
     assert.equal(app.element('cameraFaceCaptureBtn').style.display, '');
 
     app.element('cameraFaceCaptureBtn').listeners.click();
+    await app.element('cameraFaceSaveBtn').listeners.click();
+    assert.equal(app.fetchCalls.length, 0, 'One view must not complete registration');
+    assert.equal(app.trackStops, 0, 'Camera stays open for the next position');
+    assert.match(app.element('cameraFacePoseInstruction').textContent, /left/);
+    app.element('cameraFaceCaptureBtn').listeners.click();
+    assert.match(app.element('cameraFacePoseInstruction').textContent, /right/);
+    app.element('cameraFaceCaptureBtn').listeners.click();
     assert.equal(app.trackStops, 1);
     assert.equal(app.element('cameraFaceSaveBtn').style.display, '');
 
@@ -118,6 +140,22 @@ test('student can capture and submit a camera face image through the enrollment 
     assert.equal(app.fetchCalls.length, 1);
     assert.equal(app.fetchCalls[0][0], '/profile/face-enrollment');
     assert.equal(app.fetchCalls[0][1].headers['X-CSRF-TOKEN'], 'test-csrf-token');
+    assert.deepEqual(app.fetchCalls[0][1].body.items.map(item => item[0]), ['face_images[front]', 'face_images[left]', 'face_images[right]']);
     assert.equal(app.element('cameraFacePreviewWrap').style.display, 'none');
-    assert.match(app.element('cameraFaceStatus').textContent, /Face registered securely/);
+    assert.match(app.element('cameraFaceStatus').textContent, /three face views were registered securely/);
+});
+
+test('pose validation errors keep the captures available for retry or retake', async () => {
+    const app = mount({ response: { ok: false, json: async () => ({ message: 'Turn in opposite directions.' }) } });
+    const opening = app.element('cameraFaceStartBtn').listeners.click();
+    app.cameraGate.resolve(app.stream());
+    await opening;
+    for (let i = 0; i < 3; i++) app.element('cameraFaceCaptureBtn').listeners.click();
+    await app.element('cameraFaceSaveBtn').listeners.click();
+    assert.match(app.element('cameraFaceStatus').textContent, /opposite directions/);
+    assert.equal(app.element('cameraFaceRetakeBtn').disabled, false);
+    assert.equal(app.element('cameraFaceSaveBtn').disabled, false);
+    app.element('cameraFaceCancelBtn').listeners.click();
+    await app.element('cameraFaceSaveBtn').listeners.click();
+    assert.equal(app.fetchCalls.length, 1, 'Canceled captures cannot be submitted');
 });

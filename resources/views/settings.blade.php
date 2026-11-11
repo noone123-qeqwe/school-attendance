@@ -4061,7 +4061,7 @@
         <section class="settings-main-content" id="studentSettingsContent" @if($user->isStudent()) aria-labelledby="studentSettingsPageTitle" @endif>
         @if($user->isStudent())
         <header class="student-settings-detail-heading">
-            <button type="button" class="student-settings-back" data-settings-back><i class="bi bi-arrow-left" aria-hidden="true"></i>All settings</button>
+            <button type="button" class="student-settings-back" data-settings-back><i class="bi bi-arrow-left" aria-hidden="true"></i><span data-settings-back-label>All settings</span></button>
             <h2 id="studentSettingsPageTitle" tabindex="-1">Profile &amp; school details</h2>
             <p id="studentSettingsPageDescription">Manage your photo, contact number, and student information.</p>
         </header>
@@ -4439,15 +4439,21 @@
                 <div class="sc-body">
 
                     @if(Auth::user()->isStudent())
-                    <section id="cameraFaceEnrollment" aria-labelledby="cameraFaceEnrollmentTitle" style="margin:0 0 26px;padding:20px;border:1px solid rgba(14,165,233,.28);border-radius:16px;background:rgba(14,165,233,.045);">
+                    <div id="studentBiometricChoices" class="student-biometric-choices">
+                        <button type="button" data-biometric-page="face" aria-controls="cameraFaceEnrollment"><i class="bi bi-camera-video" aria-hidden="true"></i><span><strong>Face registration</strong><small>Use your camera to capture your front, left, and right views for attendance.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+                        <button type="button" data-biometric-page="fingerprint" aria-controls="studentPasskeySettings"><i class="bi bi-fingerprint" aria-hidden="true"></i><span><strong>Fingerprint registration</strong><small>Set up secure device sign-in with your device’s fingerprint sensor.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+                    </div>
+                    <section id="cameraFaceEnrollment" data-enrollment-url="{{ route('profile.face.enroll') }}" aria-labelledby="cameraFaceEnrollmentTitle" style="margin:0 0 26px;padding:20px;border:1px solid rgba(14,165,233,.28);border-radius:16px;background:rgba(14,165,233,.045);">
                         <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
                             <i class="bi bi-camera-video" aria-hidden="true" style="font-size:1.35rem;color:#38bdf8;"></i>
                             <div>
                                 <h3 id="cameraFaceEnrollmentTitle" style="font-size:1rem;font-weight:750;color:#f8fafc;margin:0 0 4px;">Register face for attendance</h3>
-                                <p style="font-size:.82rem;color:#cbd5e1;margin:0;line-height:1.5;">Use your camera to capture one clear face. The image is checked for quality and stored encrypted for attendance matching; it is not saved as a public profile photo.</p>
+                                <p style="font-size:.82rem;color:#cbd5e1;margin:0;line-height:1.5;">Capture three clear views: front, slightly left, and slightly right. The captures are checked together and stored encrypted for attendance matching, separately from your public profile photo.</p>
                             </div>
                         </div>
                         @if($faceEnrollmentAvailable)
+                            <ol class="face-pose-progress" aria-label="Face capture positions"><li data-face-pose="front">1. Front</li><li data-face-pose="left">2. Left</li><li data-face-pose="right">3. Right</li></ol>
+                            <p id="cameraFacePoseInstruction" class="face-pose-instruction" aria-live="polite">Look straight ahead for your first capture. Keep your head level and both eyes visible.</p>
                             <div id="cameraFacePreviewWrap" style="display:none;position:relative;overflow:hidden;width:min(100%,440px);aspect-ratio:4/3;margin:0 auto 14px;border-radius:14px;background:#080b12;border:1px solid rgba(56,189,248,.3);">
                                 <video id="cameraFaceVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
                                 <div aria-hidden="true" style="position:absolute;inset:10% 25%;border:2px solid rgba(56,189,248,.9);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.24);pointer-events:none;"></div>
@@ -4458,7 +4464,7 @@
                         @if($faceEnrollmentAvailable)
                             <div style="display:flex;gap:9px;flex-wrap:wrap;">
                                 <button type="button" id="cameraFaceStartBtn" class="sbtn bio-primary-cta" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera-video me-2"></i>Open camera</button>
-                                <button type="button" id="cameraFaceCaptureBtn" hidden class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera me-2"></i>Capture face</button>
+                                <button type="button" id="cameraFaceCaptureBtn" hidden class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;">Capture front view</button>
                                 <button type="button" id="cameraFaceRetakeBtn" hidden class="cancel-btn" style="display:none;"><i class="bi bi-arrow-repeat me-1"></i>Retake</button>
                                 <button type="button" id="cameraFaceSaveBtn" hidden class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-shield-check me-2"></i>Register face</button>
                                 <button type="button" id="cameraFaceCancelBtn" hidden class="cancel-btn" style="display:none;">Cancel</button>
@@ -4472,8 +4478,8 @@
                     <div id="studentPasskeySettings">
                     @if($user->isStudent())
                     <header class="student-biometric-section-heading">
-                        <h3>Device sign-in</h3>
-                        <p>Set up a passkey to sign in with your device. Your device may offer a fingerprint, Face ID, Windows Hello, or a PIN.</p>
+                        <h3>Fingerprint registration</h3>
+                        <p>Use the secure prompt on your device to register. Your operating system may offer a PIN or another verification method; websites cannot force a fingerprint sensor.</p>
                     </header>
                     @endif
                     <!-- In-app browser & Insecure Context Alert -->
@@ -4497,8 +4503,8 @@
                         <div class="bio-section-title-wrap">
                             <span class="bio-step-badge">Step 1</span>
                             <div>
-                                <div class="bio-step-title">Choose Biometric Authentication Method</div>
-                                <div class="bio-step-subtitle">Select ONE preferred biometric method to register for passwordless login and QR clock-in:</div>
+                                <div class="bio-step-title">{{ $user->isStudent() ? 'Fingerprint sign-in' : 'Choose Biometric Authentication Method' }}</div>
+                                <div class="bio-step-subtitle">{{ $user->isStudent() ? 'Register the secure credential on the device you use to sign in.' : 'Select ONE preferred biometric method to register for passwordless login and QR clock-in:' }}</div>
                             </div>
                         </div>
 
@@ -4530,6 +4536,7 @@
                             </div>
 
                             <!-- Option 2: Device face sign-in -->
+                            @if(!$user->isStudent())
                             <div class="bio-method-card" id="methodCardFace" data-method="face" tabindex="0" role="button" aria-pressed="false" onclick="selectBiometricMethod('face')" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('face')">
                                 <div class="bio-card-radio">
                                     <div class="bio-radio-inner">
@@ -4554,6 +4561,7 @@
                                     </div>
                                 </div>
                             </div>
+                            @endif
                         </div>
                     </div>
 
@@ -6472,184 +6480,7 @@ async function prefetchWebAuthn() {
     isFetchingOptions = false;
 }
 
-// ── Camera-based face enrollment for attendance ──
-let cameraFaceStream = null;
-let cameraFaceBlob = null;
-let cameraFaceRequestId = 0;
-
-function stopCameraFaceStream() {
-    if (cameraFaceStream) cameraFaceStream.getTracks().forEach(track => track.stop());
-    cameraFaceStream = null;
-}
-
-function initCameraFaceEnrollment() {
-    const start = document.getElementById('cameraFaceStartBtn');
-    if (!start) return;
-    const video = document.getElementById('cameraFaceVideo');
-    const canvas = document.getElementById('cameraFaceCanvas');
-    const wrap = document.getElementById('cameraFacePreviewWrap');
-    const capture = document.getElementById('cameraFaceCaptureBtn');
-    const save = document.getElementById('cameraFaceSaveBtn');
-    const retake = document.getElementById('cameraFaceRetakeBtn');
-    const cancel = document.getElementById('cameraFaceCancelBtn');
-    const status = document.getElementById('cameraFaceStatus');
-
-    const setStatus = (message, color = '#94a3b8') => {
-        if (status) { status.textContent = message; status.style.color = color; }
-    };
-    const setCameraControlVisible = (element, visible) => {
-        if (!element) return;
-        element.hidden = !visible;
-        element.style.display = visible ? '' : 'none';
-    };
-    const reset = () => {
-        stopCameraFaceStream();
-        cameraFaceBlob = null;
-        if (video) video.srcObject = null;
-        if (wrap) wrap.style.display = 'none';
-        if (video) video.style.display = 'block';
-        if (canvas) canvas.style.display = 'none';
-        setCameraControlVisible(capture, false);
-        setCameraControlVisible(retake, false);
-        setCameraControlVisible(save, false);
-        setCameraControlVisible(cancel, false);
-        [retake, save, cancel, start].forEach(button => { if (button) button.disabled = false; });
-        setCameraControlVisible(start, true);
-    };
-
-    start.addEventListener('click', async () => {
-        const requestId = ++cameraFaceRequestId;
-        if (!navigator.mediaDevices?.getUserMedia) {
-            setStatus('Camera access requires a supported browser and a secure HTTPS connection.', '#f87171');
-            return;
-        }
-        start.disabled = true;
-        setStatus('Requesting camera access…');
-        try {
-            stopCameraFaceStream();
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: false,
-                video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 960 } }
-            });
-            if (requestId !== cameraFaceRequestId) {
-                stream.getTracks().forEach(track => track.stop());
-                return;
-            }
-            cameraFaceStream = stream;
-            video.srcObject = cameraFaceStream;
-            await video.play();
-            if (requestId !== cameraFaceRequestId) {
-                stopCameraFaceStream();
-                video.srcObject = null;
-                return;
-            }
-            wrap.style.display = 'block';
-            video.style.display = 'block';
-            canvas.style.display = 'none';
-            setCameraControlVisible(start, false);
-            setCameraControlVisible(capture, true);
-            setCameraControlVisible(cancel, true);
-            setStatus('Center your face inside the frame, face the camera, and use even lighting.');
-        } catch (error) {
-            stopCameraFaceStream();
-            if (requestId !== cameraFaceRequestId) return;
-            if (video) video.srcObject = null;
-            start.disabled = false;
-            setStatus(error?.name === 'NotAllowedError'
-                ? 'Camera permission was denied. Allow camera access in your browser settings and retry.'
-                : 'The camera could not be opened. Check that it is available, then retry.', '#f87171');
-        }
-    });
-
-    capture.addEventListener('click', () => {
-        if (!video.videoWidth || !video.videoHeight) {
-            setStatus('The camera is not ready yet. Wait a moment and retry.', '#f87171');
-            return;
-        }
-        const requestId = cameraFaceRequestId;
-        const scale = Math.min(1, 1280 / Math.max(video.videoWidth, video.videoHeight));
-        canvas.width = Math.round(video.videoWidth * scale);
-        canvas.height = Math.round(video.videoHeight * scale);
-        canvas.getContext('2d', { alpha: false }).drawImage(video, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(blob => {
-            if (requestId !== cameraFaceRequestId) return;
-            if (!blob) {
-                setStatus('The camera frame could not be captured. Please try again.', '#f87171');
-                return;
-            }
-            cameraFaceBlob = blob;
-            stopCameraFaceStream();
-            video.srcObject = null;
-            video.style.display = 'none';
-            canvas.style.cssText = 'display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);';
-            setCameraControlVisible(capture, false);
-            setCameraControlVisible(retake, true);
-            setCameraControlVisible(save, true);
-            setStatus('Capture ready. Register it for secure face matching, or cancel to retake.');
-        }, 'image/jpeg', 0.88);
-    });
-
-    save.addEventListener('click', async () => {
-        if (!cameraFaceBlob) return;
-        const requestId = cameraFaceRequestId;
-        save.disabled = true;
-        if (retake) retake.disabled = true;
-        if (cancel) cancel.disabled = true;
-        setStatus('Checking face quality and saving securely…');
-        const form = new FormData();
-        form.append('face_image', cameraFaceBlob, 'face-enrollment.jpg');
-        try {
-            const response = await fetch('{{ route("profile.face.enroll") }}', {
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-                body: form,
-                credentials: 'same-origin'
-            });
-            const result = await response.json();
-            if (requestId !== cameraFaceRequestId) return;
-            if (!response.ok || !result.success) {
-                save.disabled = false;
-                if (retake) retake.disabled = false;
-                if (cancel) cancel.disabled = false;
-                setCameraControlVisible(retake, true);
-                setStatus(result.message || 'Face registration could not be completed. Please try again.', '#f87171');
-                return;
-            }
-            reset();
-            setStatus(result.message || 'Face registered securely for attendance verification.', '#34d399');
-        } catch (error) {
-            if (requestId !== cameraFaceRequestId) return;
-            save.disabled = false;
-            if (retake) retake.disabled = false;
-            if (cancel) cancel.disabled = false;
-            setCameraControlVisible(retake, true);
-            setStatus('Could not reach the server. Your capture was not saved; please retry.', '#f87171');
-        }
-    });
-
-    retake.addEventListener('click', () => {
-        cameraFaceRequestId++;
-        reset();
-        start.click();
-    });
-
-    cancel.addEventListener('click', () => {
-        cameraFaceRequestId++;
-        reset();
-        setStatus('Capture canceled.');
-    });
-    window.addEventListener('pagehide', () => {
-        cameraFaceRequestId++;
-        reset();
-        setStatus('The camera was closed when you left Settings. Open it again when you are ready.');
-    });
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCameraFaceEnrollment, { once: true });
-} else {
-    initCameraFaceEnrollment();
-}
+// Camera enrollment is handled by camera-face-enrollment.js on its own screen.
 
 // ── Device Passkey Registration ──
 let isBioRegistrationRunning = false;
@@ -7661,6 +7492,7 @@ window.copyParentLinkCode = copyParentLinkCode;
 </script>
 @if(Auth::user()->isStudent())
 <script src="{{ asset('js/qrcode.min.js') }}"></script>
+<script src="{{ asset('js/camera-face-enrollment.js') }}?v={{ filemtime(public_path('js/camera-face-enrollment.js')) }}"></script>
 <script src="{{ asset('js/student-settings.js') }}?v={{ filemtime(public_path('js/student-settings.js')) }}"></script>
 @endif
 @endsection

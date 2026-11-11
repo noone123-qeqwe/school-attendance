@@ -26,16 +26,45 @@ class ProfilePhotoController extends Controller
             return response()->json(['success' => false, 'code' => 'FACE_VERIFICATION_DISABLED', 'message' => 'Face attendance enrollment is currently unavailable.'], 503);
         }
 
-        $request->validate([
-            'face_image' => 'required|image|mimes:jpeg,jpg|max:5120|dimensions:min_width=100,min_height=100,max_width=2000,max_height=2000',
-        ]);
+        $multiView = $request->has('face_images') || $request->hasFile('face_images');
+        $imageRule = 'image|mimes:jpeg,jpg|max:2048|dimensions:min_width=100,min_height=100,max_width=2000,max_height=2000';
+        $request->validate($multiView ? [
+            'face_images' => 'required|array:front,left,right|size:3',
+            'face_images.front' => 'required|'.$imageRule,
+            'face_images.left' => 'required|'.$imageRule,
+            'face_images.right' => 'required|'.$imageRule,
+        ] : ['face_image' => 'required|image|mimes:jpeg,jpg|max:5120|dimensions:min_width=100,min_height=100,max_width=2000,max_height=2000']);
+
+        $photos = app(ProfileFacePhotoService::class);
+        if ($multiView) {
+            $views = [];
+            foreach (['front', 'left', 'right'] as $pose) {
+                $file = $request->file('face_images.'.$pose);
+                $normalized = $file && $file->isValid() ? $photos->normalizeForMatching($file->get()) : null;
+                if ($normalized === null) {
+                    return response()->json(['success' => false, 'code' => 'PROFILE_IMAGE_UNREADABLE', 'message' => 'A camera capture could not be processed. Retake all three positions.'], 422);
+                }
+                $views[$pose] = $normalized;
+            }
+            $quality = app(ProfileFaceEnrollmentService::class)->validateViews($views);
+            if (!($quality['valid'] ?? false)) {
+                return response()->json(['success' => false, 'code' => $quality['code'], 'message' => $quality['message']],
+                    ($quality['code'] ?? '') === 'MATCHER_UNAVAILABLE' ? 503 : 422);
+            }
+            try {
+                DB::transaction(fn () => $photos->saveCameraViews($user, $views));
+            } catch (\Throwable $e) {
+                Log::error('Multi-view face enrollment storage failed', ['user_id' => $user->id, 'exception' => $e::class]);
+                return response()->json(['success' => false, 'message' => 'The face captures could not be saved securely. Please retry.'], 500);
+            }
+            return response()->json(['success' => true, 'view_count' => 3, 'message' => 'Your front, left, and right face captures were registered securely.']);
+        }
 
         $file = $request->file('face_image');
         if (!$file || !$file->isValid()) {
             return response()->json(['success' => false, 'message' => 'The camera image could not be read. Please capture it again.'], 422);
         }
 
-        $photos = app(ProfileFacePhotoService::class);
         $jpeg = $photos->normalizeForMatching($file->get());
         if ($jpeg === null) {
             return response()->json(['success' => false, 'code' => 'PROFILE_IMAGE_UNREADABLE', 'message' => 'The camera image could not be processed. Please capture it again.'], 422);

@@ -97,7 +97,7 @@ class FaceRecognitionRegistrationTest extends TestCase
             ]);
     }
 
-    public function test_settings_page_describes_device_passkey_face_registration()
+    public function test_student_settings_separates_camera_registration_from_device_credentials()
     {
         $user = User::factory()->create();
         $response = $this->actingAs($user)->get(route('settings'));
@@ -107,8 +107,11 @@ class FaceRecognitionRegistrationTest extends TestCase
         $response->assertSee('navigator.credentials.create', false);
         $response->assertSee('your device may offer a PIN.', false);
         $response->assertSee('Register face for attendance', false);
-        $response->assertSee('This enrolls a device passkey', false);
-        $response->assertSee('navigator.mediaDevices.getUserMedia', false);
+        $response->assertSee('Fingerprint registration', false);
+        $response->assertSee('websites cannot force a fingerprint sensor.', false);
+        $response->assertSee('data-biometric-page="face"', false);
+        $response->assertSee('data-biometric-page="fingerprint"', false);
+        $response->assertSee('js/camera-face-enrollment.js', false);
     }
 
     public function test_login_page_renders_device_passkey_face_sign_in()

@@ -13,6 +13,7 @@ class ProfileFacePhotoService
     private const CAMERA_ENROLLMENT_SOURCE = 'camera-face-enrollment';
     private const MAX_SOURCE_BYTES = 5 * 1024 * 1024;
     private const MAX_SIDE = 1280;
+    public const MAX_CAMERA_CAPTURE_BYTES = 3 * 1024 * 1024;
 
     public function save(User $user, string $sourceBytes, string $sourcePath): void
     {
@@ -27,6 +28,11 @@ class ProfileFacePhotoService
     /** Persist an already-normalized JPEG so enrollment validates and stores identical bytes. */
     public function saveNormalized(User $user, string $jpeg, string $sourcePath): void
     {
+        // Changing a public avatar must not replace an explicit camera enrollment.
+        if ($sourcePath !== self::CAMERA_ENROLLMENT_SOURCE && ProfileFacePhoto::where('user_id', $user->id)
+            ->where('source_path', self::CAMERA_ENROLLMENT_SOURCE)->exists()) {
+            return;
+        }
         $metadata = @getimagesizefromstring($jpeg);
         if (strlen($jpeg) < 128 || strlen($jpeg) > self::MAX_SOURCE_BYTES ||
             !is_array($metadata) || ($metadata['mime'] ?? null) !== 'image/jpeg' ||
@@ -49,6 +55,46 @@ class ProfileFacePhotoService
     public function saveCameraEnrollment(User $user, string $jpeg): void
     {
         $this->saveNormalized($user, $jpeg, self::CAMERA_ENROLLMENT_SOURCE);
+    }
+
+    /** Store the complete, validated capture set atomically in the existing encrypted row. */
+    public function saveCameraViews(User $user, array $views): void
+    {
+        if (array_keys($views) !== ['front', 'left', 'right']) {
+            throw new \RuntimeException('All three face positions are required.');
+        }
+        $totalBytes = 0;
+        foreach ($views as $jpeg) {
+            if (!is_string($jpeg)) {
+                throw new \RuntimeException('Invalid face capture.');
+            }
+            $totalBytes += strlen($jpeg);
+            $metadata = @getimagesizefromstring($jpeg);
+            if (strlen($jpeg) < 128 || !is_array($metadata) || $metadata['mime'] !== 'image/jpeg' ||
+                min($metadata[0], $metadata[1]) < 100 || max($metadata[0], $metadata[1]) > self::MAX_SIDE ||
+                $totalBytes > self::MAX_CAMERA_CAPTURE_BYTES) {
+                throw new \RuntimeException('Invalid face capture.');
+            }
+        }
+        ProfileFacePhoto::updateOrCreate(['user_id' => $user->id], [
+            'image_ciphertext' => Crypt::encryptString(json_encode([
+                'format' => 'camera-views-v1',
+                'views' => array_map('base64_encode', $views),
+            ], JSON_THROW_ON_ERROR)),
+            'mime_type' => 'image/jpeg',
+            'source_path' => self::CAMERA_ENROLLMENT_SOURCE,
+        ]);
+    }
+
+    /** @return list<string> Decrypted references, available only to the server matcher. */
+    public function referenceImages(User $user): array
+    {
+        $saved = ProfileFacePhoto::find($user->id);
+        if ($saved && $saved->source_path === self::CAMERA_ENROLLMENT_SOURCE) {
+            return array_values($this->decryptViews($saved));
+        }
+        $front = $this->bytes($user);
+        return $front === null ? [] : [$front];
     }
 
     /** Normalize enrollment input once before face-quality validation and encrypted storage. */
@@ -98,11 +144,29 @@ class ProfileFacePhotoService
 
     private function decrypt(ProfileFacePhoto $photo): ?string
     {
+        return $this->decryptViews($photo)['front'] ?? null;
+    }
+
+    private function decryptViews(ProfileFacePhoto $photo): array
+    {
         try {
-            $bytes = base64_decode(Crypt::decryptString($photo->image_ciphertext), true);
-            return is_string($bytes) && $bytes !== '' ? $bytes : null;
+            $plaintext = Crypt::decryptString($photo->image_ciphertext);
+            $payload = json_decode($plaintext, true);
+            if (is_array($payload) && ($payload['format'] ?? '') === 'camera-views-v1') {
+                $views = $payload['views'] ?? [];
+                if (!is_array($views) || array_keys($views) !== ['front', 'left', 'right']) return [];
+                $decoded = [];
+                foreach ($views as $pose => $encoded) {
+                    $bytes = is_string($encoded) ? base64_decode($encoded, true) : false;
+                    if (!is_string($bytes) || $bytes === '') return [];
+                    $decoded[$pose] = $bytes;
+                }
+                return $decoded;
+            }
+            $bytes = base64_decode($plaintext, true);
+            return is_string($bytes) && $bytes !== '' ? ['front' => $bytes] : [];
         } catch (\Throwable) {
-            return null;
+            return [];
         }
     }
 

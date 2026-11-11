@@ -8,6 +8,15 @@ use Tests\TestCase;
 
 class ProfileFaceEnrollmentServiceTest extends TestCase
 {
+    public function test_multi_view_enrollment_requires_all_positions_and_valid_images(): void
+    {
+        $service = new ProfileFaceEnrollmentService();
+        $this->assertSame('PROFILE_POSES_REQUIRED', $service->validateViews(['front' => 'image'])['code']);
+        $this->assertSame('PROFILE_IMAGE_QUALITY', $service->validateViews([
+            'front' => 'not an image', 'left' => 'not an image', 'right' => 'not an image',
+        ])['code']);
+    }
+
     public function test_enrollment_check_rejects_non_image_bytes_before_starting_matcher(): void
     {
         $service = new ProfileFaceEnrollmentService();

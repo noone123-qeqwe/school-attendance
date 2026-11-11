@@ -10,6 +10,7 @@ use App\Services\ProfileFacePhotoService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Tests\TestCase;
 
 class CameraFaceEnrollmentTest extends TestCase
@@ -22,6 +23,11 @@ class CameraFaceEnrollmentTest extends TestCase
             public function __construct(private array $result) {}
 
             public function validate(string $normalizedJpeg): array
+            {
+                return $this->result;
+            }
+
+            public function validateViews(array $views): array
             {
                 return $this->result;
             }
@@ -65,8 +71,12 @@ class CameraFaceEnrollmentTest extends TestCase
         $this->assertSame(1, $xpath->query('//*[@id="cameraFaceEnrollment"]')->length);
         $this->assertSame(0, $xpath->query('//*[@id="studentPasskeySettings"]//*[@id="cameraFaceEnrollment"]')->length);
         $this->assertSame(1, $xpath->query('//*[@id="studentPasskeySettings"]//*[@id="methodCardFp"]')->length);
-        // A single menu destination exposes both independently operated flows.
+        $this->assertSame(0, $xpath->query('//*[@id="studentPasskeySettings"]//*[@id="methodCardFace"]')->length);
+        // The menu opens a choice of two independently navigable screens.
         $this->assertSame(1, $xpath->query('//*[@data-settings-page="biometrics"]')->length);
+        $this->assertSame(1, $xpath->query('//*[@data-biometric-page="face"]')->length);
+        $this->assertSame(1, $xpath->query('//*[@data-biometric-page="fingerprint"]')->length);
+        $this->assertSame(3, $xpath->query('//*[@id="cameraFaceEnrollment"]//*[@data-face-pose]')->length);
         $this->assertSame(0, $xpath->query('//*[@data-settings-page="face" or @data-settings-page="passkeys"]')->length);
         $this->assertSame(1, $xpath->query('//*[@id="sec-section-biometrics"]//*[@id="cameraFaceEnrollment"]')->length);
         $this->assertSame(1, $xpath->query('//*[@id="sec-section-biometrics"]//*[@id="studentPasskeySettings"]')->length);
@@ -125,17 +135,85 @@ class CameraFaceEnrollmentTest extends TestCase
         $view = file_get_contents(resource_path('views/settings.blade.php'));
 
         $this->assertStringContainsString('Register face for attendance', $view);
-        $this->assertStringContainsString('navigator.mediaDevices.getUserMedia', $view);
-        $this->assertStringContainsString("route(\"profile.face.enroll\")", $view);
+        $this->assertStringContainsString("route('profile.face.enroll')", $view);
         $this->assertStringContainsString('This enrolls a device passkey', $view);
 
-        $flowStart = strpos($view, '// ── Camera-based face enrollment for attendance ──');
-        $flowEnd = strpos($view, '// ── Device Passkey Registration ──', $flowStart ?: 0);
-        $cameraFlow = $flowStart !== false && $flowEnd !== false
-            ? substr($view, $flowStart, $flowEnd - $flowStart)
-            : '';
+        $cameraFlow = file_get_contents(public_path('js/camera-face-enrollment.js'));
         $this->assertNotSame('', $cameraFlow);
+        $this->assertStringContainsString('navigator.mediaDevices.getUserMedia', $cameraFlow);
         $this->assertStringNotContainsString('fingerprint', strtolower($cameraFlow));
         $this->assertStringNotContainsString('navigator.credentials.create', $cameraFlow);
+    }
+
+    private function cameraViews(): array
+    {
+        $views = [];
+        foreach (['front', 'left', 'right'] as $pose) {
+            $views[$pose] = UploadedFile::fake()->image($pose.'.jpg', 480, 640);
+        }
+        return $views;
+    }
+
+    public function test_three_validated_views_are_encrypted_and_available_to_the_attendance_matcher(): void
+    {
+        $this->setQualityResult(['valid' => true, 'code' => 'PROFILE_READY', 'message' => '']);
+        $student = User::factory()->create(['role' => 'student', 'profile_image' => null]);
+
+        $this->actingAs($student)->postJson(route('profile.face.enroll'), [
+            'face_images' => $this->cameraViews(),
+        ])->assertOk()->assertJsonPath('view_count', 3);
+
+        $photo = ProfileFacePhoto::findOrFail($student->id);
+        $payload = json_decode(Crypt::decryptString($photo->image_ciphertext), true);
+        $this->assertSame('camera-views-v1', $payload['format']);
+        $this->assertSame(['front', 'left', 'right'], array_keys($payload['views']));
+        $references = app(ProfileFacePhotoService::class)->referenceImages($student);
+        $this->assertCount(3, $references);
+        foreach ($references as $image) {
+            $this->assertSame('image/jpeg', getimagesizefromstring($image)['mime']);
+            $this->assertStringNotContainsString(base64_encode($image), $photo->image_ciphertext);
+        }
+        $this->assertSame($references[0], app(ProfileFacePhotoService::class)->bytes($student));
+        $this->assertNull($student->fresh()->profile_image);
+    }
+
+    public function test_incomplete_or_extra_positions_cannot_be_registered(): void
+    {
+        $student = User::factory()->create(['role' => 'student']);
+        $views = $this->cameraViews();
+        unset($views['right']);
+        $this->actingAs($student)->postJson(route('profile.face.enroll'), ['face_images' => $views])
+            ->assertUnprocessable()->assertJsonValidationErrors('face_images.right');
+        $views = $this->cameraViews();
+        $views['extra'] = UploadedFile::fake()->image('extra.jpg', 480, 640);
+        $this->postJson(route('profile.face.enroll'), ['face_images' => $views])
+            ->assertUnprocessable()->assertJsonValidationErrors('face_images');
+        $this->assertDatabaseMissing('profile_face_photos', ['user_id' => $student->id]);
+    }
+
+    public function test_pose_or_identity_failure_preserves_the_existing_enrollment(): void
+    {
+        $student = User::factory()->create(['role' => 'student']);
+        $photos = app(ProfileFacePhotoService::class);
+        $photos->saveCameraEnrollment($student, UploadedFile::fake()->image('previous.jpg', 480, 640)->get());
+        $previous = ProfileFacePhoto::findOrFail($student->id)->image_ciphertext;
+        foreach (['PROFILE_POSE_VARIATION', 'PROFILE_IDENTITY_MISMATCH', 'MATCHER_UNAVAILABLE'] as $code) {
+            $this->setQualityResult(['valid' => false, 'code' => $code, 'message' => 'Retake the captures.']);
+            $this->actingAs($student)->postJson(route('profile.face.enroll'), ['face_images' => $this->cameraViews()])
+                ->assertStatus($code === 'MATCHER_UNAVAILABLE' ? 503 : 422)->assertJsonPath('code', $code);
+            $this->assertSame($previous, ProfileFacePhoto::findOrFail($student->id)->image_ciphertext);
+        }
+    }
+
+    public function test_changing_the_public_avatar_does_not_replace_camera_enrollment(): void
+    {
+        $student = User::factory()->create(['role' => 'student']);
+        $photos = app(ProfileFacePhotoService::class);
+        $views = array_map(fn ($file) => $file->get(), $this->cameraViews());
+        $photos->saveCameraViews($student, $views);
+        $ciphertext = ProfileFacePhoto::findOrFail($student->id)->image_ciphertext;
+        $photos->save($student, UploadedFile::fake()->image('avatar.jpg', 200, 200)->get(), 'profile-photos/avatar.jpg');
+        $this->assertSame($ciphertext, ProfileFacePhoto::findOrFail($student->id)->image_ciphertext);
+        $this->assertCount(3, $photos->referenceImages($student));
     }
 }

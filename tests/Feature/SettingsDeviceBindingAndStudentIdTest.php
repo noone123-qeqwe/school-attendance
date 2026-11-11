@@ -83,7 +83,7 @@ class SettingsDeviceBindingAndStudentIdTest extends TestCase
         $response->assertSee('All settings');
         $response->assertSee('Password &amp; email', false);
         $response->assertSee('Biometrics');
-        $response->assertSee('Device sign-in');
+        $response->assertSee('Fingerprint registration');
         $response->assertSee('data-settings-page="biometrics"', false);
         $response->assertDontSee('data-settings-page="face"', false);
         $response->assertDontSee('data-settings-page="passkeys"', false);
