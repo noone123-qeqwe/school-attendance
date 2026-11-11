@@ -11,6 +11,11 @@ const script = fs.readFileSync(path.join(__dirname, '../../resources/views/parti
 function mount({ platformCheck = async () => true, createCredential } = {}) {
     const elements = new Map(['startBioBtn', 'bioIdleView', 'bioScanningView', 'bioErrorView', 'bioSuccessView']
         .map(id => [id, { textContent: id === 'startBioBtn' ? 'Register fingerprint' : '', style: { display: 'none' } }]));
+    const stages = [1, 2, 3].map(step => ({
+        dataset: { bioStep: String(step) }, attributes: {},
+        setAttribute(name, value) { this.attributes[name] = value; },
+        removeAttribute(name) { delete this.attributes[name]; },
+    }));
     const prompts = [];
     const requests = [];
     const publicKeyCredential = { isUserVerifyingPlatformAuthenticatorAvailable: platformCheck };
@@ -28,7 +33,7 @@ function mount({ platformCheck = async () => true, createCredential } = {}) {
                 };
             } },
         },
-        document: { getElementById: id => elements.get(id), querySelector: () => null, querySelectorAll: () => [] },
+        document: { getElementById: id => elements.get(id), querySelector: () => null, querySelectorAll: selector => selector === '[data-bio-step]' ? stages : [] },
         fetch: async (url, options) => {
             requests.push({ url, options });
             if (url.startsWith('/webauthn.register.options')) {
@@ -39,7 +44,7 @@ function mount({ platformCheck = async () => true, createCredential } = {}) {
         },
     });
     vm.runInContext(script, context);
-    return { context, elements, prompts, requests };
+    return { context, elements, prompts, requests, stages };
 }
 
 test('the dedicated fingerprint screen registers through the on-device prompt', async () => {
@@ -52,6 +57,9 @@ test('the dedicated fingerprint screen registers through the on-device prompt', 
     assert.equal(save.options.headers['X-CSRF-TOKEN'], 'test-token');
     assert.equal(JSON.parse(save.options.body).biometric_type, 'fingerprint');
     assert.equal(app.elements.get('bioSuccessView').style.display, 'block');
+    assert.equal(app.stages[0].dataset.complete, 'true');
+    assert.equal(app.stages[1].dataset.complete, 'true');
+    assert.equal(app.stages[2].attributes['aria-current'], 'step');
 });
 
 test('cancelling while device support is being checked prevents a late native prompt', async () => {
@@ -69,4 +77,6 @@ test('cancelling while device support is being checked prevents a late native pr
     assert.equal(app.prompts.length, 0);
     assert.equal(app.requests.some(request => request.url === '/webauthn.register'), false);
     assert.equal(app.elements.get('bioIdleView').style.display, 'block');
+    assert.equal(app.stages[0].attributes['aria-current'], 'step');
+    assert.equal(app.stages[1].dataset.complete, undefined);
 });

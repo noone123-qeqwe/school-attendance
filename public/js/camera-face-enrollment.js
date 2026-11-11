@@ -26,7 +26,7 @@
         let views = {};
         let saving = false;
 
-        function setStatus(message, color = '#94a3b8') {
+        function setStatus(message, color = 'var(--text-muted)') {
             status.textContent = message;
             status.style.color = color;
         }
@@ -59,6 +59,8 @@
             canvas.style.display = 'none';
             [capture, retake, save, cancel].forEach(button => { visible(button, false); button.disabled = false; });
             start.disabled = false;
+            start.removeAttribute('aria-busy');
+            start.innerHTML = '<i class="bi bi-camera" aria-hidden="true"></i> Open camera';
             visible(start, true);
             if (done) visible(done, false);
             progress();
@@ -72,6 +74,8 @@
                 return;
             }
             start.disabled = true;
+            start.setAttribute('aria-busy', 'true');
+            start.textContent = 'Opening camera…';
             setStatus('Requesting camera access…');
             try {
                 const opened = await navigator.mediaDevices.getUserMedia({
@@ -110,6 +114,8 @@
             }
             const attempt = requestId;
             capture.disabled = true;
+            capture.setAttribute('aria-busy', 'true');
+            capture.textContent = 'Adjusting light…';
             lighting?.lock(true);
             if (lighting) await lighting.settle();
             if (attempt !== requestId || !stream) return;
@@ -120,6 +126,8 @@
                 canvas.getContext('2d', { alpha: false }).drawImage(video, 0, 0, canvas.width, canvas.height);
             } catch (_) {
                 capture.disabled = false;
+                capture.removeAttribute('aria-busy');
+                capture.textContent = 'Capture ' + poses[index][0] + ' view';
                 lighting?.lock(false);
                 setStatus('This camera frame could not be read. Please try again.', '#f87171');
                 return;
@@ -127,6 +135,8 @@
             canvas.toBlob(blob => {
                 if (attempt !== requestId) return;
                 capture.disabled = false;
+                capture.removeAttribute('aria-busy');
+                capture.textContent = 'Capture ' + poses[index][0] + ' view';
                 lighting?.lock(false);
                 if (!blob) {
                     setStatus('This frame could not be captured. Please try again.', '#f87171');
@@ -153,6 +163,8 @@
             const attempt = requestId;
             saving = true;
             [save, retake, cancel].forEach(button => { button.disabled = true; });
+            save.setAttribute('aria-busy', 'true');
+            save.textContent = 'Checking and saving…';
             setStatus('Checking all three face captures and saving securely…');
             const form = new FormData();
             poses.forEach(([pose]) => form.append('face_images[' + pose + ']', views[pose], pose + '.jpg'));
@@ -175,6 +187,8 @@
                 if (attempt !== requestId) return;
                 saving = false;
                 [save, retake, cancel].forEach(button => { button.disabled = false; });
+                save.removeAttribute('aria-busy');
+                save.textContent = 'Register face';
                 setStatus(error.message || 'Could not reach the server. Retry or retake the captures.', '#f87171');
             }
         });

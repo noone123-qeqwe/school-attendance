@@ -110,6 +110,16 @@ function updateProgressiveFeedback(pct, stateText) {
     }
 }
 
+function setBioRegistrationStage(stage) {
+    document.querySelectorAll('[data-bio-step]').forEach(step => {
+        const stepNumber = Number(step.dataset.bioStep);
+        if (stepNumber < stage) step.dataset.complete = 'true';
+        else delete step.dataset.complete;
+        if (stepNumber === stage) step.setAttribute('aria-current', 'step');
+        else step.removeAttribute('aria-current');
+    });
+}
+
 function startScanProgressAnimation() {
     clearInterval(bioScanProgressTimer);
     bioScanProgressTimer = null;
@@ -159,6 +169,7 @@ function cancelBiometricRegistration() {
     if (scanningView) scanningView.style.display = 'none';
     if (successView) successView.style.display = 'none';
     if (errorView) errorView.style.display = 'none';
+    setBioRegistrationStage(1);
 
     // Reset styles
     const faceScanFrame = document.getElementById('faceScanFrame');
@@ -431,6 +442,7 @@ async function beginFingerprintRegistration() {
     if (successView) successView.style.display = 'none';
     if (errorView) errorView.style.display = 'none';
     if (scanningView) scanningView.style.display = 'block';
+    setBioRegistrationStage(1);
 
     document.querySelectorAll('.fp-scan-frame, .face-scan-frame').forEach(el => el.classList.remove('bio-detected'));
 
@@ -568,6 +580,8 @@ async function beginFingerprintRegistration() {
             throw new Error('Biometric registration was cancelled.');
         }
 
+        setBioRegistrationStage(2);
+
         if (fpScanFrame) {
             fpScanFrame.classList.add('bio-detected');
         }
@@ -625,6 +639,7 @@ async function beginFingerprintRegistration() {
         }
 
         if (result.success) {
+            setBioRegistrationStage(3);
             if (scanningView) scanningView.style.display = 'none';
             if (successView) {
                 successView.style.display = 'block';

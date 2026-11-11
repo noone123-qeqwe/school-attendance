@@ -63,6 +63,9 @@ class CameraFaceEnrollmentTest extends TestCase
             ->assertSee('id="cameraFaceVideo"', false)
             ->assertSee('id="cameraFaceCaptureBtn" hidden', false)
             ->assertSee('id="cameraFaceSaveBtn" hidden', false)
+            ->assertSee('Capture three face views')
+            ->assertSee('Center your face')
+            ->assertSee('checked for quality, then encrypted for attendance matching', false)
             ->assertDontSee('id="topHeader"', false)
             ->assertDontSee('id="startBioBtn"', false);
 
@@ -73,6 +76,24 @@ class CameraFaceEnrollmentTest extends TestCase
         $this->assertSame(1, $xpath->query('//*[@id="cameraFaceLight"]//*[@data-light-toggle]')->length);
         $this->assertSame(1, $xpath->query('//*[@id="cameraFaceLight"]//label[@for="cameraFaceLight-level"]')->length);
         $this->assertSame(1, $xpath->query('//meta[@name="csrf-token"]')->length);
+    }
+
+    public function test_fingerprint_screen_explains_each_stage_and_shows_clear_registration_states(): void
+    {
+        $student = User::factory()->create(['role' => 'student']);
+
+        $this->actingAs($student)->get(route('settings.biometrics.fingerprint'))
+            ->assertOk()
+            ->assertSee('Fingerprint sign-in')
+            ->assertSee('Device-protected sign-in')
+            ->assertSee('Your fingerprint or face stays on your device.', false)
+            ->assertSee('data-bio-step="1"', false)
+            ->assertSee('data-bio-step="2"', false)
+            ->assertSee('data-bio-step="3"', false)
+            ->assertSee('id="bioScanningView"', false)
+            ->assertSee('id="bioSuccessView"', false)
+            ->assertSee('id="bioErrorView"', false)
+            ->assertSee('Registered devices');
     }
 
     public function test_registration_pages_require_a_student_session(): void
