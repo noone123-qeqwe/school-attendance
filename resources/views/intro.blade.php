@@ -232,63 +232,75 @@
             border-radius: 0 4px 4px 0;
         }
 
-        /* ── FADE OUT OVERLAY ── */
-        .fade-out {
-            position: fixed;
-            inset: 0;
-            background: #110A0A;
-            z-index: 999;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease-out;
-        }
-        .fade-out.active {
+        /* Keep a useful screen visible while the next document loads. */
+        [hidden] { display: none !important; }
+        .intro-leaving .branding {
+            top: 50%;
+            bottom: auto;
+            left: 50%;
+            right: auto;
+            width: min(88%, 560px);
+            text-align: center;
             opacity: 1;
-            pointer-events: all;
+            transform: translate(-50%, -50%);
+            animation: none;
+        }
+        .intro-leaving .branding h1 { overflow-wrap: anywhere; }
+        .intro-logo { display: block; margin: 0 auto 24px; object-fit: contain; }
+        .branding .intro-status { font-size: 1rem; line-height: 1.6; letter-spacing: 0; text-transform: none; }
+        .branding .intro-recovery { margin-top: 12px; font-size: .85rem; line-height: 1.6; letter-spacing: 0; text-transform: none; }
+        .intro-leaving .skip-btn { animation: none; opacity: 1; }
+        .skip-btn:focus-visible { outline: 2px solid #cfa46f; outline-offset: 4px; }
+        @media (prefers-reduced-motion: reduce) {
+            .branding, .skip-btn { animation: none; opacity: 1; }
+            .branding { transform: none; }
+            .intro-leaving .branding { transform: translate(-50%, -50%); }
         }
     </style>
 </head>
 <body>
 
     <!-- Video: Desktop intro = Desktop.mp4, Mobile intro = Mobile.mp4 -->
-    <video id="introVideo" autoplay muted playsinline preload="auto">
+    <video id="introVideo" data-skip-intro autoplay muted playsinline preload="auto">
         <source id="introVideoSrcMobile" src="{{ $mobileVideoUrl }}" type="video/mp4" media="(max-width: 768px), (orientation: portrait)">
         <source id="introVideoSrcDesktop" src="{{ $desktopVideoUrl }}" type="video/mp4" media="(min-width: 769px) and (orientation: landscape)">
         <source id="introVideoSrc" src="{{ $initialVideoSrc }}" type="video/mp4">
     </video>
 
     <!-- Cinematic Overlays -->
-    <div class="vignette"></div>
-    <div class="overlay"></div>
+    <div class="vignette" data-skip-intro></div>
+    <div class="overlay" data-skip-intro></div>
 
     <!-- Animated Branding -->
-    <div class="branding">
+    <div class="branding" data-skip-intro>
+        <img src="{{ asset('images/logo.png') }}" class="intro-logo" id="introLogo" alt="" width="96" height="96" hidden>
         <h1>{{ config('app.name', 'Smart Classroom') }}</h1>
-        <p>Intelligent Attendance</p>
+        <p id="introTagline">Intelligent Attendance</p>
+        <p class="intro-status" id="introStatus" role="status" aria-live="polite" hidden>{{ Auth::check() ? 'Opening your dashboard…' : 'Opening sign-in…' }}</p>
+        <p class="intro-recovery" id="introRecovery" hidden>The next page is taking longer than usual. Tap “Continue now” to try again.</p>
     </div>
 
     <!-- Progress bar -->
-    <div class="progress-bar-container">
+    <div class="progress-bar-container" data-skip-intro>
         <div class="progress-bar" id="progressBar"></div>
     </div>
 
     <!-- Skip button -->
-    <a href="{{ $destUrl }}" class="skip-btn" id="skipBtn" role="button" aria-label="Skip Intro Video">
-        <span>Skip Intro</span>
+    <a href="{{ $destUrl }}" class="skip-btn" id="skipBtn" aria-label="Skip Intro Video">
+        <span id="skipBtnLabel">Skip Intro</span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
     </a>
-
-    <!-- Fade out overlay -->
-    <div class="fade-out" id="fadeOut"></div>
 
     <script nonce="{{ csp_nonce() }}">
         const video       = document.getElementById('introVideo');
         const skipBtn     = document.getElementById('skipBtn');
         const destUrl     = @json($destUrl);
         const progressBar = document.getElementById('progressBar');
-        const fadeOut     = document.getElementById('fadeOut');
+        const status      = document.getElementById('introStatus');
+        const recovery    = document.getElementById('introRecovery');
+        const skipLabel   = document.getElementById('skipBtnLabel');
         const isMobileScreen = window.innerWidth <= 768 || 
                                window.screen.width <= 768 || 
                                (window.matchMedia && window.matchMedia('(max-width: 768px), (orientation: portrait)').matches) ||
@@ -296,6 +308,7 @@
         const INTRO_START_TIME = 0.0; // Play high-definition animation fully from the beginning
         let hasTransitioned = false;
         let hasInitialized = false;
+        let recoveryTimer = null;
 
         // Strict mapping: Desktop intro = Desktop.mp4, Mobile intro = Mobile.mp4
         const MOBILE_VIDEO  = '{{ $mobileVideoUrl }}';
@@ -333,35 +346,54 @@
         }, { passive: true });
 
         function goToNext(e) {
+            // After starting navigation, leave the real link available for a
+            // manual retry. Automatic media events must never restart the request.
+            if (hasTransitioned) return;
             if (e && typeof e.preventDefault === 'function') {
                 e.preventDefault();
             }
-            if (hasTransitioned) return;
             hasTransitioned = true;
+            document.body.classList.add('intro-leaving');
+            document.getElementById('introLogo').hidden = false;
+            document.getElementById('introTagline').hidden = true;
+            if (status) status.hidden = false;
+            if (skipLabel) skipLabel.textContent = 'Continue now';
+            if (skipBtn) skipBtn.setAttribute('aria-label', 'Continue to the next page');
 
-            if (fadeOut) {
-                fadeOut.classList.add('active');
+            // Release the video download so it does not compete with the page
+            // request on a slow mobile connection. The branded status stays visible.
+            if (video) {
+                video.hidden = true;
+                try {
+                    video.pause();
+                    video.removeAttribute('src');
+                    video.querySelectorAll('source').forEach(source => source.removeAttribute('src'));
+                    video.load();
+                } catch (error) {
+                    // A media failure must never prevent skipping the intro.
+                }
             }
-
-            window.location.href = destUrl;
-            setTimeout(() => {
-                window.location.replace(destUrl);
-            }, 50);
+            recoveryTimer = setTimeout(() => {
+                if (recovery) recovery.hidden = false;
+            }, 8000);
+            window.location.replace(destUrl);
         }
 
-        // 1. Skip button click & touch
+        // 1. One click handler covers mouse, touch, and keyboard activation.
         if (skipBtn) {
             skipBtn.addEventListener('click', goToNext);
-            skipBtn.addEventListener('touchend', goToNext);
         }
 
-        // 2. Click/Tap anywhere on screen to skip
+        // 2. Intro surfaces can skip, but links and PWA dialog controls keep
+        // their own behavior. This listener calls preventDefault and is not passive.
         document.addEventListener('click', (e) => {
-            goToNext(e);
-        }, { passive: true });
+            if (e.defaultPrevented || e.target?.closest('a, button, input, select, textarea, [role="dialog"]')) return;
+            if (e.target === document.body || e.target?.closest('[data-skip-intro]')) goToNext(e);
+        });
 
         // 3. Keyboard navigation (Space, Enter, Escape)
         document.addEventListener('keydown', (e) => {
+            if (e.defaultPrevented || (e.target !== document.body && e.target !== video)) return;
             if (['Space', 'Enter', 'Escape'].includes(e.code) || e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') {
                 goToNext(e);
             }
@@ -370,7 +402,7 @@
         // 4. Video Events & Playback Monitoring
         if (video) {
             const startSmoothPlayback = () => {
-                if (hasInitialized) return;
+                if (hasInitialized || hasTransitioned) return;
                 hasInitialized = true;
 
                 if (video.currentTime < INTRO_START_TIME) {
@@ -422,6 +454,8 @@
                 goToNext();
             }
         }, 12000);
+
+        window.addEventListener('pagehide', () => clearTimeout(recoveryTimer));
     </script>
 </body>
 </html>
