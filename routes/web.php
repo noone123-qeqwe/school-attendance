@@ -365,6 +365,7 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/my-classes/pdf', [PTController::class, 'myClassesPdf'])->name('student.classes.pdf');
     Route::get('/schedule', [App\Http\Controllers\Student\ScheduleController::class, 'index'])->name('student.schedule');
     Route::get('/student/attendance-calendar', [App\Http\Controllers\HomeController::class, 'attendanceCalendar'])->name('student.attendance.calendar');
+    Route::get('/student/dashboard-calendar-data', [App\Http\Controllers\HomeController::class, 'dashboardCalendarData'])->name('student.dashboard.calendar.data');
     Route::get('/student/calendar', [App\Http\Controllers\HomeController::class, 'calendar'])->name('student.calendar');
     Route::get('/student/calendar/data', [App\Http\Controllers\HomeController::class, 'calendarData'])->name('student.calendar.data');
     Route::get('/student/calendar/search-invitees', [App\Http\Controllers\HomeController::class, 'searchInvitees'])->name('student.calendar.search-invitees');

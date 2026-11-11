@@ -392,7 +392,7 @@ class WebAuthnController extends Controller
             }
             $creds = $user->webauthnCredentials()->get();
             if ($creds->isEmpty()) {
-                return response()->json(["success" => false, "code" => "NOT_REGISTERED", "message" => "No biometrics registered."], 404);
+                return response()->json(["success" => false, "code" => "NOT_REGISTERED", "user_exists" => true, "message" => "No biometrics registered."], 404);
             }
             $methods = [];
             $hasFp = false;
@@ -410,6 +410,14 @@ class WebAuthnController extends Controller
             if ($hasFp) $methods[] = 'fingerprint';
             if ($hasFace) $methods[] = 'face';
             if ($hasHw) $methods[] = 'device_lock';
+            if (!$hasHw) {
+                return response()->json([
+                    'success' => true,
+                    'requires_device_enrollment' => true,
+                    'identifier' => $user->student_number ?? $user->email ?? $identifier,
+                    'message' => 'An older camera-only face profile cannot be used for secure sign-in. Verify your password to enroll a device passkey instead.',
+                ]);
+            }
             return response()->json([
                 "success" => true,
                 "identifier" => $user->student_number ?? $user->email ?? $identifier,

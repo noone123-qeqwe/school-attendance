@@ -2299,6 +2299,36 @@ var fpArrow = document.getElementById('fpArrow');
 
 var bioAbortController = null;
 var isBioPending = false;
+var biometricRedirectStarted = false;
+
+function completeBiometricLogin(result) {
+    if (biometricRedirectStarted) return;
+    biometricRedirectStarted = true;
+    isBioPending = true;
+    if (fpLabel) fpLabel.textContent = '✓ Authenticated! Opening dashboard...';
+    if (fpHint) fpHint.textContent = 'Loading your dashboard';
+    if (fpIcon) fpIcon.className = 'bi bi-check-circle-fill text-success';
+    if (fpArrow) fpArrow.className = 'bi bi-check2 fp-row-arrow text-success';
+    if (fpRowBtn) {
+        fpRowBtn.disabled = true;
+        fpRowBtn.style.opacity = '1';
+        fpRowBtn.removeAttribute('title');
+    }
+
+    // Begin the navigation before optional account storage or native bridge
+    // calls. A slow device bridge must not hold up the dashboard request.
+    window.location.replace(result.redirect || '{{ route("home") }}');
+
+    if (result.user && result.user.identifier) {
+        try {
+            saveAccount({
+                identifier: result.user.identifier,
+                name: result.user.name,
+                role: result.user.role
+            });
+        } catch (e) {}
+    }
+}
 
 function getEffectiveRpId(serverRpId) {
     var hostname = window.location.hostname;
@@ -3099,6 +3129,7 @@ function handleSelectBiometricMethod(selectedMethod, identifier, opts) {
 
 // Handle biometric login button click
 async function handleBiometricLogin() {
+    if (biometricRedirectStarted) return;
     hideFpMessage();
 
     if (fpRowBtn && typeof fpRowBtn.blur === 'function') {
@@ -3185,7 +3216,9 @@ async function handleBiometricLogin() {
     var savedIds = savedAccounts.map(function(a) { return a.identifier; }).filter(Boolean);
 
     try {
-        var optRes = await fetch('{{ route("webauthn.login.options") }}', {
+        // Only discover methods here. The selected method obtains its fresh,
+        // single-use challenge in performBiometricLogin().
+        var optRes = await fetch('{{ route("webauthn.available.methods") }}', {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 
@@ -3201,7 +3234,6 @@ async function handleBiometricLogin() {
         });
 
         var opts = await optRes.json();
-        console.log('WebAuthn options response:', opts);
 
         if (opts.requires_device_enrollment) {
             resetBiometricButton();
@@ -3447,6 +3479,7 @@ function performNativeAndroidBiometricLogin(studentNumber) {
 }
 
 async function performBiometricLogin(studentNumber, selectedMethod) {
+    if (biometricRedirectStarted) return;
     studentNumber = (studentNumber || '').trim();
     selectedMethod = selectedMethod || { id: 'fingerprint', name: 'Biometric', icon: 'bi-fingerprint', uv: 'required' };
     var onDeviceMethod = selectedMethod.id === 'fingerprint' || selectedMethod.id === 'face';
@@ -3645,28 +3678,8 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
         
         var result = await loginRes.json();
 
-        if (result.success) {
-            if (fpLabel) fpLabel.textContent = '✓ Authenticated! Redirecting...';
-            if (fpHint) fpHint.textContent = 'Welcome back!';
-            if (fpIcon) fpIcon.className = 'bi bi-check-circle-fill text-success';
-            if (fpArrow) fpArrow.className = 'bi bi-check2 fp-row-arrow text-success';
-            if (fpRowBtn) fpRowBtn.style.opacity = '1';
-
-            if (result.user && result.user.identifier) {
-                try {
-                    saveAccount({
-                        identifier: result.user.identifier,
-                        name: result.user.name,
-                        role: result.user.role
-                    });
-                    if (idInput) {
-                        idInput.value = result.user.identifier;
-                        if (typeof updateAccountBanner === 'function') updateAccountBanner();
-                    }
-                } catch(e) {}
-            }
-            
-            window.location.replace(result.redirect || '{{ route("home") }}');
+        if (loginRes.ok && result.success) {
+            completeBiometricLogin(result);
         } else {
             resetBiometricButton();
 

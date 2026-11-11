@@ -4,121 +4,11 @@
 @section('content')
 
 @php
-    $calYear   = request('cal_year',  now()->year);
-    $calMonth  = request('cal_month', now()->month);
-    $calStart  = \Carbon\Carbon::create($calYear, $calMonth, 1);
-    $calEnd    = $calStart->copy()->endOfMonth();
-    $prevMonth = $calStart->copy()->subMonth();
-    $nextMonth = $calStart->copy()->addMonth();
-
-    $monthRecords = isset($records) ? $records->filter(fn($r) =>
-        \Carbon\Carbon::parse($r->date)->year  == $calYear &&
-        \Carbon\Carbon::parse($r->date)->month == $calMonth
-    ) : collect();
-
-    $dayRecordsMap = [];
-    foreach ($monthRecords as $r) {
-        $day = (int) \Carbon\Carbon::parse($r->date)->format('j');
-        $dayRecordsMap[$day][] = $r;
-    }
-
-    $eventsMap = $eventsMap ?? [];
-
-    $dayDotsMap = [];
-    for ($d = 1; $d <= $calEnd->day; $d++) {
-        $dots = [];
-        $dDateKey = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('Y-m-d');
-
-        // 1. Attendance dots (present, late, absent)
-        if (isset($dayRecordsMap[$d])) {
-            $statuses = collect($dayRecordsMap[$d])->pluck('status')->map(fn($s) => strtolower($s))->unique();
-            if ($statuses->contains('present')) $dots[] = 'present';
-            if ($statuses->contains('late'))    $dots[] = 'late';
-            if ($statuses->contains('absent'))  $dots[] = 'absent';
-        }
-
-        // 2. Exam, Event, and Holiday dots
-        if (isset($eventsMap[$dDateKey])) {
-            $eTypes = collect($eventsMap[$dDateKey])->pluck('type')->unique();
-            if ($eTypes->contains('exam'))    $dots[] = 'exam';
-            if ($eTypes->contains('event'))   $dots[] = 'event';
-            if ($eTypes->contains('holiday')) $dots[] = 'holiday';
-        }
-
-        if (!empty($dots)) {
-            $dayDotsMap[$d] = array_values(array_unique($dots));
-        }
-    }
-
-    $calendarJson = [];
-    foreach ($dayRecordsMap as $day => $recs) {
-        $dateKey = \Carbon\Carbon::create($calYear, $calMonth, $day)->format('Y-m-d');
-        $dayName = \Carbon\Carbon::parse($dateKey)->format('l');
-
-        $calendarJson[$dateKey] = collect($recs)->map(function($r) use ($dayName) {
-            $sched = null;
-            if ($r->subject && $r->subject->schedules) {
-                $sched = $r->subject->schedules->firstWhere('day', $dayName) 
-                      ?? $r->subject->schedules->first();
-            }
-
-            $schedStart = $sched ? \Carbon\Carbon::parse($sched->start_time)->format('g:i A') : null;
-            $schedEnd   = $sched ? \Carbon\Carbon::parse($sched->end_time)->format('g:i A') : null;
-            $schedText  = ($schedStart && $schedEnd) ? "{$schedStart} – {$schedEnd}" : 'Schedule TBA';
-
-            $clockInTime = $r->time_in 
-                ? \Carbon\Carbon::parse($r->time_in)->format('g:i A') 
-                : ($r->checked_in_at ? $r->checked_in_at->format('g:i A') : null);
-
-            $clockOutTime = $r->time_out 
-                ? \Carbon\Carbon::parse($r->time_out)->format('g:i A') 
-                : null;
-
-            $status = $r->status ? ucfirst(strtolower($r->status)) : 'Absent';
-            $clockInDisplay = $clockInTime ?? 'No clock-in';
-
-            $instructorName = $r->subject?->instructorUser?->name 
-                           ?? $r->subject?->instructor 
-                           ?? 'Instructor TBA';
-
-            $remarks = $r->excuse_note 
-                    ?? $r->excuseSubmission?->reason 
-                    ?? ($r->excused ? 'Excused Absence' : null);
-
-            return [
-                'id'             => $r->id,
-                'subject'        => $r->subject->name ?? $r->subject_name ?? $r->subject_code ?? 'Class',
-                'code'           => $r->subject_code ?? ($r->subject->code ?? ''),
-                'instructor'     => $instructorName,
-                'schedule'       => $schedText,
-                'schedule_start' => $schedStart,
-                'schedule_end'   => $schedEnd,
-                'status'         => $status,
-                'status_lower'   => strtolower($status),
-                'time_in'        => $clockInTime,
-                'clock_in'       => $clockInDisplay,
-                'time_out'       => $clockOutTime,
-                'remarks'        => $remarks,
-            ];
-        })->values()->toArray();
-    }
-
-    $distinctMonths = collect();
-
+    $calYear   = max(2000, min(2100, (int) request('cal_year', now()->year)));
+    $calMonth  = max(1, min(12, (int) request('cal_month', now()->month)));
     $today     = now()->day;
-    $todayFull = now()->toDateString();
     $isCurrentMonth = (now()->year == $calYear && now()->month == $calMonth);
-    $startDow  = $calStart->dayOfWeek;
-
-    $noClassDays = [];
-    for ($d = 1; $d <= $calEnd->day; $d++) {
-        if (\Carbon\Carbon::create($calYear, $calMonth, $d)->dayOfWeek === 0) {
-            $noClassDays[] = $d;
-        }
-    }
-    $isLatestMonth = $isCurrentMonth;
-
-    $totalRecords = isset($attendanceRecordCount) ? (int) $attendanceRecordCount : (isset($records) ? $records->count() : 0);
+    $totalRecords = (int) ($attendanceRecordCount ?? 0);
     $todayClassCount = isset($todaySchedule) ? $todaySchedule->count() : 0;
     $greetHour = now()->hour;
     $greeting = $greetHour < 12 ? 'Good Morning' : ($greetHour < 17 ? 'Good Afternoon' : 'Good Evening');
@@ -2222,8 +2112,11 @@
 </div>
 
 <script nonce="{{ csp_nonce() }}">
-var attCalendarData = @json($calendarJson);
-var eventsCalendarData = @json($eventsMap ?? []);
+// Calendar details load only when opened, keeping the first dashboard request light.
+var attCalendarData = {};
+var eventsCalendarData = {};
+var dashboardCalendarDataLoaded = false;
+var dashboardCalendarDataRequest = null;
 var allAttendanceRecords = [];
 let attendanceHistoryLoaded = false;
 let attendanceHistoryRequest = null;
@@ -2231,7 +2124,42 @@ let dayModalInstance = null;
 let recordsModalInstance = null;
 let currentSelectedDateKey = '{{ $calYear }}-{{ str_pad($calMonth, 2, '0', STR_PAD_LEFT) }}-{{ str_pad(($isCurrentMonth && $today ? $today : 14), 2, '0', STR_PAD_LEFT) }}';
 
+function loadDashboardCalendarData() {
+    if (dashboardCalendarDataLoaded) {
+        return Promise.resolve();
+    }
+    if (dashboardCalendarDataRequest) {
+        return dashboardCalendarDataRequest;
+    }
+    var url = '{{ route('student.dashboard.calendar.data') }}'
+        + '?year={{ $calYear }}&month={{ $calMonth }}';
+
+    dashboardCalendarDataRequest = fetch(url, {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+    })
+        .then(function(response) {
+            if (!response.ok) throw new Error('Dashboard calendar request failed');
+            return response.json();
+        })
+        .then(function(data) {
+            attCalendarData = data && data.attendance && typeof data.attendance === 'object'
+                ? data.attendance
+                : {};
+            eventsCalendarData = data && data.events && typeof data.events === 'object'
+                ? data.events
+                : {};
+            dashboardCalendarDataLoaded = true;
+        })
+        .finally(function() {
+            dashboardCalendarDataRequest = null;
+        });
+
+    return dashboardCalendarDataRequest;
+}
+
 function closeDaySummaryModal() {
+    currentSelectedDateKey = null;
     const modalEl = document.getElementById('daySummaryModal');
     if (modalEl) {
         if (dayModalInstance) {
@@ -2283,6 +2211,23 @@ function showAttDetail(dateKey, day) {
     const titleEl = document.getElementById('daySummaryTitle');
     const subtitleEl = document.getElementById('daySummarySubtitle');
     const contentEl = document.getElementById('daySummaryContent');
+
+    if (!dashboardCalendarDataLoaded) {
+        if (titleEl) titleEl.textContent = 'Loading calendar details';
+        if (subtitleEl) subtitleEl.innerHTML = '<span class="day-summary-chip chip-empty"><span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Preparing attendance and event details</span>';
+        if (contentEl) contentEl.innerHTML = '<div class="day-empty-card"><div class="day-empty-icon"><i class="bi bi-calendar2-week"></i></div><div style="font-weight:700;color:#f3ede4;">Loading this day…</div></div>';
+        openDaySummaryInspector();
+        loadDashboardCalendarData().then(function() {
+            if (dashboardCalendarDataLoaded && currentSelectedDateKey === dateKey) {
+                showAttDetail(dateKey, day);
+            }
+        }).catch(function() {
+            if (currentSelectedDateKey !== dateKey) return;
+            if (subtitleEl) subtitleEl.textContent = 'Calendar unavailable';
+            if (contentEl) contentEl.innerHTML = '<div class="day-empty-card" role="alert"><p>Could not load calendar details. Close this window and open the day again to retry.</p><a href="{{ route('student.attendance.calendar') }}" style="color:#ffd166;">Open attendance calendar</a></div>';
+        });
+        return;
+    }
 
     const dt = new Date(dateKey + 'T00:00:00');
     const formattedDate = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
@@ -2542,6 +2487,11 @@ function showAttDetail(dateKey, day) {
         if (contentEl) contentEl.innerHTML = fullHtml;
     }
 
+    openDaySummaryInspector();
+    if (window.triggerHaptic) window.triggerHaptic('light');
+}
+
+function openDaySummaryInspector() {
     const modalEl = document.getElementById('daySummaryModal');
     if (modalEl) {
         if (modalEl.parentNode !== document.body) {
@@ -2573,7 +2523,6 @@ function showAttDetail(dateKey, day) {
             }
         }
     }
-    if (window.triggerHaptic) window.triggerHaptic('light');
 }
 
 async function loadAttendanceRecordsForModal() {
@@ -2832,6 +2781,11 @@ function escapeHtml(str) {
 document.addEventListener('DOMContentLoaded', function() {
     // Relocate modals directly to document.body to escape any CSS transform/stacking context on mobile
     const dModal = document.getElementById('daySummaryModal');
+    if (dModal) {
+        dModal.addEventListener('hide.bs.modal', function() {
+            currentSelectedDateKey = null;
+        });
+    }
     if (dModal && dModal.parentNode !== document.body) {
         document.body.appendChild(dModal);
     }
@@ -2860,6 +2814,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
 });
 </script>
 

@@ -156,23 +156,10 @@ class HomeController extends Controller
         $alreadyClockedIn = $existingRecord && in_array($existingRecord->status, ['Present', 'Late']);
     }
 
-    // Load only the selected calendar month on the dashboard. The complete
-    // history is fetched on demand when the student opens the records dialog.
-    $calendarMonth = Carbon::create(
-        (int) request()->query('cal_year', $now->year),
-        (int) request()->query('cal_month', $now->month),
-        1
-    );
-    $calendarMonthStart = $calendarMonth->copy()->startOfMonth()->toDateString();
-    $calendarMonthEnd = $calendarMonth->copy()->endOfMonth()->toDateString();
-
-    $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission'])
-        ->where('user_id', $user->id)
-        ->whereBetween('date', [$calendarMonthStart, $calendarMonthEnd])
-        ->orderBy('date', 'desc')
-        ->orderBy('time_in', 'desc')
-        ->get();
-
+    // Calendar records and school events are useful detail, but they are not
+    // needed to render the first dashboard screen. They are loaded through a
+    // protected endpoint when opened so an authenticated
+    // student reaches the dashboard without waiting for extra relationships.
     // Aggregate once in the database, then build the small per-subject summary
     // in PHP instead of loading every historical row for this dashboard.
     $attendanceSummaryRows = Attendance::where('user_id', $user->id)
@@ -295,28 +282,14 @@ class HomeController extends Controller
     // (Already built above to calculate dynamic misses)
 
 
-    // 9. Check for holidays (cached for 30 minutes to eliminate WAN roundtrips)
-    $todayHoliday = \Illuminate\Support\Facades\Cache::remember("holiday_{$todayDate}", 1800, function() use ($now) {
-        return Holiday::getHoliday($now->toDateString());
-    });
-    $upcomingHolidays = \Illuminate\Support\Facades\Cache::remember("upcoming_holidays_{$todayDate}", 1800, function() use ($now) {
-        return Holiday::getUpcoming(
-            $now->copy()->addDay()->toDateString(),
-            $now->copy()->addDays(7)->toDateString()
-        )->take(3);
-    });
-
-    // 10. Fetch Active Warnings
+    // 9. Fetch active warnings. These are actionable and remain part of the
+    // initial response.
     $activeWarnings = \App\Models\Warning::where('user_id', $user->id)
         ->where('created_at', '>=', $now->copy()->subDays(14))
         ->orderBy('created_at', 'desc')
         ->get();
 
-    // 11. Build events calendar data (holidays + custom events + exams)
-    [$calendarEvents, $eventsMap] = $this->getStudentCalendarEventsMap($user);
-
-
-    // 13. Per-Subject Attendance Breakdown
+    // 10. Per-subject attendance breakdown
     $subjectStats = collect();
     foreach ($subjects as $subjectModel) {
         $subjectRecords = $subjectAttendanceStats->get($subjectModel->code);
@@ -353,23 +326,105 @@ class HomeController extends Controller
         'attendanceStatus',
         'alreadyClockedIn',
         'subjects',
-        'records',
         'attendanceRecordCount',
         'attendanceRate',
         'todaySubjects',
-        'todayHoliday',
-        'upcomingHolidays',
         'activeWarnings',
         'totalPresent',
         'totalLate',
         'totalAbsent',
         'streakCount',
         'todaySchedule',
-        'calendarEvents',
-        'eventsMap',
         'subjectStats'
     ));
 }
+
+    /**
+     * Return the detailed month data used by the dashboard's calendar dialog.
+     *
+     * Keeping this separate from index() lets the visible dashboard render
+     * before optional calendar relationships and events have finished loading.
+     */
+    public function dashboardCalendarData(Request $request)
+    {
+        $user = Auth::user();
+        abort_unless($user && $user->isStudent(), 403);
+
+        $now = now();
+        $validated = $request->validate([
+            'year' => ['sometimes', 'integer', 'between:2000,2100'],
+            'month' => ['sometimes', 'integer', 'between:1,12'],
+        ]);
+        $year = (int) ($validated['year'] ?? $now->year);
+        $month = (int) ($validated['month'] ?? $now->month);
+
+        $calendarMonth = Carbon::create($year, $month, 1);
+        $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission'])
+            ->where('user_id', $user->id)
+            ->whereBetween('date', [
+                $calendarMonth->copy()->startOfMonth()->toDateString(),
+                $calendarMonth->copy()->endOfMonth()->toDateString(),
+            ])
+            ->orderBy('date', 'desc')
+            ->orderBy('time_in', 'desc')
+            ->get();
+
+        [, $eventsMap] = $this->getStudentCalendarEventsMap($user, $year, $month, true);
+
+        return response()->json([
+            'attendance' => $this->formatDashboardCalendarRecords($records),
+            'events' => $eventsMap,
+        ], 200, ['Cache-Control' => 'private, no-store']);
+    }
+
+    /**
+     * Format the small calendar-dialog payload without requiring the dashboard
+     * Blade view to eagerly serialize every attendance relationship.
+     *
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    private function formatDashboardCalendarRecords(\Illuminate\Support\Collection $records): array
+    {
+        $calendar = [];
+
+        foreach ($records as $record) {
+            $date = Carbon::parse($record->date);
+            $dayName = $date->format('l');
+            $schedule = $record->subject?->schedules?->firstWhere('day', $dayName)
+                ?? $record->subject?->schedules?->first();
+
+            $scheduleStart = $schedule ? Carbon::parse($schedule->start_time)->format('g:i A') : null;
+            $scheduleEnd = $schedule ? Carbon::parse($schedule->end_time)->format('g:i A') : null;
+            $clockIn = $record->time_in
+                ? Carbon::parse($record->time_in)->format('g:i A')
+                : ($record->checked_in_at ? $record->checked_in_at->format('g:i A') : null);
+            $clockOut = $record->time_out ? Carbon::parse($record->time_out)->format('g:i A') : null;
+            $status = $record->status ? ucfirst(strtolower($record->status)) : 'Absent';
+            $dateKey = $date->toDateString();
+
+            $calendar[$dateKey][] = [
+                'id' => $record->id,
+                'subject' => $record->subject?->name ?? $record->subject_name ?? $record->subject_code ?? 'Class',
+                'code' => $record->subject_code ?? $record->subject?->code ?? '',
+                'instructor' => $record->subject?->instructorUser?->name
+                    ?? $record->subject?->instructor
+                    ?? 'Instructor TBA',
+                'schedule' => ($scheduleStart && $scheduleEnd) ? "{$scheduleStart} – {$scheduleEnd}" : 'Schedule TBA',
+                'schedule_start' => $scheduleStart,
+                'schedule_end' => $scheduleEnd,
+                'status' => $status,
+                'status_lower' => strtolower($status),
+                'time_in' => $clockIn,
+                'clock_in' => $clockIn ?? 'No clock-in',
+                'time_out' => $clockOut,
+                'remarks' => $record->excuse_note
+                    ?? $record->excuseSubmission?->reason
+                    ?? ($record->excused ? 'Excused Absence' : null),
+            ];
+        }
+
+        return $calendar;
+    }
 
     /**
      * Dedicated Attendance Calendar page.
@@ -397,7 +452,7 @@ class HomeController extends Controller
     /**
      * Build unified calendar events, exams, and holidays for a student.
      */
-    private function getStudentCalendarEventsMap(User $user, $calYear = null, $calMonth = null): array
+    private function getStudentCalendarEventsMap(User $user, $calYear = null, $calMonth = null, bool $monthOnly = false): array
     {
         $now = now();
         $year = (int) ($calYear ?? request('cal_year', $now->year));
@@ -406,8 +461,8 @@ class HomeController extends Controller
         $viewMonthStart = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
         $viewMonthEnd   = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
 
-        $rangeStart = min($viewMonthStart, $now->copy()->subDays(60)->toDateString());
-        $rangeEnd   = max($viewMonthEnd, $now->copy()->addDays(90)->toDateString());
+        $rangeStart = $monthOnly ? $viewMonthStart : min($viewMonthStart, $now->copy()->subDays(60)->toDateString());
+        $rangeEnd   = $monthOnly ? $viewMonthEnd : max($viewMonthEnd, $now->copy()->addDays(90)->toDateString());
 
         // 1. Fetch active holidays in range
         $holidays = Holiday::active()

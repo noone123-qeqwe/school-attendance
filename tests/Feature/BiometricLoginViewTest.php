@@ -387,15 +387,13 @@ PEM;
             }
             $cleanCode = implode("\n", $lines);
 
-            // Check syntax with node -e if node is available
-            $tmpFile = tempnam(sys_get_temp_dir(), 'login_script_') . '.js';
-            file_put_contents($tmpFile, $cleanCode);
+            // Pass code over stdin so Windows app-container temp paths do not
+            // prevent the Node child process from reading the script.
+            $process = new \Symfony\Component\Process\Process(['node', '--check']);
+            $process->setInput($cleanCode);
+            $process->run();
 
-            $command = 'node --check ' . escapeshellarg($tmpFile) . ' 2>&1';
-            exec($command, $output, $returnCode);
-            @unlink($tmpFile);
-
-            $this->assertSame(0, $returnCode, "Script index {$index} contains syntax error: " . implode("\n", $output));
+            $this->assertTrue($process->isSuccessful(), "Script index {$index} contains syntax error: " . $process->getErrorOutput());
         }
     }
 
@@ -521,5 +519,44 @@ PEM;
         $this->assertContains('fingerprint', $methods);
         $this->assertContains('face', $methods);
         $this->assertContains('device_lock', $methods);
+    }
+
+    public function test_method_discovery_preserves_the_challenge_until_a_real_sign_in_attempt(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+        \App\Models\WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'local-device-credential',
+            'public_key' => self::TEST_PUBLIC_KEY,
+            'biometric_type' => 'fingerprint',
+            'sign_count' => 0,
+        ]);
+
+        $this->withSession(['webauthn.auth_challenge' => 'existing-challenge'])
+            ->postJson(route('webauthn.available.methods'), ['identifier' => $user->student_number])
+            ->assertOk()
+            ->assertJsonPath('available_methods', ['fingerprint', 'device_lock'])
+            ->assertSessionHas('webauthn.auth_challenge', 'existing-challenge');
+
+        $options = $this->postJson(route('webauthn.login.options'), ['identifier' => $user->student_number])
+            ->assertOk();
+        $this->assertNotSame('existing-challenge', $options->json('challenge'));
+        $this->assertNotEmpty($options->json('challenge'));
+    }
+
+    public function test_method_discovery_requires_secure_enrollment_for_legacy_camera_profiles(): void
+    {
+        $user = User::factory()->create(['is_active' => true]);
+        \App\Models\WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'legacy-camera-profile',
+            'public_key' => json_encode([0.1, 0.2, 0.3]),
+            'biometric_type' => 'face',
+            'sign_count' => 0,
+        ]);
+
+        $this->postJson(route('webauthn.available.methods'), ['identifier' => $user->student_number])
+            ->assertOk()->assertJsonPath('requires_device_enrollment', true);
+        $this->assertGuest();
     }
 }
