@@ -1,6 +1,27 @@
 /* Layout adjustments shared by the student, teacher, parent, and admin portals.
    Keep visual tokens and colors in the existing theme stylesheets. */
 
+@media screen and (max-width: 768px) {
+    /* The outer shell owns the device safe areas; the page owns the 16px
+       reading gutter. Keeping these separate avoids double notch padding.
+       The main-content ID deliberately wins over legacy per-page resets. */
+    body #mainContent.main-content {
+        padding-left: var(--sal, env(safe-area-inset-left, 0px)) !important;
+        padding-right: var(--sar, env(safe-area-inset-right, 0px)) !important;
+    }
+
+    body #mainContent.main-content > .page-enter {
+        box-sizing: border-box;
+        min-width: 0;
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+
+    body #mainContent.main-content > .page-enter > * {
+        min-width: 0;
+    }
+}
+
 @media (min-width: 1024px) {
     .main-content > .page-enter {
         margin-inline: auto;

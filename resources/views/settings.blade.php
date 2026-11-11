@@ -3823,7 +3823,6 @@
 }
 
 @media (max-width: 767.98px) {
-    body.student-portal .main-content > .page-enter:has(.student-settings) { padding: 0 !important; }
     .student-settings { padding: 10px 12px calc(20px + env(safe-area-inset-bottom)) !important; }
     .student-settings .settings-command-header { gap: 12px; margin-bottom: 10px; padding: 14px; }
     .student-settings .stabs-wrapper { margin-bottom: 10px; }

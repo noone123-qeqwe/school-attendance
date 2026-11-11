@@ -57,6 +57,7 @@
 .student-settings-detail-heading, .sp.student-settings[data-student-settings] { scroll-margin-top: 88px; }
 .student-settings-detail-heading h2 { margin: 0 0 6px; font-size: 1.35rem; font-weight: 700; color: var(--text-primary); letter-spacing: -.025em; }
 .student-settings-detail-heading p { color: var(--text-muted); font-size: .87rem; line-height: 1.6; margin: 0; max-width: 62ch; }
+.student-settings-detail-heading :is(h2, p) { overflow-wrap: anywhere; }
 .student-settings-back { display: none; }
 .sp.student-settings[data-student-settings] [hidden] { display: none !important; }
 .sp.student-settings[data-student-settings] .spanel { animation: none !important; }
@@ -125,7 +126,7 @@
     .sp.student-settings[data-student-view="overview"] .settings-main-content { display: none !important; }
     .sp.student-settings:not([data-student-view="overview"]) .student-settings-menu,
     .sp.student-settings:not([data-student-view="overview"]) .student-settings-heading { display: none !important; }
-    .student-settings-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 0 0 18px -6px; padding: 8px 6px; border: 0; background: transparent; color: var(--gold-primary); font-size: .87rem; font-weight: 600; }
+    .student-settings-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 0 0 18px; padding: 8px 0; border: 0; background: transparent; color: var(--gold-primary); font-size: .87rem; font-weight: 600; }
     .student-settings-detail-heading { margin-bottom: 22px; }
     .student-settings-detail-heading h2 { font-size: 1.4rem !important; line-height: 1.3; }
     .sp.student-settings[data-student-settings] .sc-head { padding: 18px 18px 14px !important; }

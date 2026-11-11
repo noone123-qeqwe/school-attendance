@@ -10,6 +10,38 @@ class ResponsiveLayoutSafeAreasTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_role_pages_share_the_screen_edge_spacing_layer(): void
+    {
+        $pages = [
+            'student' => ['/home', '/settings', '/profile', '/attendance/records'],
+            'teacher' => ['/teacher/dashboard', '/teacher/profile', '/teacher/notifications'],
+            'parent' => ['/parent/dashboard', '/parent/profile', '/parent/notifications'],
+            'admin' => ['/admin/dashboard', '/admin/profile', '/admin/settings'],
+        ];
+
+        foreach ($pages as $role => $urls) {
+            $user = User::factory()->create(['role' => $role, 'admin_sub_role' => $role === 'admin' ? 'super_admin' : null]);
+            $this->actingAs($user);
+            foreach ($urls as $url) {
+                $response = $this->get($url);
+                $this->assertSame(200, $response->status(), "{$role}: {$url} must render.");
+                $document = new \DOMDocument();
+                @$document->loadHTML($response->getContent());
+                $xpath = new \DOMXPath($document);
+                $this->assertSame(1, $xpath->query('//*[@id="mainContent"]/*[contains(concat(" ", normalize-space(@class), " "), " page-enter ")]')->length, $url);
+                $this->assertSame(1, $xpath->query('//link[contains(@href,"portal-layout-refinements.css?v=")]')->length, $url);
+            }
+        }
+    }
+
+    public function test_settings_does_not_cancel_the_outer_page_gutter(): void
+    {
+        $source = file_get_contents(resource_path('views/settings.blade.php'));
+        $this->assertStringNotContainsString('.page-enter:has(.student-settings) { padding: 0 !important; }', $source);
+        $styles = file_get_contents(public_path('css/student-settings.css'));
+        $this->assertStringNotContainsString('margin: 0 0 18px -6px', $styles);
+    }
+
     public function test_login_interface_has_dynamic_viewport_and_safe_area_insets(): void
     {
         $response = $this->get(route('login'));
