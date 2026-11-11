@@ -53,6 +53,8 @@ function selectBiometricMethod(method) {
 
     // 4. Update Step 2 title & CTA button text
     const displaySpan = document.getElementById('selectedMethodDisplay');
+    const methodHelper = document.getElementById('selectedMethodHelper');
+    const stepTitle = document.getElementById('bioStep2Title');
     const startBtn = document.getElementById('startBioBtn');
     if (displaySpan) {
         if (method === 'fingerprint') {
@@ -63,6 +65,12 @@ function selectBiometricMethod(method) {
             displaySpan.style.color = '#38bdf8';
         }
     }
+    if (methodHelper) {
+        methodHelper.textContent = method === 'face'
+            ? '— Confirm with your device. A PIN may be offered.'
+            : '— Follow the device prompt; a screen lock may be offered.';
+    }
+    if (stepTitle) stepTitle.textContent = method === 'face' ? 'Confirm face unlock on this device' : 'Confirm fingerprint on this device';
     if (startBtn) {
         if (method === 'fingerprint') {
             startBtn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Continue to Register Fingerprint';
@@ -70,7 +78,7 @@ function selectBiometricMethod(method) {
             startBtn.style.background = '';
             startBtn.style.color = '';
         } else {
-            startBtn.innerHTML = '<i class="bi bi-person-bounding-box me-2"></i>Register Device Passkey';
+            startBtn.innerHTML = '<i class="bi bi-person-bounding-box me-2"></i>Continue with Face Sign-In';
             startBtn.className = 'sbtn bio-primary-cta';
             startBtn.style.background = 'linear-gradient(135deg, #0284c7, #0ea5e9)';
             startBtn.style.color = '#ffffff';
@@ -120,26 +128,38 @@ function setBioRegistrationStage(stage) {
     });
 }
 
+function focusBiometricHeading(element) {
+    if (!element) return;
+    element.setAttribute('tabindex', '-1');
+    element.focus({ preventScroll: true });
+}
+
 function startScanProgressAnimation() {
     clearInterval(bioScanProgressTimer);
     bioScanProgressTimer = null;
     if (selectedBioMethod === 'fingerprint') {
-        updateProgressiveFeedback(25, 'Sensor ready — place finger on device sensor...');
+        updateProgressiveFeedback(25, 'Waiting for secure device prompt…');
         const pctEl = document.getElementById('fpPctLabel');
-        if (pctEl) pctEl.textContent = 'Ready';
+        if (pctEl) pctEl.textContent = 'Waiting';
         const titleEl = document.getElementById('fpScanningTitle');
         const subEl = document.getElementById('fpStatusSub');
-        if (titleEl) titleEl.textContent = 'Touch Fingerprint Sensor';
-        if (subEl) subEl.textContent = 'Place your finger on your device sensor or confirm the prompt';
+        if (titleEl) titleEl.textContent = 'Confirm on your device';
+        if (subEl) subEl.textContent = 'Follow the secure prompt. Your device may ask for a fingerprint or screen lock.';
     } else {
-        updateProgressiveFeedback(25, 'Waiting for Face ID or Windows Hello...');
+        updateProgressiveFeedback(25, 'Waiting for Face ID or Windows Hello…');
+        const pctEl = document.getElementById('facePctLabel');
+        const titleEl = document.getElementById('faceScanningTitle');
+        const subEl = document.getElementById('faceStatusSub');
+        if (pctEl) pctEl.textContent = 'Waiting';
+        if (titleEl) titleEl.textContent = 'Confirm face unlock on your device';
+        if (subEl) subEl.textContent = 'Complete the secure device prompt. A PIN may be offered.';
     }
 }
 
 function triggerBiometricDetected() {
     clearInterval(bioScanProgressTimer);
     bioScanProgressTimer = null;
-    updateProgressiveFeedback(100, selectedBioMethod === 'fingerprint' ? 'Device verified! Finalizing...' : 'Device face sign-in verified! Finalizing...');
+    updateProgressiveFeedback(100, 'Device sign-in verified! Finalizing…');
 
     const frame = selectedBioMethod === 'fingerprint'
         ? document.querySelector('.fp-scan-frame')
@@ -170,6 +190,9 @@ function cancelBiometricRegistration() {
     if (successView) successView.style.display = 'none';
     if (errorView) errorView.style.display = 'none';
     setBioRegistrationStage(1);
+    if (document.visibilityState !== 'hidden') {
+        focusBiometricHeading(document.getElementById('startBioBtn'));
+    }
 
     // Reset styles
     const faceScanFrame = document.getElementById('faceScanFrame');
@@ -209,29 +232,55 @@ async function loadDevices() {
     const badge = document.getElementById('deviceCountBadge');
     const badgeFp = document.getElementById('statusBadgeFingerprint');
     const badgeFace = document.getElementById('statusBadgeFace');
+    if (!list) return;
 
-    if (!window.PublicKeyCredential) {
+    const webAuthnAvailable = Boolean(window.isSecureContext && window.PublicKeyCredential);
+    if (!webAuthnAvailable) {
         if (badge) { badge.textContent = !window.isSecureContext ? 'Requires HTTPS' : 'Unsupported'; badge.style.color = '#f87171'; }
         if (badgeFp) { badgeFp.textContent = 'Unavailable'; badgeFp.className = 'bio-status-pill not-reg'; }
         if (badgeFace) { badgeFace.textContent = 'Unavailable'; badgeFace.className = 'bio-status-pill not-reg'; }
+    } else if (badge) {
+        badge.textContent = 'Checking registered devices…';
+        badge.style.color = '#b39b82';
     }
 
+    list.setAttribute('aria-busy', 'true');
+    list.innerHTML = '';
+    const loadingState = document.createElement('div');
+    loadingState.className = 'device-list-loading';
+    loadingState.setAttribute('role', 'status');
+    loadingState.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:10px;min-height:72px;padding:16px;border:1px solid rgba(207,164,111,.18);border-radius:12px;background:rgba(207,164,111,.04);color:#b39b82;font-size:.86rem;';
+    const loadingIcon = document.createElement('span');
+    loadingIcon.className = 'biometric-spinner';
+    loadingIcon.style.cssText = 'flex:none;width:16px;height:16px;border:2px solid rgba(207,164,111,.3);border-top-color:#cfa46f;border-radius:50%;';
+    loadingIcon.setAttribute('aria-hidden', 'true');
+    const loadingText = document.createElement('span');
+    loadingText.textContent = 'Checking your registered devices…';
+    loadingState.appendChild(loadingIcon);
+    loadingState.appendChild(loadingText);
+    list.appendChild(loadingState);
+
     try {
-        const res = await fetch('{{ route("webauthn.devices") }}');
+        const res = await fetch('{{ route("webauthn.devices") }}', {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' }
+        });
+        if (!res.ok) throw new Error('Device list request failed.');
         const devices = await res.json();
-        if (!list) return;
+        if (!Array.isArray(devices)) throw new Error('Device list response was invalid.');
 
         list.innerHTML = '';
+        list.removeAttribute('aria-busy');
 
-        const hasFp = Array.isArray(devices) && devices.some(d => (d.biometric_type || 'fingerprint') === 'fingerprint');
-        const hasFace = Array.isArray(devices) && devices.some(d => d.biometric_type === 'face' && d.is_secure_face_credential);
-        const hasLegacyFace = Array.isArray(devices) && devices.some(d => d.biometric_type === 'face' && !d.is_secure_face_credential);
+        const hasFp = devices.some(d => (d.biometric_type || 'fingerprint') === 'fingerprint');
+        const hasFace = devices.some(d => d.biometric_type === 'face' && d.is_secure_face_credential);
+        const hasLegacyFace = devices.some(d => d.biometric_type === 'face' && !d.is_secure_face_credential);
 
-        if (badgeFp) {
+        if (badgeFp && webAuthnAvailable) {
             badgeFp.textContent = hasFp ? 'Active' : 'Not Registered';
             badgeFp.className = 'bio-status-pill ' + (hasFp ? 'reg-active' : 'not-reg');
         }
-        if (badgeFace) {
+        if (badgeFace && webAuthnAvailable) {
             badgeFace.textContent = hasFace ? 'Active' : (hasLegacyFace ? 'Re-enroll' : 'Not Registered');
             badgeFace.className = 'bio-status-pill ' + (hasFace ? 'reg-active' : 'not-reg');
         }
@@ -292,6 +341,7 @@ async function loadDevices() {
                     </button>`;
                 div.querySelector('[data-device-name]').textContent = d.name || d.device_name || (isFace ? 'Face Recognition Credential' : 'Fingerprint Credential');
                 const removeButton = div.querySelector('.device-remove-btn');
+                removeButton.setAttribute('aria-label', 'Remove ' + (d.name || d.device_name || 'registered device'));
                 removeButton.addEventListener('click', () => removeDevice(d.credential_id, removeButton));
                 list.appendChild(div);
             });
@@ -314,7 +364,47 @@ async function loadDevices() {
         }
     } catch(e) {
         console.error('Failed to load biometric devices', e);
-        if (badge) badge.textContent = 'Could not load registered devices. Refresh to try again.';
+        list.innerHTML = '';
+        list.removeAttribute('aria-busy');
+        if (webAuthnAvailable) {
+            if (badgeFp) {
+                badgeFp.textContent = 'Unable to check';
+                badgeFp.className = 'bio-status-pill failed';
+            }
+            if (badgeFace) {
+                badgeFace.textContent = 'Unable to check';
+                badgeFace.className = 'bio-status-pill failed';
+            }
+        }
+        if (badge) {
+            badge.textContent = 'Could not load devices';
+            badge.style.color = '#fca5a5';
+            badge.style.borderColor = 'rgba(248,113,113,.3)';
+            badge.style.background = 'rgba(248,113,113,.08)';
+        }
+        const errorState = document.createElement('div');
+        errorState.className = 'device-list-error';
+        errorState.setAttribute('role', 'alert');
+        errorState.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 14px;text-align:center;border:1px solid rgba(248,113,113,.25);border-radius:12px;background:rgba(248,113,113,.06);color:#f3e7cd;';
+        const errorText = document.createElement('span');
+        errorText.textContent = 'We couldn’t load your registered devices. Check your connection and try again.';
+        const retryButton = document.createElement('button');
+        retryButton.type = 'button';
+        retryButton.className = 'device-load-retry';
+        retryButton.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:8px 14px;border:1px solid rgba(207,164,111,.38);border-radius:9px;background:rgba(207,164,111,.12);color:#f3e7cd;font:inherit;font-weight:650;cursor:pointer;';
+        retryButton.innerHTML = '<i class="bi bi-arrow-repeat" aria-hidden="true"></i> Try again';
+        retryButton.addEventListener('click', function() {
+            retryButton.disabled = true;
+            retryButton.textContent = 'Checking again…';
+            if (badge) {
+                badge.setAttribute('tabindex', '-1');
+                badge.focus({ preventScroll: true });
+            }
+            return loadDevices();
+        });
+        errorState.appendChild(errorText);
+        errorState.appendChild(retryButton);
+        list.appendChild(errorState);
     }
 }
 
@@ -323,7 +413,8 @@ async function removeDevice(credentialId, btn) {
     try {
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Removing...';
+            btn.setAttribute('aria-busy', 'true');
+            btn.textContent = 'Removing…';
         }
         const res = await fetch('{{ route("webauthn.remove") }}', {
             method: 'DELETE',
@@ -331,6 +422,9 @@ async function removeDevice(credentialId, btn) {
             body: JSON.stringify({ credential_id: credentialId })
         });
         const data = await res.json();
+        if (!res.ok || data.success === false) {
+            throw new Error(data.message || 'Could not remove this sign-in method. Please try again.');
+        }
         await loadDevices();
         if (typeof showToast === 'function') {
             showToast(data.message || 'Biometric credential removed.', 'info');
@@ -339,8 +433,12 @@ async function removeDevice(credentialId, btn) {
         console.error('Failed to remove biometric device', err);
         if (btn) {
             btn.disabled = false;
+            btn.removeAttribute('aria-busy');
             btn.innerHTML = '<i class="bi bi-trash3 me-1"></i>Remove';
         }
+        const badge = document.getElementById('deviceCountBadge');
+        if (typeof showToast === 'function') showToast(err.message || 'Could not remove this sign-in method. Please try again.', 'error');
+        else if (badge) badge.textContent = 'Could not remove device. Try again.';
     }
 }
 
@@ -425,6 +523,7 @@ async function beginFingerprintRegistration() {
             if (errorTitle) errorTitle.textContent = 'HTTPS Connection Required';
             if (errorDesc) errorDesc.textContent = 'Device biometric sign-in requires HTTPS or localhost. On mobile Wi-Fi, open the app through its secure HTTPS address.';
         }
+        focusBiometricHeading(errorTitle);
         return;
     }
 
@@ -435,6 +534,7 @@ async function beginFingerprintRegistration() {
             if (errorTitle) errorTitle.textContent = 'Browser Unsupported';
             if (errorDesc) errorDesc.innerHTML = 'Your current browser does not support WebAuthn biometric credentials. Please use <strong>Google Chrome</strong>, <strong>Microsoft Edge</strong>, or <strong>Apple Safari</strong>.';
         }
+        focusBiometricHeading(errorTitle);
         return;
     }
 
@@ -442,7 +542,7 @@ async function beginFingerprintRegistration() {
     if (successView) successView.style.display = 'none';
     if (errorView) errorView.style.display = 'none';
     if (scanningView) scanningView.style.display = 'block';
-    setBioRegistrationStage(1);
+    setBioRegistrationStage(2);
 
     document.querySelectorAll('.fp-scan-frame, .face-scan-frame').forEach(el => el.classList.remove('bio-detected'));
 
@@ -457,13 +557,14 @@ async function beginFingerprintRegistration() {
     }
     const fpScanningTitle = document.getElementById(registrationType === 'face' ? 'faceScanningTitle' : 'fpScanningTitle');
     const fpStatusSub = document.getElementById(registrationType === 'face' ? 'faceStatusSub' : 'fpStatusSub');
-    if (fpScanningTitle) fpScanningTitle.textContent = registrationType === 'face' ? 'Waiting for Face ID / Windows Hello' : 'Touch Fingerprint Sensor';
+    if (fpScanningTitle) fpScanningTitle.textContent = registrationType === 'face' ? 'Confirm face unlock on your device' : 'Confirm on your device';
     if (fpStatusSub) fpStatusSub.textContent = registrationType === 'face'
-        ? 'Complete the protected device prompt. Your device may offer a PIN instead of face verification.'
-        : 'Place your finger on the sensor or confirm the device prompt.';
-    updateProgressiveFeedback(25, registrationType === 'face' ? 'Waiting for device face sign-in prompt...' : 'Sensor ready — waiting for biometric prompt...');
+        ? 'Complete the secure prompt. A PIN may be offered by your device.'
+        : 'Follow the secure prompt. Your device may ask for a fingerprint or screen lock.';
+    updateProgressiveFeedback(25, registrationType === 'face' ? 'Waiting for device confirmation…' : 'Waiting for secure device prompt…');
     const fpPctLabel = document.getElementById(registrationType === 'face' ? 'facePctLabel' : 'fpPctLabel');
-    if (fpPctLabel) fpPctLabel.textContent = 'Ready';
+    if (fpPctLabel) fpPctLabel.textContent = 'Waiting';
+    focusBiometricHeading(fpScanningTitle);
 
     const controller = new AbortController();
     bioAbortController = controller;
@@ -580,12 +681,12 @@ async function beginFingerprintRegistration() {
             throw new Error('Biometric registration was cancelled.');
         }
 
-        setBioRegistrationStage(2);
+        setBioRegistrationStage(3);
 
         if (fpScanFrame) {
             fpScanFrame.classList.add('bio-detected');
         }
-        if (fpScanningTitle) fpScanningTitle.textContent = registrationType === 'face' ? 'Device Verified ✓' : 'Fingerprint Verified ✓';
+        if (fpScanningTitle) fpScanningTitle.textContent = 'Device Verified ✓';
         if (fpStatusSub) fpStatusSub.textContent = 'Device verification complete. Registering credential...';
         triggerBiometricDetected();
 
@@ -635,17 +736,19 @@ async function beginFingerprintRegistration() {
                 if (errorTitle) errorTitle.textContent = 'Biometric Already Registered';
                 if (errorDesc) errorDesc.textContent = result.message || 'This device credential is already registered on your account.';
             }
+            focusBiometricHeading(errorTitle);
             return;
         }
 
         if (result.success) {
-            setBioRegistrationStage(3);
+            setBioRegistrationStage(4);
             if (scanningView) scanningView.style.display = 'none';
             if (successView) {
                 successView.style.display = 'block';
                 if (successTitle) successTitle.textContent = registrationType === 'face' ? 'Face Sign-in Registered!' : 'Fingerprint Registered Successfully!';
                 if (successDesc) successDesc.textContent = result.message || 'Your device credential is linked to your account.';
             }
+            focusBiometricHeading(successTitle);
             await loadDevices();
         } else {
             if (scanningView) scanningView.style.display = 'none';
@@ -654,6 +757,7 @@ async function beginFingerprintRegistration() {
                 if (errorTitle) errorTitle.textContent = 'Registration Incomplete';
                 if (errorDesc) errorDesc.textContent = result.message || 'The server could not verify and save the biometric enrollment.';
             }
+            focusBiometricHeading(errorTitle);
         }
     } catch(err) {
         if (controller.signal.aborted) return;
@@ -664,6 +768,7 @@ async function beginFingerprintRegistration() {
         if (err.name === 'AbortError') {
             if (scanningView) scanningView.style.display = 'none';
             if (idleView) idleView.style.display = 'block';
+            focusBiometricHeading(document.getElementById('startBioBtn'));
             return;
         }
 
@@ -684,6 +789,7 @@ async function beginFingerprintRegistration() {
                 if (errorDesc) errorDesc.textContent = err.message || 'Device verification could not be completed. Check your device sign-in settings and try again.';
             }
         }
+        focusBiometricHeading(errorTitle);
     } finally {
         if (bioAbortController === controller) bioAbortController = null;
     }

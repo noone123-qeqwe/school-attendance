@@ -1919,6 +1919,9 @@
     color: #94a3b8;
     margin-top: 2px;
 }
+@keyframes biometric-spin { to { transform: rotate(360deg); } }
+.sec-group-panel .biometric-spinner { animation: biometric-spin .8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .sec-group-panel .biometric-spinner { animation: none; } }
 
 /* Method Selection Grid */
 .bio-method-grid {
@@ -4427,9 +4430,9 @@
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
                             <div class="sc-title">Biometrics Verification</div>
-                            <span class="sec-badge sec-badge-green"><i class="bi bi-patch-check-fill"></i> FIDO2 / WebAuthn Active</span>
+                            <span class="sec-badge sec-badge-green"><i class="bi bi-patch-check-fill"></i> WebAuthn security</span>
                         </div>
-                        <div class="sc-sub">Manage enterprise biometric authentication such as hardware fingerprint or facial recognition for instant passwordless login and verified clock-in</div>
+                        <div class="sc-sub">Register a camera-based face profile for attendance, or set up device-protected sign-in with a fingerprint, face unlock, or screen lock.</div>
                     </div>
                 </div>
                 <div class="sc-body">
@@ -4462,14 +4465,14 @@
                         <div class="bio-section-title-wrap">
                             <span class="bio-step-badge">Step 1</span>
                             <div>
-                                <div class="bio-step-title">{{ $user->isStudent() ? 'Fingerprint sign-in' : 'Choose Biometric Authentication Method' }}</div>
-                                <div class="bio-step-subtitle">{{ $user->isStudent() ? 'Register the secure credential on the device you use to sign in.' : 'Select ONE preferred biometric method to register for passwordless login and QR clock-in:' }}</div>
+                                <div class="bio-step-title">{{ $user->isStudent() ? 'Fingerprint sign-in' : 'Choose a device sign-in method' }}</div>
+                                <div class="bio-step-subtitle">{{ $user->isStudent() ? 'Register the secure credential on the device you use to sign in.' : 'Your device verifies you locally. It may offer a fingerprint, face unlock, or screen lock.' }}</div>
                             </div>
                         </div>
 
                         <div class="bio-method-grid">
                             <!-- Option 1: Fingerprint -->
-                            <div class="bio-method-card selected" id="methodCardFp" data-method="fingerprint" tabindex="0" role="button" aria-pressed="true" onclick="selectBiometricMethod('fingerprint')" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('fingerprint')">
+                            <div class="bio-method-card selected" id="methodCardFp" data-method="fingerprint" tabindex="0" role="button" aria-pressed="true" onclick="selectBiometricMethod('fingerprint')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectBiometricMethod('fingerprint')}">
                                 <div class="bio-card-radio">
                                     <div class="bio-radio-inner">
                                         <i class="bi bi-check-lg"></i>
@@ -4484,7 +4487,7 @@
                                         <span class="bio-status-pill not-reg" id="statusBadgeFingerprint">Checking...</span>
                                     </div>
                                     <p class="bio-method-desc">
-                                        Use your built-in fingerprint sensor when configured. Your device may also ask for a PIN.
+                                        Use your built-in fingerprint sensor when available. Your device may also offer face unlock or a PIN.
                                     </p>
                                     <div class="bio-method-meta">
                                         <span class="bio-spec-chip"><i class="bi bi-shield-check" style="color:#34d399;"></i> WebAuthn</span>
@@ -4496,7 +4499,7 @@
 
                             <!-- Option 2: Device face sign-in -->
                             @if(!$user->isStudent())
-                            <div class="bio-method-card" id="methodCardFace" data-method="face" tabindex="0" role="button" aria-pressed="false" onclick="selectBiometricMethod('face')" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('face')">
+                            <div class="bio-method-card" id="methodCardFace" data-method="face" tabindex="0" role="button" aria-pressed="false" onclick="selectBiometricMethod('face')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectBiometricMethod('face')}">
                                 <div class="bio-card-radio">
                                     <div class="bio-radio-inner">
                                         <i class="bi bi-check-lg"></i>
@@ -4507,11 +4510,11 @@
                                 </div>
                                 <div class="bio-method-info">
                                     <div class="bio-method-header">
-                                        <span class="bio-method-name">Device passkey (Face ID / Windows Hello)</span>
+                                        <span class="bio-method-name">Device face unlock</span>
                                         <span class="bio-status-pill not-reg" id="statusBadgeFace">Checking...</span>
                                     </div>
                                     <p class="bio-method-desc">
-                                        This enrolls a device passkey and uses whatever verification your device supports. For camera-based attendance face registration, use the camera section above.
+                                        This creates a device passkey and uses Face ID, Windows Hello, or another supported device check. It does not create a camera face profile for attendance.
                                     </p>
                                     <div class="bio-method-meta">
                                         <span class="bio-spec-chip"><i class="bi bi-eye" style="color:#38bdf8;"></i> On-device</span>
@@ -4529,8 +4532,8 @@
                         <div class="bio-section-title-wrap">
                             <span class="bio-step-badge">Step 2</span>
                             <div>
-                                <div class="bio-step-title" id="bioStep2Title">Biometric Sensor Capture</div>
-                                <div class="bio-step-subtitle" id="bioStep2Subtitle">Selected: <strong id="selectedMethodDisplay" style="color:#34d399;">Fingerprint</strong> — Ready to register this device</div>
+                                <div class="bio-step-title" id="bioStep2Title">Confirm this device</div>
+                                <div class="bio-step-subtitle" id="bioStep2Subtitle">Selected method: <strong id="selectedMethodDisplay" style="color:#34d399;">Fingerprint</strong> <span id="selectedMethodHelper">— Follow your device prompt to finish.</span></div>
                             </div>
                         </div>
 
@@ -4547,8 +4550,8 @@
                                             <div class="bio-radar-ring delay-1"></div>
                                             <i class="bi bi-fingerprint bio-idle-sensor-icon"></i>
                                         </div>
-                                        <div class="bio-preview-title">Register Fingerprint Authentication</div>
-                                        <div class="bio-preview-sub">Click the button below to start the hardware fingerprint enrollment for this account.</div>
+                                        <div class="bio-preview-title">Add fingerprint sign-in</div>
+                                        <div class="bio-preview-sub">Continue to register a secure device key. Your device may ask for a fingerprint, face unlock, or screen lock.</div>
                                     </div>
 
                                     <!-- Face Idle Graphic -->
@@ -4562,8 +4565,8 @@
                                                 <i class="bi bi-person-bounding-box bio-idle-face-icon"></i>
                                             </div>
                                         </div>
-                                        <div class="bio-preview-title">Register a device passkey</div>
-                                        <div class="bio-preview-sub">Confirm in your device prompt. Verification stays on the device; your device may offer a PIN.</div>
+                                        <div class="bio-preview-title">Use device face unlock</div>
+                                        <div class="bio-preview-sub">Confirm in the secure prompt. This creates a device sign-in key, not an attendance face profile.</div>
                                     </div>
                                 </div>
 

@@ -102,6 +102,7 @@ class FaceRecognitionRegistrationTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user)->get(route('settings'))
             ->assertOk()
+            ->assertSee('Register a camera-based face profile for attendance', false)
             ->assertSee('href="'.route('settings.biometrics.face').'"', false)
             ->assertSee('href="'.route('settings.biometrics.fingerprint').'"', false)
             ->assertDontSee('id="cameraFaceVideo"', false)
@@ -123,7 +124,7 @@ class FaceRecognitionRegistrationTest extends TestCase
         $response->assertOk();
         $response->assertSee('Confirm with Face ID or Windows Hello', false);
         $response->assertSee('navigator.credentials.get', false);
-        $response->assertSee('a PIN may be offered.', false);
+        $response->assertSee('A device PIN may be offered.', false);
     }
 
     public function test_login_options_returns_face_method_and_credential_id_for_registered_face_user()

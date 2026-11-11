@@ -17,6 +17,7 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
     const windowListeners = {};
     const fetchCalls = [];
     let trackStops = 0;
+    let focusedElement = null;
     const element = id => {
         if (!elements.has(id)) {
             elements.set(id, {
@@ -30,7 +31,7 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
                 setAttribute() {}, removeAttribute() {},
                 click() { return this.listeners.click?.(); },
                 addEventListener(event, callback) { this.listeners[event] = callback; },
-                focus() {},
+                focus() { focusedElement = this; },
                 play: async () => {},
                 getContext: () => ({ drawImage() {} }),
                 toBlob: callback => callback({ size: 1024, type: 'image/jpeg' }),
@@ -73,6 +74,7 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
         fetchCalls,
         windowListeners,
         window,
+        focusedElement: () => focusedElement,
         get trackStops() { return trackStops; },
         stream() { return { getTracks: () => [{ stop: () => { trackStops++; } }] }; },
     };
@@ -123,6 +125,7 @@ test('student must capture all three positions before submitting the camera enro
 
     assert.equal(app.element('cameraFacePreviewWrap').style.display, 'block');
     assert.equal(app.element('cameraFaceCaptureBtn').style.display, '');
+    assert.equal(app.focusedElement(), app.element('cameraFaceCaptureBtn'));
 
     app.element('cameraFaceCaptureBtn').listeners.click();
     await app.element('cameraFaceSaveBtn').listeners.click();
@@ -134,6 +137,7 @@ test('student must capture all three positions before submitting the camera enro
     app.element('cameraFaceCaptureBtn').listeners.click();
     assert.equal(app.trackStops, 1);
     assert.equal(app.element('cameraFaceSaveBtn').style.display, '');
+    assert.equal(app.focusedElement(), app.element('cameraFaceSaveBtn'));
 
     await app.element('cameraFaceSaveBtn').listeners.click();
 
@@ -145,6 +149,7 @@ test('student must capture all three positions before submitting the camera enro
     assert.match(app.element('cameraFaceStatus').textContent, /three face views were registered securely/);
     assert.equal(app.element('cameraFaceDone').hidden, false);
     assert.equal(app.element('cameraFaceStartBtn').hidden, true);
+    assert.equal(app.focusedElement(), app.element('cameraFaceDone'));
 });
 
 test('pose validation errors keep the captures available for retry or retake', async () => {
@@ -157,7 +162,9 @@ test('pose validation errors keep the captures available for retry or retake', a
     assert.match(app.element('cameraFaceStatus').textContent, /opposite directions/);
     assert.equal(app.element('cameraFaceRetakeBtn').disabled, false);
     assert.equal(app.element('cameraFaceSaveBtn').disabled, false);
+    assert.equal(app.focusedElement(), app.element('cameraFaceSaveBtn'));
     app.element('cameraFaceCancelBtn').listeners.click();
+    assert.equal(app.focusedElement(), app.element('cameraFaceStartBtn'));
     await app.element('cameraFaceSaveBtn').listeners.click();
     assert.equal(app.fetchCalls.length, 1, 'Canceled captures cannot be submitted');
 });

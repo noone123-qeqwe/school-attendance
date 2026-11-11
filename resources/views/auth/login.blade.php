@@ -1667,7 +1667,7 @@ if (document.readyState === 'loading') {
             <div id="fingerprintSection" style="display: block;">
                 <!-- Inline message area for biometric feedback -->
                 <div id="fpMessage" role="status" style="display:none;"></div>
-                <button type="button" class="fp-row anim-fade-up anim-d5" id="fpRowBtn" aria-haspopup="dialog" aria-controls="biometricModal">
+                <button type="button" class="fp-row anim-fade-up anim-d5" id="fpRowBtn" aria-label="Sign in with Biometrics" aria-haspopup="dialog" aria-controls="biometricModal">
                     <div class="fp-row-left">
                         <div class="fp-icon-wrap">
                             <i class="bi bi-fingerprint" id="fpIcon"></i>

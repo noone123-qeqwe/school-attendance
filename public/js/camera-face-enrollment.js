@@ -96,12 +96,14 @@
                 visible(capture, true);
                 visible(cancel, true);
                 setStatus('Capture 1 of 3: front view. Use even lighting and keep only your face in the frame.');
+                capture.focus({ preventScroll: true });
             } catch (error) {
                 if (attempt !== requestId) return;
                 reset();
                 setStatus(error?.name === 'NotAllowedError'
                     ? 'Camera permission was denied. Allow camera access and retry.'
                     : 'The camera could not be opened. Check that it is available and retry.', '#f87171');
+                start.focus({ preventScroll: true });
             }
         });
 
@@ -154,6 +156,7 @@
                     visible(retake, true);
                     visible(save, true);
                     setStatus('Three views captured. The server will check face quality, head positions, and that all captures show the same person.');
+                    save.focus({ preventScroll: true });
                 }
             }, 'image/jpeg', 0.88);
         });
@@ -190,10 +193,16 @@
                 save.removeAttribute('aria-busy');
                 save.textContent = 'Register face';
                 setStatus(error.message || 'Could not reach the server. Retry or retake the captures.', '#f87171');
+                save.focus({ preventScroll: true });
             }
         });
         retake.addEventListener('click', () => { requestId++; reset(); start.click(); });
-        cancel.addEventListener('click', () => { requestId++; reset(); setStatus('Capture canceled.'); });
+        cancel.addEventListener('click', () => {
+            requestId++;
+            reset();
+            setStatus('Capture canceled.');
+            start.focus({ preventScroll: true });
+        });
         window.addEventListener('pagehide', () => {
             const captureInProgress = Boolean(stream) || start.disabled || Object.keys(views).length > 0;
             requestId++;

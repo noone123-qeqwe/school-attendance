@@ -5,6 +5,11 @@
 
 @section('content')
 <section class="biometric-flow-card" aria-label="Register this device">
+    <ol class="bio-registration-steps" aria-label="Registration steps">
+        <li data-bio-step="1" aria-current="step"><span>1</span><span>Start</span></li>
+        <li data-bio-step="2"><span>2</span><span>Confirm</span></li>
+        <li data-bio-step="3"><span>3</span><span>Finish</span></li>
+    </ol>
     <div id="bioIdleView">
         <div class="bio-flow-kicker"><i class="bi bi-shield-lock" aria-hidden="true"></i> Device-protected sign-in</div>
         <div class="bio-flow-title-row">
@@ -14,11 +19,6 @@
                 <p>Use your device’s secure prompt to add a quick sign-in method.</p>
             </div>
         </div>
-        <ol class="bio-registration-steps" aria-label="Registration steps">
-            <li data-bio-step="1" aria-current="step"><span>1</span><span>Start</span></li>
-            <li data-bio-step="2"><span>2</span><span>Confirm</span></li>
-            <li data-bio-step="3"><span>3</span><span>Finish</span></li>
-        </ol>
         <p class="bio-privacy-note"><i class="bi bi-lock" aria-hidden="true"></i><span>Your fingerprint or face stays on your device. The app saves a secure sign-in key.</span></p>
         <button type="button" id="startBioBtn" class="flow-button flow-primary"><i class="bi bi-fingerprint" aria-hidden="true"></i> Register fingerprint</button>
     </div>

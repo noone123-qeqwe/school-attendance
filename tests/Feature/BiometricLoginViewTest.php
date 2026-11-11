@@ -219,8 +219,8 @@ PEM;
         $response = $this->get(route('login'));
 
         $response->assertStatus(200);
-        $response->assertSee('Biometric authentication was cancelled or timed out. Please try again or use your password.', false);
-        $response->assertSee('AUTHENTICATION CANCELLED', false);
+        $response->assertSee('Try the device prompt again or sign in with your password.', false);
+        $response->assertSee('Device prompt didn’t finish', false);
         $response->assertSee('STUDENT ID OR EMAIL REQUIRED', false);
     }
 
