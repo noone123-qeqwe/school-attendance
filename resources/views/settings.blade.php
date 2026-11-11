@@ -3484,6 +3484,41 @@
 .student-settings .sec-group-header { margin-bottom: 20px; }
 .student-settings .sec-cards-grid { gap: 20px; }
 .student-settings .sec-card { border-radius: 16px; padding: 22px; }
+.student-settings .student-account-shortcuts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.student-settings .student-account-shortcuts[hidden],
+.student-settings .student-phone-shortcut[hidden] { display:none !important; }
+.student-settings .student-account-shortcut,
+.student-settings .student-phone-shortcut {
+    display:flex; align-items:center; gap:14px; min-width:0; padding:18px;
+    border:1px solid rgba(207,164,111,.2); border-radius:15px;
+    background:linear-gradient(145deg,rgba(207,164,111,.07),rgba(18,14,11,.44));
+}
+.student-settings .student-account-shortcut-icon {
+    display:grid; place-items:center; flex:0 0 44px; width:44px; height:44px;
+    border:1px solid rgba(207,164,111,.24); border-radius:13px;
+    background:rgba(207,164,111,.12); color:#f5dfa8; font-size:1.1rem;
+}
+.student-settings .student-account-shortcut-copy { flex:1; min-width:0; }
+.student-settings .student-account-shortcut-copy strong,
+.student-settings .student-account-shortcut-copy span { display:block; overflow-wrap:anywhere; }
+.student-settings .student-account-shortcut-copy strong { color:#f3e7cd; font-size:.92rem; }
+.student-settings .student-account-shortcut-copy span { margin-top:4px; color:#b39b82; font-size:.78rem; line-height:1.45; }
+.student-settings .student-account-shortcut button,
+.student-settings .student-phone-shortcut button {
+    display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:42px;
+    padding:9px 13px; border:1px solid rgba(207,164,111,.3); border-radius:11px;
+    background:rgba(207,164,111,.12); color:#f5dfa8; font:inherit; font-size:.8rem; font-weight:700;
+}
+.student-settings .student-account-shortcut button:hover,
+.student-settings .student-phone-shortcut button:hover { background:rgba(207,164,111,.2); }
+.student-settings .student-phone-shortcut { justify-content:space-between; margin-bottom:18px; }
+.student-settings .student-account-edit-panel { padding:0; border:0; background:transparent; box-shadow:none; }
+.student-settings .student-account-edit-panel > .student-account-edit-intro {
+    margin-bottom:16px; padding:18px 20px; border:1px solid rgba(207,164,111,.18);
+    border-radius:15px; background:rgba(207,164,111,.055); color:#b39b82; line-height:1.5;
+}
+.student-settings .student-account-edit-panel .sec-card,
+.student-settings .student-account-edit-panel .sc { margin:0; }
 .student-settings .sec-card-top { margin-bottom: 14px; }
 .student-settings .sec-card-name { font-size: .95rem; }
 .student-settings .sec-card-subtitle { line-height: 1.4; }
@@ -3629,6 +3664,11 @@
     .student-settings .sec-health-hero { padding: 22px 14px; }
     .student-settings .sec-group-panel { padding: 18px 12px; }
     .student-settings .sec-card { padding: 20px 14px; }
+    .student-settings .student-account-shortcuts { grid-template-columns:minmax(0,1fr); gap:10px; }
+    .student-settings .student-account-shortcut { padding:14px; align-items:flex-start; }
+    .student-settings .student-account-shortcut button { flex:0 0 auto; padding:9px 10px; }
+    .student-settings .student-phone-shortcut { padding:14px; align-items:flex-start; }
+    .student-settings .student-account-edit-panel > .student-account-edit-intro { padding:15px; }
     .student-settings .bio-method-grid { grid-template-columns: 1fr; gap: 18px; }
     .student-settings .bio-method-card { padding: 22px 16px 20px; }
     .student-settings .bio-action-row { align-items: stretch; flex-direction: column; gap: 12px; }
@@ -4103,12 +4143,12 @@
         </div>
 
         <!-- Personal Information (Editable) -->
-        <div class="sc">
+        <div class="sc" @if($user->isStudent()) data-account-edit-source="phone" @endif>
             <div class="sc-head">
                 <div class="sc-icon" style="background:rgba(207,164,111,0.14);color:#cfa46f;"><i class="bi bi-person-lines-fill"></i></div>
                 <div>
-                    <div class="sc-title">Personal Information</div>
-                    <div class="sc-sub">Update your contact details and emergency recovery info</div>
+                    <div class="sc-title">{{ $user->isStudent() ? 'Phone number' : 'Personal Information' }}</div>
+                    <div class="sc-sub">{{ $user->isStudent() ? 'Update your emergency contact and account recovery number.' : 'Update your contact details and emergency recovery info' }}</div>
                 </div>
             </div>
             <div class="sc-body">
@@ -4136,12 +4176,22 @@
                     </div>
                     <div class="d-flex justify-content-end gap-2 mt-4">
                         <button type="submit" class="sbtn btn-gold" style="width:auto;padding:11px 28px;">
-                            <i class="bi bi-save me-2"></i>Save Changes
+                            <i class="bi bi-save me-2"></i>{{ $user->isStudent() ? 'Save phone number' : 'Save Changes' }}
                         </button>
                     </div>
                 </form>
             </div>
         </div>
+
+        @if($user->isStudent())
+        <div class="sc student-phone-shortcut" id="studentPhoneShortcut" hidden>
+            <div>
+                <div class="sc-title">Phone number</div>
+                <div class="sc-sub">{{ Auth::user()->phone ?: 'Add a number for account recovery and emergency contact.' }}</div>
+            </div>
+            <button type="button" data-account-page="change-phone"><i class="bi bi-pencil-square" aria-hidden="true"></i>Change</button>
+        </div>
+        @endif
 
         <!-- Academic Info -->
         <div class="sc">
@@ -4294,9 +4344,24 @@
                 </div>
             </div>
 
-            <div class="sec-cards-grid">
+            @if($user->isStudent())
+            <div class="student-account-shortcuts" id="studentCredentialShortcuts" hidden>
+                <article class="student-account-shortcut">
+                    <span class="student-account-shortcut-icon"><i class="bi bi-envelope-at" aria-hidden="true"></i></span>
+                    <span class="student-account-shortcut-copy"><strong>Email address</strong><span>{{ Auth::user()->email }}<br>Used for verification and account recovery.</span></span>
+                    <button type="button" data-account-page="change-email">Change</button>
+                </article>
+                <article class="student-account-shortcut">
+                    <span class="student-account-shortcut-icon"><i class="bi bi-key" aria-hidden="true"></i></span>
+                    <span class="student-account-shortcut-copy"><strong>Password</strong><span>Change your password after verifying your email.</span></span>
+                    <button type="button" data-account-page="change-password">Change</button>
+                </article>
+            </div>
+            @endif
+
+            <div class="sec-cards-grid" @if($user->isStudent()) id="studentCredentialFormGrid" @endif>
                 <!-- Card 1: Email address Management -->
-                <div class="sec-card" style="--card-accent: #3b82f6;">
+                <div class="sec-card" @if($user->isStudent()) data-account-edit-source="email" @endif style="--card-accent: #3b82f6;">
                     <div class="sec-card-top">
                         <div class="sec-card-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
                             <i class="bi bi-envelope-check-fill"></i>
@@ -4357,7 +4422,7 @@
                 </div>
 
                 <!-- Card 2: Password -->
-                <div class="sec-card" style="--card-accent: #f59e0b;">
+                <div class="sec-card" @if($user->isStudent()) data-account-edit-source="password" @endif style="--card-accent: #f59e0b;">
                     <div class="sec-card-top">
                         <div class="sec-card-icon" style="background:rgba(207,164,111,0.12);color:#f5dfa8;border:1px solid rgba(207,164,111,0.25);">
                             <i class="bi bi-key-fill"></i>
@@ -5273,6 +5338,21 @@
         </div>
     </div>
 
+    @if($user->isStudent())
+    <div id="tab-account-email" class="spanel student-account-edit-panel" aria-label="Change email address">
+        <div class="student-account-edit-intro">Enter the new email address you can access. We’ll send a verification code there before changing your account email.</div>
+        <div id="accountEmailFormSlot"></div>
+    </div>
+    <div id="tab-account-password" class="spanel student-account-edit-panel" aria-label="Change password">
+        <div class="student-account-edit-intro">We’ll send a security code to your current email. Enter it and choose a strong new password.</div>
+        <div id="accountPasswordFormSlot"></div>
+    </div>
+    <div id="tab-account-phone" class="spanel student-account-edit-panel" aria-label="Change phone number">
+        <div class="student-account-edit-intro">Update the phone number used for emergency contact and account recovery.</div>
+        <div id="accountPhoneFormSlot"></div>
+    </div>
+    @endif
+
         </section> <!-- /settings-main-content -->
     </div> <!-- /settings-layout-grid -->
 </div>
@@ -6093,6 +6173,7 @@ function collectOtp(btn) {
     if(btn) {
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        if (typeof window.studentSettingsRememberReturn === 'function') window.studentSettingsRememberReturn();
         btn.closest('form').submit();
     }
 }
@@ -6161,6 +6242,7 @@ function collectEmailOtp(btn) {
     if(btn) {
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        if (typeof window.studentSettingsRememberReturn === 'function') window.studentSettingsRememberReturn();
         btn.closest('form').submit();
     }
 }

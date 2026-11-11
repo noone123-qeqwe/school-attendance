@@ -7,6 +7,9 @@
         profile: ['Profile & school details', 'Manage your photo, contact number, and student information.', 'profile'],
         family: ['Guardians', 'Choose who can view your attendance and share a link code with your guardian.', 'family'],
         credentials: ['Password & email', 'Keep your sign-in details up to date. Changes require an email verification code.', 'security', 'credentials'],
+        'change-email': ['Change email address', 'Verify the new address before it becomes your account email.', 'account-email'],
+        'change-password': ['Change password', 'Confirm your email and choose a new password.', 'account-password'],
+        'change-phone': ['Change phone number', 'Update the number used for emergency contact and account recovery.', 'account-phone'],
         biometrics: ['Biometrics', 'Register your face for attendance and manage the secure ways you sign in to your account.', 'security', 'biometrics'],
         device: ['Attendance device', 'Manage the phone or computer you use to record attendance.', 'security', 'device'],
         recovery: ['Recovery codes', 'Save backup codes somewhere safe in case you lose access to your account.', 'security', 'recovery'],
@@ -24,7 +27,40 @@
     const returnKey = 'student_settings_return_' + root.dataset.studentSettings;
     let started = false;
 
+    function placeAccountEditForms() {
+        const sources = [
+            ['email', 'accountEmailFormSlot'],
+            ['password', 'accountPasswordFormSlot'],
+            ['phone', 'accountPhoneFormSlot'],
+        ];
+        let moved = 0;
+        sources.forEach(([name, slotId]) => {
+            const source = document.querySelector('[data-account-edit-source="' + name + '"]');
+            const slot = document.getElementById(slotId);
+            if (source && slot) {
+                slot.appendChild(source);
+                moved++;
+            }
+        });
+
+        if (moved === sources.length) {
+            const formGrid = document.getElementById('studentCredentialFormGrid');
+            const credentialShortcuts = document.getElementById('studentCredentialShortcuts');
+            const phoneShortcut = document.getElementById('studentPhoneShortcut');
+            if (formGrid) formGrid.hidden = true;
+            if (credentialShortcuts) credentialShortcuts.hidden = false;
+            if (phoneShortcut) phoneShortcut.hidden = false;
+            root.dataset.accountFormsReady = 'true';
+        }
+    }
+
+    placeAccountEditForms();
+
     function defaultPage() { return mobile.matches ? 'overview' : 'profile'; }
+
+    window.studentSettingsRememberReturn = function() {
+        try { sessionStorage.setItem(returnKey, root.dataset.studentView); } catch (e) {}
+    };
 
     function filterMenu() {
         const query = filter.value.trim().toLocaleLowerCase();
@@ -82,6 +118,12 @@
     window.studentSettingsNavigate = navigate;
 
     root.addEventListener('click', event => {
+        const accountLink = event.target.closest('[data-account-page]');
+        if (accountLink) {
+            event.preventDefault();
+            navigate(accountLink.dataset.accountPage, { push: true, focus: true });
+            return;
+        }
         const link = event.target.closest('[data-settings-page], [data-settings-back]');
         if (!link) return;
         event.preventDefault();
@@ -94,7 +136,7 @@
     filter.addEventListener('input', filterMenu);
     root.addEventListener('submit', event => {
         if (event.target instanceof HTMLFormElement && event.target.checkValidity()) {
-            try { sessionStorage.setItem(returnKey, root.dataset.studentView); } catch (e) {}
+            window.studentSettingsRememberReturn();
         }
     });
     function syncHistory() { navigate(location.hash.replace(/^#(?:tab-)?/, '') || defaultPage(), { fromHistory: true }); }

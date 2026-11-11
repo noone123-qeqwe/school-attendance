@@ -81,6 +81,12 @@ class SettingsDeviceBindingAndStudentIdTest extends TestCase
         $response->assertSee('Manage your account and attendance access.');
         $response->assertSee('class="sp student-settings"', false);
         $response->assertSee('All settings');
+        $response->assertSee('id="tab-account-email"', false);
+        $response->assertSee('id="tab-account-password"', false);
+        $response->assertSee('id="tab-account-phone"', false);
+        $response->assertSee('data-account-page="change-email"', false);
+        $response->assertSee('data-account-page="change-password"', false);
+        $response->assertSee('data-account-page="change-phone"', false);
         $response->assertSee('Password &amp; email', false);
         $response->assertSee('Biometrics');
         $response->assertSee('Fingerprint registration');

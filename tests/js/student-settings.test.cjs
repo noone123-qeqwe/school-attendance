@@ -13,7 +13,7 @@ function mount(mobile = true) {
     const element = (id, textContent = '') => {
         const classes = new Set(), attributes = new Map();
         const el = {
-            id, textContent, hidden: false, style: {}, dataset: {}, value: '',
+            id, textContent, hidden: false, style: {}, dataset: {}, value: '', children: [],
             classList: {
                 toggle(name, on) { if (on) classes.add(name); else classes.delete(name); },
                 contains: name => classes.has(name),
@@ -21,7 +21,7 @@ function mount(mobile = true) {
             setAttribute: (name, value) => attributes.set(name, value),
             removeAttribute: name => attributes.delete(name),
             getAttribute: name => attributes.get(name),
-            addEventListener() {}, focus() {}, scrollIntoView() {},
+            addEventListener() {}, appendChild(child) { this.children.push(child); return child; }, focus() {}, scrollIntoView() {},
         };
         ids.set(id, el);
         return el;
@@ -36,7 +36,7 @@ function mount(mobile = true) {
         button.dataset.settingsKeywords = '';
         return button;
     });
-    const panels = ['profile', 'security'].map(key => element('tab-' + key));
+    const panels = ['profile', 'security', 'account-email', 'account-password', 'account-phone'].map(key => element('tab-' + key));
     const groups = ['biometrics', 'credentials', 'device', 'recovery'].map(key => element('sec-section-' + key));
     const menuGroup = { querySelectorAll: () => buttons };
     for (const id of ['studentSettingsPageTitle', 'studentSettingsPageDescription', 'studentSettingsFilter', 'studentSettingsNoResults']) element(id);
@@ -44,6 +44,14 @@ function mount(mobile = true) {
     element('studentFingerprintRegistrationLink').href = '/settings/biometrics/fingerprint';
     const root = element('root');
     root.dataset = { studentSettings: '7', studentView: 'overview' };
+    const sources = new Map(['email', 'password', 'phone'].map(name => {
+        const source = element('source-' + name);
+        source.dataset.accountEditSource = name;
+        return [name, source];
+    }));
+    for (const id of ['accountEmailFormSlot', 'accountPasswordFormSlot', 'accountPhoneFormSlot', 'studentCredentialFormGrid', 'studentCredentialShortcuts', 'studentPhoneShortcut']) element(id);
+    ids.get('studentCredentialShortcuts').hidden = true;
+    ids.get('studentPhoneShortcut').hidden = true;
     root.addEventListener = (event, fn) => { rootListeners[event] = fn; };
     root.querySelectorAll = selector => ({
         '[data-settings-page]': buttons,
@@ -62,12 +70,38 @@ function mount(mobile = true) {
     };
     vm.runInNewContext(script, {
         window, location, history,
-        document: { querySelector: () => root, getElementById: id => ids.get(id), addEventListener: (event, fn) => { documentListeners[event] = fn; } },
+        document: {
+            querySelector: selector => selector === '[data-student-settings]' ? root : selector.match(/data-account-edit-source="(email|password|phone)"/) ? sources.get(selector.match(/data-account-edit-source="(email|password|phone)"/)[1]) : null,
+            getElementById: id => ids.get(id),
+            addEventListener: (event, fn) => { documentListeners[event] = fn; },
+        },
         sessionStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
         HTMLFormElement: class {},
     });
     return { window, root, ids, buttons, location, listeners, rootListeners, documentListeners, storage, redirects };
 }
+
+test('student account edits move to focused, separate screens', () => {
+    const app = mount(true);
+    for (const [name, slot] of [['email', 'accountEmailFormSlot'], ['password', 'accountPasswordFormSlot'], ['phone', 'accountPhoneFormSlot']]) {
+        assert.equal(app.ids.get(slot).children[0], app.ids.get('source-' + name));
+    }
+    assert.equal(app.ids.get('studentCredentialFormGrid').hidden, true);
+    assert.equal(app.ids.get('studentCredentialShortcuts').hidden, false);
+    assert.equal(app.ids.get('studentPhoneShortcut').hidden, false);
+
+    const emailAction = {
+        dataset: { accountPage: 'change-email' },
+        closest: selector => selector.includes('[data-account-page]') ? emailAction : null,
+    };
+    app.rootListeners.click({ target: emailAction, preventDefault() {} });
+    assert.equal(app.root.dataset.studentView, 'change-email');
+    assert.equal(app.ids.get('studentSettingsPageTitle').textContent, 'Change email address');
+    assert.equal(app.ids.get('tab-account-email').classList.contains('active'), true);
+    assert.equal(app.location.hash, '#tab-change-email');
+    app.window.studentSettingsRememberReturn();
+    assert.equal(app.storage.get('student_settings_return_7'), 'change-email');
+});
 
 for (const [screen, mobile] of [['mobile', true], ['desktop', false]]) {
     test(`${screen}: Biometrics opens its menu and leaves registration links to the browser`, () => {
