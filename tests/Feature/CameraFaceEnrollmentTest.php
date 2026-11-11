@@ -77,6 +77,9 @@ class CameraFaceEnrollmentTest extends TestCase
         $this->assertSame(1, $xpath->query('//*[@data-biometric-page="face"]')->length);
         $this->assertSame(1, $xpath->query('//*[@data-biometric-page="fingerprint"]')->length);
         $this->assertSame(3, $xpath->query('//*[@id="cameraFaceEnrollment"]//*[@data-face-pose]')->length);
+        $this->assertSame(1, $xpath->query('//*[@id="cameraFaceEnrollment"]//*[@id="cameraFaceLight"]//*[@data-light-toggle]')->length);
+        $this->assertSame(1, $xpath->query('//*[@id="cameraFaceLight"]//label[@for="cameraFaceLight-level"]')->length);
+        $this->assertSame(0, $xpath->query('//*[@id="studentPasskeySettings"]//*[@data-light-toggle]')->length);
         $this->assertSame(0, $xpath->query('//*[@data-settings-page="face" or @data-settings-page="passkeys"]')->length);
         $this->assertSame(1, $xpath->query('//*[@id="sec-section-biometrics"]//*[@id="cameraFaceEnrollment"]')->length);
         $this->assertSame(1, $xpath->query('//*[@id="sec-section-biometrics"]//*[@id="studentPasskeySettings"]')->length);

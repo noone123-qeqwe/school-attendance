@@ -45,6 +45,7 @@ function mount(cameraGate, playGate = { promise: Promise.resolve() }) {
         currentFacingMode: 'user',
         faceCameraRequestId: 0,
         faceVerificationInProgress: false,
+        faceLighting: null,
         document: { getElementById: element },
         navigator: { mediaDevices: { getUserMedia: () => cameraGate.promise } },
         setCameraStatus: (message, state) => statuses.push({ message, state }),

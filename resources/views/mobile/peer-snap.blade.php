@@ -29,6 +29,7 @@
             <div class="peer-oval" aria-hidden="true"></div>
         </div>
         <p class="peer-camera-note" id="peerGuidance" role="status" aria-live="polite">Position one face inside the oval. Look directly at the camera.</p>
+        @include('partials.camera-light-controls', ['cameraLightId' => 'peerFaceLight'])
         <div class="peer-challenge" id="peerChallenge" hidden></div>
         <button id="peerCapture" type="button" class="peer-primary" disabled>Begin live challenge</button>
         <button id="peerCancel" type="button" class="peer-secondary">Cancel and release camera</button>
@@ -50,6 +51,7 @@
     const sessionSelect = $('peerSession'), studentInput = $('peerStudent');
     const formCard = $('peerFormCard'), cameraCard = $('peerCameraCard'), result = $('peerResult');
     const video = $('peerVideo'), guidance = $('peerGuidance'), captureButton = $('peerCapture');
+    const lighting = window.CameraLighting?.mount($('peerFaceLight'));
     const challengeBox = $('peerChallenge'), countdown = $('peerCountdown');
     const startButton = $('peerStart'), retrySessionsButton = $('peerRetrySessions'), formMessage = $('peerFormMessage');
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
@@ -71,6 +73,7 @@
     function wasPending() { try { return sessionStorage.getItem(pendingKey) === '1'; } catch (_) { return false; } }
     function updateStartAvailability() { startButton.disabled = state !== 'IDLE' || !sessionSelect.value || !studentInput.value.trim(); }
     function stopCamera() {
+        lighting?.stop();
         const active = stream;
         stream = null;
         video.pause?.();
@@ -196,6 +199,7 @@
             formCard.hidden = true; cameraCard.hidden = false;
             video.srcObject = stream; await video.play();
             if (!isCurrent(id)) return;
+            lighting?.start(newStream);
             try { detector = 'FaceDetector' in window ? new FaceDetector({fastMode:true,maxDetectedFaces:3}) : null; }
             catch { detector = null; }
             challengeBox.textContent = {blink_twice:'Blink twice while looking at the camera',turn_left:'Turn your head slightly left, then face forward',turn_right:'Turn your head slightly right, then face forward'}[ticket.challenge] || 'Follow the on-screen challenge';
@@ -218,8 +222,11 @@
         if (state !== 'FACE_SEARCH' || !ticket) return;
         const id = flowId;
         captureButton.disabled = true;
+        lighting?.lock(true);
         const canvas = document.createElement('canvas'), context = canvas.getContext?.('2d');
         try {
+            if (lighting) await lighting.settle();
+            if (!isCurrent(id)) return;
             if (!context || typeof canvas.toBlob !== 'function') { const error = new Error('This browser cannot capture camera frames. Try an updated browser or ask your instructor for help.'); error.fatal = true; throw error; }
             if (detector) {
                 let faces = null;
@@ -257,7 +264,7 @@
             if (state === 'FACE_SEARCH' && !error.status && !error.fatal) { guidance.textContent = error.message; captureButton.disabled = false; return; }
             const uncertain = state === 'MATCHING' && (!error.status || error.status >= 500);
             fail(uncertain ? 'The final result could not be confirmed. Ask your instructor to check attendance before trying this classmate again.' : (error.message || 'Verification failed. Please try again.'), error.status);
-        } finally { canvas.width = 0; canvas.height = 0; }
+        } finally { lighting?.lock(false); canvas.width = 0; canvas.height = 0; }
     }
     $('peerStart').addEventListener('click',start);
     retrySessionsButton.addEventListener('click',loadSessions);

@@ -14,6 +14,7 @@
         const cancel = document.getElementById('cameraFaceCancelBtn');
         const status = document.getElementById('cameraFaceStatus');
         const instruction = document.getElementById('cameraFacePoseInstruction');
+        const lighting = window.CameraLighting?.mount(document.getElementById('cameraFaceLight'));
         const poses = [
             ['front', 'Look straight at the camera. Keep your head level and both eyes visible.'],
             ['left', 'Turn your head slightly to your left. Keep both eyes visible and hold still.'],
@@ -40,6 +41,7 @@
             element.style.display = show ? '' : 'none';
         }
         function stopCamera() {
+            lighting?.stop();
             if (stream) stream.getTracks().forEach(track => track.stop());
             stream = null;
             video.srcObject = null;
@@ -89,6 +91,7 @@
                 video.srcObject = opened;
                 await video.play();
                 if (attempt !== requestId) return;
+                lighting?.start(opened);
                 wrap.style.display = 'block';
                 visible(start, false);
                 visible(capture, true);
@@ -103,7 +106,7 @@
             }
         });
 
-        capture.addEventListener('click', () => {
+        capture.addEventListener('click', async () => {
             const index = Object.keys(views).length;
             if (!poses[index] || capture.disabled || !stream) return;
             if (!video.videoWidth || !video.videoHeight) {
@@ -112,13 +115,24 @@
             }
             const attempt = requestId;
             capture.disabled = true;
+            lighting?.lock(true);
+            if (lighting) await lighting.settle();
+            if (attempt !== requestId || !stream) return;
             const scale = Math.min(1, 1280 / Math.max(video.videoWidth, video.videoHeight));
             canvas.width = Math.round(video.videoWidth * scale);
             canvas.height = Math.round(video.videoHeight * scale);
-            canvas.getContext('2d', { alpha: false }).drawImage(video, 0, 0, canvas.width, canvas.height);
+            try {
+                canvas.getContext('2d', { alpha: false }).drawImage(video, 0, 0, canvas.width, canvas.height);
+            } catch (_) {
+                capture.disabled = false;
+                lighting?.lock(false);
+                setStatus('This camera frame could not be read. Please try again.', '#f87171');
+                return;
+            }
             canvas.toBlob(blob => {
                 if (attempt !== requestId) return;
                 capture.disabled = false;
+                lighting?.lock(false);
                 if (!blob) {
                     setStatus('This frame could not be captured. Please try again.', '#f87171');
                     return;

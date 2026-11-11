@@ -440,6 +440,7 @@
                 </div>
             </div>
 
+            @include('partials.camera-light-controls', ['cameraLightId' => 'faceMatchLight'])
             <button type="button" class="btn-verify-face" id="btnCaptureFace" onclick="captureAndVerifyFace()">
                 <i class="bi bi-person-check-fill"></i> Verify My Face
             </button>
@@ -552,6 +553,7 @@ var HAS_FINGERPRINT = {{ !empty($hasFingerprint) ? 'true' : 'false' }};
 var ACTIVE_METHOD = '{{ $defaultMethod ?? (!empty($hasFaceMethod) ? "face" : "fingerprint") }}';
 var currentFacingMode = 'user';
 var activeStream = null;
+var faceLighting = window.CameraLighting?.mount(document.getElementById('faceMatchLight'));
 var faceCameraRequestId = 0;
 var faceVerificationInProgress = false;
 
@@ -1313,6 +1315,7 @@ function startFaceScan() {
             if (requestId !== faceCameraRequestId || activeStream !== stream) return;
             Promise.resolve(video.play()).then(function() {
                 if (requestId !== faceCameraRequestId || activeStream !== stream) return;
+                faceLighting?.start(stream);
                 setCameraStatus('Position your face inside the oval, then tap Verify My Face.', 'pulsing');
                 var readyButton = document.getElementById('btnCaptureFace');
                 if (readyButton) readyButton.disabled = false;
@@ -1352,6 +1355,7 @@ function toggleCameraFacing() {
 
 function stopCamera() {
     faceCameraRequestId++;
+    faceLighting?.stop();
     if (activeStream) {
         activeStream.getTracks().forEach(function(track) {
             track.stop();
@@ -1375,6 +1379,8 @@ async function captureAndVerifyFace() {
     }
 
     faceVerificationInProgress = true;
+    var captureRequestId = faceCameraRequestId;
+    faceLighting?.lock(true);
     var captureBtn = document.getElementById('btnCaptureFace');
     if (captureBtn) {
         captureBtn.disabled = true;
@@ -1394,7 +1400,9 @@ async function captureAndVerifyFace() {
     var liveFrames = [];
 
     try {
+        if (faceLighting) await faceLighting.settle();
         for (var sample = 0; sample < 3; sample++) {
+            if (captureRequestId !== faceCameraRequestId) return;
             if (video.readyState < 2 || !activeStream) {
                 handleFaceError('The camera capture was interrupted. Please retry.');
                 return;
@@ -1410,6 +1418,10 @@ async function captureAndVerifyFace() {
         handleFaceError('Unable to capture the camera samples. Please retry.');
         return;
     }
+
+    if (captureRequestId !== faceCameraRequestId) return;
+    faceLighting?.turnOff();
+    faceLighting?.lock(false);
 
     setCameraStatus('Comparing camera samples with your profile photo...', 'pulsing');
     var fingerprintCredential = null;
@@ -1438,6 +1450,7 @@ function setCameraStatus(text, dotClass) {
 
 function handleFaceError(msg, similarity) {
     faceVerificationInProgress = false;
+    faceLighting?.lock(false);
     var oval = document.getElementById('faceOvalGuide');
     if (oval) oval.className = 'face-oval-guide mismatch';
 

@@ -4459,6 +4459,7 @@
                                 <div aria-hidden="true" style="position:absolute;inset:10% 25%;border:2px solid rgba(56,189,248,.9);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.24);pointer-events:none;"></div>
                                 <canvas id="cameraFaceCanvas" style="display:none;"></canvas>
                             </div>
+                            @include('partials.camera-light-controls', ['cameraLightId' => 'cameraFaceLight'])
                         @endif
                         <div id="cameraFaceStatus" role="status" aria-live="polite" style="min-height:1.3em;margin:0 0 10px;color:{{ $hasCameraFaceEnrollment ? '#34d399' : '#94a3b8' }};font-size:.82rem;">{{ $hasCameraFaceEnrollment ? 'A face profile is enrolled for attendance matching. Register a new capture to replace it.' : '' }}</div>
                         @if($faceEnrollmentAvailable)
