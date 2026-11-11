@@ -14,7 +14,8 @@
             groups.forEach((group, index) => {
                 let count = 0;
                 group.querySelectorAll('[data-admin-nav-link]').forEach(link => {
-                    const matches = !query || link.textContent.toLocaleLowerCase().includes(query);
+                    const terms = `${link.textContent} ${link.dataset.adminNavKeywords || ''}`.toLocaleLowerCase();
+                    const matches = !query || terms.includes(query);
                     link.hidden = !matches;
                     if (matches) count++;
                 });
@@ -26,6 +27,10 @@
             nav.querySelector('[data-admin-nav-empty]').hidden = total > 0;
             if (!query) previousOpen = null;
         });
+        groups.forEach(group => group.addEventListener('toggle', () => {
+            if (!group.open || search?.value.trim()) return;
+            groups.forEach(other => { if (other !== group) other.open = false; });
+        }));
         if (nav.closest('#moreSheet')) {
             nav.addEventListener('click', event => {
                 if (event.target.closest('a[href]')) window.closeMoreSheet?.();
@@ -33,7 +38,7 @@
         }
     });
 
-    const actionMenus = [...document.querySelectorAll('.admin-action-menu')];
+    const actionMenus = [...document.querySelectorAll('.admin-action-menu, [data-admin-section-switcher]')];
     document.addEventListener('click', event => {
         actionMenus.forEach(menu => {
             if (!menu.contains(event.target) || event.target.closest('.admin-action-menu-items a, .admin-action-menu-items button')) menu.open = false;
@@ -48,6 +53,22 @@
 
     const main = document.getElementById('mainContent');
     if (!main) return;
+    // Browser validation must be able to reach a field in a closed category.
+    main.addEventListener('invalid', event => {
+        const category = event.target.closest('details.admin-settings-section');
+        if (category) category.open = true;
+    }, true);
+    const revealSettingsFragment = () => {
+        const hash = window.location?.hash;
+        if (!hash) return;
+        let id;
+        try { id = decodeURIComponent(hash.slice(1)); } catch { return; }
+        const target = document.getElementById(id);
+        const category = target?.closest('details.admin-settings-section');
+        if (category) category.open = true;
+    };
+    revealSettingsFragment();
+    window.addEventListener('hashchange', revealSettingsFragment);
     main.addEventListener('click', event => {
         const button = event.target.closest('[data-admin-edit-record]');
         if (button) {

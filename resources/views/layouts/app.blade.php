@@ -50,6 +50,7 @@
     @endif
     @if(Auth::user()?->isAdmin() && !request()->routeIs('admin.*.pdf'))
         <link rel="stylesheet" href="{{ asset('css/admin-portal-redesign.css') }}?v={{ filemtime(public_path('css/admin-portal-redesign.css')) }}">
+        <link rel="stylesheet" href="{{ asset('css/admin-simple.css') }}?v={{ filemtime(public_path('css/admin-simple.css')) }}">
     @endif
     @if(Auth::user()?->isParent() && !request()->routeIs('parent.*.report'))
         <link rel="stylesheet" href="{{ asset('css/parent-portal-redesign.css') }}?v={{ filemtime(public_path('css/parent-portal-redesign.css')) }}">
@@ -120,12 +121,12 @@
                     @endif
                     <div class="header-title-container">
                         <div class="header-page-title">
-                            @hasSection('page-title')
+                            @if(Auth::user()?->isAdmin())
+                                {{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['title'] }}
+                            @elseif(View::hasSection('page-title'))
                                 @yield('page-title')
                             @else
-                                @if(Auth::user()?->isAdmin())
-                                    {{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['title'] }}
-                                @elseif(request()->routeIs('home') || request()->routeIs('admin.dashboard') || request()->routeIs('teacher.dashboard') || request()->routeIs('parent.dashboard'))
+                                @if(request()->routeIs('home') || request()->routeIs('teacher.dashboard') || request()->routeIs('parent.dashboard'))
                                     Dashboard
                                 @elseif(request()->routeIs('student.classes')) My Classes
                                 @elseif(request()->routeIs('settings')) Settings
@@ -134,7 +135,7 @@
                                 @endif
                             @endif
                         </div>
-                        <div class="header-page-sub">@hasSection('page-sub')@yield('page-sub')@elseif(Auth::user()?->isAdmin()){{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['group'] }} workspace @else{{ now()->format('l, F j, Y') }}@endif</div>
+                        <div class="header-page-sub">@if(Auth::user()?->isAdmin()){{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['group'] }}@elseif(View::hasSection('page-sub'))@yield('page-sub')@else{{ now()->format('l, F j, Y') }}@endif</div>
                     </div>
                 </div>
 
@@ -360,6 +361,9 @@
 
         <main class="main-content {{ Auth::check() ? '' : 'guest-mode' }}" id="mainContent">
             <div class="{{ Auth::check() ? 'p-4' : '' }} page-enter">
+                @if(Auth::user()?->isAdmin())
+                    @include('partials.admin-page-context')
+                @endif
 
                 @yield('content')
             </div>
@@ -851,7 +855,7 @@
         <div class="more-sheet d-md-none {{ Auth::user()->isAdmin() ? 'admin-navigation-sheet' : '' }}" id="moreSheet" role="dialog" aria-modal="true" aria-labelledby="moreSheetTitle" aria-hidden="true" inert>
             <div class="more-sheet-handle"></div>
             <div class="more-sheet-header">
-                <span class="more-sheet-title" id="moreSheetTitle">More</span>
+                <span class="more-sheet-title" id="moreSheetTitle">{{ Auth::user()->isAdmin() ? 'All admin pages' : 'More' }}</span>
                 <button type="button" class="more-sheet-close" id="moreSheetCloseBtn" onclick="closeMoreSheet()" aria-label="Close More Menu">
                     <i class="bi bi-x-lg" style="pointer-events:none;"></i>
                 </button>

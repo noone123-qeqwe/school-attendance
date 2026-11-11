@@ -70,7 +70,7 @@ class AdminDashboardTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/admin/dashboard');
 
         $response->assertStatus(200);
-        $response->assertSee('Total Students');
+        $response->assertViewHas('totalStudents', 5);
     }
 
     public function test_dashboard_shows_teacher_count(): void

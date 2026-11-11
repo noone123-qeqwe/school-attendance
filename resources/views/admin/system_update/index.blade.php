@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'System Maintenance & Operations Hub')
+@section('title', 'System maintenance')
 
 @section('content')
 <div class="system-update-container">
@@ -47,7 +47,7 @@
            role="button">
             <span class="tab-btn-glow"></span>
             <i class="bi bi-lightning-charge-fill tab-icon"></i>
-            <span class="tab-label">Updates & Maintenance</span>
+            <span class="tab-label">Updates</span>
             @if($pendingMigrationsCount > 0)
                 <span class="tab-badge tab-badge-alert">{{ $pendingMigrationsCount }} Migrations</span>
             @endif
@@ -59,7 +59,7 @@
            role="button">
             <span class="tab-btn-glow"></span>
             <i class="bi bi-shield-check tab-icon"></i>
-            <span class="tab-label">Backups & Restore Hub</span>
+            <span class="tab-label">Backups</span>
             <span class="tab-badge">{{ $totalBackupCount }}</span>
         </a>
         <a href="{{ route('admin.system-update.index', ['tab' => 'health']) }}"
@@ -69,7 +69,7 @@
            role="button">
             <span class="tab-btn-glow"></span>
             <i class="bi bi-activity tab-icon"></i>
-            <span class="tab-label">System Diagnostics & Health</span>
+            <span class="tab-label">Health</span>
             <span class="tab-badge-score {{ $healthScore >= 90 ? 'score-green' : ($healthScore >= 70 ? 'score-amber' : 'score-red') }}" id="topTabHealthBadge">{{ $healthScore }}%</span>
         </a>
     </div>
@@ -116,22 +116,22 @@
                     <span class="hero-icon-box">
                         <i class="bi bi-cpu-fill"></i>
                     </span>
-                    <span class="hero-title-text">System Update & Maintenance Center</span>
+                    <span class="hero-title-text">System maintenance</span>
                 </h1>
                 <p class="update-hero-desc">
-                    Orchestrate automated 1-click system upgrades, apply zero-downtime database schema migrations, purge and warm up cache stores, and broadcast asset updates to all client PWA devices.
+                    Keep the app up to date, manage backups and check system health.
                 </p>
             </div>
 
             <div class="hero-actions">
                 <button type="button" class="saas-btn saas-btn-secondary hero-btn-secondary" onclick="switchMaintenanceTab('backups', document.getElementById('tabBtnBackups'))">
                     <i class="bi bi-archive-fill me-1 text-gold"></i>
-                    <span>Backups Vault</span>
+                    <span>View backups</span>
                     <span class="badge-count-pill">{{ $totalBackupCount }}</span>
                 </button>
                 <button type="button" class="saas-btn saas-btn-gold hero-btn-scan" onclick="triggerHealthScan()" id="quickScanBtn" title="Run diagnostic scan">
                     <i class="bi bi-radar me-1"></i>
-                    <span>Scan Health</span>
+                    <span>Check health</span>
                 </button>
                 <button type="button" class="hero-btn-primary" onclick="confirmFullSystemUpdate()" id="fullUpdateBtn">
                     <span class="btn-glow-layer"></span>
@@ -143,6 +143,8 @@
         </div>
 
         <!-- Live Telemetry KPI Grid -->
+        <details class="admin-maintenance-details">
+        <summary>System details <small>Version, database, client cache and readiness checks</small></summary>
         <div class="telemetry-grid">
             <!-- 1. System State -->
             <div class="telemetry-card card-glow-emerald">
@@ -290,7 +292,8 @@
             </div>
         </div>
 
-        <!-- 1-Click Update Interactive Console (Stepper + Obsidian Terminal) -->
+        </details>
+        <!-- Update progress -->
         <div id="updateProgressCard" class="update-console-card" style="display:none;">
             <div class="console-card-header">
                 <div class="console-header-left">
@@ -439,7 +442,7 @@
                     </div>
                     <div class="op-header-info">
                         <div class="op-title-row">
-                            <h3 class="op-title">Cache Optimizer</h3>
+                            <h3 class="op-title">Refresh cached pages</h3>
                             <span class="op-status-badge badge-emerald">Ready</span>
                         </div>
                         <p class="op-desc">Clear and compile Blade views, route maps, system configurations, and application cache stores.</p>
@@ -451,7 +454,7 @@
                 <div class="op-card-footer">
                     <div class="op-actions-row">
                         <button type="button" onclick="clearCachesOnly()" id="cacheBtn" class="saas-btn saas-btn-secondary op-btn-full">
-                            <i class="bi bi-arrow-repeat me-1"></i> Rebuild & Purge Caches
+                            <i class="bi bi-arrow-repeat me-1"></i> Refresh caches
                         </button>
                     </div>
                 </div>
@@ -510,7 +513,7 @@
                     </div>
                     <div class="op-header-info">
                         <div class="op-title-row">
-                            <h3 class="op-title">Traffic Shield</h3>
+                            <h3 class="op-title">Maintenance mode</h3>
                             <span class="op-status-badge {{ $isDown ? 'badge-amber' : 'badge-emerald' }}" id="trafficShieldBadge">
                                 {{ $isDown ? 'Maintenance Active' : 'Traffic Open' }}
                             </span>
@@ -560,7 +563,7 @@
                     <span class="hero-icon-box">
                         <i class="bi bi-shield-check"></i>
                     </span>
-                    <span class="hero-title-text">Database Backups & Disaster Recovery</span>
+                    <span class="hero-title-text">Backups & restore</span>
                 </h1>
                 <p class="update-hero-desc">
                     Capture instant point-in-time database snapshots, download offline SQL archives, and restore historical states safely in 1 click.

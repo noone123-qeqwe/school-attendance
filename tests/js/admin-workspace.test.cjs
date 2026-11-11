@@ -69,7 +69,7 @@ function fixture({ admin = true, mobile = false } = {}) {
     editorButton.closest = selector => selector.includes('edit-record') ? editorButton : null;
     main.querySelectorAll = selector => selector.startsWith('table.') ? tables : selector.includes('modal-backdrop') ? [dialog] : [];
     document.querySelectorAll = selector => { queries++; return selector.includes('data-admin-navigation') ? [nav] : []; };
-    const window = { closeMoreSheet() { mobileCloses++; } };
+    const window = { addEventListener() {}, closeMoreSheet() { mobileCloses++; } };
     function notify(target, records = [{ addedNodes: [{}] }]) { observers.filter(o => o.target === target).forEach(o => o.callback(records)); }
     class MutationObserver {
         constructor(callback) { this.callback = callback; observers.push(this); }
@@ -100,6 +100,35 @@ test('selecting a mobile destination dismisses its dialog without affecting desk
         app.nav.fire('click', { target: { closest: () => ({ href: '/admin/students' }) } });
         assert.equal(app.mobileCloses, mobile ? 1 : 0);
     }
+});
+
+test('opening an area closes unrelated groups, while searching can reveal several areas', () => {
+    const app = fixture();
+    app.groups[1].open = true;
+    app.groups[1].fire('toggle');
+    assert.deepEqual(app.groups.map(group => group.open), [false, true, false]);
+    app.search.value = 's';
+    app.search.fire('input');
+    app.groups[0].fire('toggle');
+    assert.ok(app.groups[0].open && app.groups[2].open);
+});
+
+test('page search recognizes familiar aliases as well as the visible page name', () => {
+    const app = fixture();
+    app.groups[1].links[1].textContent = 'Teachers';
+    app.groups[1].links[1].dataset.adminNavKeywords = 'Instructors and faculty accounts People';
+    app.search.value = 'faculty';
+    app.search.fire('input');
+    assert.equal(app.groups[1].hidden, false);
+    assert.equal(app.groups[1].links[1].hidden, false);
+    assert.equal(app.groups[1].links[0].hidden, true);
+});
+
+test('invalid settings fields reveal their closed category without disabling form submission', () => {
+    const app = fixture();
+    const category = { open: false };
+    app.main.fire('invalid', { target: { closest: () => category } });
+    assert.equal(category.open, true);
 });
 
 test('phone record labels preserve content and are reapplied after filtered rows arrive', () => {

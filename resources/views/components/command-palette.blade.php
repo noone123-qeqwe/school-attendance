@@ -700,30 +700,12 @@
         @endphp
 
         @if(Auth::user()->isAdmin())
-            navItems = [
-                { id: 'dashboard', label: 'Dashboard', hint: 'Admin portal & university overview', icon: 'bi-grid-fill', color: '#ffd166', bg: 'rgba(255, 209, 102, 0.12)', category: 'navigation', badge: 'Admin', url: '{{ route("admin.dashboard") }}' },
-                { id: 'students', label: 'Students', hint: 'Manage enrolled student records', icon: 'bi-people-fill', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.12)', category: 'academic', badge: 'Directory', url: '{{ route("admin.students") }}' },
-                { id: 'teachers', label: 'Teachers', hint: 'Manage instructor accounts & faculty', icon: 'bi-person-workspace', color: '#a78bfa', bg: 'rgba(167, 139, 250, 0.12)', category: 'academic', badge: 'Faculty', url: '{{ route("admin.teachers") }}' },
-                { id: 'subjects', label: 'Subjects & Schedules', hint: 'Course curriculum and timetables', icon: 'bi-book-fill', color: '#2dd4bf', bg: 'rgba(45, 212, 191, 0.12)', category: 'academic', badge: 'Curriculum', url: '{{ route("admin.subjects") }}' },
-                { id: 'attendance', label: 'Attendance Logs', hint: 'University-wide attendance records', icon: 'bi-clipboard-check-fill', color: '#fde68a', bg: 'rgba(253, 230, 138, 0.12)', category: 'academic', badge: 'Logs', url: '{{ route("admin.attendance") }}' },
-                { id: 'qr', label: 'QR Management', hint: 'Active QR attendance sessions', icon: 'bi-qr-code-scan', color: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', category: 'action', badge: 'Session', url: '{{ route("admin.qr") }}' },
-                { id: 'notifications', label: 'Notifications', hint: 'Campus alerts & system notifications', icon: 'bi-bell-fill', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', category: 'system', badge: '{{ $notifBadgeText }}', url: '{{ route("admin.notifications") }}' },
-                { id: 'courses', label: 'Courses & Degrees', hint: 'Degree programs & majors', icon: 'bi-mortarboard-fill', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.12)', category: 'academic', badge: 'Programs', url: '{{ route("admin.courses.index") }}' },
-                { id: 'sections', label: 'Sections', hint: 'Class sections and student cohorts', icon: 'bi-diagram-3-fill', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.12)', category: 'academic', badge: 'Sections', url: '{{ route("admin.sections.index") }}' },
-                { id: 'announcements', label: 'Announcements', hint: 'Broadcast campus announcements', icon: 'bi-megaphone-fill', color: '#f97316', bg: 'rgba(249, 115, 22, 0.12)', category: 'action', badge: 'Broadcast', url: '{{ route("admin.announcements.index") }}' },
-                { id: 'calendar', label: 'Holiday Calendar', hint: 'Official holidays & university events', icon: 'bi-calendar-event-fill', color: '#4ade80', bg: 'rgba(74, 222, 128, 0.12)', category: 'navigation', badge: 'Calendar', url: '{{ route("admin.calendar") }}' },
-                { id: 'excuses', label: 'Excuse Reviews', hint: 'Review & approve student absences', icon: 'bi-file-earmark-check-fill', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', category: 'action', badge: 'Reviews', url: '{{ route("admin.excuses") }}' },
-                { id: 'audit', label: 'Audit Logs', hint: 'Security activity & change logs', icon: 'bi-journal-code', color: '#e2e8f0', bg: 'rgba(226, 232, 240, 0.12)', category: 'system', badge: 'Security', url: '{{ route("admin.activity.log") }}' },
-                { id: 'health', label: 'System Health', hint: 'Server, database and cache metrics', icon: 'bi-heart-pulse-fill', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)', category: 'system', badge: 'Health', url: '{{ route("admin.system-health.index") }}' },
-                { id: 'backups', label: 'Backups', hint: 'Manage database snapshots', icon: 'bi-database-down', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)', category: 'system', badge: 'Backup', url: '{{ route("admin.backups.index") }}' },
-                { id: 'settings', label: 'Settings', hint: 'System-wide preferences & GPS', icon: 'bi-sliders', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.12)', category: 'system', badge: 'Config', url: '{{ route("admin.settings") }}' },
-                { id: 'reports', label: 'Generate PDF Report', hint: 'Export official attendance summary', icon: 'bi-file-earmark-pdf-fill', color: '#f87171', bg: 'rgba(248, 113, 113, 0.12)', category: 'action', badge: 'Export', url: '{{ route("admin.attendance.pdf") }}' }
-            ];
+            navItems = @json(\App\Support\AdminNavigation::searchItems(Auth::user()));
             quickActionChips = [
-                { label: 'Students', icon: 'bi-people-fill', url: '{{ route("admin.students") }}' },
-                { label: 'QR Sessions', icon: 'bi-qr-code-scan', url: '{{ route("admin.qr") }}' },
-                { label: 'Excuse Reviews', icon: 'bi-file-earmark-check-fill', url: '{{ route("admin.excuses") }}' },
-                { label: 'Audit Logs', icon: 'bi-journal-code', url: '{{ route("admin.activity.log") }}' }
+                { label: 'Students', icon: 'bi-people', url: '{{ route("admin.students") }}' },
+                { label: 'Class schedules', icon: 'bi-calendar3', url: '{{ route("admin.class-schedules.index") }}' },
+                { label: 'Attendance', icon: 'bi-clipboard-check', url: '{{ route("admin.attendance") }}' },
+                { label: 'Reports', icon: 'bi-bar-chart', url: '{{ route("admin.reports") }}' }
             ];
         @elseif(Auth::user()->isTeacher())
             navItems = [

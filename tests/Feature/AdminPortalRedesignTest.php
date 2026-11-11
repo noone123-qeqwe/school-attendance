@@ -64,6 +64,7 @@ class AdminPortalRedesignTest extends TestCase
             $this->assertSame(200, $response->status(), "Page {$name} must render.");
             $html = $response->getContent();
             $this->assertStringContainsString('admin-portal-redesign.css', $html, $name);
+            $this->assertStringContainsString('admin-simple.css', $html, $name);
             $this->assertStringContainsString('admin-workspace.js', $html, $name);
             $xpath = $this->xpath($html);
             $this->assertSame(2, $xpath->query('//*[@data-admin-navigation]')->length, $name);
@@ -222,7 +223,7 @@ class AdminPortalRedesignTest extends TestCase
         foreach (['student' => '/home', 'teacher' => '/teacher/dashboard', 'parent' => '/parent/dashboard'] as $role => $url) {
             $user = User::factory()->create(['role' => $role]);
             $response = $this->actingAs($user)->get($url)->assertOk();
-            $response->assertDontSee('admin-portal-redesign.css', false)->assertDontSee('admin-workspace.js', false);
+            $response->assertDontSee('admin-portal-redesign.css', false)->assertDontSee('admin-simple.css', false)->assertDontSee('admin-workspace.js', false);
         }
     }
 

@@ -1,20 +1,22 @@
 @extends('layouts.app')
 
 @section('portal-title', 'Attendance Monitoring')
-@section('page-title', 'Attendance Management')
-@section('page-sub', 'Monitor class summaries and individual student attendance records')
+@section('page-title', 'Attendance records')
+@section('page-sub', 'Classes and individual records')
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 admin-page-heading">
     <div>
         <h1 class="saas-heading saas-heading-lg mb-1">Attendance Records</h1>
-        <p class="saas-text-muted m-0">Review aggregated class attendance, drill down to individual students, and manage manual overrides.</p>
+        <p class="saas-text-muted m-0">Find a class or student, review their attendance, and download records.</p>
     </div>
 
     <div class="d-flex gap-2 admin-page-actions">
+        @if(Auth::user()->admin_sub_role !== 'data_entry')
         <a href="{{ route('admin.activity.log') }}" class="btn btn-outline" style="border-color: rgba(96, 165, 250, 0.3); color: #60a5fa;">
             <i class="bi bi-shield-lock"></i> Audit Trail
         </a>
+        @endif
         <a href="{{ route('admin.attendance.export', request()->all()) }}" class="btn btn-outline" style="border-color: rgba(74, 222, 128, 0.3); color: #4ade80;">
             <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
         </a>

@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
 @section('portal-title', 'Attendance Reports')
-@section('page-title', 'Reports & Analytics')
-@section('page-sub', 'Generate, analyze, and export comprehensive school attendance metrics')
+@section('page-title', 'Reports')
+@section('page-sub', 'Attendance summaries and downloads')
 
 @section('content')
 <div class="admin-page-heading" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
     <div>
-        <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Reports & Analytics</h1>
-        <p class="saas-text-muted" style="margin:0;">Comprehensive attendance metrics, class summaries, and exportable reports.</p>
+        <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Reports</h1>
+        <p class="saas-text-muted" style="margin:0;">Choose a report, set the dates, then download your results.</p>
     </div>
     <div class="admin-page-actions" style="display:flex; gap:10px;">
         <a href="{{ route('admin.reports.csv', request()->all()) }}" class="saas-btn saas-btn-secondary" style="color:#34d399; border-color:rgba(52,211,153,0.3); text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
@@ -28,22 +28,25 @@
         'monthly' => ['label' => 'Monthly', 'icon' => 'calendar-month'],
         'range' => ['label' => 'Date Range', 'icon' => 'calendar-range'],
         'late' => ['label' => 'Late List', 'icon' => 'clock-history'],
-        'absent' => ['label' => 'Absenteeism', 'icon' => 'person-x'],
+        'absent' => ['label' => 'Absent students', 'icon' => 'person-x'],
         'class_summary' => ['label' => 'Class Summary', 'icon' => 'building'],
         'subject_summary' => ['label' => 'Subject Summary', 'icon' => 'book'],
-        'percentage' => ['label' => 'Student %', 'icon' => 'pie-chart'],
+        'percentage' => ['label' => 'Student attendance percentage', 'icon' => 'pie-chart'],
     ];
 @endphp
 
-<nav class="admin-view-tabs" aria-label="Report category">
-    @foreach($reportTypes as $key => $meta)
-    <a href="{{ route('admin.reports', array_merge(request()->except(['page']), ['type' => $key])) }}"
-       @if($type === $key) aria-current="page" @endif class="saas-btn {{ $type === $key ? 'saas-btn-primary' : 'saas-btn-secondary' }}"
-       style="padding:8px 14px; font-size:0.85rem; white-space:nowrap; text-decoration:none;">
-        <i class="bi bi-{{ $meta['icon'] }} me-1"></i> {{ $meta['label'] }}
-    </a>
+<form method="GET" action="{{ route('admin.reports') }}" class="admin-report-picker">
+    @foreach(request()->except(['type', 'page']) as $key => $value)
+        @if(is_scalar($value))<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endif
     @endforeach
-</nav>
+    <div>
+        <label for="adminReportType">Report type</label>
+        <select id="adminReportType" name="type" class="saas-input">
+            @foreach($reportTypes as $key => $meta)<option value="{{ $key }}" @selected($type === $key)>{{ $meta['label'] }}</option>@endforeach
+        </select>
+    </div>
+    <button type="submit" class="saas-btn saas-btn-secondary">Show report</button>
+</form>
 
 <!-- Filter Bar -->
 <div class="saas-card" style="margin-bottom:24px;">

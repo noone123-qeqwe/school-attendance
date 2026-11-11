@@ -3,27 +3,22 @@
 @section('title', 'Subjects')
 
 @section('content')
+@php($isReadOnlyAuditor = auth()->user()->admin_sub_role === 'auditor')
 <div class="admin-page-heading">
     <div>
-        <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Subjects / Curriculum</h1>
-        <p class="saas-text-muted" style="margin:0;">Manage course subjects, instructors, and prerequisites.</p>
+        <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Subjects & enrollment</h1>
+        <p class="saas-text-muted" style="margin:0;">Choose a subject to manage its roster, assigned teacher or schedule.</p>
     </div>
 
     <div class="admin-page-actions">
-        <button class="saas-btn saas-btn-primary" onclick="openModal('addSubjectModal')">
+        @unless($isReadOnlyAuditor)
+        <a href="{{ route('admin.subjects.create') }}" class="saas-btn saas-btn-primary">
             <i class="bi bi-plus-lg"></i> Add Subject
-        </button>
+        </a>
+        @endunless
     </div>
 </div>
 
-<div class="admin-view-tabs">
-    <a href="{{ route('admin.subjects') }}" class="saas-btn {{ request()->routeIs('admin.subject*') ? 'saas-btn-primary' : 'saas-btn-secondary' }}" style="padding:7px 16px; border-radius:12px; font-size:0.86rem; font-weight:600; text-decoration:none;">
-        <i class="bi bi-journals me-1"></i> Subjects & Curriculum
-    </a>
-    <a href="{{ route('admin.class-schedules.index') }}" class="saas-btn {{ request()->routeIs('admin.class-schedules*') ? 'saas-btn-primary' : 'saas-btn-secondary' }}" style="padding:7px 16px; border-radius:12px; font-size:0.86rem; font-weight:600; text-decoration:none;">
-        <i class="bi bi-clock-fill me-1"></i> Class Schedules
-    </a>
-</div>
 
 <x-card type="section">
     <x-slot:title>Subjects List</x-slot:title>
@@ -92,21 +87,23 @@
                         @endif
                     </td>
                     <td data-label="Actions" style="text-align:right;">
-                        <a href="{{ route('admin.enrollments.index', $subject) }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="color:var(--ent-primary);" title="Manage Roster">
-                            <i class="bi bi-people"></i>
+                        <div class="admin-row-actions">
+                        <a href="{{ route('admin.enrollments.index', $subject) }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="color:var(--ent-primary);">
+                            <i class="bi bi-people" aria-hidden="true"></i> Roster
                         </a>
                         <a href="{{ route('admin.class-schedules.index', ['subject_id' => $subject->id]) }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="color:#D4AF37;" title="Assign / View Schedule">
-                            <i class="bi bi-clock-fill"></i>
+                            <i class="bi bi-clock-fill" aria-hidden="true"></i> Schedule
                         </a>
-                        <button class="ent-btn ent-btn-xs ent-btn-ghost" title="Edit">
-                            <i class="bi bi-pencil"></i>
-                        </button>
+                        @unless($isReadOnlyAuditor)
+                        <a href="{{ route('admin.subjects.edit', $subject) }}" class="ent-btn ent-btn-xs ent-btn-ghost"><i class="bi bi-pencil" aria-hidden="true"></i> Edit</a>
                         <form action="{{ route('admin.subjects.destroy', $subject->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this subject?')">
                             @csrf @method('DELETE')
                             <button type="submit" class="ent-btn ent-btn-xs ent-btn-ghost" style="color:var(--ent-danger);" title="Delete">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </form>
+                        @endunless
+                        </div>
                     </td>
                 </tr>
                 @empty
@@ -118,9 +115,11 @@
                             message="There are no subjects matching your filters. Get started by adding your first subject."
                         >
                             <x-slot:action>
-                                <button class="btn btn-primary" onclick="openModal('addSubjectModal')" style="background: linear-gradient(135deg, #7A1A1A, #9c2727); border: none; border-radius: 12px; padding: 10px 24px; font-weight: 600; font-size: 0.9rem; color: #fff;">
+                                @unless($isReadOnlyAuditor)
+                                <a href="{{ route('admin.subjects.create') }}" class="btn btn-primary" style="background: linear-gradient(135deg, #7A1A1A, #9c2727); border: none; border-radius: 12px; padding: 10px 24px; font-weight: 600; font-size: 0.9rem; color: #fff;">
                                     <i class="bi bi-plus-lg me-1"></i> Add Subject
-                                </button>
+                                </a>
+                                @endunless
                             </x-slot:action>
                         </x-empty-state>
                     </td>
@@ -142,89 +141,4 @@
     @endif
 </x-card>
 
-<!-- Add Subject Modal -->
-<div class="saas-modal-backdrop" id="addSubjectModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">
-    <div class="saas-card" style="width:100%; max-width:500px; transform:scale(0.95); transition:transform 0.2s;" id="addSubjectCard">
-        <div class="saas-card-header">
-            <div class="saas-heading saas-heading-sm">Add New Subject</div>
-            <button onclick="closeModal('addSubjectModal')" style="background:none; border:none; color:var(--saas-text-muted); cursor:pointer;"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <form action="{{ route('admin.subjects.store') }}" method="POST">
-            @csrf
-            <div class="saas-card-body">
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                    <div class="saas-form-group">
-                        <label class="saas-label">Subject Code</label>
-                        <input type="text" name="code" class="saas-input" placeholder="e.g. IT311" required>
-                    </div>
-                    <div class="saas-form-group">
-                        <label class="saas-label">Course</label>
-                        <select name="course" class="saas-input saas-select" required>
-                            <option value="BSCS">BSCS</option>
-                            <option value="BSIT">BSIT</option>
-                            <option value="BSIS">BSIS</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="saas-form-group">
-                    <label class="saas-label">Subject Name</label>
-                    <input type="text" name="name" class="saas-input" placeholder="e.g. Advanced Database Systems" required>
-                </div>
-
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                    <div class="saas-form-group">
-                        <label class="saas-label">Year Level</label>
-                        <select name="year" class="saas-input saas-select" required>
-                            <option value="1">Year 1</option>
-                            <option value="2">Year 2</option>
-                            <option value="3">Year 3</option>
-                            <option value="4">Year 4</option>
-                        </select>
-                    </div>
-                    <div class="saas-form-group">
-                        <label class="saas-label">Semester</label>
-                        <select name="semester" class="saas-input saas-select" required>
-                            <option value="1">1st Semester</option>
-                            <option value="2">2nd Semester</option>
-                            <option value="Summer">Summer</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="saas-form-group" style="margin-bottom:0;">
-                    <label class="saas-label">Description (Optional)</label>
-                    <textarea name="description" class="saas-input" rows="3"></textarea>
-                </div>
-            </div>
-            <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:flex-end; gap:12px; background:rgba(0,0,0,0.2);">
-                <button type="button" class="saas-btn saas-btn-secondary" onclick="closeModal('addSubjectModal')">Cancel</button>
-                <button type="submit" class="saas-btn saas-btn-primary">Save Subject</button>
-            </div>
-        </form>
-    </div>
-</div>
 @endsection
-
-@push('scripts')
-<script @cspNonce>
-    function openModal(id) {
-        const modal = document.getElementById(id);
-        const card = modal.querySelector('.saas-card');
-        modal.style.display = 'flex';
-        void modal.offsetWidth;
-        modal.style.opacity = '1';
-        card.style.transform = 'scale(1)';
-    }
-
-    function closeModal(id) {
-        const modal = document.getElementById(id);
-        const card = modal.querySelector('.saas-card');
-        modal.style.opacity = '0';
-        card.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 200);
-    }
-</script>
-@endpush

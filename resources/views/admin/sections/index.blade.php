@@ -6,7 +6,7 @@
 @php($isReadOnlyAuditor = auth()->user()->admin_sub_role === 'auditor')
 <div class="admin-page-heading">
     <div>
-        <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Sections & Blocks</h1>
+        <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Class sections</h1>
         <p class="saas-text-muted" style="margin:0;">Manage student groups and class sections.</p>
     </div>
 
@@ -17,14 +17,6 @@
     </div>
 </div>
 
-<div class="admin-view-tabs">
-    <a href="{{ route('admin.courses.index') }}" class="saas-btn {{ request()->routeIs('admin.courses*') ? 'saas-btn-primary' : 'saas-btn-secondary' }}" style="padding:7px 16px; border-radius:12px; font-size:0.86rem; font-weight:600; text-decoration:none;">
-        <i class="bi bi-book-fill me-1"></i> Degree Courses
-    </a>
-    <a href="{{ route('admin.sections.index') }}" class="saas-btn {{ request()->routeIs('admin.sections*') ? 'saas-btn-primary' : 'saas-btn-secondary' }}" style="padding:7px 16px; border-radius:12px; font-size:0.86rem; font-weight:600; text-decoration:none;">
-        <i class="bi bi-diagram-3-fill me-1"></i> Class Sections
-    </a>
-</div>
 
 <div class="saas-card" style="margin-bottom:24px;">
     <div class="saas-card-header">

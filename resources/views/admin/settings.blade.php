@@ -7,7 +7,7 @@
 <div class="admin-settings-header">
     <div>
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Settings</h1>
-        <p class="saas-text-muted" style="margin:0;">Configure global system parameters and preferences.</p>
+        <p class="saas-text-muted" style="margin:0;">Open a category to change its settings. Save changes applies all categories.</p>
     </div>
 
     <div class="admin-page-actions">
@@ -17,24 +17,23 @@
     </div>
 </div>
 
-<nav class="admin-settings-index" aria-label="Settings sections">
-    <a href="#settings-institution">Institution</a>
-    <a href="#settings-attendance">Academic & attendance</a>
-    <a href="#settings-verification">Verification rules</a>
-    <a href="#settings-notifications">Notifications</a>
-    <a href="#settings-security">Security & access</a>
-</nav>
+@if(session('success'))
+    <div class="alert alert-success" role="status">{{ session('success') }}</div>
+@endif
+@if($errors->any())
+    <div class="alert alert-danger" role="alert"><p>Check these settings before saving:</p><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+@endif
 
 <div class="admin-settings-layout">
 
     <!-- Main Settings Form -->
-    <div class="saas-card admin-settings-form" style="padding:24px;">
+    <div class="admin-settings-form">
         <form id="settingsForm" action="{{ route('admin.settings.update') }}" method="POST">
             @csrf
 
-            <h3 id="settings-institution" class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-                <i class="bi bi-building saas-text-muted"></i> Institution Details
-            </h3>
+            <details class="admin-settings-section" open>
+                <summary id="settings-institution"><i class="bi bi-building" aria-hidden="true"></i><span><strong>School details</strong><small>Name, short name and tagline</small></span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+                <div class="admin-settings-section-body">
 
             <div class="admin-settings-fields" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
                 <div class="saas-form-group">
@@ -52,11 +51,11 @@
                 <input type="text" name="school_subtitle" class="saas-input" value="{{ env('APP_SUBTITLE', 'QR, GPS & Biometric Attendance') }}">
             </div>
 
-            <hr style="border:0; border-top:1px solid var(--saas-border); margin:0 0 32px 0;">
-
-            <h3 id="settings-attendance" class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-                <i class="bi bi-clock-history saas-text-muted"></i> Academic & Attendance
-            </h3>
+                </div>
+            </details>
+            <details class="admin-settings-section" @if($errors->any()) open @endif>
+                <summary id="settings-attendance"><i class="bi bi-clock-history" aria-hidden="true"></i><span><strong>Academic term & attendance</strong><small>Semester, late arrivals and absence thresholds</small></span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+                <div class="admin-settings-section-body">
 
             <div class="admin-settings-fields" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
                 <div class="saas-form-group">
@@ -94,11 +93,15 @@
                 </div>
             </div>
 
-            <hr style="border:0; border-top:1px solid var(--saas-border); margin:0 0 32px 0;">
+                </div>
+            </details>
+            <details class="admin-settings-section" @if($errors->any()) open @endif>
+                <summary id="settings-verification"><i class="bi bi-qr-code-scan" aria-hidden="true"></i><span><strong>QR codes, location & verification</strong><small>Attendance checks, device rules and campus location</small></span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+                <div class="admin-settings-section-body">
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 id="settings-verification" class="saas-heading saas-heading-sm" style="margin:0; display:flex; align-items:center; gap:8px;">
-                    <i class="bi bi-qr-code-scan saas-text-muted"></i> Attendance & Biometrics Rules
+                <h3 class="saas-heading saas-heading-sm" style="margin:0; display:flex; align-items:center; gap:8px;">
+                    Attendance checks
                 </h3>
                 <button type="button" class="saas-btn saas-btn-secondary" style="padding:4px 12px; font-size:0.8rem;" onclick="resetAttendanceRules()">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset to Default
@@ -236,11 +239,11 @@
                 }
             </script>
 
-            <hr style="border:0; border-top:1px solid var(--saas-border); margin:0 0 32px 0;">
-
-            <h3 id="settings-notifications" class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-                <i class="bi bi-bell saas-text-muted"></i> Notifications
-            </h3>
+                </div>
+            </details>
+            <details class="admin-settings-section" @if($errors->any()) open @endif>
+                <summary id="settings-notifications"><i class="bi bi-bell" aria-hidden="true"></i><span><strong>Features & notifications</strong><small>Available features, email and SMS alerts</small></span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+                <div class="admin-settings-section-body">
 
             <label style="display:flex; align-items:center; gap:12px; margin-bottom:12px; cursor:pointer;">
                 <input type="checkbox" name="email_notifications" checked style="accent-color:var(--saas-primary); width:16px; height:16px;">
@@ -285,11 +288,11 @@
                 @endforeach
             </div>
 
-            <hr style="border:0; border-top:1px solid var(--saas-border); margin:32px 0;">
-
-            <h3 id="settings-security" class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-                <i class="bi bi-shield-lock saas-text-muted"></i> Security & Access
-            </h3>
+                </div>
+            </details>
+            <details class="admin-settings-section" @if($errors->any()) open @endif>
+                <summary id="settings-security"><i class="bi bi-shield-lock" aria-hidden="true"></i><span><strong>Security & access</strong><small>Face verification limits and admin access</small></span><i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+                <div class="admin-settings-section-body">
 
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:24px;">
                 <div class="saas-form-group">
@@ -320,6 +323,8 @@
                 <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Comma-separated list of IP addresses allowed to access the Admin panel. Leave blank to disable whitelisting.</p>
             </div>
 
+                </div>
+            </details>
             <div class="admin-settings-footer">
                 <button type="submit" class="saas-btn saas-btn-primary"><i class="bi bi-save"></i> Save Changes</button>
             </div>
@@ -332,8 +337,9 @@
             <h4 class="saas-heading saas-heading-sm" style="margin-bottom:12px;">System Information</h4>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
                 <span class="saas-text-muted" style="font-size:0.85rem;">Version</span>
-                <span style="font-size:0.85rem; font-weight:600; color:var(--saas-gold);">v{{ app(\App\Services\ChangelogService::class)->getLatestVersion() }} (SaaS Edition)</span>
+                <span style="font-size:0.85rem; font-weight:600; color:var(--saas-gold);">v{{ app(\App\Services\ChangelogService::class)->getLatestVersion() }}</span>
             </div>
+            <details class="admin-technical-details"><summary>Technical details</summary>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
                 <span class="saas-text-muted" style="font-size:0.85rem;">Laravel</span>
                 <span style="font-size:0.85rem; font-weight:600;">v{{ app()->version() }}</span>
@@ -346,6 +352,7 @@
                 <span class="saas-text-muted" style="font-size:0.85rem;">Timezone</span>
                 <span style="font-size:0.85rem; font-weight:600;">{{ config('app.timezone') }}</span>
             </div>
+            </details>
 
             <button type="button" id="adminCheckUpdateBtn" onclick="checkAdminUpdates()" class="saas-btn saas-btn-secondary" style="width:100%; justify-content:center; font-size:0.82rem; padding:8px 12px;">
                 <i class="bi bi-cloud-arrow-down me-1"></i> Check for Updates

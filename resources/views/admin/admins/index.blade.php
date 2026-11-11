@@ -5,7 +5,7 @@
 @section('content')
 <div class="admin-page-heading">
     <div>
-        <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Admins</h1>
+        <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Administrators</h1>
         <p class="saas-text-muted" style="margin:0;">Manage administrator accounts, permissions, and security roles.</p>
     </div>
 

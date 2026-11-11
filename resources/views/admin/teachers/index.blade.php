@@ -5,7 +5,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 directory-page-header">
     <div>
-        <h1 class="saas-heading saas-heading-lg mb-1">Instructors</h1>
+        <h1 class="saas-heading saas-heading-lg mb-1">Teachers</h1>
         <p class="saas-text-muted m-0">Manage teaching faculty and employee records.</p>
     </div>
 

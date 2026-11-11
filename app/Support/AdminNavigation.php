@@ -11,35 +11,35 @@ class AdminNavigation
     public static function groups(User $user): array
     {
         $groups = [
-            ['label' => 'Overview', 'icon' => 'bi-grid', 'items' => [
-                ['Dashboard', 'admin.dashboard', 'bi-grid-fill', ['admin.dashboard']],
+            ['label' => 'Home', 'icon' => 'bi-house-door', 'description' => 'Overview, calendar and notices', 'items' => [
+                ['Overview', 'admin.dashboard', 'bi-grid-fill', ['admin.dashboard'], 'Daily attendance and common tasks'],
                 ['School calendar', 'admin.calendar', 'bi-calendar-event', ['admin.calendar*']],
                 ['Announcements', 'admin.announcements.index', 'bi-megaphone', ['admin.announcements*']],
                 ['Notifications', 'admin.notifications', 'bi-bell', ['admin.notifications*']],
             ]],
-            ['label' => 'People', 'icon' => 'bi-people', 'items' => [
+            ['label' => 'People', 'icon' => 'bi-people', 'description' => 'Students, teachers and families', 'items' => [
                 ['Students', 'admin.students', 'bi-person', ['admin.students*', 'admin.student', 'admin.student.*']],
-                ['Instructors', 'admin.teachers', 'bi-person-badge', ['admin.teachers*', 'admin.teacher.*']],
+                ['Teachers', 'admin.teachers', 'bi-person-badge', ['admin.teachers*', 'admin.teacher.*'], 'Instructors and faculty accounts'],
                 ['Parents & guardians', 'admin.parents.index', 'bi-people', ['admin.parents*']],
             ]],
-            ['label' => 'Academics', 'icon' => 'bi-mortarboard', 'items' => [
+            ['label' => 'Classes', 'icon' => 'bi-mortarboard', 'description' => 'Schedules, subjects and enrollment', 'items' => [
+                ['Class schedules', 'admin.class-schedules.index', 'bi-clock', ['admin.class-schedules*'], 'Timetable, rooms and publishing'],
+                ['Subjects & enrollment', 'admin.subjects', 'bi-journal-bookmark', ['admin.subjects*', 'admin.enrollments*'], 'Subjects, instructors and class rosters'],
+                ['Class sections', 'admin.sections.index', 'bi-diagram-3', ['admin.sections*']],
                 ['Academic terms', 'admin.academic-years.index', 'bi-calendar3', ['admin.academic-years*']],
                 ['Departments', 'admin.departments.index', 'bi-building', ['admin.departments*']],
                 ['Courses & programs', 'admin.courses.index', 'bi-book', ['admin.courses*']],
-                ['Class sections', 'admin.sections.index', 'bi-diagram-3', ['admin.sections*']],
-                ['Subjects & enrollments', 'admin.subjects', 'bi-journal-bookmark', ['admin.subjects*', 'admin.enrollments*']],
-                ['Class schedules', 'admin.class-schedules.index', 'bi-clock', ['admin.class-schedules*']],
             ]],
-            ['label' => 'Attendance', 'icon' => 'bi-clipboard-check', 'items' => [
+            ['label' => 'Attendance', 'icon' => 'bi-clipboard-check', 'description' => 'Records, reviews and reports', 'items' => [
                 ['Attendance records', 'admin.attendance', 'bi-clipboard-data', ['admin.attendance*']],
-                ['QR center', 'admin.qr', 'bi-qr-code', ['admin.qr*']],
+                ['Reports', 'admin.reports', 'bi-bar-chart', ['admin.reports*'], 'Analytics, summaries and downloads'],
+                ['Student QR codes', 'admin.qr', 'bi-qr-code', ['admin.qr*'], 'QR center and printable student codes'],
                 ['Excuse reviews', 'admin.excuses', 'bi-file-earmark-text', ['admin.excuses*']],
                 ['Correction requests', 'admin.corrections', 'bi-pencil-square', ['admin.corrections*']],
                 ['Early warnings', 'admin.early-warnings', 'bi-exclamation-triangle', ['admin.early-warnings*']],
-                ['Reports & analytics', 'admin.reports', 'bi-bar-chart', ['admin.reports*']],
                 ['Classroom location', 'admin.gps', 'bi-geo-alt', ['admin.gps*']],
             ]],
-            ['label' => 'Administration', 'icon' => 'bi-gear', 'items' => [
+            ['label' => 'School & system', 'icon' => 'bi-gear', 'description' => 'Preferences, access and maintenance', 'items' => [
                 ['My profile', 'admin.profile', 'bi-person-circle', ['admin.profile']],
             ]],
         ];
@@ -77,5 +77,32 @@ class AdminNavigation
             }
         }
         return ['title' => 'Administration', 'group' => 'Workspace'];
+    }
+
+    public static function currentGroup(User $user, ?string $routeName): ?array
+    {
+        foreach (self::groups($user) as $group) {
+            foreach ($group['items'] as $item) {
+                if (self::matches($item[3], $routeName)) return $group;
+            }
+        }
+        return null;
+    }
+
+    /** Reuse the same destinations and permissions in the global page search. */
+    public static function searchItems(User $user): array
+    {
+        $items = [];
+        foreach (self::groups($user) as $group) {
+            foreach ($group['items'] as $item) {
+                $items[] = [
+                    'id' => $item[1], 'label' => $item[0],
+                    'hint' => $item[4] ?? $group['description'], 'icon' => $item[2],
+                    'category' => 'navigation', 'badge' => $group['label'],
+                    'color' => '#cfa46f', 'bg' => 'rgba(207,164,111,0.12)', 'url' => route($item[1]),
+                ];
+            }
+        }
+        return $items;
     }
 }

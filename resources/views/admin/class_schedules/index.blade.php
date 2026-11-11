@@ -3,6 +3,7 @@
 @section('title', 'Class Schedules & Room Assignment')
 
 @section('content')
+@php($isReadOnlyAuditor = auth()->user()->admin_sub_role === 'auditor')
 <style>
     /* Scoped Schedules Dashboard Styles */
     .sch-header-bar {
@@ -556,26 +557,20 @@
         <div class="sch-badge-pill">
             <i class="bi bi-clock-fill"></i> Academic Timetable &amp; Schedules
         </div>
-        <h1 class="sch-page-title">Class Schedules &amp; Room Assignment</h1>
-        <p class="sch-page-subtitle">Assign subjects, student sections, lecture rooms, faculty instructors, and timeslots.</p>
+        <h1 class="sch-page-title">Class schedules</h1>
+        <p class="sch-page-subtitle">Set each class time, teacher, section and room. Publish when the timetable is ready.</p>
     </div>
     
     <div>
+        @unless($isReadOnlyAuditor)
         <button type="button" class="sch-btn-primary" onclick="openModal('addScheduleModal')">
-            <i class="bi bi-calendar-plus-fill"></i> Assign Schedule
+            <i class="bi bi-calendar-plus-fill"></i> Add schedule
         </button>
+        @endunless
     </div>
 </div>
 
 <!-- Nav Tabs -->
-<div class="sch-nav-tabs">
-    <a href="{{ route('admin.subjects') }}" class="sch-tab-link sch-tab-inactive">
-        <i class="bi bi-journal-bookmark-fill"></i> Subjects &amp; Curriculum
-    </a>
-    <a href="{{ route('admin.class-schedules.index') }}" class="sch-tab-link sch-tab-active">
-        <i class="bi bi-clock-fill"></i> Class Schedules
-    </a>
-</div>
 
 <!-- Schedule publication -->
 <section style="display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:18px 20px;margin-bottom:22px;border-radius:16px;border:1px solid rgba(212,175,55,.2);background:rgba(26,17,17,.72);">
@@ -604,6 +599,7 @@
     </div>
     @if($academicYear)
         @php($canPublishSchedule = !$isSchedulePublished && (($publicationStatus['schedule_count'] ?? 0) > 0 || $publication))
+        @unless($isReadOnlyAuditor)
         <form method="POST" action="{{ route('admin.class-schedules.publish') }}" onsubmit="return confirm('Publish the current schedule and notify students and teachers whose schedules changed?');">
             @csrf
             <button type="submit" class="sch-btn-primary" @disabled(!$canPublishSchedule) style="white-space:nowrap;{{ !$canPublishSchedule ? 'opacity:.55;cursor:not-allowed;' : '' }}">
@@ -611,6 +607,7 @@
                 {{ $isSchedulePublished ? 'Schedules Published' : ($publication ? 'Publish Schedule Changes' : 'Publish Schedules') }}
             </button>
         </form>
+        @endunless
     @else
         <a href="{{ route('admin.academic-years.index') }}" class="sch-btn-primary" style="white-space:nowrap;text-decoration:none;">
             <i class="bi bi-calendar-plus-fill"></i> Set Current Term
@@ -755,6 +752,7 @@
                         </span>
                     </td>
                     <td style="text-align: right;">
+                        @unless($isReadOnlyAuditor)
                         <div style="display: inline-flex; gap: 6px;">
                             <button type="button" 
                                     class="sch-action-btn" 
@@ -770,6 +768,9 @@
                                 </button>
                             </form>
                         </div>
+                        @else
+                            <span class="admin-secondary-text">View only</span>
+                        @endunless
                     </td>
                 </tr>
                 @empty
@@ -792,9 +793,11 @@
                                     <i class="bi bi-arrow-counterclockwise"></i> Reset Filters
                                 </a>
                             @endif
+                            @unless($isReadOnlyAuditor)
                             <button type="button" class="sch-btn-primary" onclick="openModal('addScheduleModal')">
                                 <i class="bi bi-calendar-plus-fill"></i> Assign First Schedule
                             </button>
+                            @endunless
                         </div>
                     </td>
                 </tr>

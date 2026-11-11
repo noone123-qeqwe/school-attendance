@@ -11,120 +11,60 @@
     $rateDiff = $attendanceRate - $yesterdayRate;
 @endphp
 
-{{-- ─── MODERNIZED DASHBOARD HEADER ─── --}}
-<div class="premium-hero-card dashboard-hero dash-animate">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
-        <div>
-            <h1 style="color: #ffffff; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 4vw, 2rem); letter-spacing: -0.5px;">School overview</h1>
-            <div style="color: #b39b82; font-size: 0.88rem; font-weight: 500;">
-                Attendance, people, and tasks at a glance.
-            </div>
-        </div>
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-            <div class="hero-clock-pill">
-                <div class="hero-clock-time">
-                    <i class="bi bi-clock"></i> <span id="dashLiveClock">{{ now()->format('h:i:s A') }}</span>
-                </div>
-                <div class="hero-clock-date" id="dashLiveDate">{{ now()->format('l, F j, Y') }}</div>
-            </div>
-
-            <a href="{{ route('admin.attendance.pdf') }}" class="btn-modern-gold" style="padding: 10px 18px;">
-                <i class="bi bi-cloud-arrow-down-fill"></i> <span>Report</span>
-            </a>
-        </div>
+<header class="admin-home-heading">
+    <div>
+        <p class="admin-eyebrow">{{ now()->format('l, F j') }}</p>
+        <h1>School overview</h1>
+        <p>Start with a task, or check today's attendance below.</p>
     </div>
-</div>
+    <a href="{{ route('admin.reports') }}" class="saas-btn saas-btn-secondary"><i class="bi bi-bar-chart" aria-hidden="true"></i> View reports</a>
+</header>
 
-{{-- ─── KPI METRICS ─── --}}
-<div class="admin-dashboard-kpis dash-animate">
-    <x-kpi-card
-        label="Total Students"
-        :value="$totalStudents"
-        icon="bi-people-fill"
-        accent="gold"
-    />
-    <x-kpi-card
-        label="Total Instructors"
-        :value="$totalTeachers"
-        icon="bi-person-workspace"
-        accent="info"
-    />
-    <x-kpi-card
-        label="Present Today"
-        :value="$totalPresent"
-        icon="bi-check-circle-fill"
-        accent="success"
-        :delta="($presentDiff >= 0 ? '+'.$presentDiff : (string)$presentDiff)"
-        :deltaType="$presentDiff >= 0 ? 'positive' : 'negative'"
-        deltaText="vs yesterday"
-    />
-    <x-kpi-card
-        label="Attendance Rate"
-        :value="$attendanceRate . '%'"
-        icon="bi-percent"
-        accent="gold"
-        :delta="($rateDiff >= 0 ? '+'.$rateDiff : (string)$rateDiff) . '%'"
-        :deltaType="$rateDiff >= 0 ? 'positive' : 'negative'"
-        deltaText="vs yesterday"
-    />
-</div>
+<section aria-labelledby="adminTasksTitle" class="admin-home-section">
+    <h2 id="adminTasksTitle">What would you like to do?</h2>
+    <div class="admin-task-grid">
+        @foreach([
+            ['Students', 'Find a student, review registrations or update a record.', 'admin.students', 'bi-people'],
+            ['Class schedules', 'Assign sections and teachers, then publish the timetable.', 'admin.class-schedules.index', 'bi-calendar3'],
+            ['Attendance records', 'Look up attendance by class, date or student.', 'admin.attendance', 'bi-clipboard-check'],
+            ['School calendar', 'Review holidays and upcoming school dates.', 'admin.calendar', 'bi-calendar-event'],
+        ] as [$label, $description, $destination, $icon])
+            <a href="{{ route($destination) }}" class="admin-task-card">
+                <span class="admin-task-icon"><i class="bi {{ $icon }}" aria-hidden="true"></i></span>
+                <span><strong>{{ $label }}</strong><small>{{ $description }}</small></span>
+                <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            </a>
+        @endforeach
+    </div>
+</section>
 
-<h2 class="admin-section-heading">Quick access</h2>
-{{-- ─── QUICK ACTIONS PANEL ─── --}}
-<div class="modern-qa-grid admin-dashboard-actions dash-animate" aria-label="Quick actions">
-    <a href="{{ route('admin.students') }}" class="modern-qa-tile">
-        <div class="qa-icon-wrap" style="background: rgba(34, 197, 94, 0.14); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.25);">
-            <i class="bi bi-people-fill"></i>
-        </div>
-        <span class="qa-label">Students</span>
-    </a>
-    <a href="{{ route('admin.teachers') }}" class="modern-qa-tile">
-        <div class="qa-icon-wrap" style="background: rgba(59, 130, 246, 0.14); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25);">
-            <i class="bi bi-person-workspace"></i>
-        </div>
-        <span class="qa-label">Instructors</span>
-    </a>
-    <a href="{{ route('admin.attendance') }}" class="modern-qa-tile">
-        <div class="qa-icon-wrap" style="background: rgba(239, 68, 68, 0.14); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25);">
-            <i class="bi bi-clipboard-check-fill"></i>
-        </div>
-        <span class="qa-label">Attendance</span>
-    </a>
-    <a href="{{ route('admin.calendar') }}" class="modern-qa-tile">
-        <div class="qa-icon-wrap" style="background: rgba(168, 85, 247, 0.14); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.25);">
-            <i class="bi bi-calendar3-fill"></i>
-        </div>
-        <span class="qa-label">Calendar</span>
-    </a>
-    <a href="{{ route('admin.announcements.index') }}" class="modern-qa-tile">
-        <div class="qa-icon-wrap" style="background: rgba(236, 72, 153, 0.14); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.25);">
-            <i class="bi bi-megaphone-fill"></i>
-        </div>
-        <span class="qa-label">Announcements</span>
-    </a>
-    @if(Auth::user()->admin_sub_role !== 'data_entry')
-        <a href="{{ route('admin.activity.log') }}" class="modern-qa-tile">
-            <div class="qa-icon-wrap" style="background: rgba(245, 158, 11, 0.14); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25);">
-                <i class="bi bi-journal-text"></i>
-            </div>
-            <span class="qa-label">Activity Logs</span>
-        </a>
-    @endif
-    @if(Auth::user()->isSuperAdmin())
-    <a href="{{ route('admin.system-health.index') }}" class="modern-qa-tile">
-        <div class="qa-icon-wrap" style="background: rgba(20, 184, 166, 0.14); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.25);">
-            <i class="bi bi-heart-pulse-fill"></i>
-        </div>
-        <span class="qa-label">System Health</span>
-    </a>
-    <a href="{{ route('admin.settings') }}" class="modern-qa-tile">
-        <div class="qa-icon-wrap" style="background: rgba(148, 163, 184, 0.14); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25);">
-            <i class="bi bi-sliders"></i>
-        </div>
-        <span class="qa-label">Settings</span>
-    </a>
-    @endif
-</div>
+<section aria-labelledby="adminTodayTitle" class="admin-home-section">
+    <div class="admin-section-title-row">
+        <h2 id="adminTodayTitle">Today at a glance</h2>
+        <span class="admin-secondary-text">{{ $totalLate }} late · {{ $totalAbsent }} absent</span>
+    </div>
+    <div class="admin-dashboard-kpis">
+        <x-kpi-card label="Students" :value="$totalStudents" icon="bi-people" accent="gold" />
+        <x-kpi-card label="Teachers" :value="$totalTeachers" icon="bi-person-badge" accent="info" />
+        <x-kpi-card label="Present today" :value="$totalPresent" icon="bi-check-circle" accent="success"
+            :delta="($presentDiff >= 0 ? '+'.$presentDiff : (string)$presentDiff)"
+            :deltaType="$presentDiff >= 0 ? 'positive' : 'negative'" deltaText="vs yesterday" />
+        <x-kpi-card label="Attendance rate" :value="$attendanceRate . '%'" icon="bi-percent" accent="gold"
+            :delta="($rateDiff >= 0 ? '+'.$rateDiff : (string)$rateDiff) . '%'"
+            :deltaType="$rateDiff >= 0 ? 'positive' : 'negative'" deltaText="vs yesterday" />
+    </div>
+</section>
+
+<section aria-labelledby="adminReviewTitle" class="admin-home-section">
+    <h2 id="adminReviewTitle">{{ Auth::user()->admin_sub_role === 'auditor' ? 'Review attendance' : 'Review requests' }}</h2>
+    <div class="admin-review-links">
+        @unless(Auth::user()->admin_sub_role === 'auditor')
+            <a href="{{ route('admin.students', ['status' => 'pending']) }}"><i class="bi bi-person-check" aria-hidden="true"></i> Student registrations <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+        @endunless
+        <a href="{{ route('admin.excuses') }}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Excuse reviews <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+        <a href="{{ route('admin.corrections') }}"><i class="bi bi-pencil-square" aria-hidden="true"></i> Attendance corrections <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    </div>
+</section>
 
 {{-- ─── SYSTEM ALERTS ─── --}}
 @if($systemAlerts->count() > 0)
@@ -204,7 +144,7 @@
 </div>
 
 {{-- ─── AT-RISK STUDENTS ─── --}}
-<div class="dash-animate admin-dashboard-panel">
+<div class="dash-animate admin-dashboard-panel" id="at-risk-section">
     <x-card type="section" class="adm-card" style="min-width:0;">
         <x-slot:title>
             <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:var(--ent-danger);">
@@ -213,7 +153,7 @@
             At-Risk Students
         </x-slot:title>
         <x-slot:headerActions>
-            <a href="{{ route('admin.students') }}" class="ent-btn ent-btn-xs ent-btn-ghost">View All <i class="bi bi-arrow-right"></i></a>
+            <a href="{{ route('admin.early-warnings') }}" class="ent-btn ent-btn-xs ent-btn-ghost">View all warnings <i class="bi bi-arrow-right"></i></a>
         </x-slot:headerActions>
 
         <div class="table-responsive" style="margin: -20px; padding: 12px 20px;">
@@ -254,7 +194,7 @@
                                 <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;background:rgba(74,222,128,0.08);color:var(--ent-success);">
                                     <i class="bi bi-shield-check"></i>
                                 </div>
-                                <div class="ent-empty-text">All students are performing well.</div>
+                                <div class="ent-empty-text">No students with low attendance in the current results.</div>
                             </div>
                         </td>
                     </tr>
@@ -267,18 +207,3 @@
 </div>
 
 @endsection
-
-@push('scripts')
-<script @cspNonce>
-document.addEventListener('DOMContentLoaded', function() {
-    // ─── Ticking Live Clock ───
-    function updateClock() {
-        const clockEl = document.getElementById('dashLiveClock');
-        if (!clockEl) return;
-        const now = new Date();
-        clockEl.textContent = now.toLocaleTimeString('en-US', { hour12: true });
-    }
-    setInterval(updateClock, 1000);
-});
-</script>
-@endpush
