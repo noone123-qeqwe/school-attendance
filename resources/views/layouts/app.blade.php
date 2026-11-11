@@ -51,9 +51,16 @@
     @if(Auth::user()?->isAdmin() && !request()->routeIs('admin.*.pdf'))
         <link rel="stylesheet" href="{{ asset('css/admin-portal-redesign.css') }}?v={{ filemtime(public_path('css/admin-portal-redesign.css')) }}">
     @endif
+    @if(Auth::user()?->isParent() && !request()->routeIs('parent.*.report'))
+        <link rel="stylesheet" href="{{ asset('css/parent-portal-redesign.css') }}?v={{ filemtime(public_path('css/parent-portal-redesign.css')) }}">
+    @endif
 </head>
 
-<body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher(), 'admin-portal' => Auth::user()?->isAdmin()]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
+<body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher(), 'admin-portal' => Auth::user()?->isAdmin(), 'parent-portal' => Auth::user()?->isParent()]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
+
+    @php
+        $parentUnreadCount = Auth::user()?->isParent() ? \App\Support\ParentNavigation::unreadCount(Auth::user()) : 0;
+    @endphp
 
     <!-- Skip to main content link for keyboard/screen readers -->
     <a href="#mainContent" class="visually-hidden-focusable" style="position: absolute; top: 8px; left: 8px; background: #cfa46f; color: #110A0A; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
@@ -597,6 +604,14 @@
                 }
                 const data = await res.json();
 
+                document.querySelectorAll('[data-parent-unread-count]').forEach(badge => {
+                    const count = Math.max(0, Number(data.unread_count) || 0);
+                    const limit = badge.classList.contains('mbn-badge') ? 9 : 99;
+                    badge.hidden = count === 0;
+                    badge.textContent = count > limit ? `${limit}+` : String(count);
+                    badge.setAttribute('aria-label', `${count} unread alerts`);
+                });
+
                 // 1. Update bell badge
                 const notifBtn = document.getElementById('topNavNotifBtn') || document.querySelector('.notif-btn');
                 if (notifBtn) {
@@ -889,26 +904,7 @@
                         <span class="more-sheet-item-label">Profile</span>
                     </a>
                 @elseif(Auth::user()->isParent())
-                    <a href="{{ route('parent.link.form') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-person-plus-fill"></i></div>
-                        <span class="more-sheet-item-label">Link Student</span>
-                    </a>
-                    <a href="{{ route('parent.excuses') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
-                        <span class="more-sheet-item-label">Excuses</span>
-                    </a>
-                    <a href="{{ route('parent.schedule') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-clock-fill"></i></div>
-                        <span class="more-sheet-item-label">Schedule</span>
-                    </a>
-                    <a href="{{ route('parent.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-calendar-event-fill"></i></div>
-                        <span class="more-sheet-item-label">Calendar</span>
-                    </a>
-                    <a href="{{ route('settings') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-gear-fill"></i></div>
-                        <span class="more-sheet-item-label">Settings</span>
-                    </a>
+                    @include('partials.parent-navigation', ['mobile' => true])
                 @else
                     <a href="{{ route('student.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event-fill"></i></div>
@@ -1099,7 +1095,7 @@
         @endif
     @endauth
     @auth
-        <x-command-palette />
+        <x-command-palette :parent-unread-count="$parentUnreadCount" />
         <script src="{{ asset('js/web-push.js') }}?v={{ filemtime(public_path('js/web-push.js')) }}"></script>
     @endauth
 
@@ -1525,6 +1521,9 @@
     @endif
 
     @stack('scripts')
+    @if(Auth::user()?->isParent() && !request()->routeIs('parent.*.report'))
+        <script src="{{ asset('js/parent-workspace.js') }}?v={{ filemtime(public_path('js/parent-workspace.js')) }}" defer></script>
+    @endif
     @if(Auth::user()?->isAdmin() && !request()->routeIs('admin.*.pdf'))
         <script src="{{ asset('js/admin-workspace.js') }}?v={{ filemtime(public_path('js/admin-workspace.js')) }}" defer></script>
     @endif

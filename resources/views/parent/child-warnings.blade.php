@@ -2,7 +2,7 @@
 @section('page-title', $child->name . ' — Warnings')
 
 @section('content')
-<div class="p-4">
+<div class="parent-page">
     {{-- Back Link --}}
     <a href="{{ route('parent.dashboard') }}" class="student-back-link">
         <i class="bi bi-arrow-left"></i> Back to Dashboard

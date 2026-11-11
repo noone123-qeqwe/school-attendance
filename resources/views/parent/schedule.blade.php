@@ -2,7 +2,7 @@
 @section('page-title', 'Student Schedule')
 
 @section('content')
-<div class="mb-4 d-flex justify-content-between align-items-end flex-wrap gap-3">
+<div class="parent-page-heading">
     <div>
         <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: 2rem;">Weekly Schedule</h1>
         <div style="color: #b39b82; font-size: 0.95rem;">
@@ -15,10 +15,10 @@
     </div>
     
     @if($children->count() > 1)
-    <div class="ent-glass-panel px-3 py-2" style="border-radius: 12px; display: inline-flex; align-items: center; gap: 12px;">
-        <i class="bi bi-person-badge text-gold" style="font-size: 1.2rem;"></i>
+    <div class="parent-context-picker">
+        <label for="parentContextChild">Viewing student</label>
         <form id="child-select-form" method="GET" action="{{ route('parent.schedule') }}" class="m-0 p-0 d-flex align-items-center">
-            <select name="child_id" onchange="document.getElementById('child-select-form').submit()" class="form-select form-select-sm premium-select" style="min-width: 200px; background-color: rgba(0,0,0,0.2); color: #f3e7cd; border-color: rgba(255,255,255,0.1);">
+            <select id="parentContextChild" name="child_id" onchange="document.getElementById('child-select-form').submit()" class="form-select form-select-sm premium-select" style="min-width: 200px; background-color: rgba(0,0,0,0.2); color: #f3e7cd; border-color: rgba(255,255,255,0.1);">
                 @foreach($children as $child)
                     <option value="{{ $child->id }}" {{ $selectedChild && $selectedChild->id == $child->id ? 'selected' : '' }}>
                         {{ $child->name }}
@@ -45,7 +45,7 @@
         @php
             $currentDayName = now()->format('l');
         @endphp
-        @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day)
+        @foreach($days as $day)
             @php
                 $isToday = strtolower($day) === strtolower($currentDayName);
             @endphp

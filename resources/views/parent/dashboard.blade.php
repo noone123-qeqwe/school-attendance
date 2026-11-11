@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('page-title', 'Parent Dashboard')
+@section('page-title', 'Family Overview')
 
 @section('content')
 <style>
@@ -497,10 +497,10 @@
                 <i class="bi bi-shield-check"></i> Parent &amp; Guardian Portal
             </span>
             <h1 class="parent-hero-title">
-                <span>Welcome, {{ explode(' ', Auth::user()->name)[0] }}</span>
+                <span>Family overview</span>
             </h1>
             <p class="parent-hero-sub">
-                Live attendance monitoring, official excuses, and academic progress for your children
+                Attendance, school updates, and support for your linked students.
             </p>
         </div>
         <div>
@@ -523,7 +523,7 @@
         </div>
         <span style="font-size: 0.75rem; color: #8f826f;">Tap student to view details</span>
     </div>
-    <div class="student-tabs-scroller">
+    <div class="student-tabs-scroller" role="tablist" aria-label="Select a linked student">
         @foreach($childrenData as $index => $data)
             @php
                 $rRate = $data->rate;
@@ -532,7 +532,7 @@
                     ? (str_starts_with($data->child->profile_image, 'http') ? $data->child->profile_image : public_storage_url($data->child->profile_image))
                     : 'https://ui-avatars.com/api/?name='.urlencode($data->child->name).'&background=800000&color=fff&size=52';
             @endphp
-            <button type="button" class="student-tab-pill {{ $index === 0 ? 'active' : '' }}" id="tabBtn_{{ $data->child->id }}" onclick="switchDashboardChild('{{ $data->child->id }}')">
+            <button type="button" class="student-tab-pill {{ $index === 0 ? 'active' : '' }}" id="tabBtn_{{ $data->child->id }}" role="tab" data-parent-child-tab="{{ $data->child->id }}" aria-controls="childView_{{ $data->child->id }}" aria-selected="{{ $index === 0 ? 'true' : 'false' }}" tabindex="{{ $index === 0 ? 0 : -1 }}">
                 <img src="{{ $cImg }}" alt="{{ $data->child->name }}" class="student-pill-avatar">
                 <span>{{ $data->child->name }}</span>
                 <span class="student-pill-rate {{ $rClass }}">{{ $rRate }}%</span>
@@ -542,11 +542,14 @@
             </button>
         @endforeach
     </div>
+    <div class="parent-child-picker"><label for="parentChildPicker">Viewing student</label><select id="parentChildPicker" class="ent-input" data-parent-child-picker>
+        @foreach($childrenData as $data)<option value="{{ $data->child->id }}">{{ $data->child->name }} — {{ $data->child->student_number }}</option>@endforeach
+    </select></div>
 </div>
 @endif
 
 @forelse($childrenData as $index => $data)
-<div class="child-view-content" id="childView_{{ $data->child->id }}" style="display: {{ $index === 0 ? 'block' : 'none' }}; animation: cardFadeIn 0.3s ease;">
+<div class="child-view-content" id="childView_{{ $data->child->id }}" data-parent-child-panel="{{ $data->child->id }}" role="tabpanel" @if(count($childrenData) > 1) aria-labelledby="tabBtn_{{ $data->child->id }}" @else aria-label="Student overview: {{ $data->child->name }}" @endif @if($index !== 0) hidden inert @endif>
     @php
         $child = $data->child;
         $cImg = $child->profile_image
@@ -599,7 +602,7 @@
                     @endif
                 </a>
 
-                <a href="{{ route('parent.excuses.create_general') }}" class="parent-btn-action btn-action-ghost" title="Submit Excuse Letter">
+                <a href="{{ route('parent.excuses.create_general', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-ghost" title="Submit Excuse Letter">
                     <i class="bi bi-file-earmark-plus"></i>
                     <span>Submit Excuse</span>
                 </a>
@@ -730,7 +733,7 @@
                                     <span style="font-size: 0.72rem; color: var(--gold); font-weight: 600;">
                                         <i class="bi bi-info-circle me-1"></i>Official Warning
                                     </span>
-                                    <a href="{{ route('parent.excuses.create_general') }}" style="font-size: 0.75rem; color: #f3e7cd; font-weight: 600; text-decoration: underline;">
+                                    <a href="{{ route('parent.excuses.create_general', ['child_id' => $child->id]) }}" style="font-size: 0.75rem; color: #f3e7cd; font-weight: 600; text-decoration: underline;">
                                         Submit Excuse &rarr;
                                     </a>
                                 </div>
@@ -881,7 +884,7 @@
 </div>
 @empty
 <!-- ── EMPTY STATE: NO CHILDREN LINKED ── -->
-<div class="parent-section-card text-center py-5 my-4" style="max-width: 600px; margin-left: auto; margin-right: auto;">
+<div class="parent-section-card parent-empty text-center py-5 my-4" style="max-width: 600px; margin-left: auto; margin-right: auto;">
     <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: rgba(207,164,111,0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(207,164,111,0.3);">
         <i class="bi bi-link-45deg" style="font-size: 2.5rem; color: var(--gold);"></i>
     </div>
@@ -895,34 +898,5 @@
 </div>
 @endforelse
 
-<script @cspNonce>
-// ── Child Switcher Logic ──
-function switchDashboardChild(childId) {
-    document.querySelectorAll('.child-view-content').forEach(function(el) {
-        el.style.display = (el.id === 'childView_' + childId) ? 'block' : 'none';
-    });
 
-    // Update active tab styling
-    document.querySelectorAll('.student-tab-pill').forEach(function(pill) {
-        if (pill.id === 'tabBtn_' + childId) {
-            pill.classList.add('active');
-        } else {
-            pill.classList.remove('active');
-        }
-    });
-
-    try {
-        localStorage.setItem('selectedParentChildId', childId);
-    } catch(e) {}
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        var savedChildId = localStorage.getItem('selectedParentChildId');
-        if (savedChildId && document.getElementById('childView_' + savedChildId)) {
-            switchDashboardChild(savedChildId);
-        }
-    } catch(e) {}
-});
-</script>
 @endsection

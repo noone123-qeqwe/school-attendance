@@ -2,7 +2,7 @@
 @section('page-title', 'Submit Excuse — ' . $child->name)
 
 @section('content')
-<div class="p-4">
+<div class="parent-page">
     {{-- Back Link --}}
     <a href="{{ route('parent.child', $child) }}" class="student-back-link">
         <i class="bi bi-arrow-left"></i> Back to {{ $child->name }}'s Records
@@ -112,7 +112,7 @@
                                 <p style="color: #b39b82; font-size: 0.85rem; margin: 8px 0 0;" id="uploadText">
                                     Click or drag to upload &mdash; PDF, JPG, or PNG (max 5MB)
                                 </p>
-                                <input type="file" name="document" id="fileInput" style="display: none;" accept=".pdf,.jpg,.jpeg,.png" onchange="updateFileName(this)">
+                                <input type="file" name="document" id="fileInput" class="parent-file-input" style="display: none;" accept=".pdf,.jpg,.jpeg,.png" onchange="updateFileName(this)">
                             </label>
                         </div>
 
@@ -194,10 +194,10 @@ function updateFileName(input) {
     const text = document.getElementById('uploadText');
     const area = document.getElementById('dropZone');
     if (input.files.length > 0) {
-        text.innerHTML = '<i class="bi bi-file-earmark-check me-1" style="color: #66bb6a;"></i> ' + input.files[0].name;
+        text.textContent = 'Selected file: ' + input.files[0].name;
         area.style.borderColor = 'rgba(102,187,106,0.4)';
     } else {
-        text.innerHTML = 'Click or drag to upload &mdash; PDF, JPG, or PNG (max 5MB)';
+        text.textContent = 'Click or drag to upload — PDF, JPG, or PNG (max 5MB)';
         area.style.borderColor = 'rgba(255,215,145,0.15)';
     }
 }

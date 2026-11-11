@@ -1,0 +1,204 @@
+/* Parent workspace. All color values remain owned by the existing theme and pages. */
+@media screen {
+    html:has(body.parent-portal) { zoom: 1; }
+    body.parent-portal { line-height: 1.55; }
+    body.parent-portal [hidden] { display: none !important; }
+    body.parent-portal .main-content > .page-enter { width: min(100%, 1520px); margin-inline: auto; padding: clamp(24px, 3vw, 40px) clamp(20px, 3vw, 40px) 64px !important; }
+    body.parent-portal .parent-page { padding: 0 !important; min-width: 0; }
+    body.parent-portal .parent-form-page { max-width: 900px; margin-inline: auto; }
+    body.parent-portal .page-enter :is(.row > *, .d-flex > *, .parent-page > *) { min-width: 0; }
+    body.parent-portal .sidebar { box-shadow: none; }
+    body.parent-portal .sidebar-head { flex-direction: row; gap: 12px; padding: 24px 20px; align-items: center; }
+    body.parent-portal .sidebar-logo { width: 42px; height: 42px; flex: none; }
+    body.parent-portal .sidebar-text { text-align: left; margin: 0; }
+    body.parent-portal .sidebar-brand { font-size: .76rem; line-height: 1.5; letter-spacing: .02em; }
+    body.parent-portal .sidebar-subtitle { color: var(--text-secondary); font-size: .72rem; }
+    body.parent-portal .sidebar-nav { padding: 8px 12px 24px !important; }
+    body.parent-portal .sidebar .nav-link { min-height: 46px; padding: 12px; gap: 12px; border-radius: 9px; font-size: .85rem; white-space: normal; }
+    body.parent-portal .sidebar.collapsed .sidebar-head { padding-inline: 18px; }
+    body.parent-portal .sidebar.collapsed .parent-nav-count { display: none; }
+    body.parent-portal .parent-nav-count { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; border-radius: 99px; margin-left: auto; padding: 2px 6px; background: var(--maroon); color: var(--text-primary); font-size: .68rem; font-weight: 700; }
+    body.parent-portal #moreSheetContent .parent-nav-count { position: absolute; right: 12px; top: 8px; }
+    body.parent-portal #moreSheetContent .more-sheet-item { position: relative; }
+    body.parent-portal .top-header { box-shadow: none; }
+    body.parent-portal .header-page-title { font-size: 1.05rem; }
+    body.parent-portal :is(a, button, summary, input, select, textarea, [tabindex]):focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+    body.parent-portal :is(.parent-page-heading, .parent-form-actions) { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+    body.parent-portal .parent-form-actions { justify-content: flex-end; margin: 24px 0 0; }
+    body.parent-portal .page-enter h1,
+    body.parent-portal .parent-page-heading h2,
+    body.parent-portal .parent-page-heading h3,
+    body.parent-portal .pg-title { font-size: clamp(1.5rem, 2.5vw, 1.9rem) !important; line-height: 1.3; font-weight: 700 !important; letter-spacing: -.03em; overflow-wrap: anywhere; }
+    body.parent-portal :is(.parent-page-heading p, .pg-sub, .parent-hero-sub) { max-width: 64ch; line-height: 1.6; font-size: .9rem; }
+    body.parent-portal :is(.adm-card, .ent-section, .parent-section-card, .parent-hero-banner, .student-profile-showcase, .student-switcher-wrap, .kpi-stat-card, .link-wizard-card, .linked-children-card, .mobile-excuse-card, .sc, .child-header-glow) {
+        border-radius: 14px !important; box-shadow: none !important; backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important; transform: none !important; min-width: 0;
+    }
+    body.parent-portal :is(.adm-card-head, .ent-section-header, .parent-section-head, .sc-head) { padding: 20px 24px; gap: 12px; flex-wrap: wrap; }
+    body.parent-portal :is(.adm-card-body, .ent-section-body, .sc-body) { padding: 24px; }
+    body.parent-portal :is(.ent-btn, .adm-btn, .btn-modern-gold, .parent-btn-action, .sbtn, .cancel-btn, .link-method-btn) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border-radius: 9px !important; font-size: .85rem; font-weight: 600; white-space: normal; box-shadow: none !important; transform: none !important; line-height: 1.5; }
+    body.parent-portal :is(.ent-label, .sl) { font-size: .8rem; text-transform: none; letter-spacing: 0; font-weight: 600; line-height: 1.5; margin-bottom: 8px; }
+    body.parent-portal :is(.ent-input, .ent-glass-input, .si, .tch-input, .form-control, .form-select) { min-width: 0; max-width: 100%; min-height: 46px; border-radius: 9px; padding: 11px 13px; font-size: .9rem; line-height: 1.5; }
+    body.parent-portal textarea { min-height: 140px; resize: vertical; }
+    body.parent-portal .parent-filter-toolbar { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 16px !important; align-items: end; width: 100%; }
+    body.parent-portal .parent-filter-toolbar > * { min-width: 0 !important; }
+    body.parent-portal .parent-filter-toolbar :is(select, input) { width: 100%; }
+    body.parent-portal .parent-context-picker { display: flex; flex-direction: column; gap: 8px; min-width: 0; max-width: 100%; }
+    body.parent-portal .parent-context-picker select { min-width: 0 !important; width: min(100%, 320px); }
+    body.parent-portal .parent-context-picker label { font-size: .8rem; color: var(--text-secondary); }
+
+    /* Overview: child identity, attendance summary, then detailed updates. */
+    body.parent-portal .parent-hero-banner { padding: 24px; margin-bottom: 24px; }
+    body.parent-portal .parent-hero-banner::after { display: none; }
+    body.parent-portal .parent-hero-badge { font-size: .7rem; text-transform: none; letter-spacing: 0; }
+    body.parent-portal .student-switcher-wrap { padding: 18px 20px; }
+    body.parent-portal .student-tabs-scroller { flex-wrap: wrap; overflow: visible; gap: 8px; padding: 0; }
+    body.parent-portal .student-tab-pill { min-height: 44px; max-width: 100%; border-radius: 9px; padding: 10px 12px; font-size: .82rem; white-space: normal; text-align: left; box-shadow: none; }
+    body.parent-portal .student-tab-pill > span:first-of-type { overflow-wrap: anywhere; }
+    body.parent-portal .parent-child-picker { display: none; }
+    body.parent-portal .student-profile-showcase { padding: 24px; }
+    body.parent-portal .student-avatar-box { width: 60px; height: 60px; }
+    body.parent-portal .student-name-title { font-weight: 700; font-size: 1.4rem; overflow-wrap: anywhere; }
+    body.parent-portal .student-avatar-img { box-shadow: none; }
+    body.parent-portal .parent-actions-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    body.parent-portal .parent-kpi-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }
+    body.parent-portal .kpi-stat-card { padding: 20px; min-height: 0; }
+    body.parent-portal .kpi-stat-label { text-transform: none; letter-spacing: 0; font-size: .78rem; gap: 8px; }
+    body.parent-portal .kpi-stat-val { font-size: 1.9rem; line-height: 1.3; }
+    body.parent-portal .kpi-icon-badge { width: 32px; height: 32px; font-size: 1rem; }
+    body.parent-portal .kpi-stat-hint { font-size: .75rem; line-height: 1.5; }
+    body.parent-portal .child-view-content { animation: none !important; }
+    body.parent-portal :is(.mobile-att-card, .timeline-item) { padding: 16px; border-radius: 10px; transform: none; }
+    body.parent-portal :is(.timeline-content .subject-name, .parent-page .text-truncate, .scal-picker-name, .scal-picker-item-name, .subject-card-title) { max-width: 100% !important; white-space: normal !important; text-overflow: clip; overflow: visible; overflow-wrap: anywhere; }
+    body.parent-portal .parent-page .ent-grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+    body.parent-portal .ent-table { font-size: .85rem; }
+    body.parent-portal .ent-table th { padding: 14px 18px; text-transform: none; letter-spacing: 0; font-size: .75rem; }
+    body.parent-portal .ent-table td { padding: 16px 18px; line-height: 1.5; }
+    body.parent-portal .parent-alert-item { padding: 20px 24px !important; }
+    body.parent-portal .parent-alert-content { gap: 16px !important; }
+    body.parent-portal .parent-alert-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; overflow-wrap: anywhere; }
+    body.parent-portal .parent-empty { padding: 36px 24px !important; }
+    body.parent-portal .child-header-glow { flex-wrap: wrap; }
+    body.parent-portal .child-header-glow > img { flex: none; }
+    body.parent-portal .parent-feedback { margin: 12px 0 20px; font-size: .85rem; color: var(--text-secondary); }
+
+    /* Linking and profile sections expose their choices without horizontal scrolling. */
+    body.parent-portal .link-wizard-container { max-width: 960px; margin: 0 auto; }
+    body.parent-portal .link-wizard-card { padding: 28px; }
+    body.parent-portal .link-wizard-icon { width: 48px; height: 48px; font-size: 1.3rem; margin-bottom: 16px; box-shadow: none; }
+    body.parent-portal .link-method-nav { border-radius: 10px; gap: 8px; padding: 6px; }
+    body.parent-portal .link-method-btn { flex-wrap: wrap; font-size: .82rem; padding: 10px 12px; }
+    body.parent-portal :is(#instant_code, #otp_code) { width: 100%; max-width: 340px; margin-inline: auto; font-size: 1.5rem !important; letter-spacing: .45em !important; }
+    body.parent-portal .security-note-box { border-radius: 10px; }
+    body.parent-portal .sp { max-width: 1080px; margin-inline: auto; padding: 0; }
+    body.parent-portal .stabs-wrapper { margin-top: 0; }
+    body.parent-portal .stabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; overflow: visible; padding: 0; margin-bottom: 24px; }
+    body.parent-portal .stab { min-height: 46px; border-radius: 9px; white-space: normal; font-size: .85rem; padding: 10px 14px; }
+    body.parent-portal :is(.stabs-arrow, .stabs-floating-hint),
+    body.parent-portal .stabs-wrapper::before,
+    body.parent-portal .stabs-wrapper::after { display: none !important; }
+    body.parent-portal .sc-icon { width: 36px; height: 36px; flex: none; font-size: 1rem; }
+    body.parent-portal .sc-title { font-size: 1rem; }
+    body.parent-portal .sc-sub { font-size: .82rem; }
+    body.parent-portal :is(.eye-btn, .btn-close) { min-width: 44px; min-height: 44px; }
+    body.parent-portal .pw-wrap .si { padding-right: 64px; }
+    body.parent-portal .sp div:has(> .email-otp-digit),
+    body.parent-portal .sp div:has(> .otp-digit-s) { display: grid !important; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(4px, 1.5vw, 8px) !important; width: 100%; max-width: 360px; }
+    body.parent-portal :is(.email-otp-digit, .otp-digit-s) { width: 100% !important; min-width: 0; font-size: 16px; }
+    body.parent-portal .input-group { min-width: 0; }
+    body.parent-portal .parent-file-input { display: block !important; width: 100%; margin-top: 14px; font-size: .85rem; }
+    body.parent-portal #uploadText { overflow-wrap: anywhere; }
+
+    /* Calendars keep seven readable day columns and scrollable, labeled dialogs. */
+    body.parent-portal .scal-outer { max-width: 1320px; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+    body.parent-portal .scal-side { width: 100%; display: grid; gap: 16px; }
+    body.parent-portal :is(.scal-card, .scal-stats-card, .scal-legend-card, .scal-tips-card, .att-cal-wrap) { border-radius: 14px; box-shadow: none; padding: 24px; min-width: 0; }
+    body.parent-portal :is(.scal-grid, .scal-weekdays, .att-cal-grid, .att-cal-header) { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    body.parent-portal .scal-tile { font: inherit; color: inherit; min-width: 0; min-height: 48px; padding: 8px 2px; }
+    body.parent-portal .scal-num { font-size: 1rem; }
+    body.parent-portal :is(.scal-nav-btn, .scal-today-btn, .att-cal-nav-btn, .day-nav-step-btn, .day-nav-today-btn) { min-width: 44px; min-height: 44px; }
+    body.parent-portal :is(.scal-picker-trigger, .scal-picker-item) { min-height: 48px; }
+    body.parent-portal .scal-student-custom-picker .dropdown { min-width: 0 !important; max-width: 100% !important; }
+    body.parent-portal .scal-picker-menu { max-width: min(420px, calc(100vw - 48px)); min-width: 100%; }
+    body.parent-portal :is(.att-cal-nav, .scal-nav) { padding: 0; margin-bottom: 20px; gap: 12px; }
+    body.parent-portal .att-cal-month { font-size: 1.15rem; }
+    body.parent-portal .att-cal-cell { min-width: 0; }
+    body.parent-portal .modal-dialog { width: auto !important; max-width: min(720px, calc(100vw - 32px)) !important; margin: 16px auto; }
+    body.parent-portal .modal-content { border-radius: 16px !important; max-height: calc(100dvh - 32px); overflow-y: auto; box-shadow: none; }
+    body.parent-portal :is(.subject-card, .att-detail-card) { padding: 18px; border-radius: 12px; }
+    body.parent-portal :is(.subject-card-title, .att-card-subject-title, .subject-card-teacher, .att-grid-col-val) { overflow-wrap: anywhere; }
+}
+@media screen and (max-width: 1199.98px) {
+    body.parent-portal .parent-kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    body.parent-portal .kpi-rate-card { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    body.parent-portal .kpi-rate-card > div:first-child { flex: 1; }
+    body.parent-portal .scal-outer { grid-template-columns: minmax(0, 1fr); max-width: 960px; }
+    body.parent-portal .scal-side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.parent-portal .scal-tips-card { grid-column: 1 / -1; }
+}
+@media screen and (max-width: 767.98px) {
+    body.parent-portal .main-content > .page-enter { padding: 24px 16px calc(120px + env(safe-area-inset-bottom, 0px)) !important; }
+    body.parent-portal .header-page-title { font-size: .95rem; }
+    body.parent-portal :is(.parent-page-heading, .parent-form-actions) { gap: 12px; }
+    body.parent-portal .parent-page-heading > :last-child:not(:first-child) { width: 100%; }
+    body.parent-portal .parent-context-picker select { width: 100%; }
+    body.parent-portal .parent-filter-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.parent-portal .parent-filter-toolbar > :last-child { grid-column: 1 / -1; display: flex; gap: 10px; }
+    body.parent-portal .parent-filter-toolbar > :last-child > * { flex: 1; }
+    body.parent-portal :is(.adm-card-head, .ent-section-header, .parent-section-head, .sc-head) { padding: 18px 16px !important; }
+    body.parent-portal :is(.adm-card-body, .ent-section-body, .sc-body) { padding: 20px 16px !important; }
+    body.parent-portal :is(.ent-input, .ent-glass-input, .si, .tch-input, .form-control, .form-select) { font-size: 16px !important; }
+    body.parent-portal :is(.parent-hero-banner, .student-profile-showcase, .link-wizard-card) { padding: 20px; }
+    body.parent-portal .parent-hero-banner .btn-modern-gold { width: 100%; }
+    body.parent-portal .parent-hero-banner .d-flex > :last-child:not(:first-child) { width: 100%; }
+    body.parent-portal .student-switcher-wrap { padding: 16px; }
+    body.parent-portal .student-tabs-scroller { display: none; }
+    body.parent-portal .parent-child-picker { display: grid; gap: 8px; }
+    body.parent-portal .parent-child-picker label { font-size: .8rem; color: var(--text-secondary); }
+    body.parent-portal .student-name-title { font-size: 1.2rem; }
+    body.parent-portal .student-avatar-box { width: 52px; height: 52px; }
+    body.parent-portal .parent-actions-row { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.parent-portal .parent-actions-row a { justify-content: flex-start; padding: 10px 12px; font-size: .8rem; }
+    body.parent-portal .parent-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    body.parent-portal .kpi-stat-card { padding: 16px; }
+    body.parent-portal .kpi-stat-val { font-size: 1.65rem; }
+    body.parent-portal .kpi-stat-label { flex-wrap: wrap; }
+    body.parent-portal .parent-page .ent-grid-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.parent-portal .parent-page .ent-grid-5 > :first-child { grid-column: 1 / -1; }
+    body.parent-portal .parent-page .ent-grid-5 > :last-child { grid-column: auto; }
+    body.parent-portal .parent-alert-item { padding: 18px 16px !important; }
+    body.parent-portal .parent-alert-content { gap: 12px !important; }
+    body.parent-portal .parent-alert-content > :first-child > div { width: 36px !important; height: 36px !important; font-size: 1rem !important; }
+    body.parent-portal .parent-empty { padding: 28px 18px !important; }
+    body.parent-portal .link-method-nav { display: grid; grid-template-columns: minmax(0, 1fr); }
+    body.parent-portal .link-method-btn { justify-content: flex-start; }
+    body.parent-portal .stabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.parent-portal .parent-form-actions > * { flex: 1; }
+    body.parent-portal .scal-side { grid-template-columns: minmax(0, 1fr); }
+    body.parent-portal :is(.scal-card, .scal-stats-card, .scal-legend-card, .scal-tips-card, .att-cal-wrap) { padding: 16px; }
+    body.parent-portal .scal-grid { gap: 4px; }
+    body.parent-portal .scal-tile { min-height: 44px; aspect-ratio: 1; border-radius: 8px; }
+    body.parent-portal .scal-nav-title { font-size: 1.1rem; }
+    body.parent-portal .scal-picker-trigger { gap: 10px; padding: 12px; }
+    body.parent-portal .scal-picker-avatar { width: 34px; height: 34px; flex: none; }
+    body.parent-portal .att-cal-wrap { padding: 12px; }
+    body.parent-portal .att-cal-cell { min-height: 44px; }
+    body.parent-portal .modal-dialog { max-width: calc(100vw - 24px) !important; margin: 12px auto !important; }
+    body.parent-portal .modal-content { max-height: calc(100dvh - 24px); }
+    body.parent-portal :is(.att-info-grid, .day-modal-action-bar) { gap: 12px; }
+    body.parent-portal .att-card-header > div { min-width: 0 !important; }
+    body.parent-portal .att-card-header { flex-wrap: wrap; gap: 12px; }
+    body.parent-portal .subject-card { flex-wrap: wrap; gap: 12px; }
+    body.parent-portal .parent-page .input-group { gap: 10px; }
+    body.parent-portal .parent-page .input-group > * { flex: 1 1 100%; border-radius: 9px !important; }
+    body.parent-portal #moreSheetContent { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
+    body.parent-portal #moreSheetContent .more-sheet-item { min-height: 92px; }
+}
+@media screen and (max-width: 359.98px) {
+    body.parent-portal .parent-filter-toolbar { grid-template-columns: minmax(0, 1fr); }
+    body.parent-portal .kpi-rate-card { flex-direction: column; align-items: stretch; }
+    body.parent-portal .att-info-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.parent-portal *, body.parent-portal *::before, body.parent-portal *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

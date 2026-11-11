@@ -287,7 +287,7 @@
 <div class="sp">
 
     <div style="margin-bottom:24px;">
-        <div class="pg-title">Settings</div>
+        <h1 class="pg-title">Your account</h1>
         <div class="pg-sub">Manage your account, security, and preferences</div>
     </div>
 
@@ -308,11 +308,11 @@
         <button type="button" class="stabs-arrow stabs-arrow-left" id="stabsArrowLeft" onclick="scrollStabs('left')" aria-label="Scroll left">
             <i class="bi bi-chevron-left"></i>
         </button>
-        <div class="stabs" id="stabsNav">
-            <button class="stab active" onclick="switchTab('profile',this)"><i class="bi bi-person-circle me-1"></i> Profile</button>
-            <button class="stab" onclick="switchTab('security',this)"><i class="bi bi-shield-lock-fill me-1"></i> Security</button>
-            <button class="stab" onclick="switchTab('fingerprint',this)"><i class="bi bi-fingerprint me-1"></i> Fingerprint</button>
-            <button class="stab" onclick="switchTab('preferences',this)"><i class="bi bi-sliders me-1"></i> Preferences</button>
+        <div class="stabs" id="stabsNav" role="tablist" aria-label="Account sections">
+            <button class="stab active" id="parentAccountTab-profile" role="tab" data-parent-profile-tab="profile" aria-controls="tab-profile" aria-selected="true" tabindex="0" onclick="switchTab('profile',this)"><i class="bi bi-person-circle me-1"></i> Profile</button>
+            <button class="stab" id="parentAccountTab-security" role="tab" data-parent-profile-tab="security" aria-controls="tab-security" aria-selected="false" tabindex="-1" onclick="switchTab('security',this)"><i class="bi bi-shield-lock-fill me-1"></i> Security</button>
+            <button class="stab" id="parentAccountTab-fingerprint" role="tab" data-parent-profile-tab="fingerprint" aria-controls="tab-fingerprint" aria-selected="false" tabindex="-1" onclick="switchTab('fingerprint',this)"><i class="bi bi-fingerprint me-1"></i> Device sign-in</button>
+            <button class="stab" id="parentAccountTab-preferences" role="tab" data-parent-profile-tab="preferences" aria-controls="tab-preferences" aria-selected="false" tabindex="-1" onclick="switchTab('preferences',this)"><i class="bi bi-sliders me-1"></i> Preferences</button>
         </div>
         <button type="button" class="stabs-arrow stabs-arrow-right" id="stabsArrowRight" onclick="scrollStabs('right')" aria-label="Scroll right">
             <i class="bi bi-chevron-right"></i>
@@ -320,7 +320,7 @@
     </div>
 
     <!-- ── TAB: PROFILE ── -->
-    <div id="tab-profile" class="spanel active">
+    <div id="tab-profile" role="tabpanel" aria-labelledby="parentAccountTab-profile" aria-hidden="false" class="spanel active">
         <form action="{{ route('parent.profile.update') }}" method="POST" enctype="multipart/form-data">
             @csrf
             
@@ -354,7 +354,7 @@
     </div>
 
     <!-- ── TAB: SECURITY ── -->
-    <div id="tab-security" class="spanel">
+    <div id="tab-security" role="tabpanel" aria-labelledby="parentAccountTab-security" aria-hidden="true" class="spanel">
         <div class="sc">
             <div class="sc-head">
                 <div class="sc-icon" style="background:#fff5f5;color:#800000;"><i class="bi bi-shield-lock-fill"></i></div>
@@ -490,7 +490,7 @@
     </div>
 
     <!-- ── TAB: FINGERPRINT ── -->
-    <div id="tab-fingerprint" class="spanel">
+    <div id="tab-fingerprint" role="tabpanel" aria-labelledby="parentAccountTab-fingerprint" aria-hidden="true" class="spanel">
         <div class="sc">
             <div class="sc-head">
                 <div class="sc-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;"><i class="bi bi-fingerprint"></i></div>
@@ -535,7 +535,7 @@
     </div>
 
     <!-- ── TAB: PREFERENCES ── -->
-    <div id="tab-preferences" class="spanel">
+    <div id="tab-preferences" role="tabpanel" aria-labelledby="parentAccountTab-preferences" aria-hidden="true" class="spanel">
         <form action="{{ route('parent.profile.update') }}" method="POST">
             @csrf
             <div class="sc">
@@ -644,6 +644,12 @@ function switchTab(id, btn) {
     document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
     const targetPanel = document.getElementById('tab-' + id);
     if (targetPanel) targetPanel.classList.add('active');
+    document.querySelectorAll('.spanel').forEach(panel => panel.setAttribute('aria-hidden', String(panel !== targetPanel)));
+    document.querySelectorAll('[data-parent-profile-tab]').forEach(tab => {
+        const selected = tab.dataset.parentProfileTab === id;
+        tab.setAttribute('aria-selected', String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+    });
     if (btn) {
         btn.classList.add('active');
         btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });

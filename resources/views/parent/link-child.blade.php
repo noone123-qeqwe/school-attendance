@@ -281,12 +281,12 @@
 
         <!-- Method Navigation -->
         <div class="link-method-nav">
-            <button type="button" class="link-method-btn active" id="tabBtnCode" onclick="switchMethodTab('code')">
+            <button type="button" class="link-method-btn active" id="tabBtnCode" aria-controls="methodCodeSection" aria-pressed="true" onclick="switchMethodTab('code')">
                 <i class="bi bi-upc-scan"></i>
                 <span>Instant Link Code</span>
                 <span class="badge-rec">Fastest</span>
             </button>
-            <button type="button" class="link-method-btn" id="tabBtnOtp" onclick="switchMethodTab('otp')">
+            <button type="button" class="link-method-btn" id="tabBtnOtp" aria-controls="methodOtpSection" aria-pressed="false" onclick="switchMethodTab('otp')">
                 <i class="bi bi-envelope-check"></i>
                 <span>Student ID &amp; Email OTP</span>
             </button>
@@ -309,10 +309,10 @@
             </div>
 
             <div class="mb-4 text-center">
-                <label style="color: #cfa46f; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: block;">
+                <label for="instant_code" style="color: #cfa46f; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: block;">
                     Enter 6-Digit Link Code
                 </label>
-                <input type="text" id="instant_code" class="ent-glass-input text-center" placeholder="000000" maxlength="6" autocomplete="off"
+                <input type="text" id="instant_code" inputmode="numeric" class="ent-glass-input text-center" placeholder="000000" maxlength="6" autocomplete="one-time-code"
                     style="font-size: 2.2rem; letter-spacing: 12px; font-weight: 800; padding: 16px; font-family: monospace; max-width: 320px; margin: 0 auto; display: block;">
                 <div style="font-size: 0.78rem; color: #a8947f; margin-top: 8px;">
                     Link Codes expire 15 minutes after student generates them.
@@ -349,7 +349,7 @@
                 </div>
 
                 <div class="mb-4">
-                    <label style="color: #cfa46f; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">
+                    <label for="student_number" style="color: #cfa46f; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">
                         Student ID / Number
                     </label>
                     <input type="text" id="student_number" class="ent-glass-input" placeholder="e.g. 20260001" maxlength="50" autocomplete="off">
@@ -370,10 +370,10 @@
                 </div>
 
                 <div class="mb-4">
-                    <label style="color: #cfa46f; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; text-align: center;">
+                    <label for="otp_code" style="color: #cfa46f; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; text-align: center;">
                         6-Digit Security Code
                     </label>
-                    <input type="text" id="otp_code" class="ent-glass-input" placeholder="000000" maxlength="6" autocomplete="off"
+                    <input type="text" id="otp_code" inputmode="numeric" class="ent-glass-input" placeholder="000000" maxlength="6" autocomplete="one-time-code"
                         style="text-align: center; font-size: 2rem; letter-spacing: 14px; font-weight: 800; padding: 16px; font-family: monospace;">
                 </div>
 
@@ -389,7 +389,7 @@
         </div>
 
         <!-- Status Message Banner -->
-        <div id="status-message" style="margin-top: 20px; display: none; padding: 14px 18px; border-radius: 12px; font-size: 0.88rem; text-align: center;"></div>
+        <div id="status-message" role="status" aria-live="polite" style="margin-top: 20px; display: none; padding: 14px 18px; border-radius: 12px; font-size: 0.88rem; text-align: center;"></div>
     </div>
 </div>
 
@@ -402,12 +402,14 @@ function switchMethodTab(method) {
     const statusMsg = document.getElementById('status-message');
     if (statusMsg) statusMsg.style.display = 'none';
 
+    tabCode.setAttribute('aria-pressed', String(method === 'code'));
+    tabOtp.setAttribute('aria-pressed', String(method !== 'code'));
     if (method === 'code') {
         codeSection.style.display = 'block';
         otpSection.style.display = 'none';
         tabCode.classList.add('active');
         tabOtp.classList.remove('active');
-        document.getElementById('instant_code').focus();
+        document.getElementById('instant_student_number').focus();
     } else {
         codeSection.style.display = 'none';
         otpSection.style.display = 'block';
@@ -421,7 +423,7 @@ function showStatus(message, isError) {
     const statusMsg = document.getElementById('status-message');
     if (!statusMsg) return;
     statusMsg.style.display = 'block';
-    statusMsg.innerHTML = message;
+    statusMsg.textContent = message;
     if(isError) {
         statusMsg.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
         statusMsg.style.color = '#f87171';

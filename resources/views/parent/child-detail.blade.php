@@ -64,7 +64,7 @@
     }
 </style>
 
-<div class="p-4">
+<div class="parent-page">
     {{-- Back Link --}}
     <a href="{{ route('parent.dashboard') }}" class="student-back-link">
         <i class="bi bi-arrow-left"></i> Back to Dashboard
@@ -92,7 +92,7 @@
 
     {{-- Filters --}}
     <x-card type="section" class="ent-mb-lg">
-        <form method="GET" action="{{ route('parent.child', $child) }}" class="filter-form-grid" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+        <form method="GET" action="{{ route('parent.child', $child) }}" class="parent-filter-toolbar filter-form-grid" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
             <div class="filter-group">
                 <label class="ent-label">Subject</label>
                 <select name="subject" class="ent-input">

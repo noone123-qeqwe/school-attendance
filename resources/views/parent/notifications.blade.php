@@ -2,19 +2,21 @@
 @section('page-title', 'Notifications')
 
 @section('content')
-<div class="p-4">
-    <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+<div class="parent-page">
+    <div class="parent-page-heading">
         <h2 style="color: #f3e7cd; font-weight: 800; margin: 0;">
             <i class="bi bi-bell-fill" style="color: #cfa46f; margin-right: 8px;"></i>Notifications
         </h2>
-        <button type="button" id="markAllReadBtn" class="ent-btn ent-btn-ghost" onclick="markAllNotificationsRead()">
+        <button type="button" id="markAllReadBtn" class="ent-btn ent-btn-ghost" data-read-url="{{ route('parent.notifications.read') }}">
             <i class="bi bi-check2-all"></i> Mark All as Read
         </button>
     </div>
 
+    <p class="parent-feedback" id="parentNotificationFeedback" role="status" aria-live="polite"></p>
+
     {{-- Filters --}}
     <x-card type="section" class="ent-mb-lg">
-        <form method="GET" action="{{ route('parent.notifications') }}" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+        <form method="GET" action="{{ route('parent.notifications') }}" class="parent-filter-toolbar" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
             <div style="flex:1; min-width: 160px;">
                 <label class="ent-label" for="parentNotificationChild">Child</label>
                 <select name="child_id" id="parentNotificationChild" class="ent-input">
@@ -46,11 +48,11 @@
         @if($notifications->count() > 0)
             <div class="list-group list-group-flush" style="border-radius: 20px;">
                 @foreach($notifications as $notification)
-                    <div class="list-group-item" style="background: {{ $notification->is_read ? 'transparent' : 'rgba(255,235,190,0.04)' }}; border-bottom: 1px solid rgba(255,215,145,0.08); padding: 24px 20px; transition: background 0.3s; position: relative;">
+                    <div class="list-group-item parent-alert-item" data-parent-alert-unread="{{ $notification->is_read ? 'false' : 'true' }}" style="background: {{ $notification->is_read ? 'transparent' : 'rgba(255,235,190,0.04)' }}; border-bottom: 1px solid rgba(255,215,145,0.08); padding: 24px 20px; transition: background 0.3s; position: relative;">
                         @if(!$notification->is_read)
-                            <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #cfa46f; border-top-right-radius: 4px; border-bottom-right-radius: 4px;"></div>
+                            <div data-parent-alert-new style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #cfa46f; border-top-right-radius: 4px; border-bottom-right-radius: 4px;"></div>
                         @endif
-                        <div style="display: flex; gap: 20px;">
+                        <div class="parent-alert-content" style="display: flex; gap: 20px;">
                             <div>
                                 @if($notification->type === 'system_update')
                                     <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.18); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; border: 1px solid rgba(16,185,129,0.35);">
@@ -68,13 +70,13 @@
                             </div>
                             <div style="flex: 1; min-width: 0;">
                                 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 10px;">
-                                    <div style="font-size: 0.95rem; font-weight: 700; color: #f3e7cd; display: flex; align-items: center; gap: 8px;">
+                                    <div class="parent-alert-meta" style="font-size: 0.95rem; font-weight: 700; color: #f3e7cd; display: flex; align-items: center; gap: 8px;">
                                         {{ $notification->user_id === Auth::id() ? ($notification->relatedStudent?->name ?? 'Your alert') : $notification->user->name }}
                                         @if($notification->subject)
                                             <span style="color: #b39b82; font-weight: 500;">&bull; {{ $notification->subject->name ?? $notification->subject_code }}</span>
                                         @endif
                                         @if(!$notification->is_read)
-                                            <span class="ent-badge ent-badge-warning" style="font-size: 0.65rem; padding: 2px 6px;">New</span>
+                                            <span data-parent-alert-new class="ent-badge ent-badge-warning" style="font-size: 0.65rem; padding: 2px 6px;">New</span>
                                         @endif
                                     </div>
                                     <div style="font-size: 0.8rem; color: #8f826f; font-weight: 500;">
@@ -95,7 +97,7 @@
                 {{ $notifications->links() }}
             </div>
         @else
-            <div class="ent-empty" style="padding: 60px;">
+            <div class="ent-empty parent-empty" style="padding: 60px;">
                 <div class="ent-empty-icon" style="width:72px;height:72px;font-size:2.5rem; margin-bottom:16px;">
                     <i class="bi bi-bell-slash"></i>
                 </div>
@@ -106,19 +108,5 @@
     </x-card>
 </div>
 
-<script @cspNonce>
-function markAllNotificationsRead() {
-    fetch('{{ route('parent.notifications.read') }}', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Content-Type': 'application/json'
-        }
-    }).then(response => response.json()).then(data => {
-        if (data.success) {
-            window.location.reload();
-        }
-    });
-}
-</script>
+
 @endsection

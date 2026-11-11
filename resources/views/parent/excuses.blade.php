@@ -14,7 +14,7 @@
         .filter-group { flex-basis: 100%; min-width: 100%; }
     }
 </style>
-<div class="p-4">
+<div class="parent-page">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4" style="background: rgba(207,164,111,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(207,164,111,0.15);">
         <h2 style="color: #f3e7cd; font-weight: 800; margin: 0; display: flex; align-items: center; font-size: clamp(1.2rem, 3vw, 1.8rem);">
             <div style="width: 40px; height: 40px; background: rgba(207,164,111,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
@@ -29,7 +29,7 @@
 
     {{-- Filters --}}
     <x-card type="section" class="ent-mb-lg">
-        <form method="GET" action="{{ route('parent.excuses') }}" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+        <form method="GET" action="{{ route('parent.excuses') }}" class="parent-filter-toolbar" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
             <div class="filter-group">
                 <label class="ent-label">Child</label>
                 <select name="child_id" class="ent-input">

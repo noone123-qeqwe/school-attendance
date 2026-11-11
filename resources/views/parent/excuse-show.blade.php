@@ -2,8 +2,8 @@
 @section('page-title', 'Excuse Details')
 
 @section('content')
-<div class="p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="parent-page">
+    <div class="parent-page-heading">
         <h2 style="color: #f3e7cd; font-weight: 800; margin: 0;">
             <i class="bi bi-file-earmark-text" style="color: #cfa46f; margin-right: 8px;"></i>Excuse Details
         </h2>
@@ -103,7 +103,7 @@
                     <form action="{{ route('parent.excuse.comment', $excuseSubmission->id) }}" method="POST">
                         @csrf
                         <div class="input-group">
-                            <input type="text" name="body" class="tch-input" placeholder="Type a message..." required style="border-radius: 8px 0 0 8px; flex-grow: 1;">
+                            <input type="text" name="body" aria-label="Message to the teacher" class="tch-input" placeholder="Type a message..." required style="border-radius: 8px 0 0 8px; flex-grow: 1;">
                             <button type="submit" class="adm-btn adm-btn-primary" style="border-radius: 0 8px 8px 0;">
                                 <i class="bi bi-send-fill"></i> Send
                             </button>

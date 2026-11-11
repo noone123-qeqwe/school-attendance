@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('page-title', 'Attendance Calendar')
+@section('page-title', 'School Calendar')
 
 @php
     $firstChild = $children->first();
-    $selectedChildId = request('child_id', $firstChild?->id);
-    $selectedChild = $children->firstWhere('id', $selectedChildId) ?? $firstChild;
+    $selectedChild = $selectedChild ?? $firstChild;
+    $selectedChildId = $selectedChild?->id;
 @endphp
 
 @section('content')
@@ -644,6 +644,10 @@
 </style>
 
 {{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
+<div class="parent-page-heading"><div><h1>School calendar</h1><p class="ent-text-muted m-0">School events and attendance for the student you select.</p></div><a id="parentCalendarScheduleLink" href="{{ route('parent.schedule', ['child_id' => $selectedChildId]) }}" class="ent-btn ent-btn-ghost"><i class="bi bi-clock" aria-hidden="true"></i> Weekly schedule</a></div>
+@if($children->isEmpty())<div class="parent-section-card parent-empty mb-4"><h2 class="h5">Connect your student</h2><p>Link a student account to see their school calendar and attendance.</p><a class="ent-btn ent-btn-primary" href="{{ route('parent.link.form') }}">Link student</a></div>@endif
+<p id="parentCalendarFeedback" class="parent-feedback" role="status" aria-live="polite"></p>
+<button type="button" id="parentCalendarRetry" class="ent-btn ent-btn-ghost mb-3" onclick="scalLoadAndRender()" hidden>Retry calendar</button>
 <div class="scal-outer">
 
     {{-- MAIN CALENDAR CARD --}}
@@ -826,12 +830,12 @@
 </div>
 
 {{-- ── Event Detail Modal ──────────────────────────────────────────────── --}}
-<div class="modal fade" id="eventDetailModal" tabindex="-1">
+<div class="modal fade" id="eventDetailModal" tabindex="-1" aria-labelledby="eventTitle">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content ent-modal-content w-100">
             <div class="ent-modal-header position-relative">
                 <h5 class="ent-modal-title" id="eventTitle" style="padding-right: 24px;">Event</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
+                <button type="button" class="btn-close btn-close-white" aria-label="Close dialog" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
             </div>
             <div class="ent-modal-body">
                 <div class="ent-modal-row">
@@ -864,7 +868,7 @@
 </div>
 
 {{-- ── Day Summary Modal ───────────────────────────────────────────────── --}}
-<div class="modal fade" id="daySummaryModal" tabindex="-1">
+<div class="modal fade" id="daySummaryModal" tabindex="-1" aria-labelledby="daySummaryTitle">
     <div class="modal-dialog modal-dialog-bottom modal-dialog-scrollable">
         <div class="modal-content bottom-sheet-content">
             <div class="bottom-sheet-handle"></div>
@@ -876,7 +880,7 @@
                         <span id="daySummaryStatusText">Status</span>
                     </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeDaySummaryModal()" style="position:absolute;top:20px;right:20px;"></button>
+                <button type="button" class="btn-close btn-close-white" aria-label="Close dialog" data-bs-dismiss="modal" onclick="closeDaySummaryModal()" style="position:absolute;top:20px;right:20px;"></button>
             </div>
             <div class="px-4 pb-4">
                 <h6 style="font-size:0.78rem;font-weight:700;color:#8b7d70;text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px 0;" id="daySummarySectionTitle">Subjects</h6>
@@ -892,6 +896,7 @@
 </div>
 
 <script @cspNonce>
+@include('partials.parent-calendar-text')
 /* ═══════════════════════════════════════════════════
    Squircle Attendance Calendar — Parent View
    ═══════════════════════════════════════════════════ */
@@ -902,6 +907,8 @@ const scalChildCount = {{ $children->count() }};
 
 // Raw events from API: date string → array of event objects
 const scalEventMap = {};
+let scalRequestId = 0;
+let scalFetchController = null;
 
 const MONTH_NAMES = ['January','February','March','April','May','June',
                      'July','August','September','October','November','December'];
@@ -946,6 +953,15 @@ function scalSelectChild(btn, childId) {
         }
     });
     
+    const url = new URL(window.location.href);
+    url.searchParams.set('child_id', scalChildId);
+    window.history.replaceState({}, '', url);
+    const scheduleLink = document.getElementById('parentCalendarScheduleLink');
+    if (scheduleLink) {
+        const scheduleUrl = new URL(scheduleLink.href);
+        scheduleUrl.searchParams.set('child_id', scalChildId);
+        scheduleLink.href = scheduleUrl.toString();
+    }
     scalLoadAndRender();
 }
 
@@ -1033,23 +1049,44 @@ function scalUpdateStats() {
 
 /* ── Fetch events for a month range ─────────────────────── */
 function scalFetchEvents(year, month, cb) {
-    const start   = `${year}-${String(month).padStart(2,'0')}-01`;
+    const requestId = ++scalRequestId;
+    scalFetchController?.abort();
+    const controller = new AbortController();
+    scalFetchController = controller;
+    let timedOut = false;
+    const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 15000);
+    const start = `${year}-${String(month).padStart(2,'0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
-    const end     = `${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
-    const childParam = scalChildId ? `&child_id=${scalChildId}` : '';
-    fetch(`{{ route('parent.calendar.data') }}?start=${start}&end=${end}${childParam}`)
-        .then(r => r.json())
+    const end = `${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+    const childParam = scalChildId ? `&child_id=${encodeURIComponent(scalChildId)}` : '';
+    const feedback = document.getElementById('parentCalendarFeedback');
+    const retry = document.getElementById('parentCalendarRetry');
+    if (retry) retry.hidden = true;
+    Object.keys(scalEventMap).forEach(key => delete scalEventMap[key]);
+    if (feedback) feedback.textContent = 'Loading calendar…';
+    fetch(`{{ route('parent.calendar.data') }}?start=${start}&end=${end}${childParam}`, { signal: controller.signal, headers: { Accept: 'application/json' } })
+        .then(response => {
+            if (!response.ok) throw new Error('Calendar request failed');
+            return response.json();
+        })
         .then(data => {
-            Object.keys(scalEventMap).forEach(k => delete scalEventMap[k]);
-            data.forEach(ev => {
-                const dateStr = ev.start ? ev.start.split('T')[0] : null;
-                if (!dateStr) return;
-                if (!scalEventMap[dateStr]) scalEventMap[dateStr] = [];
-                scalEventMap[dateStr].push(ev);
+            if (requestId !== scalRequestId) return;
+            if (!Array.isArray(data)) throw new Error('Invalid calendar response');
+            data.forEach(event => {
+                const date = event.start ? event.start.split('T')[0] : null;
+                if (!date) return;
+                (scalEventMap[date] ??= []).push(event);
             });
+            if (feedback) feedback.textContent = '';
             cb();
         })
-        .catch(() => cb());
+        .catch(error => {
+            if (requestId !== scalRequestId || (error.name === 'AbortError' && !timedOut)) return;
+            Object.keys(scalEventMap).forEach(key => delete scalEventMap[key]);
+            if (feedback) feedback.textContent = 'Calendar could not load. Check your connection and retry.';
+            if (retry) retry.hidden = false;
+            cb();
+        }).finally(() => clearTimeout(timeout));
 }
 
 /* ── Derive dominant status for a day ───────────────────── */
@@ -1130,10 +1167,10 @@ function scalRender() {
         }
 
         html += `
-        <div class="${classes}" data-date="${dateStr}" onclick="scalDayClick('${dateStr}')">
+        <button type="button" class="${classes}" data-date="${dateStr}" aria-label="View details for ${dateStr}" aria-haspopup="dialog" aria-controls="daySummaryModal" onclick="scalDayClick('${dateStr}')">
             <span class="scal-num">${d}</span>
             <div class="scal-dots-row">${dotsHtml}</div>
-        </div>`;
+        </button>`;
     }
 
     grid.innerHTML = html;
@@ -1215,7 +1252,7 @@ function scalDayClick(dateStr) {
                 const studentNameHtml = (scalChildCount > 1 && ev.student_name)
                     ? `<div style="display:inline-flex;align-items:center;gap:4px;margin-top:3px;">
                           <i class="bi bi-person-fill" style="font-size:0.68rem;color:#cfa46f;"></i>
-                          <span style="font-size:0.72rem;color:#cfa46f;font-weight:600;">${ev.student_name}</span>
+                          <span style="font-size:0.72rem;color:#cfa46f;font-weight:600;">${parentEscapeHtml(ev.student_name)}</span>
                        </div>`
                     : '';
 
@@ -1225,25 +1262,25 @@ function scalDayClick(dateStr) {
                         <i class="bi ${iconCls}"></i>
                     </div>
                     <div class="subject-card-info">
-                        <div class="subject-card-title">${ev.subject_name || ev.title}</div>
+                        <div class="subject-card-title">${parentEscapeHtml(ev.subject_name || ev.title)}</div>
                         ${studentNameHtml}
-                        <div class="subject-card-time" style="margin-top:2px;">${ev.time_string || 'Time not set'}</div>
-                        <div class="subject-card-teacher">${ev.instructor_name || 'No Instructor'}${ev.excused ? ' &nbsp;<span style=\"font-size:0.7rem;color:#cfa46f;\">(Excused)</span>' : ''}</div>
+                        <div class="subject-card-time" style="margin-top:2px;">${parentEscapeHtml(ev.time_string || 'Time not set')}</div>
+                        <div class="subject-card-teacher">${parentEscapeHtml(ev.instructor_name || 'No Instructor')}${ev.excused ? ' &nbsp;<span style=\"font-size:0.7rem;color:#cfa46f;\">(Excused)</span>' : ''}</div>
                     </div>
-                    <div class="subject-card-badge" style="background:${badge.bg};color:${badge.color};">${ev.status}</div>
+                    <div class="subject-card-badge" style="background:${badge.bg};color:${badge.color};">${parentEscapeHtml(ev.status)}</div>
                 </div>`);
             } else {
                 hasEvent = true;
-                const evColor = ev.color || '#8b5cf6';
+                const evColor = parentCalendarColor(ev.color);
                 content.insertAdjacentHTML('beforeend', `
                 <div class="subject-card" style="border:1px dashed ${evColor}40;">
                     <div class="subject-card-icon" style="background:${evColor}20;color:${evColor};">
                         <i class="bi bi-calendar-event"></i>
                     </div>
                     <div class="subject-card-info">
-                        <div class="subject-card-title">${ev.title}</div>
-                        <div class="subject-card-time">${ev.time_string || 'All Day'}</div>
-                        <div class="subject-card-teacher" style="text-transform:capitalize;">${(ev.type||'').replace('_',' ')}</div>
+                        <div class="subject-card-title">${parentEscapeHtml(ev.title)}</div>
+                        <div class="subject-card-time">${parentEscapeHtml(ev.time_string || 'All Day')}</div>
+                        <div class="subject-card-teacher" style="text-transform:capitalize;">${parentEscapeHtml((ev.type||'').replace('_',' '))}</div>
                     </div>
                 </div>`);
             }

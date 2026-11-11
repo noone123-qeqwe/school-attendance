@@ -1,3 +1,4 @@
+@props(['parentUnreadCount' => null])
 {{-- ═════════════════════════════════════════════════════════════════
      COMMAND PALETTE — Redesigned Quick Navigation & Spotlight
      Ultra-sleek, responsive mobile sheet + desktop command center
@@ -691,8 +692,7 @@
     @auth
         @php
             if (Auth::user()->isParent()) {
-                $pChildIds = Auth::user()->children()->pluck('users.id');
-                $unreadNotifsCount = \App\Models\Notification::whereIn('user_id', $pChildIds)->where('is_read', false)->count();
+                $unreadNotifsCount = $parentUnreadCount ?? \App\Support\ParentNavigation::unreadCount(Auth::user());
             } else {
                 $unreadNotifsCount = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count();
             }
@@ -750,13 +750,16 @@
             navItems = [
                 { id: 'dashboard', label: 'Dashboard', hint: 'Children overview & daily attendance', icon: 'bi-grid-fill', color: '#ffd166', bg: 'rgba(255, 209, 102, 0.12)', category: 'navigation', badge: 'Home', url: '{{ route("parent.dashboard") }}' },
                 { id: 'calendar', label: 'School Calendar', hint: 'Academic schedule, exams & holidays', icon: 'bi-calendar-event-fill', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.12)', category: 'academic', badge: 'Calendar', url: '{{ route("parent.calendar") }}' },
+                { id: 'schedule', label: 'Weekly Schedule', hint: 'Class times, rooms & instructors', icon: 'bi-clock', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.12)', category: 'academic', badge: 'Classes', url: '{{ route("parent.schedule") }}' },
+                { id: 'attendance-calendar', label: 'Attendance Calendar', hint: 'Daily attendance records for a linked student', icon: 'bi-calendar-check', color: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', category: 'academic', badge: 'Records', url: '{{ route("parent.attendance.calendar") }}' },
+                { id: 'account', label: 'Account Settings', hint: 'Profile, security & preferences', icon: 'bi-gear', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.12)', category: 'system', badge: 'Account', url: '{{ route("parent.profile") }}' },
                 { id: 'excuses', label: 'Excuse Letters', hint: 'Submit excuse for student absence', icon: 'bi-file-earmark-text-fill', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', category: 'action', badge: 'Excuses', url: '{{ route("parent.excuses") }}' },
                 { id: 'link', label: 'Link a Child', hint: 'Connect student account with code', icon: 'bi-link-45deg', color: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', category: 'action', badge: 'Connect', url: '{{ route("parent.link.form") }}' },
                 { id: 'notifications', label: 'Notifications', hint: 'Attendance alerts & warnings', icon: 'bi-bell-fill', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', category: 'navigation', badge: '{{ $notifBadgeText }}', url: '{{ route("parent.notifications") }}' }
             ];
             quickActionChips = [
                 { label: 'Calendar', icon: 'bi-calendar-event-fill', url: '{{ route("parent.calendar") }}' },
-                { label: 'Submit Excuse', icon: 'bi-file-earmark-text-fill', url: '{{ route("parent.excuses") }}' },
+                { label: 'Submit Excuse', icon: 'bi-file-earmark-text-fill', url: '{{ route("parent.excuses.create_general") }}' },
                 { label: 'Link Child', icon: 'bi-link-45deg', url: '{{ route("parent.link.form") }}' }
             ];
         @else

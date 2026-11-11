@@ -2,7 +2,7 @@
 @section('page-title', 'Submit General Excuse')
 
 @section('content')
-<div class="p-4" style="max-width: 800px; margin: 0 auto;">
+<div class="parent-page parent-form-page" style="max-width: 800px; margin: 0 auto;">
     <a href="{{ route('parent.excuses') }}" style="color: #b39b82; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; margin-bottom: 24px; transition: color 0.2s;" onmouseover="this.style.color='#f3e7cd'" onmouseout="this.style.color='#b39b82'">
         <i class="bi bi-arrow-left"></i> Back to Excuse Letters
     </a>
@@ -29,15 +29,18 @@
     @endif
 
     <x-card type="section" style="padding: 32px;">
-        <form method="POST" action="{{ route('parent.excuses.store_general') }}" enctype="multipart/form-data">
+        @if($children->isEmpty())
+            <div class="parent-empty"><h2 class="h5">Link a student first</h2><p>Connect your student's account before submitting an excuse.</p><a class="ent-btn ent-btn-primary" href="{{ route('parent.link.form') }}">Link student</a></div>
+        @endif
+        <form @if($children->isEmpty()) hidden @endif method="POST" action="{{ route('parent.excuses.store_general') }}" enctype="multipart/form-data">
             @csrf
             
             <div style="margin-bottom: 24px;">
-                <label class="ent-label">Select Child</label>
+                <label class="ent-label" for="childSelect">Select child</label>
                 <select id="childSelect" name="child_id" class="ent-input" required onchange="updateAttendanceOptions()">
                     <option value="">Select a child...</option>
                     @foreach($children as $child)
-                        <option value="{{ $child->id }}" data-attendances="{{ json_encode($child->attendances->map(function($a) {
+                        <option value="{{ $child->id }}" @selected((string) old('child_id', request('child_id')) === (string) $child->id) data-attendances="{{ json_encode($child->attendances->map(function($a) {
                             return [
                                 'id' => $a->id,
                                 'date' => \Carbon\Carbon::parse($a->date)->format('M d, Y'),
@@ -52,31 +55,31 @@
             </div>
 
             <div style="margin-bottom: 24px;">
-                <label class="ent-label">Select Absence / Lateness to Excuse</label>
-                <select id="attendanceSelect" name="attendance_id" class="ent-input" required disabled>
+                <label class="ent-label" for="attendanceSelect">Absence or lateness to excuse</label>
+                <select id="attendanceSelect" data-selected="{{ old('attendance_id') }}" name="attendance_id" class="ent-input" required disabled>
                     <option value="">First select a child...</option>
                 </select>
             </div>
 
             <div style="margin-bottom: 24px;">
-                <label class="ent-label">Reason Category <span style="color: #ef5350;">*</span></label>
-                <select name="reason_type" class="ent-input" onchange="toggleCustomReason(this)">
+                <label class="ent-label" for="reasonType">Reason category <span style="color: #ef5350;">*</span></label>
+                <select id="reasonType" name="reason_type" class="ent-input" onchange="toggleCustomReason(this)">
                     <option value="">Select a reason...</option>
-                    <option value="illness">Illness / Medical Condition</option>
-                    <option value="medical_appointment">Medical / Dental Appointment</option>
-                    <option value="family_emergency">Family Emergency</option>
-                    <option value="bereavement">Bereavement / Death in Family</option>
-                    <option value="religious">Religious Observance</option>
-                    <option value="official_event">Official School Event / Activity</option>
-                    <option value="transportation">Transportation Issues</option>
-                    <option value="natural_disaster">Natural Disaster / Calamity</option>
-                    <option value="other">Other (please specify)</option>
+                    <option value="illness" @selected(old('reason_type') === 'illness')>Illness / Medical Condition</option>
+                    <option value="medical_appointment" @selected(old('reason_type') === 'medical_appointment')>Medical / Dental Appointment</option>
+                    <option value="family_emergency" @selected(old('reason_type') === 'family_emergency')>Family Emergency</option>
+                    <option value="bereavement" @selected(old('reason_type') === 'bereavement')>Bereavement / Death in Family</option>
+                    <option value="religious" @selected(old('reason_type') === 'religious')>Religious Observance</option>
+                    <option value="official_event" @selected(old('reason_type') === 'official_event')>Official School Event / Activity</option>
+                    <option value="transportation" @selected(old('reason_type') === 'transportation')>Transportation Issues</option>
+                    <option value="natural_disaster" @selected(old('reason_type') === 'natural_disaster')>Natural Disaster / Calamity</option>
+                    <option value="other" @selected(old('reason_type') === 'other')>Other (please specify)</option>
                 </select>
             </div>
 
             <div style="margin-bottom: 24px;">
                 <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 8px;">
-                    <label class="ent-label" style="margin: 0;">Detailed Explanation <span style="color: #ef5350;">*</span></label>
+                    <label class="ent-label" for="descInput" style="margin: 0;">Detailed explanation <span style="color: #ef5350;">*</span></label>
                     <span id="charCount" style="font-size:0.75rem; color: #8f826f;">0 / 500</span>
                 </div>
                 <textarea name="reason" id="descInput" class="ent-input" maxlength="500" style="min-height: 120px; resize: vertical;" placeholder="Provide details about the reason for absence..." required>{{ old('reason') }}</textarea>
@@ -89,11 +92,11 @@
                     <p style="color: #b39b82; font-size: 0.9rem; margin: 8px 0 0;" id="uploadText">
                         Click or drag to upload &mdash; PDF, JPG, or PNG (max 5MB)
                     </p>
-                    <input type="file" name="document" id="fileInput" style="display: none;" accept=".pdf,.jpg,.jpeg,.png" onchange="updateFileName(this)">
+                    <input type="file" name="document" id="fileInput" class="parent-file-input" style="display: none;" accept=".pdf,.jpg,.jpeg,.png" onchange="updateFileName(this)">
                 </label>
             </div>
 
-            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <div class="parent-form-actions">
                 <a href="{{ route('parent.excuses') }}" class="ent-btn ent-btn-ghost">Cancel</a>
                 <button type="submit" class="ent-btn ent-btn-primary">
                     <i class="bi bi-send me-1"></i> Submit Excuse
@@ -104,7 +107,7 @@
 </div>
 
 <script @cspNonce>
-function updateAttendanceOptions() {
+function updateAttendanceOptions(preferred = '') {
     const childSelect = document.getElementById('childSelect');
     const attendanceSelect = document.getElementById('attendanceSelect');
     
@@ -136,7 +139,9 @@ function updateAttendanceOptions() {
         option.textContent = `${att.date} — ${att.subject} (${att.status})`;
         attendanceSelect.appendChild(option);
     });
+    attendanceSelect.value = String(preferred || '');
 }
+updateAttendanceOptions(document.getElementById('attendanceSelect').dataset.selected);
 
 // Character Counter
 const descInput = document.getElementById('descInput');
@@ -200,10 +205,10 @@ function updateFileName(input) {
     const text = document.getElementById('uploadText');
     const area = document.getElementById('dropZone');
     if (input.files.length > 0) {
-        text.innerHTML = '<i class="bi bi-file-earmark-check me-1" style="color: #4ade80;"></i> ' + input.files[0].name;
+        text.textContent = 'Selected file: ' + input.files[0].name;
         area.style.borderColor = 'rgba(74, 222, 128, 0.4)';
     } else {
-        text.innerHTML = 'Click or drag to upload &mdash; PDF, JPG, or PNG (max 5MB)';
+        text.textContent = 'Click or drag to upload — PDF, JPG, or PNG (max 5MB)';
         area.style.borderColor = 'rgba(255,255,255,0.1)';
     }
 }

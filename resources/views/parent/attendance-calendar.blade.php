@@ -787,7 +787,7 @@
     }
 </style>
 
-<div class="mb-4 d-flex justify-content-between align-items-end flex-wrap gap-3">
+<div class="parent-page-heading">
     <div>
         <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: 2rem;">Attendance Calendar</h1>
         <div style="color: #b39b82; font-size: 0.95rem;">
@@ -800,10 +800,10 @@
     </div>
     
     @if($children->count() > 1)
-    <div class="ent-glass-panel px-3 py-2" style="border-radius: 12px; display: inline-flex; align-items: center; gap: 12px;">
-        <i class="bi bi-person-badge text-gold" style="font-size: 1.2rem;"></i>
+    <div class="parent-context-picker">
+        <label for="parentContextChild">Viewing student</label>
         <form id="child-select-form" method="GET" action="{{ route('parent.attendance.calendar') }}" class="m-0 p-0 d-flex align-items-center">
-            <select name="child_id" onchange="document.getElementById('child-select-form').submit()" class="form-select form-select-sm premium-select" style="min-width: 200px; background-color: rgba(0,0,0,0.2); color: #f3e7cd; border-color: rgba(255,255,255,0.1);">
+            <select id="parentContextChild" name="child_id" onchange="document.getElementById('child-select-form').submit()" class="form-select form-select-sm premium-select" style="min-width: 200px; background-color: rgba(0,0,0,0.2); color: #f3e7cd; border-color: rgba(255,255,255,0.1);">
                 @foreach($children as $child)
                     <option value="{{ $child->id }}" {{ $selectedChild && $selectedChild->id == $child->id ? 'selected' : '' }}>
                         {{ $child->name }}
@@ -830,12 +830,12 @@
             <div class="att-cal-wrap">
                 {{-- Month Navigation --}}
                 <div class="att-cal-nav">
-                    <a href="?child_id={{ $selectedChild->id }}&cal_year={{ $prevMonth->year }}&cal_month={{ $prevMonth->month }}" class="att-cal-nav-btn">
+                    <a href="?child_id={{ $selectedChild->id }}&cal_year={{ $prevMonth->year }}&cal_month={{ $prevMonth->month }}" class="att-cal-nav-btn" aria-label="Previous month">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                     <div class="att-cal-month">{{ $calStart->format('F Y') }}</div>
                     @if(!$isLatestMonth)
-                        <a href="?child_id={{ $selectedChild->id }}&cal_year={{ $nextMonth->year }}&cal_month={{ $nextMonth->month }}" class="att-cal-nav-btn">
+                        <a href="?child_id={{ $selectedChild->id }}&cal_year={{ $nextMonth->year }}&cal_month={{ $nextMonth->month }}" class="att-cal-nav-btn" aria-label="Next month">
                             <i class="bi bi-chevron-right"></i>
                         </a>
                     @else
@@ -931,7 +931,7 @@
 @endif
 
 {{-- ── Day Summary Inspector Modal (Subject-by-Subject Attendance Details) ───────────────── --}}
-<div class="modal fade" id="daySummaryModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="daySummaryModal" tabindex="-1" aria-labelledby="daySummaryTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="scal-sheet-handle day-modal-sheet-handle"></div>
@@ -984,6 +984,7 @@
 </div>
 
 <script @cspNonce>
+@include('partials.parent-calendar-text')
 var attCalendarData = @json($calendarJson);
 let dayModalInstance = null;
 let currentSelectedDateKey = '{{ $calYear }}-{{ str_pad($calMonth, 2, '0', STR_PAD_LEFT) }}-{{ str_pad(($isCurrentMonth && $today ? $today : 14), 2, '0', STR_PAD_LEFT) }}';
@@ -1105,7 +1106,7 @@ function showAttDetail(dateKey, day) {
 
             const clockInVal = r.clock_in || (r.time_in ? r.time_in : (statusKey === 'absent' ? 'No clock-in' : '—'));
             const excuseLink = (statusKey === 'absent' && selectedChildId && r.id)
-                ? `<a href="/parent/child/${selectedChildId}/excuse/${r.id}" class="day-card-excuse-btn">
+                ? `<a href="/parent/child/${encodeURIComponent(selectedChildId)}/excuse/${encodeURIComponent(r.id)}" class="day-card-excuse-btn">
                        <span><i class="bi bi-file-earmark-plus me-1"></i> Submit Excuse for Child</span>
                        <i class="bi bi-arrow-right-short" style="font-size:1.1rem;"></i>
                    </a>`
@@ -1115,29 +1116,29 @@ function showAttDetail(dateKey, day) {
                 <div class="att-detail-card ${borderClass}">
                     <div class="att-card-header">
                         <div style="flex:1; min-width:200px;">
-                            <div class="att-card-subject-title">${r.subject || 'Subject'}</div>
+                            <div class="att-card-subject-title">${parentEscapeHtml(r.subject || 'Subject')}</div>
                             <div class="att-card-meta">
-                                ${r.code ? `<span class="att-code-pill">${r.code}</span>` : ''}
-                                ${r.instructor ? `<span class="att-instructor-pill"><i class="bi bi-person-fill"></i> ${r.instructor}</span>` : ''}
+                                ${r.code ? `<span class="att-code-pill">${parentEscapeHtml(r.code)}</span>` : ''}
+                                ${r.instructor ? `<span class="att-instructor-pill"><i class="bi bi-person-fill"></i> ${parentEscapeHtml(r.instructor)}</span>` : ''}
                             </div>
                         </div>
                         <span class="att-status-badge ${statusBadgeClass}">
-                            <i class="bi ${statusIcon}"></i> ${r.status || 'Status'}
+                            <i class="bi ${statusIcon}"></i> ${parentEscapeHtml(r.status || 'Status')}
                         </span>
                     </div>
 
                     <div class="att-info-grid">
                         <div>
                             <div class="att-grid-col-label"><i class="bi bi-calendar3"></i> Schedule</div>
-                            <div class="att-grid-col-val">${r.schedule || 'Flexible'}</div>
+                            <div class="att-grid-col-val">${parentEscapeHtml(r.schedule || 'Flexible')}</div>
                         </div>
                         <div>
                             <div class="att-grid-col-label"><i class="bi bi-box-arrow-in-right"></i> Actual Clock-in</div>
-                            <div class="att-grid-col-val" style="${statusKey === 'absent' ? 'color:#f87171;' : ''}">${clockInVal}</div>
+                            <div class="att-grid-col-val" style="${statusKey === 'absent' ? 'color:#f87171;' : ''}">${parentEscapeHtml(clockInVal)}</div>
                         </div>
                     </div>
 
-                    ${r.remarks ? `<div style="font-size:0.75rem; color:#ffd166; margin-top:8px; display:flex; align-items:center; gap:6px;"><i class="bi bi-info-circle-fill"></i> ${r.remarks}</div>` : ''}
+                    ${r.remarks ? `<div style="font-size:0.75rem; color:#ffd166; margin-top:8px; display:flex; align-items:center; gap:6px;"><i class="bi bi-info-circle-fill"></i> ${parentEscapeHtml(r.remarks)}</div>` : ''}
                     ${excuseLink}
                 </div>
             `;
