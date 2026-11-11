@@ -28,7 +28,7 @@ function mount(mobile = true) {
     };
     const buttons = [
         ['profile', 'Profile & school details'],
-        ['biometrics', 'Face & device sign-in face registration camera passkeys fingerprint credentials'],
+        ['biometrics', 'Biometrics face registration camera passkeys fingerprint credentials'],
         ['credentials', 'Password & email'],
     ].map(([page, text]) => {
         const button = element('button-' + page, text);
@@ -80,7 +80,7 @@ for (const [screen, mobile] of [['mobile', true], ['desktop', false]]) {
         assert.equal(app.ids.get('studentPasskeySettings').hidden, false);
         assert.equal(app.ids.get('tab-security').classList.contains('active'), true);
         assert.equal(app.ids.get('sec-section-credentials').style.display, 'none');
-        assert.equal(app.ids.get('studentSettingsPageTitle').textContent, 'Face & device sign-in');
+        assert.equal(app.ids.get('studentSettingsPageTitle').textContent, 'Biometrics');
         assert.equal(app.buttons[1].getAttribute('aria-current'), 'page');
         assert.equal(app.location.hash, '#tab-biometrics');
     });

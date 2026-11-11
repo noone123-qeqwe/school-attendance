@@ -7,7 +7,7 @@
         profile: ['Profile & school details', 'Manage your photo, contact number, and student information.', 'profile'],
         family: ['Guardians', 'Choose who can view your attendance and share a link code with your guardian.', 'family'],
         credentials: ['Password & email', 'Keep your sign-in details up to date. Changes require an email verification code.', 'security', 'credentials'],
-        biometrics: ['Face & device sign-in', 'Register your face for attendance and manage the secure ways you sign in to your account.', 'security', 'biometrics'],
+        biometrics: ['Biometrics', 'Register your face for attendance and manage the secure ways you sign in to your account.', 'security', 'biometrics'],
         device: ['Attendance device', 'Manage the phone or computer you use to record attendance.', 'security', 'device'],
         recovery: ['Recovery codes', 'Save backup codes somewhere safe in case you lose access to your account.', 'security', 'recovery'],
         preferences: ['Notifications & app', 'Choose how you receive alerts, adjust your display, and check for updates.', 'preferences'],

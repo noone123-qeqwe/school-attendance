@@ -6,7 +6,7 @@
         ],
         'Security & attendance' => [
             ['credentials', 'bi-shield-lock', 'Password & email', 'Update your sign-in details', 'security otp reset'],
-            ['biometrics', 'bi-person-bounding-box', 'Face & device sign-in', 'Register your face and manage secure device sign-in', 'face registration camera facial recognition capture passkeys biometric webauthn fingerprint credentials'],
+            ['biometrics', 'bi-person-bounding-box', 'Biometrics', 'Register your face and manage secure device sign-in', 'face registration camera facial recognition capture passkeys biometric webauthn fingerprint credentials'],
             ['device', 'bi-phone', 'Attendance device', 'Manage the device you use to check in', 'binding trusted lock phone scan'],
             ['recovery', 'bi-life-preserver', 'Recovery codes', 'Keep a backup way to access your account', 'emergency vault lost password'],
         ],
