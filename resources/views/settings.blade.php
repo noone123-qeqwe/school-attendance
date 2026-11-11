@@ -3,12 +3,6 @@
 @endphp
 @extends($layout)
 
-@push('styles')
-@if(Auth::user()?->isStudent())
-<link rel="stylesheet" href="{{ asset('css/student-settings.css') }}?v={{ filemtime(public_path('css/student-settings.css')) }}">
-@endif
-@endpush
-
 @section('page-title', 'Settings')
 @section('content')
 @php

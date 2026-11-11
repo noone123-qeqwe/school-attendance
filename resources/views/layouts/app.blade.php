@@ -54,6 +54,9 @@
     @if(Auth::user()?->isParent() && !request()->routeIs('parent.*.report'))
         <link rel="stylesheet" href="{{ asset('css/parent-portal-redesign.css') }}?v={{ filemtime(public_path('css/parent-portal-redesign.css')) }}">
     @endif
+    @if(Auth::user()?->isStudent() && request()->routeIs('settings'))
+        <link rel="stylesheet" href="{{ asset('css/student-settings.css') }}?v={{ filemtime(public_path('css/student-settings.css')) }}">
+    @endif
 </head>
 
 <body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher(), 'admin-portal' => Auth::user()?->isAdmin(), 'parent-portal' => Auth::user()?->isParent()]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>

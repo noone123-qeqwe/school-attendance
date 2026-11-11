@@ -17,6 +17,31 @@
 .student-settings-search input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--text-primary); font: inherit; font-size: .85rem; padding: 11px 0; box-shadow: none; }
 .student-settings-search input::placeholder { color: var(--text-muted); }
 .student-settings-search:focus-within { border-color: var(--gold-primary); outline: 2px solid var(--gold-subtle); outline-offset: 2px; }
+/* This composite label stays horizontal when the shared mobile form rules load. */
+.sp.student-settings[data-student-settings] label.student-settings-search {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    padding: 0 14px !important;
+    margin-bottom: 22px !important;
+}
+.sp.student-settings[data-student-settings] .student-settings-search > i {
+    flex: 0 0 20px;
+    width: 20px;
+    margin: 0;
+    text-align: center;
+}
+.sp.student-settings[data-student-settings] #studentSettingsFilter {
+    flex: 1 1 0%;
+    min-width: 0;
+    min-height: 46px;
+    margin: 0;
+    padding: 10px 0 !important;
+    border-radius: 0 !important;
+}
 .student-settings-menu-group { margin: 0 0 22px; }
 .student-settings-menu-group h2 { margin: 0 10px 9px; font-size: .72rem; line-height: 1.4; font-weight: 650; color: var(--text-muted); }
 .student-settings-link { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 52px; padding: 10px; margin: 2px 0; text-align: left; color: var(--text-primary); background: transparent; border: 1px solid transparent; border-radius: 10px; cursor: pointer; }
