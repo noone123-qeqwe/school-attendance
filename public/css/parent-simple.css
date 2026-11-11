@@ -230,3 +230,145 @@
     body.parent-portal .parent-actions-row .parent-btn-action { font-size: .72rem; }
     body.parent-portal .parent-page-heading { padding: 15px; }
 }
+
+/* Guardian-friendly reading and navigation: keep the existing palette, while
+   making each choice easier to read and touch without needing to zoom. */
+@media screen {
+    body.parent-portal { font-size: 16px; }
+    body.parent-portal .sidebar .parent-nav-group .nav-link {
+        grid-template-columns: 24px minmax(0, 1fr);
+        min-height: 68px;
+        padding: 11px 12px;
+        column-gap: 12px;
+    }
+    body.parent-portal .parent-nav-group-title {
+        margin: 0 11px 8px;
+        font-size: .75rem;
+        letter-spacing: .06em;
+    }
+    body.parent-portal .sidebar .parent-nav-group .nav-link-text {
+        font-size: .94rem;
+        line-height: 1.3;
+    }
+    body.parent-portal .parent-nav-link-description {
+        overflow: visible;
+        color: #b39b82;
+        font-size: .78rem;
+        line-height: 1.35;
+        text-overflow: clip;
+        white-space: normal;
+    }
+    body.parent-portal .parent-nav-count { min-width: 25px; height: 25px; font-size: .72rem; }
+    body.parent-portal .sidebar .parent-nav-group .nav-link:has(.parent-nav-count:not([hidden])) { position: relative; padding-right: 38px; }
+    body.parent-portal .sidebar .parent-nav-count { position: absolute; top: 11px; right: 8px; }
+
+    body.parent-portal .parent-page-heading {
+        gap: 18px;
+        padding: 24px 26px;
+    }
+    body.parent-portal .parent-page-heading :is(h1, h2, h3),
+    body.parent-portal .pg-title { font-size: clamp(1.65rem, 2.5vw, 2rem) !important; }
+    body.parent-portal :is(.parent-page-heading p, .pg-sub, .parent-hero-sub) {
+        color: #b39b82;
+        font-size: 1rem;
+        line-height: 1.65;
+    }
+
+    body.parent-portal .parent-child-context { gap: 16px; padding: 19px 20px; }
+    body.parent-portal .parent-child-context-avatar { width: 48px; height: 48px; flex-basis: 48px; font-size: 1.05rem; }
+    body.parent-portal .parent-child-context-copy { line-height: 1.45; }
+    body.parent-portal .parent-child-context-copy strong {
+        overflow: visible;
+        font-size: 1rem;
+        text-overflow: clip;
+        white-space: normal;
+    }
+    body.parent-portal .parent-child-context-copy > span:last-child { font-size: .82rem; }
+    body.parent-portal .parent-child-context-eyebrow { font-size: .73rem; }
+    body.parent-portal .parent-child-context-select { gap: 6px; }
+    body.parent-portal .parent-child-context-select label { font-size: .8rem; }
+    body.parent-portal .parent-child-context-select select { min-height: 50px; padding-block: 10px; font-size: .92rem; }
+    body.parent-portal .parent-child-context-links { gap: 10px; }
+    body.parent-portal .parent-child-context-links a {
+        min-height: 50px;
+        padding: 10px 14px;
+        font-size: .88rem;
+        line-height: 1.3;
+    }
+
+    body.parent-portal .parent-quick-actions { width: min(100%, 740px); }
+    body.parent-portal .parent-quick-actions-title {
+        margin: 0 0 9px;
+        color: #b39b82;
+        font-size: .82rem;
+        font-weight: 700;
+        line-height: 1.4;
+    }
+    body.parent-portal .parent-actions-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        width: 100%;
+        gap: 10px !important;
+    }
+    body.parent-portal .parent-actions-row .parent-btn-action {
+        min-height: 54px;
+        padding: 11px 13px !important;
+        font-size: .9rem;
+        line-height: 1.3;
+        white-space: normal;
+    }
+    body.parent-portal .parent-actions-row .parent-btn-action > span:not(.badge) { min-width: 0; }
+
+    body.parent-portal :is(.ent-btn, .adm-btn, .btn-modern-gold, .parent-btn-action, .sbtn, .cancel-btn, .link-method-btn) {
+        min-height: 50px;
+        font-size: .92rem;
+    }
+    body.parent-portal :is(.ent-label, .sl) { font-size: .9rem; margin-bottom: 9px; }
+    body.parent-portal .stab { min-height: 50px; font-size: .9rem !important; }
+    body.parent-portal .child-item-actions :is(a, button) { min-height: 50px; }
+    body.parent-portal :is(.ent-input, .ent-glass-input, .si, .tch-input, .form-control, .form-select) {
+        min-height: 50px;
+        padding: 12px 14px;
+        font-size: 1rem;
+    }
+    body.parent-portal .parent-feedback { font-size: .95rem; line-height: 1.5; }
+    body.parent-portal .parent-alert-item { scroll-margin-top: 18px; }
+    body.parent-portal .parent-page :is(.ent-empty, .alert, .security-note-box) { font-size: .95rem; line-height: 1.6; }
+    body.parent-portal .parent-page :is(.ent-table td, .ent-table th, .parent-data-table td, .parent-data-table th) { font-size: .9rem; }
+
+}
+
+@media (max-width: 767.98px) {
+    body.parent-portal .main-content > .page-enter { padding: 18px 16px calc(112px + env(safe-area-inset-bottom)) !important; }
+    body.parent-portal .parent-page-heading { padding: 19px; }
+    body.parent-portal .parent-page-heading .ent-btn { min-height: 48px; width: 100%; }
+    body.parent-portal .parent-child-context { padding: 16px; }
+    body.parent-portal .parent-child-context-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.parent-portal .parent-child-context-links a { min-height: 54px; padding: 10px; font-size: .82rem; text-align: center; }
+    body.parent-portal .parent-quick-actions { width: 100%; }
+    body.parent-portal .parent-quick-actions-title { font-size: .88rem; }
+    body.parent-portal .parent-actions-row { grid-template-columns: 1fr !important; }
+    body.parent-portal .parent-actions-row .parent-btn-action { min-height: 54px; justify-content: flex-start; padding-inline: 16px !important; font-size: .95rem; }
+    body.parent-portal .parent-kpi-grid { gap: 12px !important; }
+    body.parent-portal .kpi-stat-card { padding: 17px !important; }
+    body.parent-portal .kpi-stat-val { font-size: 1.65rem !important; }
+    body.parent-portal #moreSheetContent { grid-template-columns: minmax(0, 1fr) !important; gap: 18px; }
+    body.parent-portal #moreSheetContent .parent-nav-group-mobile { display: grid; gap: 8px; }
+    body.parent-portal #moreSheetContent .parent-nav-group-title { margin: 0 4px 2px; }
+    body.parent-portal #moreSheetContent .more-sheet-item {
+        display: flex !important; flex-direction: row !important; align-items: center !important; gap: 14px !important;
+        min-height: 76px; padding: 14px !important; text-align: left;
+    }
+    body.parent-portal #moreSheetContent .more-sheet-item-icon { flex: 0 0 44px; width: 44px !important; height: 44px !important; margin: 0; }
+    body.parent-portal #moreSheetContent .parent-mobile-menu-copy { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
+    body.parent-portal #moreSheetContent .more-sheet-item-label { font-size: 1rem !important; line-height: 1.4 !important; text-align: left !important; }
+    body.parent-portal #moreSheetContent .parent-nav-link-description { grid-column: auto; font-size: .86rem; }
+    body.parent-portal .more-sheet-close { width: 48px !important; height: 48px !important; }
+    body.parent-portal .more-sheet-header { position: sticky; top: 0; z-index: 2; background: rgba(18, 10, 8, .98); }
+    body.parent-portal .mobile-bottom-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    body.parent-portal .mobile-bottom-nav .mbn-item { min-height: 62px; padding-inline: 4px; }
+    body.parent-portal .mobile-bottom-nav .mbn-item span:last-child { font-size: 13px !important; line-height: 1.4 !important; }
+}
+
+@media (max-width: 390px) {
+    body.parent-portal .parent-child-context-links a { font-size: .76rem; }
+}

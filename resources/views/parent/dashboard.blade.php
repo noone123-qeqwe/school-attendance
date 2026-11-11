@@ -494,18 +494,18 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
             <span class="parent-hero-badge">
-                <i class="bi bi-people-fill"></i> Parent workspace
+                <i class="bi bi-people-fill"></i> Parent &amp; guardian portal
             </span>
             <h1 class="parent-hero-title">
-                <span>Your students, at a glance</span>
+                <span>Your children, in one place</span>
             </h1>
             <p class="parent-hero-sub">
-                Choose a student to see attendance, the weekly schedule, school notices, and support tasks.
+                Choose a child to check attendance, class schedules, school messages, and support tasks.
             </p>
         </div>
         <div>
             <a href="{{ route('parent.link.form') }}" class="btn-modern-gold" style="white-space: nowrap;">
-                <i class="bi bi-person-plus-fill"></i> Add student
+                <i class="bi bi-person-plus-fill"></i> Link a student
             </a>
         </div>
     </div>
@@ -518,7 +518,7 @@
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-people-fill text-gold" style="font-size: 1.1rem;"></i>
             <span style="font-size: 0.85rem; font-weight: 700; color: #f3e7cd; text-transform: uppercase; letter-spacing: 0.5px;">
-                Choose a student ({{ count($childrenData) }})
+                Choose a child ({{ count($childrenData) }})
             </span>
         </div>
         <span style="font-size: 0.75rem; color: #8f826f;">Everything below changes for the student you choose.</span>
@@ -591,25 +591,27 @@
             </div>
 
             <!-- Quick Action Shortcuts -->
-            <div class="parent-actions-row">
+            <section class="parent-quick-actions" aria-labelledby="parentQuickActions_{{ $child->id }}">
+                <h3 id="parentQuickActions_{{ $child->id }}" class="parent-quick-actions-title">What would you like to do?</h3>
+                <div class="parent-actions-row" role="group" aria-label="Common tasks for {{ $child->name }}">
                 <a href="{{ route('parent.attendance.calendar', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-primary" title="View attendance calendar">
                     <i class="bi bi-calendar-check"></i>
-                    <span>Attendance</span>
+                    <span>View attendance</span>
                 </a>
 
                 <a href="{{ route('parent.schedule', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-ghost" title="View weekly schedule">
                     <i class="bi bi-clock"></i>
-                    <span>Schedule</span>
+                    <span>Class schedule</span>
                 </a>
 
                 <a href="{{ route('parent.child', $child) }}" class="parent-btn-action btn-action-ghost" title="Detailed Attendance History">
                     <i class="bi bi-clock-history"></i>
-                    <span>Records</span>
+                    <span>Attendance records</span>
                 </a>
 
                 <a href="{{ route('parent.child.warnings', $child) }}" class="parent-btn-action {{ $data->warnings->count() > 0 ? 'btn-action-danger' : 'btn-action-ghost' }}" title="Academic Warnings">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <span>Warnings</span>
+                    <span>Notices &amp; warnings</span>
                     @if($data->warnings->count() > 0)
                         <span class="badge rounded-pill bg-danger" style="font-size: 0.68rem; padding: 2px 6px;">{{ $data->warnings->count() }}</span>
                     @endif
@@ -617,14 +619,15 @@
 
                 <a href="{{ route('parent.excuses.create_general', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-ghost" title="Submit Excuse Letter">
                     <i class="bi bi-file-earmark-plus"></i>
-                    <span>Submit Excuse</span>
+                    <span>Submit an excuse</span>
                 </a>
 
                 <a href="{{ route('parent.child.report', $child) }}" class="parent-btn-action btn-action-primary" title="Download Official PDF Report">
                     <i class="bi bi-file-earmark-pdf-fill"></i>
-                    <span>PDF Report</span>
+                    <span>Download report</span>
                 </a>
-            </div>
+                </div>
+            </section>
         </div>
     </div>
 

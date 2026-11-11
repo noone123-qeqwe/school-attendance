@@ -3,9 +3,7 @@
 @endphp
 @foreach(\App\Support\ParentNavigation::groups() as $group)
     <div class="parent-nav-group {{ $mobile ? 'parent-nav-group-mobile' : '' }}">
-        @if(!$mobile)
-            <p class="parent-nav-group-title">{{ $group['label'] }}</p>
-        @endif
+        <p class="parent-nav-group-title">{{ $group['label'] }}</p>
         @foreach($group['items'] as [$label, $destination, $icon, $patterns, $color, $description])
             @php
                 $active = request()->routeIs(...$patterns);
@@ -22,8 +20,13 @@
                 @else
                     <i class="bi {{ $icon }}" aria-hidden="true"></i>
                 @endif
-                <span class="{{ $mobile ? 'more-sheet-item-label' : 'nav-link-text' }}">{{ $label }}</span>
-                @if(!$mobile)
+                @if($mobile)
+                    <span class="parent-mobile-menu-copy">
+                        <span class="more-sheet-item-label">{{ $label }}</span>
+                        <small class="parent-nav-link-description">{{ $description }}</small>
+                    </span>
+                @else
+                    <span class="nav-link-text">{{ $label }}</span>
                     <small class="parent-nav-link-description">{{ $description }}</small>
                 @endif
                 @if($destination === 'parent.notifications')

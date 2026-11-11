@@ -958,9 +958,9 @@
 
             // Highlight More button with top jewel active style like Home
             document.querySelectorAll('.mobile-bottom-nav .mbn-item').forEach(function(item) {
-                if (item.classList.contains('active') && !item.classList.contains('mbn-item-more')) {
+                if (item.classList.contains('active')) {
                     item.setAttribute('data-was-active', 'true');
-                    item.classList.remove('active');
+                    if (!item.classList.contains('mbn-item-more')) item.classList.remove('active');
                 }
             });
             document.querySelectorAll('.mbn-item-more').forEach(function(btn) {

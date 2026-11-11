@@ -14,12 +14,12 @@ class ParentNavigation
     public static function items(): array
     {
         return [
-            ['Home', 'parent.dashboard', 'bi-house-door', ['parent.dashboard'], 'gold', 'Your child at a glance'],
-            ['Attendance', 'parent.attendance.calendar', 'bi-calendar-check', ['parent.attendance.calendar', 'parent.child', 'parent.child.warnings'], 'green', 'Calendar, records and warnings'],
-            ['Schedule', 'parent.schedule', 'bi-clock', ['parent.schedule'], 'purple', 'Weekly classes and rooms'],
-            ['School calendar', 'parent.calendar', 'bi-calendar-event', ['parent.calendar*'], 'gold', 'Holidays and school events'],
-            ['Excuse letters', 'parent.excuses', 'bi-file-earmark-text', ['parent.excuses*', 'parent.excuse*', 'parent.child.excuse'], 'red', 'Submit a letter or check its status'],
-            ['Alerts', 'parent.notifications', 'bi-bell', ['parent.notifications*'], 'amber', 'Attendance alerts and messages'],
+            ['Home', 'parent.dashboard', 'bi-house-door', ['parent.dashboard'], 'gold', 'Choose a child and see the most important updates'],
+            ['Attendance & records', 'parent.attendance.calendar', 'bi-calendar-check', ['parent.attendance.calendar', 'parent.child', 'parent.child.warnings'], 'green', 'View attendance, detailed records, and notices'],
+            ['Class schedule', 'parent.schedule', 'bi-clock', ['parent.schedule'], 'purple', 'See class times, rooms, and instructors'],
+            ['School calendar', 'parent.calendar', 'bi-calendar-event', ['parent.calendar*'], 'gold', 'Holidays, events, and school dates'],
+            ['Excuse requests', 'parent.excuses', 'bi-file-earmark-text', ['parent.excuses*', 'parent.excuse*', 'parent.child.excuse'], 'red', 'Submit an excuse or check its status'],
+            ['Alerts', 'parent.notifications', 'bi-bell', ['parent.notifications*'], 'amber', 'Read attendance alerts and school messages'],
             ['My children', 'parent.link.form', 'bi-people', ['parent.link*'], 'green', 'Link a student or manage connections'],
             ['Account Settings', 'parent.profile', 'bi-gear', ['parent.profile'], 'blue', 'Profile, sign-in and preferences'],
         ];
@@ -30,7 +30,7 @@ class ParentNavigation
         $items = self::items();
         return [
             ['label' => 'Your child', 'items' => array_slice($items, 0, 3)],
-            ['label' => 'School & messages', 'items' => array_slice($items, 3, 3)],
+            ['label' => 'School support', 'items' => array_slice($items, 3, 3)],
             ['label' => 'Family & account', 'items' => array_slice($items, 6)],
         ];
     }

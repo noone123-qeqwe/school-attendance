@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('page-title', 'Link Student Account')
+@section('page-title', 'Link a Child')
 
 @section('content')
 <style>
@@ -222,10 +222,10 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
             <div class="d-flex align-items-center gap-2">
                 <i class="bi bi-people-fill text-gold" style="font-size: 1.2rem;"></i>
-                <h3 style="color: #f3e7cd; font-size: 1.1rem; font-weight: 800; margin: 0;">Connected Students</h3>
+                <h3 style="color: #f3e7cd; font-size: 1.1rem; font-weight: 800; margin: 0;">Your linked children</h3>
             </div>
             <span class="badge" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); font-size: 0.75rem; border-radius: 99px; padding: 4px 10px;">
-                {{ $linkedChildren->count() }} Linked
+                {{ $linkedChildren->count() }} connected
             </span>
         </div>
 
@@ -272,10 +272,10 @@
 
         <div class="text-center mb-4">
             <h2 style="color: #ffffff; font-weight: 800; font-size: clamp(1.3rem, 3vw, 1.7rem); margin: 0 0 6px 0; letter-spacing: -0.5px;">
-                Connect a Student Profile
+                Add a child to your account
             </h2>
             <p style="color: #b39b82; font-size: 0.9rem; margin: 0;">
-                Choose your preferred method to link with your child's attendance account
+                The link code is the fastest option. Choose the email code only if you do not have a link code.
             </p>
         </div>
 
@@ -283,12 +283,12 @@
         <div class="link-method-nav">
             <button type="button" class="link-method-btn active" id="tabBtnCode" aria-controls="methodCodeSection" aria-pressed="true" onclick="switchMethodTab('code')">
                 <i class="bi bi-upc-scan"></i>
-                <span>Instant Link Code</span>
-                <span class="badge-rec">Fastest</span>
+                <span>Use a link code</span>
+                <span class="badge-rec">Recommended</span>
             </button>
             <button type="button" class="link-method-btn" id="tabBtnOtp" aria-controls="methodOtpSection" aria-pressed="false" onclick="switchMethodTab('otp')">
                 <i class="bi bi-envelope-check"></i>
-                <span>Student ID &amp; Email OTP</span>
+                <span>Use student ID and email code</span>
             </button>
         </div>
 
@@ -297,20 +297,20 @@
             <div class="security-note-box">
                 <i class="bi bi-lightning-charge-fill text-gold" style="font-size: 1.25rem; flex-shrink: 0; margin-top: 2px;"></i>
                 <div style="font-size: 0.85rem; color: #e6dbce; line-height: 1.5;">
-                    Enter your child's <strong>Student ID</strong> and the <strong>6-digit Link Code</strong> generated under <strong>Student Portal &gt; Settings &gt; Family / Guardian</strong>. Both are checked together to protect the link.
+                    Ask your child for their <strong>Student ID</strong> and <strong>6-digit link code</strong>. They can find the code in <strong>Student Portal &gt; Settings &gt; Guardians</strong>.
                 </div>
             </div>
 
             <div class="mb-3">
                 <label for="instant_student_number" style="color: #cfa46f; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">
-                    Student ID / Number
+                    Child's student ID
                 </label>
                 <input type="text" id="instant_student_number" class="ent-glass-input" placeholder="Enter your child's Student ID" maxlength="50" autocomplete="off" inputmode="numeric">
             </div>
 
             <div class="mb-4 text-center">
                 <label for="instant_code" style="color: #cfa46f; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: block;">
-                    Enter 6-Digit Link Code
+                    6-digit link code
                 </label>
                 <input type="text" id="instant_code" inputmode="numeric" class="ent-glass-input text-center" placeholder="000000" maxlength="6" autocomplete="one-time-code"
                     style="font-size: 2.2rem; letter-spacing: 12px; font-weight: 800; padding: 16px; font-family: monospace; max-width: 320px; margin: 0 auto; display: block;">
@@ -320,7 +320,7 @@
             </div>
 
             <button type="button" id="btn-verify-code" class="btn-modern-gold w-100 justify-content-center" style="padding: 14px; font-size: 1rem;">
-                Verify &amp; Link Student <i class="bi bi-check-circle-fill ms-2"></i>
+                Link this student <i class="bi bi-check-circle-fill ms-2"></i>
             </button>
         </div>
 
@@ -335,7 +335,7 @@
                 <div style="width: 36px; height: 1px; background: rgba(207, 164, 111, 0.2);"></div>
                 <div class="step-dot" id="dot2" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 700; color: #8f826f; text-transform: uppercase;">
                     <span style="width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(207, 164, 111, 0.3); background: rgba(255, 255, 255, 0.05); display: flex; align-items: center; justify-content: center; font-size: 0.72rem;">2</span>
-                    <span>Email OTP</span>
+                    <span>Email confirmation</span>
                 </div>
             </div>
 
@@ -344,19 +344,19 @@
                 <div class="security-note-box">
                     <i class="bi bi-shield-lock-fill text-gold" style="font-size: 1.2rem; flex-shrink: 0; margin-top: 2px;"></i>
                     <div style="font-size: 0.84rem; color: #e6dbce; line-height: 1.5;">
-                        Enter your child's <strong>Student ID / Number</strong> (e.g. 20260001). A 6-digit confirmation code will be sent to their registered school inbox.
+                        Enter your child's <strong>student ID</strong>. A 6-digit confirmation code will be sent to their registered school email.
                     </div>
                 </div>
 
                 <div class="mb-4">
                     <label for="student_number" style="color: #cfa46f; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">
-                        Student ID / Number
+                        Child's student ID
                     </label>
                     <input type="text" id="student_number" class="ent-glass-input" placeholder="e.g. 20260001" maxlength="50" autocomplete="off">
                 </div>
 
                 <button type="button" id="btn-send-otp" class="btn-modern-gold w-100 justify-content-center" style="padding: 14px; font-size: 1rem;">
-                    Send OTP Verification Code <i class="bi bi-arrow-right ms-2"></i>
+                    Send confirmation code <i class="bi bi-arrow-right ms-2"></i>
                 </button>
             </div>
 
@@ -365,13 +365,13 @@
                 <div class="security-note-box" style="background: rgba(52, 211, 153, 0.08); border-color: rgba(52, 211, 153, 0.25);">
                     <i class="bi bi-envelope-check-fill" style="color: #34d399; font-size: 1.2rem; flex-shrink: 0; margin-top: 2px;"></i>
                     <div style="font-size: 0.84rem; color: #e6dbce; line-height: 1.5;">
-                        Verification code sent! Ask your child for the 6-digit code received on their school inbox.
+                        Code sent. Ask your child for the 6-digit code received in their school email.
                     </div>
                 </div>
 
                 <div class="mb-4">
                     <label for="otp_code" style="color: #cfa46f; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; text-align: center;">
-                        6-Digit Security Code
+                        6-digit confirmation code
                     </label>
                     <input type="text" id="otp_code" inputmode="numeric" class="ent-glass-input" placeholder="000000" maxlength="6" autocomplete="one-time-code"
                         style="text-align: center; font-size: 2rem; letter-spacing: 14px; font-weight: 800; padding: 16px; font-family: monospace;">
@@ -382,7 +382,7 @@
                         <i class="bi bi-arrow-left me-1"></i> Back
                     </button>
                     <button type="button" id="btn-verify-otp" class="btn-modern-gold flex-fill justify-content-center" style="padding: 14px; font-size: 0.95rem;">
-                        Confirm &amp; Link Student <i class="bi bi-check-circle-fill ms-2"></i>
+                        Link this student <i class="bi bi-check-circle-fill ms-2"></i>
                     </button>
                 </div>
             </div>
@@ -532,12 +532,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     showStatus(data.message || 'Invalid or expired code.', true);
                     btnVerifyCode.disabled = false;
-                    btnVerifyCode.innerHTML = 'Verify &amp; Link Student <i class="bi bi-check-circle-fill ms-2"></i>';
+                    btnVerifyCode.innerHTML = 'Link this student <i class="bi bi-check-circle-fill ms-2"></i>';
                 }
             } catch (err) {
                 showStatus('Network error while connecting. Please try again.', true);
                 btnVerifyCode.disabled = false;
-                btnVerifyCode.innerHTML = 'Verify &amp; Link Student <i class="bi bi-check-circle-fill ms-2"></i>';
+                btnVerifyCode.innerHTML = 'Link this student <i class="bi bi-check-circle-fill ms-2"></i>';
             }
         });
     }
@@ -577,14 +577,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     document.getElementById('otp_code').focus();
                 } else {
-                    showStatus(data.message || 'Failed to send OTP.', true);
+                    showStatus(data.message || 'Unable to send the confirmation code.', true);
                 }
             } catch (error) {
                 showStatus('An unexpected error occurred.', true);
             }
 
             btnSendOtp.disabled = false;
-            btnSendOtp.innerHTML = 'Send OTP Verification Code <i class="bi bi-arrow-right ms-2"></i>';
+            btnSendOtp.innerHTML = 'Send confirmation code <i class="bi bi-arrow-right ms-2"></i>';
         });
     }
 
@@ -605,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const otp = document.getElementById('otp_code').value.trim();
             
             if(otp.length !== 6) {
-                showStatus('Please enter the complete 6-digit OTP.', true);
+                showStatus('Please enter the complete 6-digit confirmation code.', true);
                 return;
             }
 
@@ -631,14 +631,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.location.href = '{{ route("parent.dashboard") }}';
                     }, 1200);
                 } else {
-                    showStatus(data.message || 'Invalid or expired OTP.', true);
+                    showStatus(data.message || 'That confirmation code is invalid or has expired.', true);
                     btnVerifyOtp.disabled = false;
-                    btnVerifyOtp.innerHTML = 'Confirm &amp; Link Student <i class="bi bi-check-circle-fill ms-2"></i>';
+                    btnVerifyOtp.innerHTML = 'Link this student <i class="bi bi-check-circle-fill ms-2"></i>';
                 }
             } catch (error) {
                 showStatus('An unexpected error occurred.', true);
                 btnVerifyOtp.disabled = false;
-                btnVerifyOtp.innerHTML = 'Confirm &amp; Link Student <i class="bi bi-check-circle-fill ms-2"></i>';
+                btnVerifyOtp.innerHTML = 'Link this student <i class="bi bi-check-circle-fill ms-2"></i>';
             }
         });
     }

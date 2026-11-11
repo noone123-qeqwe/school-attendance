@@ -32,17 +32,17 @@
             @endif
         </div>
         <nav class="parent-child-context-links" aria-label="Student tasks">
-            <a href="{{ route('parent.attendance.calendar', ['child_id' => $contextChild->id]) }}" class="{{ $contextSection === 'attendance' ? 'active' : '' }}">
+            <a href="{{ route('parent.attendance.calendar', ['child_id' => $contextChild->id]) }}" class="{{ $contextSection === 'attendance' ? 'active' : '' }}" aria-label="View attendance for {{ $contextChild->name }}">
                 <i class="bi bi-calendar-check" aria-hidden="true"></i><span>Attendance</span>
             </a>
-            <a href="{{ route('parent.child', $contextChild) }}" class="{{ $contextSection === 'records' ? 'active' : '' }}">
-                <i class="bi bi-clock-history" aria-hidden="true"></i><span>Records</span>
+            <a href="{{ route('parent.child', $contextChild) }}" class="{{ $contextSection === 'records' ? 'active' : '' }}" aria-label="View detailed attendance records for {{ $contextChild->name }}">
+                <i class="bi bi-clock-history" aria-hidden="true"></i><span>Detailed records</span>
             </a>
-            <a href="{{ route('parent.schedule', ['child_id' => $contextChild->id]) }}" class="{{ $contextSection === 'schedule' ? 'active' : '' }}">
-                <i class="bi bi-clock" aria-hidden="true"></i><span>Schedule</span>
+            <a href="{{ route('parent.schedule', ['child_id' => $contextChild->id]) }}" class="{{ $contextSection === 'schedule' ? 'active' : '' }}" aria-label="View class schedule for {{ $contextChild->name }}">
+                <i class="bi bi-clock" aria-hidden="true"></i><span>Class schedule</span>
             </a>
-            <a href="{{ route('parent.excuses.create_general', ['child_id' => $contextChild->id]) }}" class="{{ $contextSection === 'excuse' ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-plus" aria-hidden="true"></i><span>Submit excuse</span>
+            <a href="{{ route('parent.excuses.create_general', ['child_id' => $contextChild->id]) }}" class="{{ $contextSection === 'excuse' ? 'active' : '' }}" aria-label="Submit an excuse for {{ $contextChild->name }}">
+                <i class="bi bi-file-earmark-plus" aria-hidden="true"></i><span>Submit an excuse</span>
             </a>
         </nav>
     </section>
