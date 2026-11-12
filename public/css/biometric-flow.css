@@ -169,6 +169,7 @@ html:has(.face-registration-page) body { width: 100%; height: 100%; overflow: hi
 .face-registration-page #cameraFacePoseInstruction { grid-area: instruction; align-self: center; margin: 0; }
 .face-registration-page .face-camera-stage { grid-area: stage; display: grid; place-items: center; min-width: 0; min-height: 0; }
 .face-registration-page #cameraFacePreviewWrap {
+    position: relative;
     width: 100%;
     height: 100%;
     min-height: 250px;
@@ -178,6 +179,112 @@ html:has(.face-registration-page) body { width: 100%; height: 100%; overflow: hi
     border-radius: 16px;
 }
 .face-registration-page #cameraFaceVideo { object-fit: cover; }
+.face-registration-page #cameraFacePreviewWrap::after {
+    content: "";
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    background: #f3e7cd;
+    opacity: 0;
+    pointer-events: none;
+}
+.face-registration-page #cameraFacePreviewWrap.face-camera-enter { animation: face-camera-enter .42s cubic-bezier(.2,.75,.25,1) both; }
+.face-registration-page #cameraFacePreviewWrap.face-capture-feedback::after { animation: face-capture-flash .34s ease-out both; }
+.face-registration-page .face-pose-progress li {
+    transition: color .22s ease, background-color .22s ease, border-color .22s ease, box-shadow .22s ease, transform .22s ease;
+}
+.face-registration-page .face-pose-progress li[aria-current="step"] {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 2px #cfa46f16, 0 5px 16px #0003;
+    animation: face-step-current 1.8s ease-in-out infinite;
+}
+.face-registration-page .face-pose-progress li > span:first-child { transition: transform .22s ease, background-color .22s ease, color .22s ease; }
+.face-registration-page .face-pose-progress li[aria-current="step"] > span:first-child { animation: face-step-marker .34s cubic-bezier(.2,.8,.25,1.25) both; }
+.face-registration-page .face-pose-progress li[data-complete="true"] > span:first-child { font-size: 0; }
+.face-registration-page .face-pose-progress li[data-complete="true"] > span:first-child::after {
+    content: "✓";
+    font-size: .82rem;
+    animation: face-step-marker .3s cubic-bezier(.2,.8,.25,1.25) both;
+}
+.face-registration-page #cameraFacePoseInstruction { transition: background-color .2s ease, color .2s ease; }
+.face-registration-page #cameraFaceStatus.face-status-pop { animation: face-status-pop .2s ease-out both; }
+.face-registration-page #cameraFaceGuide {
+    transition: border-color .24s ease, box-shadow .24s ease, transform .24s ease;
+    --face-stability-progress: 0;
+}
+.face-registration-page #cameraFaceGuide::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    top: 10%;
+    left: 9%;
+    right: 9%;
+    height: 2px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, transparent, #f5dfa8, #86efac, transparent);
+    box-shadow: 0 0 12px #86efac88;
+    opacity: 0;
+    pointer-events: none;
+}
+.face-registration-page #cameraFaceGuide::after {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border: 1px solid #86efac;
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+}
+.face-registration-page #cameraFaceGuide[data-state="searching"]::before { animation: face-guide-sweep 2s ease-in-out infinite; }
+.face-registration-page #cameraFaceGuide[data-state="ready"] {
+    border-color: #86efac;
+}
+.face-registration-page #cameraFaceGuide[data-state="ready"]::after { animation: face-guide-ready-ring 1.8s ease-in-out infinite; }
+.face-registration-page #cameraFaceGuide[data-state="ready"] .face-guide-stability { opacity: 1; transform: scaleX(1); }
+.face-registration-page #cameraFaceGuide[data-state="capturing"] {
+    border-color: #f3e7cd;
+    transform: scale(1.015);
+    box-shadow: 0 0 0 999px #0005, 0 0 24px #f3e7cd88;
+    animation: face-guide-capture .34s ease-out both;
+}
+.face-registration-page #cameraFaceGuide .face-guide-stability {
+    position: absolute;
+    z-index: 2;
+    right: 20%;
+    bottom: 9%;
+    left: 20%;
+    display: block;
+    width: auto;
+    height: 4px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #f3e7cd55;
+    border-radius: 999px;
+    background: #120e0b99;
+    opacity: 0;
+    transform: scaleX(.84);
+    transition: opacity .2s ease, transform .2s ease;
+}
+.face-registration-page #cameraFaceGuide .face-guide-stability > span {
+    display: block;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    background: #86efac;
+    transform: scaleX(var(--face-stability-progress, 0));
+    transform-origin: left center;
+    transition: transform .18s ease-out;
+}
+.face-registration-page #cameraFaceGuide .face-guide-label-pop { animation: face-guide-label-pop .18s ease-out both; }
+.face-registration-page .biometric-face-guide[data-state="manual"]::before,
+.face-registration-page .biometric-face-guide[data-state="ready"]::before,
+.face-registration-page .biometric-face-guide[data-state="capturing"]::before { animation: none; opacity: 0; }
+.face-registration-page #cameraFaceGuide[data-state="manual"] { border-color: var(--gold-primary); }
+.face-registration-page #cameraFaceGuide[data-state="complete"] { border-color: #86efac; }
 .face-registration-page #cameraFaceStartBtn { width: min(100%, 22rem); min-height: 56px; }
 .face-registration-page #cameraFaceLight { grid-area: light; align-self: start; min-width: 0; margin: 0; padding: 12px; }
 .face-registration-page #cameraFaceLight [data-light-help] { font-size: .76rem; }
@@ -185,10 +292,15 @@ html:has(.face-registration-page) body { width: 100%; height: 100%; overflow: hi
 .face-registration-page .bio-privacy-note { grid-area: privacy; align-self: start; margin: 0 !important; }
 .face-registration-page .biometric-flow-actions { grid-area: actions; align-self: end; }
 .face-registration-page .biometric-flow-actions > * { min-width: min(100%, 9rem); }
-.face-registration-page #cameraFaceGuide[data-state="tracking"] { border-color: #86efac; }
-.face-registration-page #cameraFaceGuide[data-state="capturing"] { border-color: #f3e7cd; }
-.face-registration-page #cameraFaceGuide[data-state="tracking"] { animation: face-guide-ready 1.8s ease-in-out infinite; }
-@keyframes face-guide-ready { 50% { box-shadow: 0 0 0 999px #0004, 0 0 18px #86efac66; } }
+@keyframes face-camera-enter { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
+@keyframes face-capture-flash { 0% { opacity: 0; } 18% { opacity: .22; } 100% { opacity: 0; } }
+@keyframes face-guide-sweep { 0% { top: 10%; opacity: 0; } 14% { opacity: .8; } 86% { opacity: .8; } 100% { top: 84%; opacity: 0; } }
+@keyframes face-guide-ready-ring { 0%, 100% { opacity: .16; transform: scale(.99); } 50% { opacity: .72; transform: scale(1.015); } }
+@keyframes face-guide-capture { 0% { transform: scale(1); } 45% { transform: scale(1.025); } 100% { transform: scale(1.015); } }
+@keyframes face-step-current { 50% { box-shadow: 0 0 0 3px #cfa46f12, 0 6px 18px #0004; } }
+@keyframes face-step-marker { from { opacity: .55; transform: scale(.72); } to { opacity: 1; transform: scale(1); } }
+@keyframes face-guide-label-pop { from { opacity: .55; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes face-status-pop { from { opacity: .65; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 760px) {
     .face-registration-page .biometric-flow { gap: 7px; padding-right: max(10px, env(safe-area-inset-right)); padding-left: max(10px, env(safe-area-inset-left)); }
     .face-registration-page .biometric-flow-heading h1 { font-size: 1.45rem; }
@@ -232,6 +344,26 @@ html:has(.face-registration-page) body { width: 100%; height: 100%; overflow: hi
 }
 @media (prefers-reduced-motion: reduce) {
     .face-registration-page * { scroll-behavior: auto !important; }
+    .face-registration-page .face-pose-progress li[aria-current="step"],
+    .face-registration-page .face-pose-progress li[aria-current="step"] > span:first-child,
+    .face-registration-page .face-pose-progress li[data-complete="true"] > span:first-child::after,
+    .face-registration-page #cameraFacePreviewWrap.face-camera-enter,
+    .face-registration-page #cameraFacePreviewWrap.face-capture-feedback::after,
+    .face-registration-page #cameraFaceStatus.face-status-pop,
+    .face-registration-page #cameraFaceGuide[data-state="ready"],
+    .face-registration-page #cameraFaceGuide[data-state="ready"]::after,
+    .face-registration-page #cameraFaceGuide[data-state="capturing"],
+    .face-registration-page #cameraFaceGuide[data-state="searching"]::before,
+    .face-registration-page #cameraFaceGuide .face-guide-label-pop {
+        animation: none !important;
+    }
+    .face-registration-page .face-pose-progress li,
+    .face-registration-page #cameraFaceGuide,
+    .face-registration-page #cameraFaceGuide .face-guide-stability,
+    .face-registration-page #cameraFaceGuide .face-guide-stability > span,
+    .face-registration-page #cameraFacePoseInstruction {
+        transition: none !important;
+    }
 }
 
 /* Device sign-in and setup on the login screen. */

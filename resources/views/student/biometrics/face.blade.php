@@ -24,7 +24,10 @@
         <div class="face-camera-stage" id="cameraFaceStage">
             <div id="cameraFacePreviewWrap" class="biometric-camera-preview" style="display:none">
                 <video id="cameraFaceVideo" autoplay muted playsinline aria-label="Live camera preview"></video>
-                <div class="biometric-face-guide" id="cameraFaceGuide" aria-hidden="true"><span>Center your face</span></div>
+                <div class="biometric-face-guide" id="cameraFaceGuide" aria-hidden="true">
+                    <span>Center your face</span>
+                    <span class="face-guide-stability"><span></span></span>
+                </div>
                 <canvas id="cameraFaceCanvas" style="display:none"></canvas>
             </div>
             <button type="button" id="cameraFaceStartBtn" class="flow-button flow-primary"><i class="bi bi-camera" aria-hidden="true"></i> Start face scan</button>

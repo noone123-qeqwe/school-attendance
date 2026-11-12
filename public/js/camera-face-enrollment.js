@@ -16,6 +16,7 @@
         const status = document.getElementById('cameraFaceStatus');
         const instruction = document.getElementById('cameraFacePoseInstruction');
         const guide = document.getElementById('cameraFaceGuide');
+        const guideLabel = guide.querySelector('span');
         const done = document.getElementById('cameraFaceDone');
         const lighting = window.CameraLighting?.mount(document.getElementById('cameraFaceLight'));
         const poses = [
@@ -36,12 +37,16 @@
         let lastSample = null;
         let firstTurnSign = 0;
         let lastStatus = '';
+        let captureFeedbackTimer = null;
 
         function setStatus(message, color = 'var(--text-muted)') {
             if (lastStatus === message) return;
             lastStatus = message;
             status.textContent = message;
             status.style.color = color;
+            status.classList.remove('face-status-pop');
+            void status.offsetWidth;
+            status.classList.add('face-status-pop');
         }
         function visible(element, show) {
             element.hidden = !show;
@@ -49,15 +54,34 @@
         }
         function updateGuide(state, label) {
             guide.dataset.state = state;
-            guide.querySelector('span').textContent = label;
+            if (guideLabel.textContent !== label) {
+                guideLabel.textContent = label;
+                guideLabel.classList.remove('face-guide-label-pop');
+                void guideLabel.offsetWidth;
+                guideLabel.classList.add('face-guide-label-pop');
+            }
+        }
+        function resetStability() {
+            stableCount = 0;
+            lastSample = null;
+            guide.style.setProperty('--face-stability-progress', '0');
+        }
+        function showCaptureFeedback() {
+            if (captureFeedbackTimer !== null) window.clearTimeout(captureFeedbackTimer);
+            wrap.classList.remove('face-capture-feedback');
+            void wrap.offsetWidth;
+            wrap.classList.add('face-capture-feedback');
+            captureFeedbackTimer = window.setTimeout(() => {
+                wrap.classList.remove('face-capture-feedback');
+                captureFeedbackTimer = null;
+            }, 400);
         }
         function stopScanner() {
             scanning = false;
             if (scanTimer !== null) window.clearTimeout(scanTimer);
             scanTimer = null;
             scanInFlight = false;
-            stableCount = 0;
-            lastSample = null;
+            resetStability();
         }
         function stopCamera() {
             stopScanner();
@@ -76,15 +100,18 @@
             });
             instruction.textContent = poses[index]?.[1] || 'All three views are captured. Register them securely, or retake the sequence.';
             if (poses[index]) capture.textContent = 'Capture ' + poses[index][0] + ' view';
-            updateGuide('tracking', index === 0 ? 'Center your face' : 'Follow the position');
+            updateGuide(poses[index] ? 'searching' : 'complete', index === 0 ? 'Center your face' : 'Follow the position');
         }
         function reset() {
             stopCamera();
+            if (captureFeedbackTimer !== null) window.clearTimeout(captureFeedbackTimer);
+            captureFeedbackTimer = null;
             views = {};
             saving = false;
             firstTurnSign = 0;
             lastStatus = '';
             wrap.style.display = 'none';
+            wrap.classList.remove('face-camera-enter', 'face-capture-feedback');
             video.style.display = 'block';
             canvas.style.display = 'none';
             [capture, retake, save, cancel].forEach(button => { visible(button, false); button.disabled = false; });
@@ -101,7 +128,7 @@
             capture.disabled = false;
             capture.removeAttribute('aria-busy');
             visible(capture, Boolean(stream));
-            updateGuide('tracking', 'Center your face');
+            updateGuide('manual', 'Center your face');
             setStatus(message);
             if (stream) capture.focus({ preventScroll: true });
         }
@@ -122,10 +149,12 @@
                 Math.abs(sample.offset - lastSample.offset) > .045) {
                 lastSample = sample;
                 stableCount = 1;
+                guide.style.setProperty('--face-stability-progress', String(stableCount / 4));
                 return false;
             }
             lastSample = sample;
             stableCount++;
+            guide.style.setProperty('--face-stability-progress', String(Math.min(stableCount / 4, 1)));
             return stableCount >= 4;
         }
         async function captureView(index, attempt, automatic) {
@@ -149,6 +178,7 @@
                 if (attempt !== requestId) return false;
                 if (!blob) throw new Error('This frame could not be captured. Please try again.');
 
+                showCaptureFeedback();
                 if (poses[index][0] === 'left' && lastSample) firstTurnSign = Math.sign(lastSample.offset);
                 views[poses[index][0]] = blob;
                 progress();
@@ -170,8 +200,7 @@
                 return true;
             } catch (error) {
                 if (attempt === requestId) {
-                    stableCount = 0;
-                    lastSample = null;
+                    resetStability();
                     setStatus(error.message || 'This frame could not be captured. Please try again.', '#f87171');
                 }
                 return false;
@@ -198,9 +227,8 @@
                 const faces = await detector.detect(video);
                 if (!scanning || attempt !== requestId || !stream) return;
                 if (faces.length !== 1) {
-                    stableCount = 0;
-                    lastSample = null;
-                    updateGuide('tracking', faces.length ? 'Keep one face in frame' : 'Move into the frame');
+                    resetStability();
+                    updateGuide('searching', faces.length ? 'Keep one face in frame' : 'Move into the frame');
                     setStatus(faces.length ? 'More than one face is visible. Keep only your face in the frame.' : 'Move your face into the frame to begin the automatic scan.');
                     return;
                 }
@@ -215,9 +243,8 @@
                 const y = (box.y + box.height / 2) / video.videoHeight;
                 const size = box.width / video.videoWidth;
                 if (size < .18 || size > .72 || x < .3 || x > .7 || y < .16 || y > .84) {
-                    stableCount = 0;
-                    lastSample = null;
-                    updateGuide('tracking', size < .18 ? 'Move a little closer' : size > .72 ? 'Move a little back' : 'Center your face');
+                    resetStability();
+                    updateGuide('searching', size < .18 ? 'Move a little closer' : size > .72 ? 'Move a little back' : 'Center your face');
                     setStatus(size < .18 ? 'Move a little closer and keep your full face inside the guide.' : size > .72
                         ? 'Move a little back so your full face fits inside the guide.'
                         : 'Center your face in the guide and keep both eyes visible.');
@@ -226,19 +253,17 @@
                 const index = Object.keys(views).length;
                 const sample = { x, y, size, offset };
                 if (!guideForPose(index, offset)) {
-                    stableCount = 0;
-                    lastSample = null;
-                    updateGuide('tracking', index === 0 ? 'Look straight at camera' : index === 1 ? 'Turn slightly to your left' : 'Turn the other way');
+                    resetStability();
+                    updateGuide('searching', index === 0 ? 'Look straight at camera' : index === 1 ? 'Turn slightly to your left' : 'Turn the other way');
                     setStatus(index === 0 ? 'Look straight at the camera and hold still.' : index === 1
                         ? 'Turn your head slightly to your left. Keep your face centered.'
                         : 'Turn slightly to the opposite side. Keep your face centered.');
                     return;
                 }
-                updateGuide('tracking', 'Hold still · scanning');
+                updateGuide('ready', 'Hold still · scanning');
                 setStatus('Face position detected. Hold still while this view is captured automatically.');
                 if (isStable(sample)) {
-                    stableCount = 0;
-                    lastSample = sample;
+                    resetStability();
                     await captureView(index, attempt, true);
                 }
             } catch (_) {
@@ -275,6 +300,7 @@
                 if (attempt !== requestId) return;
                 lighting?.start(opened);
                 wrap.style.display = 'block';
+                wrap.classList.add('face-camera-enter');
                 visible(start, false);
                 visible(cancel, true);
                 try {
@@ -288,7 +314,7 @@
                 scanning = true;
                 visible(capture, false);
                 setStatus('Automatic scan is ready. Hold each position steady; your face captures stay on this device until you register them.');
-                updateGuide('tracking', 'Center your face');
+                updateGuide('searching', 'Center your face');
                 instruction.focus({ preventScroll: true });
                 queueScan(250);
             } catch (error) {
@@ -351,8 +377,7 @@
             if (document.hidden) {
                 if (scanTimer !== null) window.clearTimeout(scanTimer);
                 scanTimer = null;
-                stableCount = 0;
-                lastSample = null;
+                resetStability();
             } else {
                 queueScan(100);
             }
