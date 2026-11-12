@@ -86,6 +86,7 @@ class CameraFaceEnrollmentTest extends TestCase
 
         $this->actingAs($student)->get(route('settings.biometrics.fingerprint'))
             ->assertOk()
+            ->assertSee('fingerprint-registration-page', false)
             ->assertSee('Fingerprint sign-in')
             ->assertSee('Device-protected sign-in')
             ->assertSee('Your fingerprint or face stays on your device.', false)
@@ -95,6 +96,7 @@ class CameraFaceEnrollmentTest extends TestCase
             ->assertSee('id="bioScanningView"', false)
             ->assertSee('id="bioSuccessView"', false)
             ->assertSee('id="bioErrorView"', false)
+            ->assertSee('class="bio-error-heading"', false)
             ->assertSee('Registered devices');
     }
 

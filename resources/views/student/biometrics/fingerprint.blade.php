@@ -2,6 +2,7 @@
 
 @section('title', 'Fingerprint registration')
 @section('description', 'Set up secure sign-in on this device. Your device may offer a PIN or another verification method.')
+@section('pageClass', 'fingerprint-registration-page')
 
 @section('content')
 <section class="biometric-flow-card" aria-label="Register this device">
@@ -35,10 +36,14 @@
         <a href="{{ route('settings') }}#tab-biometrics" class="flow-button flow-primary"><i class="bi bi-arrow-left" aria-hidden="true"></i> Done</a>
     </div>
     <div id="bioErrorView" style="display:none" role="alert">
-        <div class="bio-flow-result-icon is-error" aria-hidden="true"><i class="bi bi-exclamation-lg"></i></div>
-        <h2 id="bioErrorTitle">Registration could not finish</h2>
+        <div class="bio-error-heading">
+            <div class="bio-flow-result-icon is-error" aria-hidden="true"><i class="bi bi-exclamation-lg"></i></div>
+            <h2 id="bioErrorTitle">Registration could not finish</h2>
+        </div>
         <p id="bioErrorDesc"></p>
-        <button type="button" id="retryBtn" class="flow-button flow-primary"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Try again</button>
+        <div class="bio-error-actions">
+            <button type="button" id="retryBtn" class="flow-button flow-primary"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Try again</button>
+        </div>
     </div>
 </section>
 <section class="biometric-flow-card" aria-labelledby="registeredDevicesTitle">

@@ -16,7 +16,7 @@ function fakeElement() {
         removeAttribute(name) { delete this.attributes[name]; },
         addEventListener(name, callback) { this.listeners[name] = callback; },
         focus() {},
-        querySelector() { return null; },
+        querySelector(selector) { return selector ? fakeElement() : null; },
     };
     Object.defineProperty(element, 'innerHTML', {
         get() { return this._innerHTML || ''; },
@@ -26,7 +26,7 @@ function fakeElement() {
 }
 
 function mount({ platformCheck = async () => true, createCredential, deviceFetch } = {}) {
-    const ids = ['startBioBtn', 'bioIdleView', 'bioScanningView', 'fpScanningTitle', 'bioErrorView', 'bioErrorTitle', 'bioSuccessView', 'bioSuccessTitle', 'deviceList', 'deviceCountBadge', 'statusBadgeFingerprint', 'statusBadgeFace'];
+    const ids = ['startBioBtn', 'bioIdleView', 'bioScanningView', 'fpScanningTitle', 'bioErrorView', 'bioErrorTitle', 'bioErrorDesc', 'bioSuccessView', 'bioSuccessTitle', 'deviceList', 'deviceCountBadge', 'statusBadgeFingerprint', 'statusBadgeFace'];
     const elements = new Map(ids.map(id => [id, fakeElement()]));
     elements.get('startBioBtn').textContent = 'Register fingerprint';
     const stages = [1, 2, 3].map(step => ({
@@ -85,6 +85,22 @@ test('the dedicated fingerprint screen registers through the on-device prompt', 
     assert.equal(app.elements.get('fpScanningTitle').textContent, 'Device Verified ✓');
     assert.equal(app.stages.every(step => step.dataset.complete === 'true'), true);
     assert.equal(app.stages.every(step => step.attributes['aria-current'] === undefined), true);
+});
+
+test('a dismissed prompt explains that the existing fingerprint stays active', async () => {
+    const app = mount({
+        createCredential: async () => { throw Object.assign(new Error('prompt dismissed'), { name: 'NotAllowedError' }); },
+        deviceFetch: async () => ({ ok: true, json: async () => [{ biometric_type: 'fingerprint', credential_id: 'existing-key' }] }),
+    });
+    await app.context.loadDevices();
+    await app.context.beginSelectedBiometricRegistration();
+
+    assert.equal(app.elements.get('bioErrorView').style.display, 'block');
+    assert.equal(app.elements.get('bioErrorTitle').textContent, 'Device prompt ended');
+    assert.match(app.elements.get('bioErrorDesc').textContent, /No new credential was added/);
+    assert.match(app.elements.get('bioErrorDesc').textContent, /existing Fingerprint sign-in remains active/);
+    assert.equal(app.elements.get('deviceCountBadge').textContent, '1 Registered');
+    assert.equal(app.requests.some(request => request.url === '/webauthn.register'), false);
 });
 
 test('cancelling while device support is being checked prevents a late native prompt', async () => {

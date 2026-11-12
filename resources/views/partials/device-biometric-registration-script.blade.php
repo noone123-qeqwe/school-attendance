@@ -3,6 +3,7 @@ let selectedBioMethod = 'fingerprint'; // 'fingerprint' | 'face'
 let bioAbortController = null;
 let bioScanProgressTimer = null;
 let bioRegistrationRun = null;
+let registeredDeviceSnapshot = null;
 
 function selectBiometricMethod(method) {
     if (method !== 'fingerprint' && method !== 'face') return;
@@ -233,6 +234,7 @@ async function loadDevices() {
     const badgeFp = document.getElementById('statusBadgeFingerprint');
     const badgeFace = document.getElementById('statusBadgeFace');
     if (!list) return;
+    registeredDeviceSnapshot = null;
 
     const webAuthnAvailable = Boolean(window.isSecureContext && window.PublicKeyCredential);
     if (!webAuthnAvailable) {
@@ -268,6 +270,7 @@ async function loadDevices() {
         if (!res.ok) throw new Error('Device list request failed.');
         const devices = await res.json();
         if (!Array.isArray(devices)) throw new Error('Device list response was invalid.');
+        registeredDeviceSnapshot = devices;
 
         list.innerHTML = '';
         list.removeAttribute('aria-busy');
@@ -363,6 +366,7 @@ async function loadDevices() {
             list.appendChild(emptyDiv);
         }
     } catch(e) {
+        registeredDeviceSnapshot = null;
         console.error('Failed to load biometric devices', e);
         list.innerHTML = '';
         list.removeAttribute('aria-busy');
@@ -776,8 +780,16 @@ async function beginFingerprintRegistration() {
         if (errorView) {
             errorView.style.display = 'block';
             if (err.name === 'NotAllowedError') {
-                if (errorTitle) errorTitle.textContent = 'Biometric Prompt Dismissed';
-                if (errorDesc) errorDesc.textContent = 'The device verification prompt was cancelled or timed out. Try again or use another sign-in method.';
+                const existingMethods = Array.isArray(registeredDeviceSnapshot)
+                    ? [...new Set(registeredDeviceSnapshot
+                        .filter(device => (device.biometric_type || 'fingerprint') === 'fingerprint' ||
+                            (device.biometric_type === 'face' && device.is_secure_face_credential))
+                        .map(device => (device.biometric_type || 'fingerprint') === 'fingerprint' ? 'Fingerprint' : 'Face ID / Windows Hello'))]
+                    : [];
+                if (errorTitle) errorTitle.textContent = 'Device prompt ended';
+                if (errorDesc) errorDesc.textContent = existingMethods.length
+                    ? 'The device prompt was closed or expired before this registration finished. No new credential was added. Your existing ' + existingMethods.join(' and ') + ' sign-in remains active.'
+                    : 'The device prompt was closed or expired before registration finished. No new credential was added. Try again when ready or return to Biometrics.';
             } else if (err.name === 'InvalidStateError') {
                 if (errorTitle) errorTitle.textContent = 'Already Registered';
                 if (errorDesc) errorDesc.textContent = 'This device credential is already registered for your account.';
