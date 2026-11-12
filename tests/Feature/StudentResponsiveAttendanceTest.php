@@ -79,19 +79,24 @@ class StudentResponsiveAttendanceTest extends TestCase
         $response->assertSee('studentClock');
     }
 
-    public function test_attendance_records_page_has_responsive_attendance_action_buttons(): void
+    public function test_calendar_records_section_does_not_show_scanner_actions(): void
     {
         $response = $this->actingAs($this->student)->get('/student/calendar');
 
         $response->assertStatus(200);
 
-        // Desktop CTA (code entry)
-        $response->assertSee("openStudentScanner('code')", false);
-        $response->assertSee('Enter Attendance Code');
+        $document = new \DOMDocument();
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(
+            0,
+            $xpath->query('//*[@id="attendance-records"]//button[contains(@onclick, "openStudentScanner")]')->length
+        );
 
-        // Mobile CTA (scan/code entry)
-        $response->assertSee("openStudentScanner('scan')", false);
-        $response->assertSee('Scan / Enter Code');
+        $recordsSection = $xpath->query('//*[@id="attendance-records"]')->item(0);
+        $recordsHtml = $recordsSection ? $document->saveHTML($recordsSection) : '';
+        $this->assertStringNotContainsString('Enter Attendance Code', $recordsHtml);
+        $this->assertStringNotContainsString('Scan / Enter Code', $recordsHtml);
     }
 
     public function test_scanner_modal_has_desktop_code_header_and_responsive_logic(): void
