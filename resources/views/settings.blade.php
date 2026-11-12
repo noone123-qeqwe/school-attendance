@@ -5177,13 +5177,13 @@
                                 <i class="bi bi-lightning-charge-fill"></i> Zero Email Delay
                             </span>
                         </div>
-                        <div class="sec-card-subtitle">Generate a 6-digit code or QR for your parent to scan</div>
+                        <div class="sec-card-subtitle">Invite your guardian from the Parent Portal</div>
                     </div>
                 </div>
 
                 <div class="sec-card-content">
-                    <div style="font-size:0.82rem;color:#b39b82;line-height:1.5;margin-bottom:14px;">
-                        Generate a secure 6-digit code. Your parent can enter it in their Parent Portal under <strong>Link Student</strong> to instantly bind with zero waiting.
+                    <div class="student-link-code-copy" style="font-size:0.82rem;color:#b39b82;line-height:1.5;margin-bottom:14px;">
+                        Generate a code and share it with your guardian. They can enter it under <strong>Link Student</strong>.
                     </div>
 
                     <!-- Code Display Card (Hidden until generated) -->
@@ -5257,16 +5257,18 @@
                             @endforeach
                         </div>
                     @else
-                        <div style="text-align:center;padding:26px 16px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.2);margin-bottom:12px;">
+                        <div class="student-guardians-empty" style="text-align:center;padding:26px 16px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.2);margin-bottom:12px;">
                             <i class="bi bi-person-x" style="font-size:2.2rem;color:rgba(207,164,111,0.35);display:block;margin-bottom:6px;"></i>
-                            <div style="font-weight:700;color:#f3e7cd;font-size:0.9rem;margin-bottom:4px;">No Guardians Connected</div>
-                            <div style="font-size:0.78rem;color:#b39b82;">Click "Generate Parent Link Code" to invite your guardian.</div>
+                            <div class="student-guardians-empty-copy">
+                                <div style="font-weight:700;color:#f3e7cd;font-size:0.9rem;margin-bottom:4px;">No Guardians Connected</div>
+                                <div style="font-size:0.78rem;color:#b39b82;">Generate a link code to invite a guardian.</div>
+                            </div>
                         </div>
                     @endif
 
-                    <div style="background:rgba(207,164,111,0.06);border:1px solid rgba(207,164,111,0.15);border-radius:12px;padding:12px 14px;font-size:0.78rem;color:#e6dbce;line-height:1.45;">
+                    <div class="student-privacy-note" style="background:rgba(207,164,111,0.06);border:1px solid rgba(207,164,111,0.15);border-radius:12px;padding:12px 14px;font-size:0.78rem;color:#e6dbce;line-height:1.45;">
                         <i class="bi bi-shield-lock-fill text-gold me-1"></i>
-                        <strong>Privacy Safeguard:</strong> Guardians have view-only access to your attendance logs, late marks, and subject summaries. To protect attendance integrity, guardian links cannot be unlinked by students and can only be managed by your guardian or school administrator.
+                        <strong>Privacy safeguard:</strong> Guardians can view attendance and subject summaries. Students cannot remove a guardian link; a guardian or school administrator can manage it.
                     </div>
                 </div>
             </div>
