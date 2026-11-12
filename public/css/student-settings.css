@@ -143,6 +143,14 @@
     .sp.student-settings[data-student-settings] .pref-tile-btn-wrap { width: 100%; }
     .sp.student-settings[data-student-settings] .pref-tile-btn-wrap button { width: 100%; }
 }
+@media (max-width: 768px) {
+    /* Student settings navigation scrolls this page below the fixed app header.
+       Include the safe-area/status-bar height so headings never land underneath it. */
+    .student-settings-detail-heading,
+    .sp.student-settings[data-student-settings] {
+        scroll-margin-top: calc(var(--mobile-header-height, 60px) + 16px);
+    }
+}
 @media (max-width: 575.98px) {
     .sp.student-settings[data-student-settings] .sec-card-header-line { align-items: flex-start; flex-direction: column; gap: 7px; }
     .sp.student-settings[data-student-settings] .sec-card-top { gap: 12px; }
