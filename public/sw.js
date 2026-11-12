@@ -1,5 +1,5 @@
 const APP_VERSION = '9.1.6';
-const CACHE_VERSION = 'v20261110002';
+const CACHE_VERSION = 'v20261112001';
 const CACHE_NAME = `attendance-${CACHE_VERSION}`;
 const STATIC_CACHE_NAME = CACHE_NAME;
 const RUNTIME_CACHE_NAME = `attendance-runtime-${CACHE_VERSION}`;
@@ -138,33 +138,48 @@ self.addEventListener('fetch', (event) => {
                     }
                 }
 
+                let preloadResponse = null;
                 try {
-                    // Try navigation preload first
-                    const preloadResponse = await event.preloadResponse;
-                    if (preloadResponse) {
-                        return preloadResponse;
-                    }
+                    // A rejected preload is just a failed first network attempt.
+                    // Do not let it skip the explicit retry below (common during
+                    // a cold start or a brief mobile-network handoff).
+                    preloadResponse = await event.preloadResponse;
+                } catch (_) {}
+                if (preloadResponse && preloadResponse.status < 500) {
+                    return preloadResponse;
+                }
 
+                let firstFailure = null;
+                try {
                     // Attempt 1: Fetch with 12s timeout (generous for Render cold starts)
-                    try {
-                        const networkResponse = await fetchWithTimeout(request, 12000);
-                        return networkResponse;
-                    } catch (firstError) {
-                        // Attempt 2: Retry after a short delay (handles transient mobile network blips)
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        try {
-                            const retryResponse = await fetchWithTimeout(request, 10000);
-                            return retryResponse;
-                        } catch (retryError) {
-                            throw retryError; // Fall through to offline
-                        }
-                    }
+                    return await fetchWithTimeout(request, 12000);
                 } catch (error) {
+                    firstFailure = error;
+                }
+
+                // Attempt 2: Retry after a short delay (handles transient mobile network blips)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                try {
+                    return await fetchWithTimeout(request, 10000);
+                } catch (error) {
+                    // Fall through to the cached offline page only after both
+                    // the preload and the two direct network attempts failed.
+                    firstFailure = error || firstFailure;
+                }
+
+                try {
+                    if (firstFailure) console.info('[PWA SW] Navigation network attempts failed; using offline page.');
                     // All attempts failed — show offline page
                     const cache = await caches.open(STATIC_CACHE_NAME);
                     const offlineResponse = await cache.match(OFFLINE_URL);
                     return offlineResponse || new Response(
                         '<!DOCTYPE html><html><head><title>Offline</title></head><body><h1>Offline</h1><p>Please check your internet connection.</p></body></html>',
+                        { headers: { 'Content-Type': 'text/html' } }
+                    );
+                } catch (error) {
+                    console.warn('[PWA SW] Could not load offline fallback:', error);
+                    return new Response(
+                        '<!DOCTYPE html><html><head><title>Offline</title></head><body><h1>Unable to reach the school server</h1><p>Retry when the connection is available.</p></body></html>',
                         { headers: { 'Content-Type': 'text/html' } }
                     );
                 }

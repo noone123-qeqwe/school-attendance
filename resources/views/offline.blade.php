@@ -383,9 +383,9 @@ function setStatus(state) {
     var isp   = document.getElementById('ispTipBox');
     if (state === 'server-unreachable') {
         badge.className = 'status-badge server';
-        text.textContent = 'Server Unreachable';
-        head.textContent = 'Server Unreachable';
-        msg.textContent  = 'Your internet is active, but your network provider cannot route to the school server.';
+        text.textContent = 'Server Not Reachable';
+        head.textContent = 'Can’t reach the school server';
+        msg.textContent  = 'Your device reports a network connection, but the school server is not responding. Retry, or switch between Wi-Fi and mobile data.';
         if (isp) isp.style.display = 'block';
         if (!rt.textContent.includes('…')) rt.textContent = 'Retry Connecting to Server';
     } else {
@@ -401,29 +401,38 @@ function setStatus(state) {
 async function probeExternal() {
     if (!navigator.onLine) return false;
     for (var url of ['https://www.google.com/generate_204','https://1.1.1.1/cdn-cgi/trace']) {
+        var ctrl = new AbortController();
+        var timer = setTimeout(function(){ctrl.abort();}, 2500);
         try {
-            var ctrl = new AbortController();
-            setTimeout(function(){ctrl.abort();}, 3500);
-            await fetch(url, {method:'HEAD',mode:'no-cors',cache:'no-store',signal:ctrl.signal});
+            // GET is more consistently allowed than HEAD by mobile webviews and
+            // captive-portal gateways. no-cors only uses the result as a
+            // reachability signal; the response body is never read.
+            await fetch(url, {method:'GET',mode:'no-cors',cache:'no-store',signal:ctrl.signal});
             return true;
-        } catch(e){}
+        } catch(e){} finally { clearTimeout(timer); }
     }
     return false;
 }
 
 async function probeServer() {
-    var urls = ['/api/ping?_t='+Date.now(), '/up?_t='+Date.now(), '/manifest.json?_t='+Date.now()];
-    for (var url of urls) {
+    var urls = ['/api/ping?_t='+Date.now(), '/up?_t='+Date.now()];
+    var checks = await Promise.all(urls.map(async function(url) {
+        var ctrl = new AbortController();
+        var timer = setTimeout(function(){ctrl.abort();}, 5000);
         try {
-            var ctrl = new AbortController();
-            setTimeout(function(){ctrl.abort();}, 6000);
             var res = await fetch(url, {method:'GET',cache:'no-store',signal:ctrl.signal,headers:{'Accept':'application/json,*/*'}});
-            if (res.ok || res.status < 500) return 'connected';
-            return 'server-unreachable';
-        } catch(e){}
-    }
+            return res.ok || res.status < 500 ? 'connected' : 'server-unreachable';
+        } catch(e) { return 'unreachable'; }
+        finally { clearTimeout(timer); }
+    }));
+    if (checks.includes('connected')) return 'connected';
     var hasNet = await probeExternal();
-    return hasNet ? 'server-unreachable' : 'no-internet';
+    // navigator.onLine reports the network interface, not server reachability.
+    // If it reports a connection but both first-party probes fail, avoid telling
+    // the student that all internet is gone.
+    return hasNet || navigator.onLine || checks.includes('server-unreachable')
+        ? 'server-unreachable'
+        : 'no-internet';
 }
 
 function onConnected() {
