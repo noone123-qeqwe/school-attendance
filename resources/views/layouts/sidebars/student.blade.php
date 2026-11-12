@@ -30,17 +30,13 @@
         </a>
     @endif
     <div class="student-nav-label nav-section-label">Attendance &amp; school</div>
-    <a href="{{ route('student.attendance.calendar') }}" class="nav-link {{ request()->routeIs('student.attendance.calendar') ? 'active' : '' }}">
-        <i class="bi bi-calendar-check-fill"></i>
-        <span class="nav-link-text">Attendance Calendar</span>
-    </a>
     <a href="{{ route('attendance.records') }}" class="nav-link {{ request()->routeIs('attendance.records') ? 'active' : '' }}">
         <i class="bi bi-clipboard-data-fill"></i>
         <span class="nav-link-text">Attendance Records</span>
     </a>
     <a href="{{ route('student.calendar') }}" class="nav-link {{ request()->routeIs('student.calendar') ? 'active' : '' }}">
         <i class="bi bi-calendar-event-fill"></i>
-        <span class="nav-link-text">School Calendar</span>
+        <span class="nav-link-text">Attendance &amp; Calendar</span>
     </a>
     <a href="{{ route('excuses') }}" class="nav-link {{ request()->routeIs('excuses*') ? 'active' : '' }}">
         <i class="bi bi-file-text-fill"></i>

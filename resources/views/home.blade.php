@@ -2224,7 +2224,7 @@ function showAttDetail(dateKey, day) {
         }).catch(function() {
             if (currentSelectedDateKey !== dateKey) return;
             if (subtitleEl) subtitleEl.textContent = 'Calendar unavailable';
-            if (contentEl) contentEl.innerHTML = '<div class="day-empty-card" role="alert"><p>Could not load calendar details. Close this window and open the day again to retry.</p><a href="{{ route('student.attendance.calendar') }}" style="color:#ffd166;">Open attendance calendar</a></div>';
+            if (contentEl) contentEl.innerHTML = '<div class="day-empty-card" role="alert"><p>Could not load calendar details. Close this window and open the day again to retry.</p><a href="{{ route('student.calendar') }}" style="color:#ffd166;">Open attendance and school calendar</a></div>';
         });
         return;
     }

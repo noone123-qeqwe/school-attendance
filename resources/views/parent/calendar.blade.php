@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('page-title', 'School Calendar')
+@section('page-title', 'Attendance & School Calendar')
 
 @php
     $firstChild = $children->first();
@@ -644,7 +644,7 @@
 </style>
 
 {{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
-<div class="parent-page-heading"><div><h1>School calendar</h1><p class="ent-text-muted m-0">School events and attendance for the student you select.</p></div><a id="parentCalendarScheduleLink" href="{{ route('parent.schedule', ['child_id' => $selectedChildId]) }}" class="ent-btn ent-btn-ghost"><i class="bi bi-clock" aria-hidden="true"></i> Weekly schedule</a></div>
+<div class="parent-page-heading"><div><h1>Attendance &amp; school calendar</h1><p class="ent-text-muted m-0">View your selected student’s attendance, school events, holidays, and important dates together.</p></div><a id="parentCalendarScheduleLink" href="{{ route('parent.schedule', ['child_id' => $selectedChildId]) }}" class="ent-btn ent-btn-ghost"><i class="bi bi-clock" aria-hidden="true"></i> Weekly schedule</a></div>
 @if($children->isEmpty())<div class="parent-section-card parent-empty mb-4"><h2 class="h5">Connect your student</h2><p>Link a student account to see their school calendar and attendance.</p><a class="ent-btn ent-btn-primary" href="{{ route('parent.link.form') }}">Link student</a></div>@endif
 <p id="parentCalendarFeedback" class="parent-feedback" role="status" aria-live="polite"></p>
 <button type="button" id="parentCalendarRetry" class="ent-btn ent-btn-ghost mb-3" onclick="scalLoadAndRender()" hidden>Retry calendar</button>

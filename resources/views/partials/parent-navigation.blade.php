@@ -7,7 +7,7 @@
         @foreach($group['items'] as [$label, $destination, $icon, $patterns, $color, $description])
             @php
                 $active = request()->routeIs(...$patterns);
-                $childAware = in_array($destination, ['parent.dashboard', 'parent.attendance.calendar', 'parent.schedule', 'parent.calendar'], true);
+                $childAware = in_array($destination, ['parent.dashboard', 'parent.schedule', 'parent.calendar'], true);
             @endphp
             <a href="{{ route($destination) }}"
                class="{{ $mobile ? 'more-sheet-item' : 'nav-link' }} {{ $active ? 'active' : '' }}"

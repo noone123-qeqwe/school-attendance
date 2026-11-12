@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('page-title', 'School Calendar')
+@section('page-title', 'Attendance & School Calendar')
 
 @section('content')
 <style>
@@ -371,7 +371,7 @@
 </style>
 
 {{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
-@include('partials.student-page-header', ['title' => 'School calendar', 'description' => 'See upcoming classes, school events, and important dates.', 'actionUrl' => route('student.attendance.calendar'), 'actionLabel' => 'My attendance'])
+@include('partials.student-page-header', ['title' => 'Attendance & school calendar', 'description' => 'See your attendance, classes, school events, holidays, and important dates together.', 'actionUrl' => route('attendance.records'), 'actionLabel' => 'Attendance records'])
 <div class="scal-outer">
 
     {{-- MAIN CALENDAR CARD --}}

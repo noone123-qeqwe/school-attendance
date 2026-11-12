@@ -734,7 +734,7 @@
             @endphp
             navItems = @json(\App\Support\ParentNavigation::searchItems($parentPaletteChildId ? (int) $parentPaletteChildId : null));
             quickActionChips = [
-                { label: 'Attendance', icon: 'bi-calendar-check', url: '{{ \App\Support\ParentNavigation::url("parent.attendance.calendar", $parentPaletteChildId ? (int) $parentPaletteChildId : null) }}' },
+                { label: 'Attendance & calendar', icon: 'bi-calendar-check', url: '{{ \App\Support\ParentNavigation::url("parent.calendar", $parentPaletteChildId ? (int) $parentPaletteChildId : null) }}' },
                 { label: 'Schedule', icon: 'bi-clock', url: '{{ \App\Support\ParentNavigation::url("parent.schedule", $parentPaletteChildId ? (int) $parentPaletteChildId : null) }}' },
                 { label: 'Submit Excuse', icon: 'bi-file-earmark-text-fill', url: '{{ route("parent.excuses.create_general", $parentPaletteChildId ? ["child_id" => $parentPaletteChildId] : []) }}' },
                 { label: 'My children', icon: 'bi-people', url: '{{ route("parent.link.form") }}' }
@@ -746,7 +746,7 @@
                 { id: 'classes', label: 'My Classes', hint: 'Enrolled subjects, instructors & rooms', icon: 'bi-folder-fill', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.12)', category: 'academic', badge: 'Classes', url: '{{ route("student.classes") }}' },
                 { id: 'schedule', label: 'My Schedule', hint: 'Weekly timetable & scheduled classes', icon: 'bi-calendar-week-fill', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.12)', category: 'academic', badge: 'Schedule', url: '{{ route("student.schedule") }}' },
                 { id: 'records', label: 'Attendance Records', hint: 'Subject breakdown & clock-in history', icon: 'bi-clock-history', color: '#fde68a', bg: 'rgba(253, 230, 138, 0.12)', category: 'academic', badge: 'History', url: '{{ route("attendance.records") }}' },
-                { id: 'calendar', label: 'Attendance Calendar', hint: 'Interactive monthly attendance calendar', icon: 'bi-calendar-check-fill', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.12)', category: 'academic', badge: 'Calendar', url: '{{ route("student.attendance.calendar") }}' },
+                { id: 'calendar', label: 'Attendance & School Calendar', hint: 'Attendance, school events, holidays, and important dates', icon: 'bi-calendar-check-fill', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.12)', category: 'academic', badge: 'Calendar', url: '{{ route("student.calendar") }}' },
                 { id: 'excuses', label: 'Excuse Submissions', hint: 'Submit absence excuse & check status', icon: 'bi-file-earmark-medical-fill', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', category: 'action', badge: 'Excuses', url: '{{ route("excuses") }}' },
                 { id: 'notifications', label: 'Notifications', hint: 'Class announcements & attendance warnings', icon: 'bi-bell-fill', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', category: 'navigation', badge: '{{ $notifBadgeText }}', url: '{{ route("notifications") }}' },
                 { id: 'settings', label: 'Settings', hint: 'Account preferences, security & profile', icon: 'bi-gear-fill', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.12)', category: 'system', badge: 'Account', url: '{{ route("settings") }}' }

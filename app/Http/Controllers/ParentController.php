@@ -722,20 +722,10 @@ class ParentController extends Controller
     {
         $parent = Auth::user();
         $children = $parent->children()->get();
-        
-        if ($children->isEmpty()) {
-            return view('parent.attendance-calendar', ['children' => $children, 'selectedChild' => null, 'records' => collect()]);
-        }
-
         $selectedChild = ParentNavigation::selectChild($children, $request);
-
-        // Fetch all attendance records with subject relation for the selected child
-        $records = Attendance::with('subject')
-            ->where('user_id', $selectedChild->id)
-            ->orderBy('date', 'desc')
-            ->get();
-
-        return view('parent.attendance-calendar', compact('children', 'selectedChild', 'records'));
+        // The guardian calendar already merges school dates with the selected
+        // child's attendance. Preserve the old URL while directing to that view.
+        return redirect()->route('parent.calendar', $selectedChild ? ['child_id' => $selectedChild->id] : []);
     }
 
     public function profile()

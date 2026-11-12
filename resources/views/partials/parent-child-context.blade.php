@@ -32,8 +32,8 @@
             @endif
         </div>
         <nav class="parent-child-context-links" aria-label="Student tasks">
-            <a href="{{ route('parent.attendance.calendar', ['child_id' => $contextChild->id]) }}" class="{{ $contextSection === 'attendance' ? 'active' : '' }}" aria-label="View attendance for {{ $contextChild->name }}">
-                <i class="bi bi-calendar-check" aria-hidden="true"></i><span>Attendance</span>
+            <a href="{{ route('parent.calendar', ['child_id' => $contextChild->id]) }}" class="{{ $contextSection === 'attendance' ? 'active' : '' }}" aria-label="View attendance and school calendar for {{ $contextChild->name }}">
+                <i class="bi bi-calendar-check" aria-hidden="true"></i><span>Attendance &amp; calendar</span>
             </a>
             <a href="{{ route('parent.child', $contextChild) }}" class="{{ $contextSection === 'records' ? 'active' : '' }}" aria-label="View detailed attendance records for {{ $contextChild->name }}">
                 <i class="bi bi-clock-history" aria-hidden="true"></i><span>Detailed records</span>

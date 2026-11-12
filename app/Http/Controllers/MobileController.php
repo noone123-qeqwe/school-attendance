@@ -189,7 +189,7 @@ class MobileController extends Controller
      */
     public function attendance()
     {
-        return redirect()->route('student.attendance.calendar');
+        return redirect()->route('student.calendar');
     }
 
     /**

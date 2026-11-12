@@ -183,8 +183,7 @@
             });
             @if(auth()->user()?->isStudent())
             [
-                ['Attendance Calendar', @json(route('student.attendance.calendar')), 'calendar-check'],
-                ['School Calendar', @json(route('student.calendar')), 'calendar-event'],
+                ['Calendar', @json(route('student.calendar')), 'calendar-check'],
                 ['Excuses', @json(route('excuses')), 'file-text'],
                 ['Notifications', @json(route('notifications')), 'bell'],
                 ['Settings', @json(route('settings')), 'gear'],

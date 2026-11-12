@@ -15,9 +15,8 @@ class ParentNavigation
     {
         return [
             ['Home', 'parent.dashboard', 'bi-house-door', ['parent.dashboard'], 'gold', 'Choose a child and see the most important updates'],
-            ['Attendance & records', 'parent.attendance.calendar', 'bi-calendar-check', ['parent.attendance.calendar', 'parent.child', 'parent.child.warnings'], 'green', 'View attendance, detailed records, and notices'],
+            ['Attendance & school calendar', 'parent.calendar', 'bi-calendar-check', ['parent.calendar*', 'parent.attendance.calendar', 'parent.child', 'parent.child.warnings'], 'green', 'View attendance, school events, holidays, and important dates'],
             ['Class schedule', 'parent.schedule', 'bi-clock', ['parent.schedule'], 'purple', 'See class times, rooms, and instructors'],
-            ['School calendar', 'parent.calendar', 'bi-calendar-event', ['parent.calendar*'], 'gold', 'Holidays, events, and school dates'],
             ['Excuse requests', 'parent.excuses', 'bi-file-earmark-text', ['parent.excuses*', 'parent.excuse*', 'parent.child.excuse'], 'red', 'Submit an excuse or check its status'],
             ['Alerts', 'parent.notifications', 'bi-bell', ['parent.notifications*'], 'amber', 'Read attendance alerts and school messages'],
             ['My children', 'parent.link.form', 'bi-people', ['parent.link*'], 'green', 'Link a student or manage connections'],
@@ -30,8 +29,8 @@ class ParentNavigation
         $items = self::items();
         return [
             ['label' => 'Your child', 'items' => array_slice($items, 0, 3)],
-            ['label' => 'School support', 'items' => array_slice($items, 3, 3)],
-            ['label' => 'Family & account', 'items' => array_slice($items, 6)],
+            ['label' => 'School support', 'items' => array_slice($items, 3, 2)],
+            ['label' => 'Family & account', 'items' => array_slice($items, 5)],
         ];
     }
 

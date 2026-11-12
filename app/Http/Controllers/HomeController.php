@@ -437,16 +437,9 @@ class HomeController extends Controller
             return redirect()->route('home');
         }
 
-        // Fetch all attendance records with subject, schedules, instructor, and excuse relation
-        $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission', 'correction'])
-            ->where('user_id', $user->id)
-            ->orderBy('date', 'desc')
-            ->orderBy('time_in', 'desc')
-            ->get();
-
-        [$calendarEvents, $eventsMap] = $this->getStudentCalendarEventsMap($user);
-
-        return view('student.attendance-calendar', compact('records', 'calendarEvents', 'eventsMap'));
+        // The school calendar already includes the student's attendance feed.
+        // Keep this legacy URL working for bookmarks while using one calendar page.
+        return redirect()->route('student.calendar');
     }
 
     /**

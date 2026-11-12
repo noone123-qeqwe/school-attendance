@@ -3,9 +3,9 @@
         <i class="bi bi-house-door-fill" aria-hidden="true"></i>
         <span>Home</span>
     </a>
-    <a href="{{ route('parent.attendance.calendar') }}" class="mbn-item {{ request()->routeIs('parent.attendance.calendar', 'parent.child', 'parent.child.warnings') ? 'active' : '' }}" @if(request()->routeIs('parent.attendance.calendar', 'parent.child', 'parent.child.warnings')) aria-current="page" @endif data-parent-child-context>
+    <a href="{{ route('parent.calendar') }}" class="mbn-item {{ request()->routeIs('parent.calendar*', 'parent.attendance.calendar', 'parent.child', 'parent.child.warnings') ? 'active' : '' }}" @if(request()->routeIs('parent.calendar*', 'parent.attendance.calendar', 'parent.child', 'parent.child.warnings')) aria-current="page" @endif data-parent-child-context>
         <i class="bi bi-calendar-check-fill" aria-hidden="true"></i>
-        <span>Attendance</span>
+        <span>Calendar</span>
     </a>
     <a href="{{ route('parent.notifications') }}" id="parentMobileAlertsLink" class="mbn-item {{ request()->routeIs('parent.notifications') ? 'active' : '' }}" @if(request()->routeIs('parent.notifications')) aria-current="page" @endif>
         <span class="mbn-badge" data-parent-unread-count @if($parentUnreadCount === 0) hidden @endif aria-label="{{ $parentUnreadCount }} unread alerts">{{ $parentUnreadCount > 9 ? '9+' : $parentUnreadCount }}</span>

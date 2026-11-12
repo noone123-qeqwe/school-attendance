@@ -874,15 +874,11 @@
                 @else
                     <a href="{{ route('student.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event-fill"></i></div>
-                        <span class="more-sheet-item-label">School Calendar</span>
+                        <span class="more-sheet-item-label">Attendance &amp; Calendar</span>
                     </a>
                     <a href="{{ route('excuses') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-file-text-fill"></i></div>
                         <span class="more-sheet-item-label">Excuses</span>
-                    </a>
-                    <a href="{{ route('student.attendance.calendar') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-calendar-check-fill"></i></div>
-                        <span class="more-sheet-item-label">Attendance Calendar</span>
                     </a>
                     <button type="button" onclick="closeMoreSheet(); if(typeof openSubjectBreakdownModal==='function'){openSubjectBreakdownModal();}else{window.location.href='{{ route('home') }}?open_breakdown=1';}" class="more-sheet-item" data-color="purple">
                         <div class="more-sheet-item-icon"><i class="bi bi-pie-chart-fill"></i></div>

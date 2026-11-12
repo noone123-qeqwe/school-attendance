@@ -594,9 +594,9 @@
             <section class="parent-quick-actions" aria-labelledby="parentQuickActions_{{ $child->id }}">
                 <h3 id="parentQuickActions_{{ $child->id }}" class="parent-quick-actions-title">What would you like to do?</h3>
                 <div class="parent-actions-row" role="group" aria-label="Common tasks for {{ $child->name }}">
-                <a href="{{ route('parent.attendance.calendar', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-primary" title="View attendance calendar">
+                <a href="{{ route('parent.calendar', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-primary" title="View attendance and school calendar">
                     <i class="bi bi-calendar-check"></i>
-                    <span>View attendance</span>
+                    <span>View calendar</span>
                 </a>
 
                 <a href="{{ route('parent.schedule', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-ghost" title="View weekly schedule">
