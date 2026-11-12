@@ -79,11 +79,12 @@ class StudentResponsiveAttendanceTest extends TestCase
         $response->assertSee('studentClock');
     }
 
-    public function test_calendar_records_section_does_not_show_scanner_actions(): void
+    public function test_calendar_page_hides_scanner_actions_and_records_jump_link(): void
     {
         $response = $this->actingAs($this->student)->get('/student/calendar');
 
         $response->assertStatus(200);
+        $response->assertDontSee('Jump to records');
 
         $document = new \DOMDocument();
         @$document->loadHTML($response->getContent());

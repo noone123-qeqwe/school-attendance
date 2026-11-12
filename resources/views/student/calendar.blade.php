@@ -364,7 +364,7 @@
 </style>
 
 {{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
-@include('partials.student-page-header', ['title' => 'Attendance & school calendar', 'description' => 'Check school dates and review your attendance history.', 'actionUrl' => '#attendance-records', 'actionLabel' => 'Jump to records'])
+@include('partials.student-page-header', ['title' => 'Attendance & school calendar', 'description' => 'Check school dates and review your attendance history.'])
 <div class="scal-outer">
 
     {{-- MAIN CALENDAR CARD --}}
