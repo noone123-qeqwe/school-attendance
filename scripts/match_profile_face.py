@@ -110,6 +110,21 @@ def best_reference_score(references, feature, recognizer):
     return max(scores)
 
 
+def normalize_face_lighting(aligned):
+    """Normalize local luminance after landmark alignment for steadier embeddings.
+
+    Running the same restrained CLAHE transform on enrolled and live crops reduces
+    sensitivity to shadows and uneven room lighting without relaxing the cosine
+    match threshold. Chroma is left untouched to avoid shifting skin colors.
+    """
+    lab = cv2.cvtColor(aligned, cv2.COLOR_BGR2LAB)
+    lightness, a_channel, b_channel = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(4, 4))
+    normalized_lightness = clahe.apply(lightness)
+    normalized = cv2.merge((normalized_lightness, a_channel, b_channel))
+    return cv2.cvtColor(normalized, cv2.COLOR_LAB2BGR)
+
+
 def face_feature(image_path, detector, recognizer, kind, include_pose=False):
     image = cv2.imread(image_path, cv2.IMREAD_COLOR)
     if image is None:
@@ -134,7 +149,10 @@ def face_feature(image_path, detector, recognizer, kind, include_pose=False):
     if cv2.Laplacian(gray, cv2.CV_64F).var() < 20:
         raise ValueError(f"{kind}_IMAGE_BLURRY")
 
-    feature = recognizer.feature(aligned)
+    # Apply identical luminance normalization to enrollment and live crops. This
+    # helps SFace compare faces captured under different indoor lighting while
+    # keeping the configured similarity threshold and multi-frame rule intact.
+    feature = recognizer.feature(normalize_face_lighting(aligned))
     box = (
         float(face[0] + face[2] / 2) / width,
         float(face[1] + face[3] / 2) / height,
