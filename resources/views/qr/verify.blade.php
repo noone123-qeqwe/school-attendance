@@ -17,6 +17,18 @@
         padding: clamp(14px, 4vw, 24px); background: white;
         box-shadow: 0 20px 60px rgba(0,0,0,0.1); text-align: center;
     }
+    .face-match-disclosure { margin-bottom: 12px; text-align: left; }
+    .face-match-note {
+        display: flex; align-items: flex-start; gap: 9px;
+        margin: 0; padding: 10px 12px; border: 1px solid #fde68a;
+        border-radius: 12px; background: #fffbeb; color: #78350f;
+        font-size: .82rem; line-height: 1.45;
+    }
+    .face-match-note > i { flex: none; margin-top: 2px; color: #b45309; }
+    .face-match-details { margin-top: 6px; border: 1px solid #e2e8f0; border-radius: 10px; text-align: left; }
+    .face-match-details summary { display: flex; align-items: center; min-height: 44px; padding: 8px 11px; color: #475569; font-size: .78rem; font-weight: 700; cursor: pointer; }
+    .face-match-details p { margin: 0; padding: 0 11px 11px; color: #64748b; font-size: .77rem; line-height: 1.45; }
+    .face-match-details :focus-visible { outline: 2px solid #800000; outline-offset: 2px; border-radius: 4px; }
     .verify-navigation { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; width: min(100%, 520px); margin-bottom: 12px; }
     .verify-navigation h1 { margin: 0; font-size: clamp(1.15rem, 4vw, 1.5rem); color: #481f1f; }
     .verify-navigation a { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding-inline: 8px; color: #800000; font-weight: 650; }
@@ -74,7 +86,7 @@
 
     /* Camera Viewport & HUD */
     .camera-viewport-card {
-        position: relative; width: 100%; height: 280px;
+        position: relative; width: 100%; height: clamp(260px, 42svh, 440px);
         border-radius: 20px; overflow: hidden;
         background: #090d16; box-shadow: 0 12px 36px rgba(0,0,0,0.25);
         margin-bottom: 14px; display: flex; align-items: center; justify-content: center;
@@ -89,7 +101,7 @@
         pointer-events: none;
     }
     .face-oval-guide {
-        position: relative; width: 180px; height: 230px;
+        position: relative; width: clamp(150px, 38vw, 190px); height: clamp(190px, 30svh, 260px);
         border: 2.5px dashed rgba(255, 255, 255, 0.7);
         border-radius: 50% / 55%;
         box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.45);
@@ -133,18 +145,21 @@
         display: flex; gap: 8px; z-index: 5;
     }
     .cam-tool-btn {
-        width: 34px; height: 34px; border-radius: 50%;
+        width: 44px; height: 44px; border-radius: 50%;
         background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(6px);
         border: 1px solid rgba(255, 255, 255, 0.2);
         color: white; font-size: 0.85rem;
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; transition: all 0.2s;
     }
+    .cam-tool-btn:focus-visible { outline: 3px solid #cfa46f; outline-offset: 2px; }
     .cam-tool-btn:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.05); }
 
     /* Live status badge on camera */
     .camera-status-pill {
-        position: absolute; bottom: 12px;
+        position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+        width: max-content;
+        max-width: calc(100% - 24px); justify-content: center; text-align: center;
         background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
         border: 1px solid rgba(255, 255, 255, 0.2);
         color: white; border-radius: 999px;
@@ -341,6 +356,23 @@
         font-size: 0.82rem; font-weight: 600; padding: 6px; cursor: pointer; transition: color 0.2s;
     }
     .outside-range-btn-text:hover { color: #f3e7cd; }
+    @media (max-width: 600px) {
+        .verify-wrapper { padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+        .verify-card { border-radius: 18px; }
+        .camera-viewport-card { height: clamp(250px, 41svh, 380px); border-radius: 16px; }
+        .face-oval-guide { width: clamp(145px, 44vw, 180px); height: clamp(185px, 30svh, 235px); }
+        .cam-tool-btn { width: 46px; height: 46px; }
+        .camera-status-pill { font-size: .74rem; line-height: 1.25; padding: 7px 11px; }
+        .face-match-note { padding: 9px 10px; font-size: .78rem; }
+    }
+    @media (orientation: landscape) and (max-height: 600px) {
+        .camera-viewport-card { height: clamp(210px, 58svh, 330px); }
+        .face-oval-guide { height: min(72%, 225px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .face-laser-line, .status-dot.pulsing, .spin { animation: none !important; }
+        .cam-tool-btn, .btn-verify-face, .btn-retry-face { transition: none !important; }
+    }
 </style>
 
 <div class="verify-wrapper">
@@ -423,9 +455,15 @@
 
         {{-- Live Face Camera HUD --}}
         <div id="faceScanArea" style="display: none;">
-            <div class="alert alert-warning" role="note" style="width:100%; margin-bottom:12px; text-align:left; font-size:.86rem; line-height:1.45;">
-                <strong>Supplementary identity check.</strong> Face matching compares camera samples with your profile photo. It does not provide reliable liveness or presentation attack detection, so a printed photo or video replay may pass. School policy may require an additional fingerprint or device check.
-                <span class="d-block mt-1">Camera samples are processed temporarily on the server for this check; the matcher attempts to remove temporary files after processing. Your profile photo remains part of your account. Review your school’s privacy notice or contact the school with questions.</span>
+            <div class="face-match-disclosure">
+                <p class="face-match-note" role="note">
+                    <i class="bi bi-shield-exclamation" aria-hidden="true"></i>
+                    <span><strong>Supplementary identity check.</strong> Face matching may not detect a printed photo or video replay.</span>
+                </p>
+                <details class="face-match-details">
+                    <summary>Privacy and security details</summary>
+                    <p>Camera samples are processed temporarily on the server, which attempts to remove temporary files after matching. Your registered profile photo remains part of your account. School policy may require a fingerprint or device check. Review your school’s privacy notice or contact the school with questions.</p>
+                </details>
             </div>
             <div class="camera-viewport-card">
                 <video id="faceCameraVideo" class="camera-video" autoplay playsinline muted></video>
@@ -445,14 +483,14 @@
                 </div>
 
                 <div class="camera-floating-controls">
-                    <button type="button" class="cam-tool-btn" id="flipCamBtn" onclick="toggleCameraFacing()" title="Flip Camera">
+                    <button type="button" class="cam-tool-btn" id="flipCamBtn" onclick="toggleCameraFacing()" title="Flip Camera" aria-label="Switch between front and rear camera">
                         <i class="bi bi-arrow-repeat"></i>
                     </button>
                 </div>
 
                 <div class="camera-status-pill" id="cameraStatusPill">
-                    <span class="status-dot pulsing" id="cameraStatusDot"></span>
-                    <span id="cameraStatusText">Align face within oval</span>
+                    <span class="status-dot pulsing" id="cameraStatusDot" aria-hidden="true"></span>
+                    <span id="cameraStatusText" aria-live="polite" aria-atomic="true">Align face within oval</span>
                 </div>
             </div>
 

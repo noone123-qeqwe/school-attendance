@@ -22,6 +22,11 @@
         </ol>
         <p id="cameraFacePoseInstruction" tabindex="-1" aria-live="polite">Look straight ahead for your first capture. Keep both eyes visible.</p>
         <div class="face-camera-stage" id="cameraFaceStage">
+            <div class="face-camera-placeholder" aria-hidden="true">
+                <span class="face-camera-placeholder-icon"><i class="bi bi-camera-video"></i></span>
+                <strong>Ready for your face scan</strong>
+                <span>Your camera preview appears here.</span>
+            </div>
             <div id="cameraFacePreviewWrap" class="biometric-camera-preview" style="display:none">
                 <video id="cameraFaceVideo" autoplay muted playsinline aria-label="Live camera preview"></video>
                 <div class="biometric-face-guide" id="cameraFaceGuide" aria-hidden="true">
@@ -34,7 +39,7 @@
         </div>
         @include('partials.camera-light-controls', ['cameraLightId' => 'cameraFaceLight'])
         <p id="cameraFaceStatus" class="biometric-flow-status" role="status">{{ $hasCameraFaceEnrollment ? 'A face profile is enrolled for attendance matching. Saving new captures will replace it.' : '' }}</p>
-        <p class="bio-privacy-note"><i class="bi bi-lock" aria-hidden="true"></i><span>The scan runs on this device. Captures are uploaded only when you tap Register face, then checked and encrypted for attendance matching. They are not used as your profile photo.</span></p>
+        <p class="bio-privacy-note"><i class="bi bi-lock" aria-hidden="true"></i><span><strong>Private attendance profile</strong><span>Captures stay on this device until you register. They are then encrypted and used for attendance matching, not as your profile photo.</span></span></p>
         <div class="biometric-flow-actions">
             <button type="button" id="cameraFaceCaptureBtn" hidden class="flow-button flow-primary">Capture front view</button>
             <button type="button" id="cameraFaceRetakeBtn" hidden class="flow-button">Retake</button>

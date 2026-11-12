@@ -9,6 +9,7 @@
         const video = document.getElementById('cameraFaceVideo');
         const canvas = document.getElementById('cameraFaceCanvas');
         const wrap = document.getElementById('cameraFacePreviewWrap');
+        const stage = document.getElementById('cameraFaceStage');
         const capture = document.getElementById('cameraFaceCaptureBtn');
         const save = document.getElementById('cameraFaceSaveBtn');
         const retake = document.getElementById('cameraFaceRetakeBtn');
@@ -110,6 +111,7 @@
             saving = false;
             firstTurnSign = 0;
             lastStatus = '';
+            stage.classList.remove('is-active');
             wrap.style.display = 'none';
             wrap.classList.remove('face-camera-enter', 'face-capture-feedback');
             video.style.display = 'block';
@@ -299,6 +301,7 @@
                 await video.play();
                 if (attempt !== requestId) return;
                 lighting?.start(opened);
+                stage.classList.add('is-active');
                 wrap.style.display = 'block';
                 wrap.classList.add('face-camera-enter');
                 visible(start, false);

@@ -168,6 +168,21 @@ html:has(.face-registration-page) body { width: 100%; height: 100%; overflow: hi
 .face-registration-page #cameraFaceEnrollment > .face-pose-progress { grid-area: steps; margin: 0; }
 .face-registration-page #cameraFacePoseInstruction { grid-area: instruction; align-self: center; margin: 0; }
 .face-registration-page .face-camera-stage { grid-area: stage; display: grid; place-items: center; min-width: 0; min-height: 0; }
+.face-registration-page .face-camera-stage:not(.is-active) {
+    align-content: center;
+    justify-items: center;
+    gap: 12px;
+    min-height: 220px;
+    padding: 20px;
+    border: 1px dashed #cfa46f55;
+    border-radius: 16px;
+    background: radial-gradient(ellipse at 50% 40%, #cfa46f12, #120e0b00 72%);
+}
+.face-registration-page .face-camera-placeholder { display: grid; justify-items: center; gap: 5px; color: var(--text-primary); text-align: center; }
+.face-registration-page .face-camera-placeholder-icon { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: 5px; border: 1px solid var(--gold-border); border-radius: 17px; background: var(--gold-subtle); color: var(--gold-primary); font-size: 1.5rem; }
+.face-registration-page .face-camera-placeholder strong { font-size: .98rem; }
+.face-registration-page .face-camera-placeholder > span:last-child { color: var(--text-muted); font-size: .82rem; }
+.face-registration-page .face-camera-stage.is-active .face-camera-placeholder { display: none; }
 .face-registration-page #cameraFacePreviewWrap {
     position: relative;
     width: 100%;
@@ -191,6 +206,7 @@ html:has(.face-registration-page) body { width: 100%; height: 100%; overflow: hi
 .face-registration-page #cameraFacePreviewWrap.face-camera-enter { animation: face-camera-enter .42s cubic-bezier(.2,.75,.25,1) both; }
 .face-registration-page #cameraFacePreviewWrap.face-capture-feedback::after { animation: face-capture-flash .34s ease-out both; }
 .face-registration-page .face-pose-progress li {
+    min-height: 46px;
     transition: color .22s ease, background-color .22s ease, border-color .22s ease, box-shadow .22s ease, transform .22s ease;
 }
 .face-registration-page .face-pose-progress li[aria-current="step"] {
@@ -290,6 +306,9 @@ html:has(.face-registration-page) body { width: 100%; height: 100%; overflow: hi
 .face-registration-page #cameraFaceLight [data-light-help] { font-size: .76rem; }
 .face-registration-page #cameraFaceStatus { grid-area: status; align-self: start; min-height: 0; margin: 0; }
 .face-registration-page .bio-privacy-note { grid-area: privacy; align-self: start; margin: 0 !important; }
+.face-registration-page .bio-privacy-note > span { min-width: 0; }
+.face-registration-page .bio-privacy-note strong { display: block; margin-bottom: 2px; color: var(--text-primary); font-size: .86rem; }
+.face-registration-page .bio-privacy-note > span > span { display: block; }
 .face-registration-page .biometric-flow-actions { grid-area: actions; align-self: end; }
 .face-registration-page .biometric-flow-actions > * { min-width: min(100%, 9rem); }
 @keyframes face-camera-enter { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
@@ -318,14 +337,17 @@ html:has(.face-registration-page) body { width: 100%; height: 100%; overflow: hi
     .face-registration-page .bio-flow-title-row p { font-size: .8rem; line-height: 1.3; }
     .face-registration-page .face-pose-progress { gap: 5px; margin: 0; }
     .face-registration-page .face-pose-progress li { padding: 7px 3px; font-size: .78rem; }
+    .face-registration-page .face-pose-progress li { min-height: 42px; }
     .face-registration-page #cameraFacePoseInstruction { flex: none; margin: 0; padding: 8px 10px; font-size: .82rem; line-height: 1.3; }
     .face-registration-page .face-camera-stage { flex: 1 0 clamp(220px, 38dvh, 430px); width: 100%; }
+    .face-registration-page .face-camera-stage:not(.is-active) { flex-basis: clamp(220px, 38dvh, 430px); padding: 14px; }
     .face-registration-page #cameraFacePreviewWrap { min-height: 220px; border-radius: 13px; }
     .face-registration-page #cameraFaceLight { flex: none; width: 100%; padding: 9px 10px; }
     .face-registration-page #cameraFaceLight label { margin: 7px 0 2px !important; }
     .face-registration-page #cameraFaceLight [data-light-help] { margin-top: 3px; }
     .face-registration-page #cameraFaceStatus { flex: none; margin: 0; padding: 7px 9px; font-size: .82rem; }
-    .face-registration-page .bio-privacy-note { flex: none; margin: 0 !important; padding: 8px 9px; font-size: .76rem; }
+    .face-registration-page .bio-privacy-note { flex: none; margin: 0 !important; padding: 8px 9px; font-size: .76rem; line-height: 1.4; }
+    .face-registration-page .bio-privacy-note strong { font-size: .79rem; }
     .face-registration-page .biometric-flow-actions { flex: none; gap: 7px; }
     .face-registration-page .biometric-flow-actions > * { min-width: min(100%, 8rem); min-height: 46px; }
 }
