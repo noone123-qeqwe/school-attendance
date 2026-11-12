@@ -596,17 +596,12 @@
                 <div class="parent-actions-row" role="group" aria-label="Common tasks for {{ $child->name }}">
                 <a href="{{ route('parent.calendar', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-primary" title="View attendance and school calendar">
                     <i class="bi bi-calendar-check"></i>
-                    <span>View calendar</span>
+                    <span>Calendar &amp; records</span>
                 </a>
 
                 <a href="{{ route('parent.schedule', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-ghost" title="View weekly schedule">
                     <i class="bi bi-clock"></i>
                     <span>Class schedule</span>
-                </a>
-
-                <a href="{{ route('parent.child', $child) }}" class="parent-btn-action btn-action-ghost" title="Detailed Attendance History">
-                    <i class="bi bi-clock-history"></i>
-                    <span>Attendance records</span>
                 </a>
 
                 <a href="{{ route('parent.child.warnings', $child) }}" class="parent-btn-action {{ $data->warnings->count() > 0 ? 'btn-action-danger' : 'btn-action-ghost' }}" title="Academic Warnings">
@@ -778,7 +773,7 @@
                         <i class="bi bi-clock-history text-gold"></i>
                         <span>Recent Attendance</span>
                     </h3>
-                    <a href="{{ route('parent.child', $child) }}" class="ent-btn ent-btn-sm ent-btn-ghost text-gold" style="font-size: 0.78rem;">
+                    <a href="{{ route('parent.calendar', ['child_id' => $child->id]) }}#attendance-records" class="ent-btn ent-btn-sm ent-btn-ghost text-gold" style="font-size: 0.78rem;">
                         Full History &rarr;
                     </a>
                 </div>

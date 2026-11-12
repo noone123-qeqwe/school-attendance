@@ -201,42 +201,6 @@ class MobileController extends Controller
     }
 
     /**
-     * Mobile attendance history
-     */
-    public function history(Request $request)
-    {
-        $user = Auth::user();
-
-        if (!$user->isStudent()) {
-            return redirect()->route('home');
-        }
-
-        $records = Attendance::with(['subject', 'excuseSubmission', 'correction'])
-            ->where('user_id', $user->id)
-            ->orderBy('date', 'desc')
-            ->orderBy('time_in', 'desc')
-            ->get();
-
-        $totalPresent = $records->where('status', 'Present')->where('excused', false)->count();
-        $totalLate    = $records->where('status', 'Late')->where('excused', false)->count();
-        $totalAbsent  = $records->where('status', 'Absent')->where('excused', false)->count();
-        $totalExcused = $records->where('excused', true)->count();
-        $totalCount   = $records->count();
-        $attendanceRate = $totalCount > 0 ? round((($totalPresent + $totalLate) / $totalCount) * 100) : 0;
-
-        $stats = [
-            'total'           => $totalCount,
-            'present'         => $totalPresent,
-            'late'            => $totalLate,
-            'absent'          => $totalAbsent,
-            'excused'         => $totalExcused,
-            'attendance_rate' => $attendanceRate,
-        ];
-
-        return view('mobile.history', compact('records', 'stats'));
-    }
-
-    /**
      * Mobile profile
      */
     public function profile()

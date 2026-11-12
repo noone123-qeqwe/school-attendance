@@ -4,7 +4,7 @@
     $contextSection = $contextSection ?? '';
     $childRouteTemplate = request()->routeIs('parent.child.warnings')
         ? route('parent.child.warnings', ['child' => '__parent_child__'])
-        : (request()->routeIs('parent.child') ? route('parent.child', ['child' => '__parent_child__']) : null);
+        : null;
 @endphp
 
 @if($contextChild)
@@ -34,9 +34,6 @@
         <nav class="parent-child-context-links" aria-label="Student tasks">
             <a href="{{ route('parent.calendar', ['child_id' => $contextChild->id]) }}" class="{{ $contextSection === 'attendance' ? 'active' : '' }}" aria-label="View attendance and school calendar for {{ $contextChild->name }}">
                 <i class="bi bi-calendar-check" aria-hidden="true"></i><span>Attendance &amp; calendar</span>
-            </a>
-            <a href="{{ route('parent.child', $contextChild) }}" class="{{ $contextSection === 'records' ? 'active' : '' }}" aria-label="View detailed attendance records for {{ $contextChild->name }}">
-                <i class="bi bi-clock-history" aria-hidden="true"></i><span>Detailed records</span>
             </a>
             <a href="{{ route('parent.schedule', ['child_id' => $contextChild->id]) }}" class="{{ $contextSection === 'schedule' ? 'active' : '' }}" aria-label="View class schedule for {{ $contextChild->name }}">
                 <i class="bi bi-clock" aria-hidden="true"></i><span>Class schedule</span>

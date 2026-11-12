@@ -286,32 +286,49 @@ class ParentController extends Controller
     public function childDetail(Request $request, User $child)
     {
         $this->authorizeChild($child);
-        if ($redirect = $this->childContextRedirect($request, $child, 'parent.child')) {
-            return $redirect;
+        $requestedChild = $request->integer('child_id');
+        if ($requestedChild && $requestedChild !== (int) $child->id) {
+            $child = Auth::user()->children()->whereKey($requestedChild)->first() ?? $child;
         }
 
+        return redirect()->to(route('parent.calendar', [
+            'child_id' => $child->id,
+            ...$request->only(['year', 'month', 'subject', 'status', 'date_from', 'date_to', 'page']),
+        ]).'#attendance-records');
+    }
+
+    private function calendarRecords(Request $request, User $child): array
+    {
+        $filters = $request->validate([
+            'subject' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'in:Present,Late,Absent,Escaped,Excused'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d'],
+        ]);
         $query = Attendance::with('subject')
             ->where('user_id', $child->id)
-            ->orderBy('date', 'desc');
+            ->orderByDesc('date')->orderByDesc('time_in')->orderByDesc('id');
 
-        if ($request->filled('subject')) {
-            $query->where('subject_code', $request->subject);
+        if (isset($filters['subject'])) {
+            $query->where('subject_code', $filters['subject']);
         }
-        if ($request->filled('status')) {
-            if ($request->status === 'Excused') {
-                $query->where('excused', true);
+        if ($status = $filters['status'] ?? null) {
+            if ($status === 'Excused') {
+                $query->where(fn ($query) => $query->where('excused', true)
+                    ->orWhereRaw('LOWER(status) = ?', ['excused']));
             } else {
-                $query->where('status', $request->status)->where('excused', false);
+                $query->whereRaw('LOWER(status) = ?', [strtolower($status)])->where('excused', false);
             }
         }
-        if ($request->filled('date_from')) {
-            $query->whereDate('date', '>=', $request->date_from);
+        if (isset($filters['date_from'])) {
+            $query->where('date', '>=', $filters['date_from']);
         }
-        if ($request->filled('date_to')) {
-            $query->whereDate('date', '<=', $request->date_to);
+        if (isset($filters['date_to'])) {
+            $query->where('date', '<=', $filters['date_to']);
         }
 
-        $records = $query->paginate(20)->withQueryString();
+        $records = $query->paginate(20)->withQueryString()->appends(['child_id' => $child->id])
+            ->fragment('attendance-records');
 
         // Stats
         $stats = Attendance::where('user_id', $child->id)
@@ -332,19 +349,12 @@ class ParentController extends Controller
         $rate = $total > 0 ? round((($present + $late) / $total) * 100) : 0;
 
         // Subjects for filter
-        $subjects = Attendance::where('user_id', $child->id)
-            ->distinct()
-            ->pluck('subject_code')
-            ->map(function ($code) {
-                $subject = \App\Models\Subject::where('code', $code)->first();
-                return (object) ['code' => $code, 'name' => $subject->name ?? $code];
-            });
+        $codes = Attendance::where('user_id', $child->id)->whereNotNull('subject_code')
+            ->distinct()->orderBy('subject_code')->pluck('subject_code');
+        $names = Subject::withTrashed()->whereIn('code', $codes)->pluck('name', 'code');
+        $subjects = $codes->map(fn ($code) => (object) ['code' => $code, 'name' => $names->get($code, $code)]);
 
-        $children = Auth::user()->children()->orderBy('name')->get();
-
-        return view('parent.child-detail', compact(
-            'child', 'children', 'records', 'total', 'present', 'late', 'absent', 'rate', 'subjects'
-        ));
+        return compact('records', 'total', 'present', 'late', 'absent', 'rate', 'subjects', 'filters');
     }
 
     /**
@@ -665,20 +675,24 @@ class ParentController extends Controller
         $parent = Auth::user();
         $children = $parent->children()->get();
         $selectedChild = ParentNavigation::selectChild($children, $request);
-        return view('parent.calendar', compact('children', 'selectedChild'));
+        $year = filter_var($request->query('year'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1900, 'max_range' => 2200]]) ?: now()->year;
+        $month = filter_var($request->query('month'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 12]]) ?: now()->month;
+        $attendance = $selectedChild ? $this->calendarRecords($request, $selectedChild) : [];
+
+        return view('parent.calendar', compact('children', 'selectedChild', 'year', 'month') + $attendance);
     }
 
     public function data(Request $request, \App\Services\CalendarService $calendarService)
     {
-        $childId = $request->query('child_id');
+        $childId = $request->validate(['child_id' => ['nullable', 'integer', 'min:1']])['child_id'] ?? null;
         return response()->json(
             $calendarService->getEventsForUser(
                 Auth::user(),
                 $request->query('start'),
                 $request->query('end'),
-                $childId ? (int) $childId : null
+                $childId !== null ? (int) $childId : null
             )
-        );
+        )->header('Cache-Control', 'private, no-store');
     }
 
     public function schedule(Request $request)

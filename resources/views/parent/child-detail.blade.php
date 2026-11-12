@@ -1,19 +1,4 @@
-@extends('layouts.app')
-@section('page-title', $child->name . ' — Attendance Detail')
-
-@section('content')
 <style>
-    .child-header-glow {
-        background: linear-gradient(135deg, rgba(207, 164, 111, 0.15) 0%, rgba(128, 0, 0, 0.05) 100%);
-        border: 1px solid rgba(207, 164, 111, 0.2);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.05);
-        border-radius: 16px;
-        padding: 24px;
-        position: relative;
-        overflow: hidden;
-    }
-    .filter-group { flex: 1; min-width: 150px; }
-    
     .mobile-timeline {
         display: flex; flex-direction: column; gap: 16px;
     }
@@ -35,53 +20,21 @@
     .timeline-content .time-in { font-size: 0.8rem; color: #8f826f; font-family: monospace; }
     
     @media (max-width: 768px) {
-        .child-header-glow {
-            background: rgba(26, 17, 16, 0.6);
-            border: 1px solid rgba(207, 164, 111, 0.1);
-            box-shadow: none;
-            padding: 16px;
-        }
-        
-        .filter-form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            width: 100%;
-        }
-        .filter-form-grid .filter-group {
-            flex: unset;
-            min-width: unset;
-        }
-        .filter-form-grid > .filter-actions {
-            grid-column: 1 / -1;
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        
-        .ent-grid-5 { grid-template-columns: 1fr 1fr; gap: 12px; }
-        .ent-grid-5 > :last-child { grid-column: span 2; }
+        #attendance-records .ent-grid-5 { grid-template-columns: 1fr 1fr; gap: 12px; }
+        #attendance-records .ent-grid-5 > :last-child { grid-column: span 2; }
     }
 </style>
 
-<div class="parent-page">
-    {{-- Back Link --}}
-    <a href="{{ route('parent.dashboard') }}" class="student-back-link">
-        <i class="bi bi-arrow-left"></i> Back to Dashboard
-    </a>
-
-    {{-- Child Header --}}
-    <div class="child-header-glow d-flex align-items-center gap-3 mb-4">
-        <img src="{{ $child->profile_image ? (str_starts_with($child->profile_image, 'http') ? $child->profile_image : public_storage_url($child->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($child->name).'&background=800000&color=fff' }}"
-             alt="{{ $child->name }}" class="rounded-circle"
-             style="width: 64px; height: 64px; object-fit: cover; border: 2px solid rgba(207,164,111,0.4);">
+<section class="parent-page" id="attendance-records" aria-labelledby="attendanceRecordsTitle" tabindex="-1">
+    <div class="parent-page-heading">
         <div>
-            <h3 style="color: #f3e7cd; font-weight: 800; margin: 0;">{{ $child->name }}</h3>
-            <small style="color: #b39b82;">{{ $child->student_number }} &bull; {{ $child->course }} &mdash; Year {{ $child->year_level }}, Semester {{ $child->semester }}</small>
+            <h2 id="attendanceRecordsTitle">Detailed attendance records</h2>
+            <p class="ent-text-muted m-0">{{ $child->name }}</p>
         </div>
+        <a class="ent-btn ent-btn-ghost" href="{{ route('parent.child.report', $child) }}">
+            <i class="bi bi-download" aria-hidden="true"></i> Download PDF
+        </a>
     </div>
-
-    @include('partials.parent-child-context', ['children' => $children, 'selectedChild' => $child, 'contextSection' => 'records'])
 
     {{-- Stats --}}
     <div class="ent-grid ent-grid-5 ent-mb-lg">
@@ -94,38 +47,40 @@
 
     {{-- Filters --}}
     <x-card type="section" class="ent-mb-lg">
-        <form method="GET" action="{{ route('parent.child', $child) }}" class="parent-filter-toolbar filter-form-grid" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+        <form method="GET" action="{{ route('parent.calendar') }}#attendance-records" class="calendar-record-filters">
+            <input type="hidden" name="child_id" value="{{ $child->id }}">
+            <input type="hidden" name="year" value="{{ $year }}" data-calendar-month="year">
+            <input type="hidden" name="month" value="{{ $month }}" data-calendar-month="month">
             <div class="filter-group">
-                <label class="ent-label">Subject</label>
-                <select name="subject" class="ent-input">
+                <label class="ent-label" for="parentRecordSubject">Subject</label>
+                <select name="subject" id="parentRecordSubject" class="ent-input">
                     <option value="">All Subjects</option>
                     @foreach($subjects as $subj)
-                        <option value="{{ $subj->code }}" {{ request('subject') == $subj->code ? 'selected' : '' }}>{{ $subj->name }}</option>
+                        <option value="{{ $subj->code }}" @selected(($filters['subject'] ?? '') === $subj->code)>{{ $subj->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="filter-group">
-                <label class="ent-label">Status</label>
-                <select name="status" class="ent-input">
-                    <option value="">All</option>
-                    <option value="Present" {{ request('status') == 'Present' ? 'selected' : '' }}>Present</option>
-                    <option value="Late" {{ request('status') == 'Late' ? 'selected' : '' }}>Late</option>
-                    <option value="Absent" {{ request('status') == 'Absent' ? 'selected' : '' }}>Absent</option>
-                    <option value="Excused" {{ request('status') == 'Excused' ? 'selected' : '' }}>Excused</option>
+                <label class="ent-label" for="parentRecordStatus">Status</label>
+                <select name="status" id="parentRecordStatus" class="ent-input">
+                    <option value="">All statuses</option>
+                    @foreach(['Present', 'Late', 'Absent', 'Escaped', 'Excused'] as $status)
+                        <option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ $status }}</option>
+                    @endforeach
                 </select>
             </div>
             <div class="filter-group">
-                <label class="ent-label">From</label>
-                <input type="date" name="date_from" value="{{ request('date_from') }}" class="ent-input">
+                <label class="ent-label" for="parentRecordFrom">From</label>
+                <input type="date" id="parentRecordFrom" name="date_from" value="{{ $filters['date_from'] ?? '' }}" class="ent-input">
             </div>
             <div class="filter-group">
-                <label class="ent-label">To</label>
-                <input type="date" name="date_to" value="{{ request('date_to') }}" class="ent-input">
+                <label class="ent-label" for="parentRecordTo">To</label>
+                <input type="date" id="parentRecordTo" name="date_to" value="{{ $filters['date_to'] ?? '' }}" class="ent-input">
             </div>
-            <div class="filter-actions" style="display: flex; gap: 8px;">
+            <div class="calendar-record-filter-actions">
                 <button type="submit" class="ent-btn ent-btn-primary"><i class="bi bi-funnel"></i> Filter</button>
-                @if(request()->hasAny(['subject', 'status', 'date_from', 'date_to']))
-                    <a href="{{ route('parent.child', $child) }}" class="ent-btn ent-btn-ghost text-danger">Clear</a>
+                @if(array_filter($filters))
+                    <a href="{{ route('parent.calendar', ['child_id' => $child->id, 'year' => $year, 'month' => $month]) }}#attendance-records" class="ent-btn ent-btn-ghost" data-calendar-month-link>Clear</a>
                 @endif
             </div>
         </form>
@@ -164,14 +119,14 @@
                             <span style="font-weight: 500; color: var(--ent-text);">{{ $record->subject->name ?? $record->subject_code }}</span>
                         </td>
                         <td data-label="Status">
-                            @if($record->excused)
+                            @if($record->excused || $record->status === 'Excused')
                                 <span class="ent-badge ent-badge-info">Excused</span>
                             @elseif($record->status === 'Present')
                                 <span class="ent-badge ent-badge-success">Present</span>
                             @elseif($record->status === 'Late')
                                 <span class="ent-badge ent-badge-warning">Late</span>
                             @else
-                                <span class="ent-badge ent-badge-danger">Absent</span>
+                                <span class="ent-badge ent-badge-danger">{{ $record->status }}</span>
                             @endif
                         </td>
                         <td data-label="Time In">
@@ -204,14 +159,14 @@
                     <div class="timeline-content">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="subject-name">{{ $record->subject->name ?? $record->subject_code }}</span>
-                            @if($record->excused)
+                            @if($record->excused || $record->status === 'Excused')
                                 <span class="ent-badge ent-badge-info">Excused</span>
                             @elseif($record->status === 'Present')
                                 <span class="ent-badge ent-badge-success">Present</span>
                             @elseif($record->status === 'Late')
                                 <span class="ent-badge ent-badge-warning">Late</span>
                             @else
-                                <span class="ent-badge ent-badge-danger">Absent</span>
+                                <span class="ent-badge ent-badge-danger">{{ $record->status }}</span>
                             @endif
                         </div>
                         <div class="d-flex justify-content-between align-items-end mt-2">
@@ -230,18 +185,14 @@
             </div>
         </div>
 
-        {{-- Pagination --}}
-        <div style="border-top:1px solid var(--ent-border); padding-top:16px; margin-top:16px;">
-            {{ $records->links() }}
-        </div>
         @else
         <div class="ent-empty" style="padding: 40px;">
             <div class="ent-empty-icon" style="width:64px;height:64px;font-size:2rem; margin-bottom:16px;">
                 <i class="bi bi-calendar-x"></i>
             </div>
-            <div class="ent-empty-text">No records match your filters.</div>
+            <div class="ent-empty-text">{{ $records->total() ? 'No records on this page.' : 'No records match your filters.' }}</div>
         </div>
         @endif
+        <div class="mt-3" data-calendar-month-pagination>{{ $records->links() }}</div>
     </x-card>
-</div>
-@endsection
+</section>

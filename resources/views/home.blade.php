@@ -56,7 +56,7 @@
         <a href="{{ route('excuses') }}" class="ent-btn ent-btn-primary warning-btn-submit">
             <i class="bi bi-file-text-fill me-1"></i> Submit Excuse
         </a>
-        <a href="{{ route('attendance.records') }}" class="ent-btn ent-btn-secondary warning-btn-records">
+        <a href="{{ route('student.calendar') }}#attendance-records" class="ent-btn ent-btn-secondary warning-btn-records">
             <i class="bi bi-journal-text me-1"></i> View Records
         </a>
     </div>
@@ -1194,7 +1194,7 @@
 
 <nav class="student-quick-links" aria-label="Student shortcuts">
     <a href="{{ route('student.classes') }}" data-bottom-nav-duplicate><i class="bi bi-journal-bookmark" aria-hidden="true"></i>My classes<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-    <a href="{{ route('attendance.records') }}" data-bottom-nav-duplicate><i class="bi bi-clipboard-check" aria-hidden="true"></i>Attendance records<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    <a href="{{ route('student.calendar') }}#attendance-records" data-bottom-nav-duplicate><i class="bi bi-clipboard-check" aria-hidden="true"></i>Attendance records<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
     <a href="{{ route('excuses.create_general') }}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>Submit an excuse<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
 </nav>
 
@@ -2100,7 +2100,7 @@
 
             {{-- Modal Footer --}}
             <div class="px-4 py-3 border-top d-flex justify-content-between align-items-center" style="border-color:rgba(255,255,255,0.06)!important; background:rgba(255,255,255,0.01);">
-                <a href="{{ route('attendance.records') }}" class="btn btn-outline-warning btn-sm" style="border-radius:12px; font-weight:700; font-size:0.82rem; padding:7px 16px; border-color:rgba(255,209,102,0.4); color:#ffd166;">
+                <a href="{{ route('student.calendar') }}#attendance-records" class="btn btn-outline-warning btn-sm" style="border-radius:12px; font-weight:700; font-size:0.82rem; padding:7px 16px; border-color:rgba(255,209,102,0.4); color:#ffd166;">
                     <i class="bi bi-box-arrow-up-right me-1"></i> Open Full History Page
                 </a>
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:12px; font-weight:700; font-size:0.82rem; padding:7px 18px; background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.1);">

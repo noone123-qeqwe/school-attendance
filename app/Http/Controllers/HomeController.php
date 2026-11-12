@@ -1132,12 +1132,50 @@ class HomeController extends Controller
     /**
      * Student calendar view.
      */
-    public function calendar()
+    public function calendar(Request $request)
     {
-        $year = request('year', now()->year);
-        $month = request('month', now()->month);
-        
-        return view('student.calendar', compact('year', 'month'));
+        $year = filter_var($request->query('year'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1900, 'max_range' => 2200]]) ?: now()->year;
+        $month = filter_var($request->query('month'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 12]]) ?: now()->month;
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'status' => ['nullable', 'in:Present,Late,Absent,Escaped,Excused'],
+            'record_date' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+
+        $history = Attendance::where('user_id', Auth::id());
+        $counts = (clone $history)->selectRaw('status, excused, COUNT(*) AS record_count')
+            ->groupBy('status', 'excused')->get();
+        $totals = ['all' => $counts->sum('record_count')];
+        foreach ($counts as $count) {
+            $status = $count->excused ? 'Excused' : $count->status;
+            $totals[$status] = ($totals[$status] ?? 0) + $count->record_count;
+        }
+
+        if ($status = $filters['status'] ?? null) {
+            if ($status === 'Excused') {
+                $history->where(fn ($query) => $query->where('excused', true)
+                    ->orWhereRaw('LOWER(status) = ?', ['excused']));
+            } else {
+                $history->whereRaw('LOWER(status) = ?', [strtolower($status)])->where('excused', false);
+            }
+        }
+        if ($date = $filters['record_date'] ?? null) {
+            $history->where('date', $date);
+        }
+        if (($filters['q'] ?? '') !== '') {
+            $search = '%'.$filters['q'].'%';
+            $history->where(fn ($query) => $query->whereLike('subject_code', $search)
+                ->orWhereLike('subject_name', $search)
+                ->orWhereHas('subject', fn ($subject) => $subject->whereLike('name', $search)
+                    ->orWhereLike('instructor', $search)
+                    ->orWhereHas('instructorUser', fn ($teacher) => $teacher->whereLike('name', $search))));
+        }
+
+        $records = $history->with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission', 'correction'])
+            ->orderByDesc('date')->orderByDesc('time_in')->orderByDesc('id')
+            ->paginate(20)->withQueryString()->fragment('attendance-records');
+
+        return view('student.calendar', compact('year', 'month', 'records', 'totals', 'filters'));
     }
 
     public function calendarData(Request $request, \App\Services\CalendarService $calendarService)

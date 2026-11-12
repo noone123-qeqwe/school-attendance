@@ -45,9 +45,8 @@ class ParentPortalRedesignTest extends TestCase
         $this->withoutExceptionHandling();
         $pages = [
             'parent.dashboard' => [], 'parent.link.form' => [], 'parent.schedule' => [],
-            'parent.calendar' => [], 'parent.attendance.calendar' => [], 'parent.notifications' => [],
+            'parent.calendar' => [], 'parent.notifications' => [],
             'parent.excuses' => [], 'parent.excuses.create_general' => [], 'parent.profile' => [],
-            'parent.child' => ['child' => $this->firstChild->id],
             'parent.child.warnings' => ['child' => $this->firstChild->id],
             'parent.child.excuse' => ['child' => $this->firstChild->id, 'attendance' => $this->absence->id],
             'parent.excuse.show' => ['excuseSubmission' => $this->excuse->id],
@@ -62,7 +61,7 @@ class ParentPortalRedesignTest extends TestCase
             $ids = [];
             foreach ($xpath->query('//*[@id]') as $node) $ids[] = $node->getAttribute('id');
             $this->assertSame([], array_values(array_diff_assoc($ids, array_unique($ids))), "Duplicate IDs on {$name}");
-            $this->assertSame(1, $xpath->query('//aside//nav[@aria-label="Parent navigation"]//a[@href="'.route('parent.attendance.calendar').'"]')->length);
+            $this->assertSame(1, $xpath->query('//aside//nav[@aria-label="Parent navigation"]//a[@href="'.route('parent.calendar').'"]')->length);
             $this->capture($name, $html);
         }
         foreach (ParentNavigation::items() as [$label, $route]) $this->assertTrue(Route::has($route), $label);
@@ -72,7 +71,7 @@ class ParentPortalRedesignTest extends TestCase
     {
         $emptyParent = User::factory()->create(['role' => 'parent']);
         $this->actingAs($emptyParent);
-        foreach (['parent.dashboard', 'parent.link.form', 'parent.schedule', 'parent.calendar', 'parent.attendance.calendar', 'parent.excuses', 'parent.excuses.create_general', 'parent.notifications'] as $route) {
+        foreach (['parent.dashboard', 'parent.link.form', 'parent.schedule', 'parent.calendar', 'parent.excuses', 'parent.excuses.create_general', 'parent.notifications'] as $route) {
             $html = $this->get(route($route))->assertOk()->getContent();
             $this->assertStringNotContainsString($this->firstChild->student_number, $html);
             $this->assertStringContainsString(route('parent.link.form'), $html);
@@ -93,7 +92,7 @@ class ParentPortalRedesignTest extends TestCase
             $links = $xpath->query('.//a/@href', $panel);
             $destinations = [];
             foreach ($links as $link) $destinations[] = $link->nodeValue;
-            $this->assertContains(route('parent.child', $child), $destinations);
+            $this->assertContains(route('parent.calendar', ['child_id' => $child->id]), $destinations);
             $this->assertContains(route('parent.child.report', $child), $destinations);
             $this->assertContains(route('parent.excuses.create_general', ['child_id' => $child->id]), $destinations);
         }
@@ -129,7 +128,9 @@ class ParentPortalRedesignTest extends TestCase
         $dashboardXpath = $this->xpath($dashboard->getContent());
         $this->assertSame('true', $dashboardXpath->query('//*[@data-parent-child-tab="'.$this->secondChild->id.'"]')->item(0)?->getAttribute('aria-selected'));
 
-        foreach (['parent.schedule', 'parent.attendance.calendar', 'parent.calendar'] as $route) {
+        $this->get(route('parent.attendance.calendar'))
+            ->assertRedirect(route('parent.calendar', ['child_id' => $this->secondChild->id]));
+        foreach (['parent.schedule', 'parent.calendar'] as $route) {
             $response = $this->get(route($route))->assertOk();
             $response->assertViewHas('selectedChild', fn ($child) => $child->id === $this->secondChild->id);
         }
@@ -140,30 +141,34 @@ class ParentPortalRedesignTest extends TestCase
         $html = $this->get(route('parent.dashboard'))->assertOk()->getContent();
         $xpath = $this->xpath($html);
         $this->assertSame(3, $xpath->query('//nav[@aria-label="Parent navigation"]//*[contains(concat(" ", normalize-space(@class), " "), " parent-nav-group ")]')->length);
-        $this->assertSame(1, $xpath->query('//aside//nav[@aria-label="Parent navigation"]//a[@href="'.route('parent.attendance.calendar').'"]')->length);
+        $this->assertSame(1, $xpath->query('//aside//nav[@aria-label="Parent navigation"]//a[@href="'.route('parent.calendar').'"]')->length);
         $this->assertSame(1, $xpath->query('//nav[@aria-label="Parent navigation"]//a[@href="'.route('parent.profile').'"]')->length);
         $this->assertStringContainsString('Parent pages', $html);
     }
 
-    public function test_child_detail_context_switcher_targets_the_newly_selected_child(): void
+    public function test_calendar_and_filtered_records_use_the_same_selected_child(): void
     {
-        $html = $this->get(route('parent.child', $this->firstChild))->assertOk()->getContent();
-        $xpath = $this->xpath($html);
-        $picker = $xpath->query('//*[@data-parent-child-context-switch]')->item(0);
-        $this->assertNotNull($picker);
-        $this->assertStringContainsString('__parent_child__', $picker->getAttribute('data-parent-child-context-template'));
-        $this->assertStringContainsString('/parent/child/', $picker->getAttribute('data-parent-child-context-template'));
+        $response = $this->get(route('parent.calendar', ['child_id' => $this->secondChild->id, 'status' => 'Late']))->assertOk();
+        $response->assertSee('id="scalGrid"', false)->assertSee('id="attendance-records"', false);
+        $this->assertSame([$this->lateness->id], $response->viewData('records')->pluck('id')->all());
+        $this->assertSame($this->secondChild->id, $response->viewData('selectedChild')->id);
+
+        $this->getJson(route('parent.calendar.data', ['child_id' => $this->secondChild->id]))
+            ->assertOk()->assertJsonFragment(['id' => 'att_'.$this->lateness->id])
+            ->assertJsonMissing(['id' => 'att_'.$this->absence->id]);
+
+        $unlinked = User::factory()->create(['role' => 'student']);
+        $this->getJson(route('parent.calendar.data', ['child_id' => $unlinked->id]))->assertForbidden();
     }
 
     public function test_child_detail_context_switcher_has_a_safe_server_side_fallback(): void
     {
         $this->get(route('parent.child', ['child' => $this->firstChild, 'child_id' => $this->secondChild->id]))
-            ->assertRedirect(route('parent.child', $this->secondChild));
+            ->assertRedirect(route('parent.calendar', ['child_id' => $this->secondChild->id]).'#attendance-records');
 
         $unlinked = User::factory()->create(['role' => 'student']);
         $this->get(route('parent.child', ['child' => $this->firstChild, 'child_id' => $unlinked->id]))
-            ->assertOk()
-            ->assertViewHas('child', fn ($child) => $child->id === $this->firstChild->id);
+            ->assertRedirect(route('parent.calendar', ['child_id' => $this->firstChild->id]).'#attendance-records');
     }
 
     public function test_alert_badges_use_each_guardians_read_state_and_exclude_archived_alerts(): void
@@ -188,8 +193,9 @@ class ParentPortalRedesignTest extends TestCase
         $unlinked = User::factory()->create(['role' => 'student']);
         $response = $this->get(route('parent.calendar', ['child_id' => $unlinked->id]))->assertOk();
         $response->assertViewHas('selectedChild', fn ($child) => $child->id === $this->firstChild->id);
-        preg_match('/let scalChildId\s*=\s*(\d+);/', $response->getContent(), $matches);
+        preg_match('/const scalChildId\s*=\s*(\d+);/', $response->getContent(), $matches);
         $this->assertSame((string) $this->firstChild->id, $matches[1] ?? null);
+        $this->assertSame([$this->absence->id], $response->viewData('records')->pluck('id')->all());
         $this->get(route('parent.child', $unlinked))->assertForbidden();
         $this->get(route('parent.child.warnings', $unlinked))->assertForbidden();
     }

@@ -108,14 +108,15 @@ class MobileAttendanceHistoryTest extends TestCase
         $scan->assertOk();
         $attId = $scan->json('attendanceId');
 
-        // Then open mobile history
+        // Old mobile links land directly on the records section of the calendar.
         $response = $this->actingAs($this->student)->get('/mobile/history');
-        $response->assertOk();
-        $response->assertViewIs('mobile.history');
+        $response->assertRedirect(route('student.calendar').'#attendance-records');
+        $response = $this->get(route('student.calendar'))->assertOk();
+        $response->assertViewIs('student.calendar');
         $response->assertSee('Computer Science Fundamentals');
         $response->assertSee('CS101');
         $response->assertSee('Present');
-        $response->assertSee('Attendance History');
+        $response->assertSee('Detailed attendance records');
 
         $records = $response->viewData('records');
         $this->assertTrue($records->contains('id', $attId));
@@ -131,17 +132,14 @@ class MobileAttendanceHistoryTest extends TestCase
         $scan->assertOk();
         $attId = $scan->json('attendanceId');
 
-        // Check both /attendance/records and alias /attendance/history
-        $response1 = $this->actingAs($this->student)->get('/attendance/records');
-        $response1->assertOk();
-        $response1->assertViewIs('attendance.records');
-        $records1 = $response1->viewData('records');
-        $this->assertTrue($records1->contains('id', $attId));
+        $calendar = route('student.calendar');
+        foreach (['/attendance/records', '/attendance/history', '/student/attendance-history'] as $legacyUrl) {
+            $this->actingAs($this->student)->get($legacyUrl)->assertRedirect($calendar.'#attendance-records');
+        }
 
-        $response2 = $this->actingAs($this->student)->get('/attendance/history');
-        $response2->assertOk();
-        $records2 = $response2->viewData('records');
-        $this->assertTrue($records2->contains('id', $attId));
+        $response = $this->get(route('student.calendar', ['q' => 'computer science', 'status' => 'Present']))->assertOk();
+        $response->assertSee('id="scalGrid"', false)->assertSee('id="attendance-records"', false);
+        $this->assertSame([(int) $attId], $response->viewData('records')->pluck('id')->all());
     }
 
     public function test_duplicate_submission_does_not_create_duplicate_record()
@@ -167,5 +165,37 @@ class MobileAttendanceHistoryTest extends TestCase
 
         // Assert only 1 record exists in DB
         $this->assertEquals(1, Attendance::where('user_id', $this->student->id)->where('subject_id', $this->subject->id)->count());
+    }
+
+    public function test_calendar_search_and_pagination_cover_the_students_full_history(): void
+    {
+        $olderRecord = Attendance::withoutEvents(function () {
+            foreach (range(0, 19) as $daysAgo) {
+                Attendance::create([
+                    'user_id' => $this->student->id,
+                    'subject_code' => $this->subject->code,
+                    'date' => today()->subDays($daysAgo)->toDateString(),
+                    'status' => 'Late',
+                ]);
+            }
+
+            return Attendance::create([
+                'user_id' => $this->student->id,
+                'subject_code' => $this->subject->code,
+                'date' => today()->subDays(30)->toDateString(),
+                'status' => 'Present',
+            ]);
+        });
+
+        $firstPage = $this->actingAs($this->student)->get(route('student.calendar'))->assertOk();
+        $this->assertSame(21, $firstPage->viewData('records')->total());
+        $this->assertCount(20, $firstPage->viewData('records'));
+        $this->assertStringEndsWith('#attendance-records', $firstPage->viewData('records')->nextPageUrl());
+
+        $secondPage = $this->get(route('student.calendar', ['page' => 2]))->assertOk();
+        $this->assertSame([$olderRecord->id], $secondPage->viewData('records')->pluck('id')->all());
+
+        $filtered = $this->get(route('student.calendar', ['status' => 'Present', 'q' => 'Professor Smith']))->assertOk();
+        $this->assertSame([$olderRecord->id], $filtered->viewData('records')->pluck('id')->all());
     }
 }

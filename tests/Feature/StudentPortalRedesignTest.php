@@ -33,8 +33,6 @@ class StudentPortalRedesignTest extends TestCase
             '/home',
             '/profile',
             '/my-classes',
-            '/attendance/records',
-            '/student/attendance-calendar',
             '/student/calendar',
             '/excuses',
             '/excuses/general/new',
@@ -55,7 +53,7 @@ class StudentPortalRedesignTest extends TestCase
 
     public function test_student_mobile_pages_load_the_shared_student_design_layer(): void
     {
-        foreach (['/mobile/home', '/mobile/scan', '/mobile/history', '/mobile/profile'] as $url) {
+        foreach (['/mobile/home', '/mobile/scan', '/mobile/profile'] as $url) {
             $response = $this->actingAs($this->student)->get($url);
 
             $response->assertOk();
@@ -83,8 +81,8 @@ class StudentPortalRedesignTest extends TestCase
             'user_id' => $this->student->id, 'subject_id' => $subject->id,
             'subject_code' => $subject->code, 'date' => today()->toDateString(), 'status' => 'Escaped',
         ]);
-        $response = $this->actingAs($this->student)->get('/attendance/records')->assertOk();
-        $this->captureUiPage('/attendance/records-populated', $response->getContent());
+        $response = $this->actingAs($this->student)->get('/student/calendar')->assertOk();
+        $this->captureUiPage('/student/calendar-populated', $response->getContent());
         $document = new \DOMDocument();
         @$document->loadHTML($response->getContent());
         $xpath = new \DOMXPath($document);

@@ -13,7 +13,7 @@ class ResponsiveLayoutSafeAreasTest extends TestCase
     public function test_role_pages_share_the_screen_edge_spacing_layer(): void
     {
         $pages = [
-            'student' => ['/home', '/settings', '/profile', '/attendance/records'],
+            'student' => ['/home', '/settings', '/profile', '/student/calendar'],
             'teacher' => ['/teacher/dashboard', '/teacher/profile', '/teacher/notifications'],
             'parent' => ['/parent/dashboard', '/parent/profile', '/parent/notifications'],
             'admin' => ['/admin/dashboard', '/admin/profile', '/admin/settings'],

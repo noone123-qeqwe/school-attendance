@@ -4,7 +4,7 @@
 @section('content')
 <div class="parent-page">
     {{-- Back Link --}}
-    <a href="{{ route('parent.child', $child) }}" class="student-back-link">
+    <a href="{{ route('parent.calendar', ['child_id' => $child->id]) }}#attendance-records" class="student-back-link">
         <i class="bi bi-arrow-left"></i> Back to {{ $child->name }}'s Records
     </a>
 
@@ -117,7 +117,7 @@
                         </div>
 
                         <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                            <a href="{{ route('parent.child', $child) }}" class="adm-btn adm-btn-ghost">Cancel</a>
+                            <a href="{{ route('parent.calendar', ['child_id' => $child->id]) }}#attendance-records" class="adm-btn adm-btn-ghost">Cancel</a>
                             <button type="submit" id="submitBtn" class="adm-btn adm-btn-primary" style="transition: all 0.2s;">
                                 <i class="bi bi-send me-1"></i> <span>Submit Excuse</span>
                             </button>

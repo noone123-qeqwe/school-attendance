@@ -316,7 +316,7 @@ Route::middleware('auth')->prefix('mobile')->name('mobile.')->group(function () 
     Route::middleware('student')->group(function () {
         Route::get('/attendance', [App\Http\Controllers\MobileController::class, 'attendance'])->name('attendance');
         Route::get('/scan', [App\Http\Controllers\MobileController::class, 'scan'])->name('scan');
-        Route::get('/history', [App\Http\Controllers\MobileController::class, 'history'])->name('history');
+        Route::get('/history', [AttendanceController::class, 'index'])->name('history');
     });
     
     // Teacher mobile routes

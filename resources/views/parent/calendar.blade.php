@@ -386,6 +386,7 @@
     align-items: center;
     gap: 12px;
     color: #f3ede4;
+    text-decoration: none;
     cursor: pointer;
     transition: all 0.2s ease;
     margin-bottom: 2px;
@@ -644,7 +645,18 @@
 </style>
 
 {{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
-<div class="parent-page-heading"><div><h1>Attendance &amp; school calendar</h1><p class="ent-text-muted m-0">View your selected student’s attendance, school events, holidays, and important dates together.</p></div><a id="parentCalendarScheduleLink" href="{{ route('parent.schedule', ['child_id' => $selectedChildId]) }}" class="ent-btn ent-btn-ghost"><i class="bi bi-clock" aria-hidden="true"></i> Weekly schedule</a></div>
+<div class="parent-page-heading">
+    <div>
+        <h1>Attendance &amp; school calendar</h1>
+        <p class="ent-text-muted m-0">Check school dates and review your student’s attendance history.</p>
+    </div>
+    @if($selectedChild)
+        <div class="d-flex flex-wrap gap-2">
+            <a href="#attendance-records" class="ent-btn ent-btn-ghost">Jump to records</a>
+            <a href="{{ route('parent.schedule', ['child_id' => $selectedChildId]) }}" class="ent-btn ent-btn-ghost"><i class="bi bi-clock" aria-hidden="true"></i> Weekly schedule</a>
+        </div>
+    @endif
+</div>
 @if($children->isEmpty())<div class="parent-section-card parent-empty mb-4"><h2 class="h5">Connect your student</h2><p>Link a student account to see their school calendar and attendance.</p><a class="ent-btn ent-btn-primary" href="{{ route('parent.link.form') }}">Link student</a></div>@endif
 <p id="parentCalendarFeedback" class="parent-feedback" role="status" aria-live="polite"></p>
 <button type="button" id="parentCalendarRetry" class="ent-btn ent-btn-ghost mb-3" onclick="scalLoadAndRender()" hidden>Retry calendar</button>
@@ -659,7 +671,7 @@
             </button>
             <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
                 <span class="scal-nav-title" id="scalMonthLabel">
-                    {{ \Carbon\Carbon::now()->format('F Y') }}
+                    {{ \Carbon\Carbon::create($year, $month, 1)->format('F Y') }}
                 </span>
                 <button class="scal-today-btn" onclick="scalGoToday()" id="scalTodayBtn">Today</button>
             </div>
@@ -674,7 +686,7 @@
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-2">
                     <span class="scal-picker-title">
-                        <i class="bi bi-person-badge-fill me-1" style="color: #cfa46f;"></i> Viewing Calendar for:
+                        <i class="bi bi-person-badge-fill me-1" style="color: #cfa46f;"></i> Viewing calendar and records for
                     </span>
                 </div>
                 
@@ -702,12 +714,9 @@
                             $isSel = ($child->id == $selectedChildId || ($loop->first && !$selectedChildId));
                         @endphp
                         <li>
-                            <button type="button" class="scal-picker-item {{ $isSel ? 'active' : '' }}" 
-                                    data-child-id="{{ $child->id }}"
-                                    data-name="{{ $child->name }}"
-                                    data-initials="{{ strtoupper(substr($child->name, 0, 2)) }}"
-                                    data-number="{{ $child->student_number ?? 'Student' }}"
-                                    onclick="scalSelectChild(this, {{ $child->id }})">
+                            <a class="scal-picker-item {{ $isSel ? 'active' : '' }}"
+                               href="{{ route('parent.calendar', ['child_id' => $child->id, 'year' => $year, 'month' => $month]) }}"
+                               data-calendar-month-link @if($isSel) aria-current="true" @endif>
                                 <div class="scal-picker-avatar mini">
                                     {{ strtoupper(substr($child->name, 0, 2)) }}
                                 </div>
@@ -716,7 +725,7 @@
                                     <div class="scal-picker-item-sub text-truncate">ID: {{ $child->student_number ?? 'Student' }}</div>
                                 </div>
                                 <i class="bi bi-check2 scal-picker-check {{ $isSel ? 'd-block' : 'd-none' }}"></i>
-                            </button>
+                            </a>
                         </li>
                         @endforeach
                     </ul>
@@ -829,6 +838,11 @@
     </div>
 </div>
 
+@include('partials.calendar-records')
+@if($selectedChild)
+    @include('parent.child-detail', ['child' => $selectedChild])
+@endif
+
 {{-- ── Event Detail Modal ──────────────────────────────────────────────── --}}
 <div class="modal fade" id="eventDetailModal" tabindex="-1" aria-labelledby="eventTitle">
     <div class="modal-dialog modal-dialog-centered">
@@ -887,6 +901,7 @@
                 <div id="daySummaryContent" class="d-flex flex-column gap-2">
                     <!-- dynamically populated -->
                 </div>
+                <a id="daySummaryRecordsLink" class="ent-btn ent-btn-ghost mt-3 d-none" onclick="closeDaySummaryModal()">View records for this day</a>
                 <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:18px;">
                     <i class="bi bi-info-circle"></i> All subjects for this day are shown above.
                 </div>
@@ -900,9 +915,9 @@
 /* ═══════════════════════════════════════════════════
    Squircle Attendance Calendar — Parent View
    ═══════════════════════════════════════════════════ */
-let scalYear       = new Date().getFullYear();
-let scalMonth      = new Date().getMonth() + 1;
-let scalChildId    = {{ $selectedChildId ?? 'null' }};
+let scalYear = {{ $year }};
+let scalMonth = {{ $month }};
+const scalChildId = @json($selectedChildId);
 const scalChildCount = {{ $children->count() }};
 
 // Raw events from API: date string → array of event objects
@@ -924,61 +939,6 @@ const STATUS_CLASS = {
     holiday : 'status-holiday',
     exam    : 'status-exam',
 };
-
-/* ── Switch active child & select item ──────────────────── */
-function scalSelectChild(btn, childId) {
-    scalChildId = parseInt(childId);
-    
-    // Update active trigger text & avatar
-    const name = btn.getAttribute('data-name');
-    const initials = btn.getAttribute('data-initials');
-    const number = btn.getAttribute('data-number');
-    
-    const activeName = document.getElementById('activeStudentName');
-    const activeAvatar = document.getElementById('activeStudentAvatar');
-    const activeSub = document.getElementById('activeStudentSub');
-    
-    if (activeName) activeName.textContent = name;
-    if (activeAvatar) activeAvatar.textContent = initials;
-    if (activeSub) activeSub.textContent = 'ID: ' + number;
-    
-    // Update menu items
-    document.querySelectorAll('.scal-picker-item').forEach(item => {
-        const isItem = parseInt(item.getAttribute('data-child-id')) === scalChildId;
-        item.classList.toggle('active', isItem);
-        const check = item.querySelector('.scal-picker-check');
-        if (check) {
-            check.classList.toggle('d-block', isItem);
-            check.classList.toggle('d-none', !isItem);
-        }
-    });
-    
-    const url = new URL(window.location.href);
-    url.searchParams.set('child_id', scalChildId);
-    window.history.replaceState({}, '', url);
-    const scheduleLink = document.getElementById('parentCalendarScheduleLink');
-    if (scheduleLink) {
-        const scheduleUrl = new URL(scheduleLink.href);
-        scheduleUrl.searchParams.set('child_id', scalChildId);
-        scheduleLink.href = scheduleUrl.toString();
-    }
-    document.querySelectorAll('[data-parent-child-context]').forEach(link => {
-        const contextUrl = new URL(link.href, window.location.origin);
-        contextUrl.searchParams.set('child_id', scalChildId);
-        link.href = contextUrl.toString();
-    });
-    scalLoadAndRender();
-}
-
-function scalSwitchChild(childId) {
-    scalChildId = parseInt(childId);
-    const targetBtn = document.querySelector(`.scal-picker-item[data-child-id="${childId}"]`);
-    if (targetBtn) {
-        scalSelectChild(targetBtn, childId);
-    } else {
-        scalLoadAndRender();
-    }
-}
 
 /* ── Go to today ─────────────────────────────────────────── */
 function scalGoToday() {
@@ -1194,19 +1154,41 @@ function scalNextMonth() {
     scalLoadAndRender();
 }
 
-function scalLoadAndRender() {
+function scalLoadAndRender(historyMode = 'push') {
+    syncCalendarRecordsMonth(scalYear, scalMonth);
     const grid = document.getElementById('scalGrid');
     grid.innerHTML = Array(35).fill('<div class="scal-tile loading"></div>').join('');
     scalFetchEvents(scalYear, scalMonth, () => scalRender());
     const url = new URL(window.location);
     url.searchParams.set('year',  scalYear);
     url.searchParams.set('month', scalMonth);
-    window.history.pushState({}, '', url);
+    if (scalChildId) url.searchParams.set('child_id', scalChildId);
+    else url.searchParams.delete('child_id');
+    if (historyMode === 'push') window.history.pushState({}, '', url);
+    else if (historyMode === 'replace') window.history.replaceState({}, '', url);
 }
+
+window.addEventListener('popstate', () => {
+    const params = new URL(location.href).searchParams;
+    const year = Number(params.get('year'));
+    const month = Number(params.get('month'));
+    const today = new Date();
+    scalYear = Number.isInteger(year) && year >= 1900 && year <= 2200 ? year : today.getFullYear();
+    scalMonth = Number.isInteger(month) && month >= 1 && month <= 12 ? month : today.getMonth() + 1;
+    scalLoadAndRender('none');
+});
 
 /* ── Day click → Day Summary Modal ─────────────────────── */
 function scalDayClick(dateStr) {
     const evts = scalEventMap[dateStr] || [];
+    const recordsLink = document.getElementById('daySummaryRecordsLink');
+    const recordsUrl = new URL(@json(route('parent.calendar')));
+    recordsUrl.search = new URLSearchParams({
+        child_id: scalChildId, year: scalYear, month: scalMonth, date_from: dateStr, date_to: dateStr,
+    });
+    recordsUrl.hash = 'attendance-records';
+    recordsLink.href = recordsUrl.href;
+    recordsLink.classList.toggle('d-none', !evts.some(event => event.type === 'attendance'));
     const dateObj = new Date(dateStr + 'T00:00:00');
     document.getElementById('daySummaryTitle').textContent =
         dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -1347,7 +1329,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (edm && edm.parentNode !== document.body) document.body.appendChild(edm);
     const dsm = document.getElementById('daySummaryModal');
     if (dsm && dsm.parentNode !== document.body) document.body.appendChild(dsm);
-    scalLoadAndRender();
+    scalLoadAndRender('replace');
 
     // Touch swipe for mobile
     let tx = 0, ty = 0;

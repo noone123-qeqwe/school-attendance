@@ -33,10 +33,9 @@ class StudentResponsiveAttendanceTest extends TestCase
         // Verify sidebar items
         $this->assertStringContainsString('Dashboard', $sidebar);
         $this->assertStringContainsString('My Schedule', $sidebar);
-        $this->assertStringContainsString('Attendance Calendar', $sidebar);
+        $this->assertStringContainsString('Attendance &amp; Calendar', $sidebar);
         $this->assertStringContainsString('My Classes', $sidebar);
-        $this->assertStringContainsString('Attendance Records', $sidebar);
-        $this->assertStringContainsString('School Calendar', $sidebar);
+        $this->assertStringNotContainsString(route('attendance.records'), $sidebar);
         $this->assertStringContainsString('Excuse Submissions', $sidebar);
 
         // Verify removed sidebar links (Settings, Scan QR, Biometrics)
@@ -82,7 +81,7 @@ class StudentResponsiveAttendanceTest extends TestCase
 
     public function test_attendance_records_page_has_responsive_attendance_action_buttons(): void
     {
-        $response = $this->actingAs($this->student)->get('/attendance/records');
+        $response = $this->actingAs($this->student)->get('/student/calendar');
 
         $response->assertStatus(200);
 
@@ -224,10 +223,6 @@ class StudentResponsiveAttendanceTest extends TestCase
 
         // 3. Student Attendance Calendar (/student/attendance-calendar)
         $attCalResponse = $this->actingAs($this->student)->get(route('student.attendance.calendar'));
-        $attCalResponse->assertStatus(200);
-        $attCalResponse->assertSee('id="daySummaryModal"', false);
-        $attCalResponse->assertSee('touch-action: manipulation', false);
-        $attCalResponse->assertSee('closeDaySummaryModal()', false);
-        $attCalResponse->assertSee('document.body.appendChild(dModal)', false);
+        $attCalResponse->assertRedirect(route('student.calendar'));
     }
 }

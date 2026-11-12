@@ -1,12 +1,8 @@
-@extends('layouts.app')
-
-@section('page-title', 'Attendance Records')
-@section('content')
 <style>
     .records-page { max-width: 960px; margin: 0 auto; padding-bottom: 40px; }
 
     /* Page header */
-    .page-header { margin-bottom: 24px; }
+    .records-page .page-header { margin-bottom: 24px; }
     .page-header-title { font-size: 1.6rem; font-weight: 800; color: #fde68a; letter-spacing: -0.3px; }
     .page-header-sub { font-size: 0.9rem; color: rgba(245,234,215,0.6); margin-top: 4px; }
 
@@ -55,33 +51,10 @@
         background: rgba(216,179,92,0.14); color: var(--gold);
     }
 
-    /* Filter tabs */
-    .filter-tabs { display: flex; gap: 8px; }
-    .filter-tab {
-        padding: 8px 16px; border-radius: 10px;
-        font-size: 0.78rem; font-weight: 600;
-        border: 1px solid rgba(255,255,255,0.08); 
-        background: rgba(255,255,255,0.03);
-        color: rgba(245,234,215,0.6); cursor: pointer; transition: all 0.2s;
-    }
-    .filter-tab:hover { background: rgba(255,255,255,0.08); color: #f8e7d3; }
-    .filter-tab.active { background: rgba(216,179,92,0.15); border-color: rgba(216,179,92,0.3); color: #fde68a; }
-
     /* Empty state */
     .empty-state { text-align: center; padding: 60px 20px; color: rgba(245,234,215,0.5); }
     .empty-state i { font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 12px; }
     .empty-state p { font-size: 0.95rem; margin: 0; font-weight: 500; }
-
-    /* Back btn */
-    .back-btn {
-        display: inline-flex; align-items: center; gap: 8px;
-        font-size: 0.85rem; font-weight: 600; color: rgba(245,234,215,0.8);
-        text-decoration: none; padding: 8px 16px;
-        border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-        background: rgba(255,255,255,0.04); transition: all 0.2s;
-        margin-bottom: 24px;
-    }
-    .back-btn:hover { color: #fde68a; border-color: rgba(253,230,138,0.3); background: rgba(253,230,138,0.05); transform: translateX(-4px); }
 
     /* Records Container - Mobile-first Card Layout */
     .records-container {
@@ -489,22 +462,6 @@
             font-size: 0.9rem;
         }
 
-        .filter-tabs {
-            width: 100%;
-            justify-content: center;
-        }
-        .filter-tab {
-            flex: 1;
-            text-align: center;
-            font-size: 0.7rem;
-            padding: 8px 12px;
-        }
-
-        .back-btn {
-            font-size: 0.8rem;
-            padding: 6px 12px;
-        }
-
         :is(#excuseModal, #correctionModal) .modal-content {
             margin: 10px;
             max-width: calc(100vw - 20px);
@@ -539,16 +496,11 @@
     }
 </style>
 
-<div class="records-page">
-
-    <a href="{{ route('home') }}" class="back-btn">
-        <i class="bi bi-arrow-left"></i> Back to Dashboard
-    </a>
-
+<section class="records-page" id="attendance-records" aria-labelledby="attendanceRecordsTitle" tabindex="-1">
     <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
         <div>
-            <div class="page-header-title">Attendance Records</div>
-            <div class="page-header-sub">Your complete attendance history — {{ $records->count() }} total records</div>
+            <h2 class="page-header-title" id="attendanceRecordsTitle">Detailed attendance records</h2>
+            <div class="page-header-sub">{{ $totals['all'] }} total records</div>
         </div>
         <div>
             <button type="button" onclick="openStudentScanner('code')" class="btn btn-primary d-none d-md-inline-flex" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 12px; text-transform: none;">
@@ -560,32 +512,27 @@
         </div>
     </div>
 
-    @php
-        $totalPresent = $records->where('status', 'Present')->where('excused', false)->count();
-        $totalLate    = $records->where('status', 'Late')->where('excused', false)->count();
-        $totalAbsent  = $records->where('status', 'Absent')->where('excused', false)->count();
-        $totalExcused = $records->where('excused', true)->count();
-        $total        = $records->count();
-        $rate         = $total > 0 ? round((($totalPresent + $totalLate) / $total) * 100) : 0;
-    @endphp
-
     <!-- Summary chips -->
     <div class="summary-chips">
         <div class="summary-chip">
-            <div class="summary-chip-value" style="color: #f8e7d3;">{{ $total }}</div>
+            <div class="summary-chip-value" style="color: #f8e7d3;">{{ $totals['all'] }}</div>
             <div class="summary-chip-label">Total Records</div>
         </div>
         <div class="summary-chip">
-            <div class="summary-chip-value" style="color: #4ade80;">{{ $totalPresent }}</div>
+            <div class="summary-chip-value" style="color: #4ade80;">{{ $totals['Present'] ?? 0 }}</div>
             <div class="summary-chip-label">Present</div>
         </div>
         <div class="summary-chip">
-            <div class="summary-chip-value" style="color: #fbbf24;">{{ $totalLate }}</div>
+            <div class="summary-chip-value" style="color: #fbbf24;">{{ $totals['Late'] ?? 0 }}</div>
             <div class="summary-chip-label">Late</div>
         </div>
         <div class="summary-chip">
-            <div class="summary-chip-value" style="color: #f87171;">{{ $totalAbsent }}</div>
+            <div class="summary-chip-value" style="color: #f87171;">{{ $totals['Absent'] ?? 0 }}</div>
             <div class="summary-chip-label">Absent</div>
+        </div>
+        <div class="summary-chip">
+            <div class="summary-chip-value" style="color: #fde68a;">{{ $totals['Excused'] ?? 0 }}</div>
+            <div class="summary-chip-label">Excused</div>
         </div>
     </div>
 
@@ -598,24 +545,39 @@
                 </div>
                 All Records
             </div>
-            <!-- Filter tabs -->
-            <div class="filter-tabs" role="group" aria-label="Filter records by attendance status">
-                <button class="filter-tab active" aria-pressed="true" onclick="filterTable('all', this)">All</button>
-                <button class="filter-tab" aria-pressed="false" onclick="filterTable('Present', this)">Present</button>
-                <button class="filter-tab" aria-pressed="false" onclick="filterTable('Late', this)">Late</button>
-                <button class="filter-tab" aria-pressed="false" onclick="filterTable('Absent', this)">Absent</button>
-                <button class="filter-tab" aria-pressed="false" onclick="filterTable('Escaped', this)">Escaped</button>
-                <button class="filter-tab" aria-pressed="false" onclick="filterTable('Excused', this)">Excused</button>
-            </div>
         </div>
 
-        <label class="student-record-search" for="attendanceRecordsSearch">Find a record
-            <input type="search" id="attendanceRecordsSearch" placeholder="Search by class, date, or teacher">
-        </label>
-        <p id="recordsResultsStatus" class="student-results-count" style="padding-inline:22px;" role="status"></p>
+        <form method="GET" action="{{ route('student.calendar') }}#attendance-records" class="calendar-record-filters">
+            <input type="hidden" name="year" value="{{ $year }}" data-calendar-month="year">
+            <input type="hidden" name="month" value="{{ $month }}" data-calendar-month="month">
+            <div>
+                <label class="ent-label" for="attendanceRecordsSearch">Class or teacher</label>
+                <input type="search" class="ent-input" id="attendanceRecordsSearch" name="q" maxlength="120" value="{{ $filters['q'] ?? '' }}">
+            </div>
+            <div>
+                <label class="ent-label" for="studentRecordStatus">Status</label>
+                <select id="studentRecordStatus" name="status" class="ent-input">
+                    <option value="">All statuses</option>
+                    @foreach(['Present', 'Late', 'Absent', 'Escaped', 'Excused'] as $status)
+                        <option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ $status }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="ent-label" for="studentRecordDate">Date</label>
+                <input type="date" class="ent-input" id="studentRecordDate" name="record_date" value="{{ $filters['record_date'] ?? '' }}">
+            </div>
+            <div class="calendar-record-filter-actions">
+                <button type="submit" class="ent-btn ent-btn-primary">Filter</button>
+                @if(array_filter($filters))
+                    <a class="ent-btn ent-btn-ghost" href="{{ route('student.calendar', compact('year', 'month')) }}#attendance-records" data-calendar-month-link>Clear</a>
+                @endif
+            </div>
+        </form>
+        <p class="student-results-count px-3">{{ $records->total() }} matching {{ Str::plural('record', $records->total()) }}</p>
         <!-- Mobile-first Card Layout -->
         <div class="records-container" id="recordsContainer">
-            @forelse($records as $i => $record)
+            @forelse($records as $record)
             <div class="record-card" data-status="{{ $record->status }}" data-excused="{{ $record->excused || $record->status === 'Excused' ? '1' : '0' }}">
                 @php
                     $dayName = \Carbon\Carbon::parse($record->date)->format('l');
@@ -624,11 +586,22 @@
                     $clockInTime = $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('g:i A') : ($record->checked_in_at ? $record->checked_in_at->format('g:i A') : null);
                     $clockInText = $clockInTime ?? ($record->status === 'Absent' ? 'No clock-in' : '—');
                     $instName = $record->subject?->instructorUser?->name ?? $record->subject?->instructor ?? 'Instructor TBA';
+                    $methodLabel = match ($record->method) {
+                        'qr' => 'QR scan',
+                        'code' => 'PIN code',
+                        'manual_gps' => 'GPS check-in',
+                        'manual' => 'Teacher verified',
+                        null, '' => null,
+                        default => \Illuminate\Support\Str::headline($record->method),
+                    };
                 @endphp
                 <div class="record-header">
                     <div class="record-subject">
-                        <h4>{{ $record->subject->name ?? $record->subject_code }}</h4>
+                        <h4>{{ $record->subject->name ?? $record->subject_name ?? $record->subject_code }}</h4>
                         <div class="record-meta">
+                            @if($record->subject_code)
+                                <span>{{ $record->subject_code }}</span>
+                            @endif
                             <span class="record-date">{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}</span>
                             <span class="record-day">{{ $dayName }}</span>
                             <span style="color:rgba(245,234,215,0.4);">•</span>
@@ -670,6 +643,18 @@
                             <span class="detail-label">Remarks</span>
                             <span class="detail-value">{{ $record->excuse_note ?? $record->excuseSubmission?->reason ?? ($record->excused ? 'Excused Absence' : '—') }}</span>
                         </div>
+                        @if($methodLabel)
+                            <div class="detail-item">
+                                <span class="detail-label">Method</span>
+                                <span class="detail-value">{{ $methodLabel }}</span>
+                            </div>
+                        @endif
+                        @if($record->class)
+                            <div class="detail-item">
+                                <span class="detail-label">Section</span>
+                                <span class="detail-value">{{ $record->class }}</span>
+                            </div>
+                        @endif
                     </div>
                     
                     <div class="record-actions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
@@ -699,13 +684,14 @@
             @empty
             <div class="empty-state">
                 <i class="bi bi-inbox"></i>
-                <p>No attendance records found.</p>
+                <p>{{ $records->total() ? 'No records on this page.' : 'No attendance records match your filters.' }}</p>
             </div>
             @endforelse
         </div>
+        <div class="px-3 pb-3" data-calendar-month-pagination>{{ $records->links() }}</div>
     </div>
 
-</div>
+</section>
 
 <!-- Excuse Submission Modal -->
 <div class="modal-overlay" id="excuseModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="excuseModalTitle">
@@ -881,39 +867,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-let activeRecordStatus = 'all';
-function applyRecordFilters() {
-    const query = document.getElementById('attendanceRecordsSearch').value.trim().toLowerCase();
-    const cards = Array.from(document.querySelectorAll('#recordsContainer .record-card[data-status]'));
-    let visible = 0;
-    cards.forEach(card => {
-        const matchesStatus = activeRecordStatus === 'all' || (activeRecordStatus === 'Excused' ? card.dataset.excused === '1' : card.dataset.status === activeRecordStatus);
-        card.hidden = !(matchesStatus && card.textContent.toLowerCase().includes(query));
-        if (!card.hidden) visible++;
-    });
-    document.getElementById('recordsResultsStatus').textContent = visible + (visible === 1 ? ' record' : ' records');
-    let empty = document.getElementById('recordsFilterEmpty');
-    if (!empty) {
-        empty = document.createElement('div');
-        empty.id = 'recordsFilterEmpty';
-        empty.className = 'student-filter-empty';
-        const title = document.createElement('strong');
-        title.textContent = 'No matching records';
-        empty.append(title, 'Try another status, class, date, or teacher.');
-        document.getElementById('recordsContainer').appendChild(empty);
-    }
-    empty.hidden = cards.length === 0 || visible > 0;
-}
-function filterTable(status, btn) {
-    activeRecordStatus = status;
-    document.querySelectorAll('.filter-tab').forEach(tab => {
-        tab.classList.toggle('active', tab === btn);
-        tab.setAttribute('aria-pressed', tab === btn ? 'true' : 'false');
-    });
-    applyRecordFilters();
-}
-document.getElementById('attendanceRecordsSearch').addEventListener('input', applyRecordFilters);
-applyRecordFilters();
 </script>
 
 <style>
@@ -970,4 +923,3 @@ body.student-record-dialog-open .mobile-bottom-nav { visibility: hidden; }
     box-shadow: 0 0 0 3px rgba(128, 0, 0, 0.2) !important;
 }
 </style>
-@endsection

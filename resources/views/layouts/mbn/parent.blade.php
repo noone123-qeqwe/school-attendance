@@ -12,7 +12,7 @@
         <i class="bi bi-bell-fill" aria-hidden="true"></i>
         <span>Alerts</span>
     </a>
-    <button type="button" class="mbn-item mbn-item-more {{ request()->routeIs('parent.schedule', 'parent.calendar*', 'parent.excuse*', 'parent.child.excuse', 'parent.link*', 'parent.profile') ? 'active' : '' }}" onclick="openMoreSheet()" aria-label="Open all guardian pages" aria-haspopup="dialog" aria-controls="moreSheet" aria-expanded="false" style="background:transparent;border:none;cursor:pointer;">
+    <button type="button" class="mbn-item mbn-item-more {{ request()->routeIs('parent.schedule', 'parent.excuse*', 'parent.child.excuse', 'parent.link*', 'parent.profile') ? 'active' : '' }}" onclick="openMoreSheet()" aria-label="Open all guardian pages" aria-haspopup="dialog" aria-controls="moreSheet" aria-expanded="false" style="background:transparent;border:none;cursor:pointer;">
         <i class="bi bi-list" aria-hidden="true"></i>
         <span>Menu</span>
     </button>

@@ -371,7 +371,7 @@
 </style>
 
 {{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
-@include('partials.student-page-header', ['title' => 'Attendance & school calendar', 'description' => 'See your attendance, classes, school events, holidays, and important dates together.', 'actionUrl' => route('attendance.records'), 'actionLabel' => 'Attendance records'])
+@include('partials.student-page-header', ['title' => 'Attendance & school calendar', 'description' => 'Check school dates and review your attendance history.', 'actionUrl' => '#attendance-records', 'actionLabel' => 'Jump to records'])
 <div class="scal-outer">
 
     {{-- MAIN CALENDAR CARD --}}
@@ -445,6 +445,9 @@
     </div>
 </div>
 
+@include('partials.calendar-records')
+@include('attendance.records')
+
 {{-- ── Event Detail Modal ──────────────────────────────────────────────── --}}
 <div class="modal fade" id="eventDetailModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -499,6 +502,7 @@
                 <div id="daySummaryContent" class="d-flex flex-column gap-2">
                     <!-- dynamically populated -->
                 </div>
+                <a id="daySummaryRecordsLink" class="ent-btn ent-btn-ghost mt-3 d-none" onclick="closeDaySummaryModal()">View records for this day</a>
                 <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:18px;">
                     <i class="bi bi-info-circle"></i> All subjects for this day are shown above.
                 </div>
@@ -673,6 +677,7 @@ function scalNextMonth() {
 }
 
 function scalLoadAndRender(historyMode = 'push') {
+    syncCalendarRecordsMonth(scalYear, scalMonth);
     // Show loading state
     const grid = document.getElementById('scalGrid');
     grid.setAttribute('aria-busy', 'true');
@@ -704,6 +709,12 @@ window.addEventListener('popstate', () => {
 /* ── Day click → Day Summary Modal ─────────────────────── */
 function scalDayClick(dateStr) {
     const evts = scalEventMap[dateStr] || [];
+    const recordsLink = document.getElementById('daySummaryRecordsLink');
+    const recordsUrl = new URL(@json(route('student.calendar')));
+    recordsUrl.search = new URLSearchParams({ year: scalYear, month: scalMonth, record_date: dateStr });
+    recordsUrl.hash = 'attendance-records';
+    recordsLink.href = recordsUrl.href;
+    recordsLink.classList.toggle('d-none', !evts.some(event => event.type === 'attendance'));
     const dateObj = new Date(dateStr + 'T00:00:00');
     document.getElementById('daySummaryTitle').textContent =
         dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -754,24 +765,24 @@ function scalDayClick(dateStr) {
                         <i class="bi ${iconCls}"></i>
                     </div>
                     <div class="subject-card-info">
-                        <div class="subject-card-title">${ev.subject_name || ev.title}</div>
-                        <div class="subject-card-time">${ev.time_string || 'Time not set'}</div>
-                        <div class="subject-card-teacher">${ev.instructor_name || 'No Instructor'}</div>
+                        <div class="subject-card-title">${recordText(ev.subject_name || ev.title)}</div>
+                        <div class="subject-card-time">${recordText(ev.time_string || 'Time not set')}</div>
+                        <div class="subject-card-teacher">${recordText(ev.instructor_name || 'No Instructor')}</div>
                     </div>
-                    <div class="subject-card-badge" style="background:${badge.bg};color:${badge.color};">${ev.status}</div>
+                    <div class="subject-card-badge" style="background:${badge.bg};color:${badge.color};">${recordText(ev.status)}</div>
                 </div>`);
             } else {
                 hasEvent = true;
-                const evColor = ev.color || '#8b5cf6';
+                const evColor = /^#[0-9a-f]{6}$/i.test(ev.color) ? ev.color : '#8b5cf6';
                 content.insertAdjacentHTML('beforeend', `
                 <div class="subject-card" style="border:1px dashed ${evColor}40;">
                     <div class="subject-card-icon" style="background:${evColor}20;color:${evColor};">
                         <i class="bi bi-calendar-event"></i>
                     </div>
                     <div class="subject-card-info">
-                        <div class="subject-card-title">${ev.title}</div>
-                        <div class="subject-card-time">${ev.time_string || 'All Day'}</div>
-                        <div class="subject-card-teacher" style="text-transform:capitalize;">${(ev.type||'').replace('_',' ')}</div>
+                        <div class="subject-card-title">${recordText(ev.title)}</div>
+                        <div class="subject-card-time">${recordText(ev.time_string || 'All Day')}</div>
+                        <div class="subject-card-teacher" style="text-transform:capitalize;">${recordText((ev.type || '').replace('_', ' '))}</div>
                     </div>
                 </div>`);
             }

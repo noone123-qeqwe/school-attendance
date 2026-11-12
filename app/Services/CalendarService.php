@@ -54,10 +54,8 @@ class CalendarService
         // If the user is a parent, also fetch and format attendance records for their children
         if ($user->isParent()) {
             $allChildIds = $user->children()->pluck('users.id');
-            // Filter to specific child if requested, otherwise show all
-            $childIds = $childId && $allChildIds->contains($childId)
-                ? collect([$childId])
-                : $allChildIds;
+            abort_if($childId !== null && !$allChildIds->contains($childId), 403);
+            $childIds = $childId === null ? $allChildIds : collect([$childId]);
             
             $attendanceQuery = Attendance::with(['subject.schedules', 'subject.instructorUser', 'user'])
                 ->whereIn('user_id', $childIds);
@@ -96,6 +94,9 @@ class CalendarService
         }
 
         return $events->unique(function ($item) {
+            if (($item['type'] ?? '') === 'attendance') {
+                return $item['id'];
+            }
             $datePart = isset($item['start']) ? substr((string)$item['start'], 0, 10) : '';
             $titlePart = strtolower(trim($item['title'] ?? ''));
             $typePart = $item['type'] ?? '';

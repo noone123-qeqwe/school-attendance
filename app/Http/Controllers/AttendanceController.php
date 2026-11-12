@@ -16,20 +16,11 @@ use App\Http\Controllers\Controller;
 
 class AttendanceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $user = Auth::user();
-
-        
-        // Get all records with subject schedules, instructor, excuse submission and correction relationships, newest first
-        $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission', 'correction'])
-            ->where('user_id', $user->id)
-            ->orderBy('date', 'desc')
-            ->orderBy('time_in', 'desc')
-            ->get();
-
-
-        return view('attendance.records', compact('records'));
+        return redirect()->to(route('student.calendar', $request->only([
+            'year', 'month', 'q', 'status', 'record_date', 'page', 'appeal',
+        ])).'#attendance-records');
     }
 
     /**

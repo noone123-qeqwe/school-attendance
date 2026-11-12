@@ -192,7 +192,7 @@ class ComprehensiveBugAuditTest extends TestCase
     {
         $response = $this->actingAs($this->student)
             ->get(route('mobile.attendance'));
-        $response->assertRedirect(route('student.attendance.calendar'));
+        $response->assertRedirect(route('student.calendar'));
 
         $scanResponse = $this->actingAs($this->student)
             ->get(route('mobile.scan'));
@@ -201,6 +201,6 @@ class ComprehensiveBugAuditTest extends TestCase
 
         $historyResponse = $this->actingAs($this->student)
             ->get(route('mobile.history'));
-        $historyResponse->assertOk();
+        $historyResponse->assertRedirect(route('student.calendar').'#attendance-records');
     }
 }

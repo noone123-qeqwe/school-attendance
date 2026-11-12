@@ -194,7 +194,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         ]);
 
         // Verify Student 1 can see record in attendance records endpoint
-        $recordsResponse = $this->actingAs($this->studentQr)->get(route('attendance.records'));
+        $recordsResponse = $this->actingAs($this->studentQr)->get(route('student.calendar'));
         $recordsResponse->assertOk();
         $recordsResponse->assertSee($this->subject->name);
         $recordsResponse->assertSee('Present');

@@ -11,7 +11,7 @@
             ['route' => 'home',              'icon' => 'house-fill',     'label' => 'Home',    'primary' => false, 'scan' => false],
             ['route' => 'student.classes',   'icon' => 'journal-bookmark-fill', 'label' => 'Classes', 'primary' => false, 'scan' => false],
             ['route' => 'mobile.scan',        'icon' => 'qr-code-scan',   'label' => 'Scan',    'primary' => true,  'scan' => true],
-            ['route' => 'attendance.records','icon' => 'clipboard-data-fill', 'label' => 'Records', 'primary' => false, 'scan' => false],
+            ['route' => 'student.calendar', 'icon' => 'calendar-event-fill', 'label' => 'Calendar', 'primary' => false, 'scan' => false],
             ['route' => 'profile',           'icon' => 'person-fill',    'label' => 'Profile', 'primary' => false, 'scan' => false],
         ];
     } elseif ($user->isTeacher()) {
@@ -48,7 +48,6 @@
             $activeAliases = $isStudent ? match($item['route']) {
                 'home' => ['home', 'mobile.home'],
                 'student.classes' => ['student.classes', 'student.schedule', 'classes.index'],
-                'attendance.records' => ['attendance.records', 'attendance.history', 'mobile.history'],
                 'profile' => ['profile', 'mobile.profile'],
                 default => [$item['route']],
             } : [$item['route']];
