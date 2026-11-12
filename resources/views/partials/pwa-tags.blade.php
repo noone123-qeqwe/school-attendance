@@ -2287,35 +2287,38 @@
         checkServerVersion(false);
     }
 
-    // Check visible tabs promptly so a release does not wait for the old five-minute interval.
+    // Check active tabs often enough that a release is not delayed by a long polling interval.
     // Focus, reconnect, and service-worker signals also trigger an immediate check.
     setInterval(() => {
         if (document.visibilityState === 'visible') {
             checkServerVersion(false);
         }
-    }, 60 * 1000);
+    }, 20 * 1000);
+
+    // Coalesce lifecycle signals into one immediate check when a user returns.
+    // Force bypasses the normal polling cooldown, which may have just elapsed in
+    // a backgrounded mobile tab while its interval timer was throttled.
+    let resumeVersionCheckTimer = null;
+    function checkVersionOnResume() {
+        if (document.visibilityState !== 'visible') return;
+        if (resumeVersionCheckTimer) clearTimeout(resumeVersionCheckTimer);
+        resumeVersionCheckTimer = setTimeout(() => {
+            resumeVersionCheckTimer = null;
+            checkServerVersion(true);
+        }, 250);
+    }
 
     // 4. Tab visibility change (e.g. user returns to the app from another tab/app)
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            checkServerVersion(false);
-        }
-    });
+    document.addEventListener('visibilitychange', checkVersionOnResume);
 
     // 5. Window focus
-    window.addEventListener('focus', () => {
-        checkServerVersion(false);
-    });
+    window.addEventListener('focus', checkVersionOnResume);
 
     // 6. Page show (e.g. navigation / mobile bfcache)
-    window.addEventListener('pageshow', () => {
-        checkServerVersion(false);
-    });
+    window.addEventListener('pageshow', checkVersionOnResume);
 
     // 7. Network reconnect
-    window.addEventListener('online', () => {
-        checkServerVersion(false);
-    });
+    window.addEventListener('online', checkVersionOnResume);
 
     // 8. Navigation state changes
     window.addEventListener('popstate', () => {

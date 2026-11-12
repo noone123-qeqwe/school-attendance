@@ -144,7 +144,7 @@ Route::get('/SmartAttendance.apk', function () {
     return redirect()->route('pwa.download.apk');
 });
 
-// Real-time PWA version checker with short-lived server-side caching.
+// Fast PWA version checks with a short cache to avoid stale release metadata.
 Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Services\ChangelogService $changelogService, \App\Services\VersionService $versionService) {
     $swPath = public_path('sw.js');
     $swMtime = file_exists($swPath) ? filemtime($swPath) : time();
@@ -188,7 +188,7 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
         ];
     };
 
-    $versionData = Cache::remember($cacheKey, 30, $resolver);
+    $versionData = Cache::remember($cacheKey, 5, $resolver);
 
     return response()->json($versionData, 200, [
         'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
