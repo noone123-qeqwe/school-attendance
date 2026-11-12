@@ -225,4 +225,14 @@ class StudentResponsiveAttendanceTest extends TestCase
         $attCalResponse = $this->actingAs($this->student)->get(route('student.attendance.calendar'));
         $attCalResponse->assertRedirect(route('student.calendar'));
     }
+
+    public function test_calendar_initial_html_contains_all_dates_without_waiting_for_attendance(): void
+    {
+        $response = $this->actingAs($this->student)->get(route('student.calendar', ['year' => 2028, 'month' => 2]))->assertOk();
+        $document = new \DOMDocument();
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(29, $xpath->query('//*[@id="scalGrid"]/button[@data-date]')->length);
+        $this->assertSame('29', trim($xpath->query('//*[@id="scalGrid"]/button[@data-date="2028-02-29"]/span[@class="scal-num"]')->item(0)?->textContent ?? ''));
+    }
 }

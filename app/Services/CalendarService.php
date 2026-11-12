@@ -29,7 +29,7 @@ class CalendarService
             $eventQuery->where('date', '<=', Carbon::parse($end)->toDateString());
         }
 
-        $fetchedEvents = $eventQuery->with('attendees')->get();
+        $fetchedEvents = $eventQuery->get();
 
         $events = $fetchedEvents->map(function ($event) use ($user) {
             return $this->formatEvent($event, $user);
@@ -186,7 +186,7 @@ class CalendarService
             $timeString = "{$start} - {$end}";
         }
         
-        $studentName = $attendance->user->name ?? null;
+        $studentName = $currentUser->isStudent() ? $currentUser->name : $attendance->user?->name;
 
         if ($currentUser->isParent()) {
             $childName = $studentName ?? 'Child';

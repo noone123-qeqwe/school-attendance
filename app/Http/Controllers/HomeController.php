@@ -1186,7 +1186,7 @@ class HomeController extends Controller
                 $request->query('start'),
                 $request->query('end')
             )
-        );
+        )->header('Cache-Control', 'private, no-store');
     }
 
     /**

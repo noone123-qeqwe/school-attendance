@@ -138,6 +138,7 @@
 .scal-tile.sunday .scal-num { color: #f87171; }
 
 /* Status dot indicator */
+.scal-dots-row { display: flex; min-height: 5px; }
 .scal-dot {
     width: 5px;
     height: 5px;
@@ -193,14 +194,6 @@
 }
 .scal-tile.status-exam .scal-dot { background: #ec4899; }
 
-/* Loading pulse */
-.scal-tile.loading {
-    animation: scal-pulse 1.4s ease-in-out infinite;
-}
-@keyframes scal-pulse {
-    0%, 100% { opacity: 0.4; }
-    50%       { opacity: 0.8; }
-}
 
 /* Side panel */
 .scal-side {
@@ -381,7 +374,7 @@
             <button class="scal-nav-btn" onclick="scalPrevMonth()" title="Previous month" aria-label="Previous month">
                 <i class="bi bi-chevron-left"></i>
             </button>
-            <span class="scal-nav-title" id="scalMonthLabel" aria-live="polite">{{ \Carbon\Carbon::create($year, $month)->format('F Y') }}</span>
+            <span class="scal-nav-title" id="scalMonthLabel" aria-live="polite">{{ \Carbon\Carbon::create($year, $month, 1)->format('F Y') }}</span>
             <button class="scal-nav-btn" onclick="scalNextMonth()" title="Next month" aria-label="Next month">
                 <i class="bi bi-chevron-right"></i>
             </button>
@@ -394,10 +387,7 @@
             @endforeach
         </div>
 
-        {{-- Day grid (rendered by JS) --}}
-        <p id="scalLoadStatus" role="status" hidden></p>
-        <button type="button" class="ent-btn ent-btn-secondary" id="scalRetryButton" onclick="scalLoadAndRender('none')" hidden>Retry loading calendar</button>
-        <div class="scal-grid" id="scalGrid" aria-label="School calendar days"></div>
+        @include('partials.calendar-month-grid')
     </div>
 
     {{-- SIDE PANEL --}}
@@ -503,9 +493,6 @@
                     <!-- dynamically populated -->
                 </div>
                 <a id="daySummaryRecordsLink" class="ent-btn ent-btn-ghost mt-3 d-none" onclick="closeDaySummaryModal()">View records for this day</a>
-                <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:18px;">
-                    <i class="bi bi-info-circle"></i> All subjects for this day are shown above.
-                </div>
             </div>
         </div>
     </div>
@@ -519,7 +506,8 @@ let scalYear  = {{ $year }};
 let scalMonth = {{ $month }};
 
 // Raw events from API: date string → array of event objects
-const scalEventMap = {};
+let scalEventMap = {};
+let scalDataState = 'loading';
 
 const MONTH_NAMES = ['January','February','March','April','May','June',
                      'July','August','September','October','November','December'];
@@ -536,47 +524,6 @@ const STATUS_CLASS = {
     holiday : 'status-holiday',
     exam    : 'status-exam',
 };
-
-/* ── Fetch events for a month range ─────────────────────── */
-let scalRequestId = 0;
-let scalRequestController;
-async function scalFetchEvents(year, month, cb) {
-    const requestId = ++scalRequestId;
-    scalRequestController?.abort();
-    const controller = new AbortController();
-    scalRequestController = controller;
-    const timeout = setTimeout(() => controller.abort(), 12000);
-    const start = `${year}-${String(month).padStart(2,'0')}-01`;
-    const lastDay = new Date(year, month, 0).getDate();
-    const end   = `${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
-    try {
-            const response = await fetch(`{{ route('student.calendar.data') }}?start=${start}&end=${end}`, { signal: controller.signal, headers: { Accept: 'application/json' } });
-            if (!response.ok) throw new Error('Calendar request failed');
-            const data = await response.json();
-            if (!Array.isArray(data)) throw new Error('Invalid calendar response');
-            if (requestId !== scalRequestId) return;
-            // Clear previous month data
-            Object.keys(scalEventMap).forEach(k => delete scalEventMap[k]);
-            data.forEach(ev => {
-                // ev.start may be "2026-08-20" or "2026-08-20T..."
-                const dateStr = ev.start ? ev.start.split('T')[0] : null;
-                if (!dateStr) return;
-                if (!scalEventMap[dateStr]) scalEventMap[dateStr] = [];
-                scalEventMap[dateStr].push(ev);
-            });
-            cb();
-    } catch (error) {
-        if (requestId !== scalRequestId) return;
-        document.getElementById('scalGrid').replaceChildren();
-        const status = document.getElementById('scalLoadStatus');
-        status.textContent = 'The calendar could not load. Check your connection and try again.';
-        status.hidden = false;
-        document.getElementById('scalRetryButton').hidden = false;
-    } finally {
-        clearTimeout(timeout);
-        if (requestId === scalRequestId) document.getElementById('scalGrid').setAttribute('aria-busy', 'false');
-    }
-}
 
 /* ── Derive dominant status for a day ───────────────────── */
 function scalDominantStatus(dateStr) {
@@ -604,64 +551,23 @@ function scalDominantStatus(dateStr) {
     return null;
 }
 
-/* ── Build & render the grid ────────────────────────────── */
 function scalRender() {
-    document.getElementById('scalMonthLabel').textContent =
-        `${MONTH_NAMES[scalMonth-1]} ${scalYear}`;
+    const monthName = MONTH_NAMES[scalMonth - 1];
+    document.getElementById('scalMonthLabel').textContent = monthName + ' ' + scalYear;
+    renderCalendarDates(scalYear, scalMonth, monthName);
 
-    const grid   = document.getElementById('scalGrid');
-    const today  = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-
-    const firstDay = new Date(scalYear, scalMonth - 1, 1).getDay(); // 0=Sun
-    const daysInMonth = new Date(scalYear, scalMonth, 0).getDate();
-
-    let html = '';
-
-    // Empty tiles before first day
-    for (let i = 0; i < firstDay; i++) {
-        html += '<div class="scal-tile empty"></div>';
+    for (const tile of calendarGrid.querySelectorAll('button[data-date]')) {
+        const status = scalDominantStatus(tile.dataset.date);
+        tile.classList.remove(...Object.values(STATUS_CLASS));
+        const dots = tile.querySelector('.scal-dots-row');
+        dots.replaceChildren();
+        if (status) {
+            tile.classList.add(STATUS_CLASS[status]);
+            const dot = document.createElement('span');
+            dot.className = 'scal-dot';
+            dots.append(dot);
+        }
     }
-
-    // Day tiles
-    for (let d = 1; d <= daysInMonth; d++) {
-        const dateStr = `${scalYear}-${String(scalMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const dow     = new Date(scalYear, scalMonth - 1, d).getDay();
-        const isSun   = dow === 0;
-        const isToday = dateStr === todayStr;
-        const status  = scalDominantStatus(dateStr);
-
-        let classes = 'scal-tile';
-        if (isSun)   classes += ' sunday';
-        if (isToday) classes += ' today';
-        if (status)  classes += ' ' + STATUS_CLASS[status];
-
-        const dotColor = status ? '' : 'transparent';
-        const dotStyle = status ? '' : 'opacity:0;';
-
-        html += `
-        <div class="${classes}" data-date="${dateStr}" role="button" tabindex="0" aria-label="${MONTH_NAMES[scalMonth - 1]} ${d}, ${scalYear}${status ? ', ' + status : ''}">
-            <span class="scal-num">${d}</span>
-            <span class="scal-dot" style="${dotStyle}"></span>
-        </div>`;
-    }
-
-    grid.innerHTML = html;
-
-    // Direct event listeners for mobile touch reliability
-    grid.querySelectorAll('.scal-tile:not(.empty)').forEach(tile => {
-        tile.addEventListener('click', function(e) {
-            const ds = this.getAttribute('data-date');
-            if (ds) scalDayClick(ds);
-        });
-        tile.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                const ds = this.getAttribute('data-date');
-                if (ds) scalDayClick(ds);
-            }
-        });
-    });
 }
 
 /* ── Navigate ───────────────────────────────────────────── */
@@ -678,15 +584,13 @@ function scalNextMonth() {
 
 function scalLoadAndRender(historyMode = 'push') {
     syncCalendarRecordsMonth(scalYear, scalMonth);
-    // Show loading state
-    const grid = document.getElementById('scalGrid');
-    grid.setAttribute('aria-busy', 'true');
-    document.getElementById('scalLoadStatus').hidden = true;
-    document.getElementById('scalRetryButton').hidden = true;
-    document.getElementById('scalMonthLabel').textContent = MONTH_NAMES[scalMonth - 1] + ' ' + scalYear;
-    grid.innerHTML = Array(35).fill('<div class="scal-tile loading"></div>').join('');
-
-    scalFetchEvents(scalYear, scalMonth, () => scalRender());
+    loadCalendarMonth(@js(route('student.calendar.data', absolute: false)), scalYear, scalMonth, (state, events) => {
+        scalDataState = state;
+        scalEventMap = events;
+        scalRender();
+        const selectedDate = document.getElementById('daySummaryModal').dataset.date;
+        if (selectedDate?.slice(0, 7) === calendarGrid.dataset.month) scalRenderDay(selectedDate);
+    });
 
     // Update URL
     const url = new URL(window.location);
@@ -707,14 +611,14 @@ window.addEventListener('popstate', () => {
 });
 
 /* ── Day click → Day Summary Modal ─────────────────────── */
-function scalDayClick(dateStr) {
+function scalRenderDay(dateStr) {
     const evts = scalEventMap[dateStr] || [];
     const recordsLink = document.getElementById('daySummaryRecordsLink');
     const recordsUrl = new URL(@json(route('student.calendar')));
     recordsUrl.search = new URLSearchParams({ year: scalYear, month: scalMonth, record_date: dateStr });
     recordsUrl.hash = 'attendance-records';
     recordsLink.href = recordsUrl.href;
-    recordsLink.classList.toggle('d-none', !evts.some(event => event.type === 'attendance'));
+    recordsLink.classList.toggle('d-none', scalDataState === 'ready' && !evts.some(event => event.type === 'attendance'));
     const dateObj = new Date(dateStr + 'T00:00:00');
     document.getElementById('daySummaryTitle').textContent =
         dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -724,10 +628,18 @@ function scalDayClick(dateStr) {
 
     let hasAbsent = false, hasPresent = false, hasLate = false, hasEvent = false;
 
-    if (evts.length === 0) {
+    if (scalDataState !== 'ready' || evts.length === 0) {
         document.getElementById('daySummarySubtitle').style.display = 'none';
         document.getElementById('daySummarySectionTitle').style.display = 'none';
-        content.innerHTML = '<div style="text-align:center;color:#a0948a;font-size:0.95rem;padding:28px 0;">No activities recorded for this day.</div>';
+        const message = scalDataState === 'loading'
+            ? 'Loading attendance and events for this date…'
+            : scalDataState === 'error'
+                ? 'Attendance and events couldn’t load. Close this window to retry the month.'
+                : 'No activities recorded for this day.';
+        const notice = document.createElement('p');
+        notice.className = 'text-center my-3';
+        notice.textContent = message;
+        content.append(notice);
     } else {
         document.getElementById('daySummarySectionTitle').style.display = 'block';
 
@@ -798,9 +710,13 @@ function scalDayClick(dateStr) {
         else if (hasEvent)   { dot.style.background = '#8b5cf6'; txt.textContent = 'School Event'; }
         else                 { dot.style.background = '#6b7280'; txt.textContent = 'No Status'; }
     }
+}
 
+function scalDayClick(dateStr) {
+    scalRenderDay(dateStr);
     const modalEl = document.getElementById('daySummaryModal');
     if (modalEl) {
+        modalEl.dataset.date = dateStr;
         if (modalEl.parentNode !== document.body) {
             document.body.appendChild(modalEl);
         }
@@ -828,6 +744,7 @@ function scalDayClick(dateStr) {
 function closeDaySummaryModal() {
     const m = document.getElementById('daySummaryModal');
     if (m) {
+        delete m.dataset.date;
         try { bootstrap.Modal.getOrCreateInstance(m).hide(); } catch (e) {}
         m.classList.remove('show');
         m.style.display = 'none';
@@ -844,7 +761,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const edm = document.getElementById('eventDetailModal');
     if (edm && edm.parentNode !== document.body) document.body.appendChild(edm);
     const dsm = document.getElementById('daySummaryModal');
-    if (dsm && dsm.parentNode !== document.body) document.body.appendChild(dsm);
+    if (dsm) {
+        if (dsm.parentNode !== document.body) document.body.appendChild(dsm);
+        dsm.addEventListener('hidden.bs.modal', () => delete dsm.dataset.date);
+    }
     scalLoadAndRender('replace');
 
     // Touch swipe for mobile
