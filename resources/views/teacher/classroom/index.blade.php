@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('portal-title', 'My Classes')
-@section('page-title', 'My Classes')
+@section('portal-title', request('task') === 'attendance' ? 'Take Attendance' : 'My Classes')
+@section('page-title', request('task') === 'attendance' ? 'Take Attendance' : 'My Classes')
 
 @push('styles')
 <style>
@@ -140,11 +140,12 @@
 @endpush
 
 @section('content')
+@php $attendanceMode = request('task') === 'attendance'; @endphp
 <div class="teacher-classes-wrapper">
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4 teacher-page-heading">
     <div>
-        <h2 style="color: #f3e7cd; font-weight: 800; font-size: 1.8rem; margin: 0;">My Classes</h2>
-        <p style="color: #b39b82; font-size: 0.95rem; margin-top: 4px;">Select a class to manage students and attendance.</p>
+        <h1 style="color: #f3e7cd; font-weight: 800; font-size: 1.8rem; margin: 0;">{{ $attendanceMode ? 'Take attendance' : 'My Classes' }}</h1>
+        <p style="color: #b39b82; font-size: 0.95rem; margin-top: 4px;">{{ $attendanceMode ? 'Choose a class, then open its QR attendance screen.' : 'Open a class to manage its students, schedule, and materials.' }}</p>
     </div>
     <div>
         <a href="{{ route('teacher.subjects.create') }}" class="btn-action btn-primary-action" style="background: rgba(207,164,111,0.15); border: 1px solid rgba(207,164,111,0.3); color: #f3e7cd; padding: 10px 20px; border-radius: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
@@ -153,11 +154,21 @@
     </div>
 </div>
 
+<form method="GET" action="{{ route('teacher.classroom.index') }}" class="teacher-class-search" role="search" aria-label="Find one of my classes">
+    @if($attendanceMode)<input type="hidden" name="task" value="attendance">@endif
+    <div>
+        <label for="teacherClassSearch">Find a class</label>
+        <input type="search" id="teacherClassSearch" name="search" value="{{ request('search') }}" placeholder="Class name or subject code" class="tch-input" autocomplete="off">
+    </div>
+    <button type="submit" class="ent-btn ent-btn-primary"><i class="bi bi-search" aria-hidden="true"></i>Search</button>
+    @if(request()->filled('search'))<a href="{{ route('teacher.classroom.index', $attendanceMode ? ['task' => 'attendance'] : []) }}" class="ent-btn ent-btn-secondary">Clear search</a>@endif
+</form>
+
 @if($subjects->isEmpty())
     <div class="empty-state" style="text-align: center; padding: 60px 20px; background: rgba(30,20,15,0.4); border-radius: 24px; border: 1px dashed rgba(207,164,111,0.2);">
         <i class="bi bi-journal-x" style="font-size: 3rem; color: #8f6e4a; margin-bottom: 16px;"></i>
-        <h3 style="color: #f3e7cd; font-weight: 700;">No Classes Assigned</h3>
-        <p style="color: #b39b82;">You haven't been assigned as an instructor for any classes yet.</p>
+        <h3 style="color: #f3e7cd; font-weight: 700;">{{ request()->filled('search') ? 'No classes match your search' : 'No Classes Assigned' }}</h3>
+        <p style="color: #b39b82;">{{ request()->filled('search') ? 'Try another class name or subject code, or clear the search to see all your classes.' : 'Your assigned classes will appear here. Contact your school administrator if a class is missing.' }}</p>
     </div>
 @else
     <div class="class-grid">
@@ -214,9 +225,10 @@
                 </div>
                 
                 <div class="class-card-footer">
-                    <a href="{{ route('teacher.classroom.show', $subject->code) }}" class="btn-manage-class">
-                        Manage Class <i class="bi bi-arrow-right-short fs-5"></i>
+                    <a href="{{ $attendanceMode ? route('teacher.qr', $subject->code) : route('teacher.classroom.show', $subject->code) }}" class="btn-manage-class" aria-label="{{ $attendanceMode ? 'Take attendance for ' : 'Open class ' }}{{ $subject->name }}">
+                        {{ $attendanceMode ? 'Open QR attendance' : 'Open class' }} <i class="bi bi-arrow-right-short fs-5" aria-hidden="true"></i>
                     </a>
+                    <a href="{{ $attendanceMode ? route('teacher.classroom.show', $subject->code) : route('teacher.qr', $subject->code) }}" class="teacher-class-secondary" aria-label="{{ $attendanceMode ? 'Open class ' : 'Take attendance for ' }}{{ $subject->name }}">{{ $attendanceMode ? 'View class details' : 'Take attendance' }}</a>
                 </div>
             </div>
         @endforeach

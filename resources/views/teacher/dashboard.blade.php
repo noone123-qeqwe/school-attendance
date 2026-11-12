@@ -157,17 +157,45 @@
                 </div>
                 <div class="hero-clock-date">{{ now()->format('l, F j, Y') }}</div>
             </div>
-            <div class="d-flex gap-2 justify-content-end mt-1">
-                <a href="{{ route('teacher.reports.pdf') }}" target="_blank" class="btn-modern-glass" style="padding: 8px 16px; font-size: 0.84rem;">
-                    <i class="bi bi-file-earmark-arrow-down-fill" style="color: var(--gold);"></i> Export
+            <div class="d-flex gap-2 justify-content-end mt-1 teacher-dashboard-hero-actions">
+                <a href="{{ route('teacher.reports.pdf') }}" target="_blank" rel="noopener" class="btn-modern-glass" style="padding: 8px 16px; font-size: 0.84rem;">
+                    <i class="bi bi-file-earmark-arrow-down-fill" style="color: var(--gold);"></i> Download report
                 </a>
                 <a href="{{ route('teacher.excuse.reviews') }}" class="btn-modern-gold" style="padding: 8px 16px; font-size: 0.84rem;">
-                    <i class="bi bi-file-earmark-text"></i> Reviews
+                    <i class="bi bi-file-earmark-text"></i> Review excuses
                 </a>
             </div>
         </div>
     </div>
 </div>
+
+<nav class="teacher-quick-tasks" aria-label="Daily teacher tasks">
+    <a href="{{ route('teacher.classroom.index', ['task' => 'attendance']) }}" class="teacher-task-link teacher-task-primary"><i class="bi bi-qr-code-scan" aria-hidden="true"></i><span><strong>Take attendance</strong><small>Choose a class and open its QR</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    <a href="{{ route('teacher.classroom.index') }}" class="teacher-task-link"><i class="bi bi-journal-bookmark" aria-hidden="true"></i><span><strong>My classes</strong><small>Students, schedules, and materials</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    <a href="{{ route('teacher.attendance') }}" class="teacher-task-link"><i class="bi bi-clipboard-check" aria-hidden="true"></i><span><strong>Attendance records</strong><small>Search and check recorded attendance</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    <a href="{{ route('teacher.excuse.reviews') }}" class="teacher-task-link"><i class="bi bi-file-earmark-text" aria-hidden="true"></i><span><strong>Review excuses</strong><small>Read student letters and respond</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+</nav>
+
+<section class="teacher-today-section" aria-label="Today's classes">
+    <x-card title="Today's Classes" icon="bi bi-easel-fill">
+        <div class="teacher-today-grid">
+            @forelse($todayClasses as $class)
+                <div class="teacher-today-class">
+                    <a href="{{ route('teacher.qr', $class->code) }}" class="teacher-today-attendance">
+                        <span><strong>{{ $class->name }}</strong><small>{{ $class->code }}</small></span>
+                        <span>Take attendance <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+                    </a>
+                    <a href="{{ route('teacher.attendance', ['subject' => $class->code, 'date' => now()->toDateString()]) }}" class="teacher-today-records">View today's records</a>
+                </div>
+            @empty
+                <div class="teacher-today-empty">
+                    <p>No classes scheduled today. You can still open your assigned classes and view their schedules.</p>
+                    <a href="{{ route('teacher.classroom.index') }}" class="ent-btn ent-btn-secondary">View my classes <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                </div>
+            @endforelse
+        </div>
+    </x-card>
+</section>
 
 <!-- Quick Stats -->
 <div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:grid; gap:20px; margin-bottom:24px;">
@@ -186,13 +214,13 @@
         
         <!-- School Calendar -->
         <div class="mb-4">
-            <x-card title="School Calendar" icon="bi bi-calendar3">
+            <x-card title="School Calendar" class="teacher-dashboard-calendar" icon="bi bi-calendar3">
                 <x-slot name="headerActions">
                     <div class="d-flex align-items-center gap-2">
-                        <button type="button" onclick="schoolCalendar.prev(); updateCalendarTitle();" class="btn btn-outline btn-sm" style="color: var(--ent-text); border-color: var(--ent-border);">
+                        <button type="button" onclick="schoolCalendar.prev(); updateCalendarTitle();" aria-label="Previous calendar period" class="btn btn-outline btn-sm" style="color: var(--ent-text); border-color: var(--ent-border);">
                             <i class="bi bi-chevron-left"></i>
                         </button>
-                        <button type="button" onclick="schoolCalendar.next(); updateCalendarTitle();" class="btn btn-outline btn-sm" style="color: var(--ent-text); border-color: var(--ent-border);">
+                        <button type="button" onclick="schoolCalendar.next(); updateCalendarTitle();" aria-label="Next calendar period" class="btn btn-outline btn-sm" style="color: var(--ent-text); border-color: var(--ent-border);">
                             <i class="bi bi-chevron-right"></i>
                         </button>
                         <button type="button" onclick="schoolCalendar.today(); updateCalendarTitle();" class="btn btn-outline btn-sm" style="color: var(--ent-text); border-color: var(--ent-border);">
@@ -219,9 +247,9 @@
 
         <!-- Recent Logs -->
         <div class="mb-4">
-            <x-card title="Recent Logs" icon="bi bi-clock-history">
+            <x-card title="Recent Attendance" icon="bi bi-clock-history">
                 <div class="mb-3">
-                    <input type="text" id="recentLogsSearch" placeholder="Search logs..." 
+                    <input type="text" id="recentLogsSearch" placeholder="Search student or class..." aria-label="Search recent attendance"
                         style="background:rgba(255,255,255,0.04);border:1px solid var(--ent-border);border-radius:8px;color:var(--ent-text);padding:8px 12px;font-size:0.85rem;width:100%;outline:none;font-family:'Inter',sans-serif;" 
                         onkeyup="filterRecentLogs()">
                 </div>
@@ -263,41 +291,6 @@
     <!-- Right Column -->
     <div class="col-lg-4">
         
-        <!-- Quick Switch -->
-        @if($todayClasses->count() > 0)
-        <div class="mb-4">
-            <x-card title="Today's Classes" icon="bi bi-easel-fill">
-                <div class="d-flex flex-column gap-2">
-                    @foreach($todayClasses as $class)
-                        @php
-                            $isCompleted = $class->has_attendance_today ?? false;
-                            $btnBg = $isCompleted ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.03)';
-                            $btnBorder = $isCompleted ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.06)';
-                            $icon = $isCompleted ? 'bi-check-circle-fill' : 'bi-play-circle-fill';
-                            $iconColor = $isCompleted ? '#4ade80' : '#cfa46f';
-                        @endphp
-                        <a href="{{ route('teacher.attendance', $class->id) }}" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: {{ $btnBg }}; border: 1px solid {{ $btnBorder }}; border-radius: 12px; color: var(--ent-text); text-decoration: none; transition: all 0.2s;" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='none'">
-                            <div class="d-flex align-items-center gap-3">
-                                <i class="bi {{ $icon }}" style="color: {{ $iconColor }};"></i>
-                                <span style="font-weight: 600;">{{ $class->name }}</span>
-                            </div>
-                            <i class="bi bi-chevron-right" style="font-size: 0.8rem; opacity: 0.5;"></i>
-                        </a>
-                    @endforeach
-                </div>
-            </x-card>
-        </div>
-        @else
-        <div class="mb-4">
-            <x-card title="Today's Classes" icon="bi bi-easel-fill">
-                <div class="empty-state text-center" style="padding: 20px;">
-                    <i class="bi bi-cup-hot" style="font-size: 2rem; color: #b39b82; opacity: 0.5;"></i>
-                    <p style="color: #b39b82; font-size: 0.9rem; margin-top: 10px; font-weight: 600;">No classes scheduled today</p>
-                </div>
-            </x-card>
-        </div>
-        @endif
-
         <!-- At-Risk Students -->
         @if(isset($atRiskStudents) && $atRiskStudents->count() > 0)
         <div class="mb-4">
@@ -331,8 +324,8 @@
                 <form action="{{ route('teacher.announcements.store') }}" method="POST">
                     @csrf
                     <div class="mb-3">
-                        <label class="form-label" style="font-weight: 600; color: #b39b82;">Target Class *</label>
-                        <select name="target_id" class="form-select" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
+                        <label class="form-label" for="teacherAnnouncementClass" style="font-weight: 600; color: #b39b82;">Class *</label>
+                        <select id="teacherAnnouncementClass" name="target_id" class="form-select" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
                             <option value="">Select a class...</option>
                             @foreach($teacherSubjects as $sub)
                                 <option value="{{ $sub->id }}" style="color: #000;">{{ $sub->name }} ({{ $sub->code }})</option>
@@ -340,16 +333,16 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" style="font-weight: 600; color: #b39b82;">Title *</label>
-                        <input type="text" name="title" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
+                        <label class="form-label" for="teacherAnnouncementTitle" style="font-weight: 600; color: #b39b82;">Title *</label>
+                        <input id="teacherAnnouncementTitle" type="text" name="title" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" style="font-weight: 600; color: #b39b82;">Message *</label>
-                        <textarea name="content" class="form-control" rows="3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required></textarea>
+                        <label class="form-label" for="teacherAnnouncementMessage" style="font-weight: 600; color: #b39b82;">Message *</label>
+                        <textarea id="teacherAnnouncementMessage" name="content" class="form-control" rows="3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required></textarea>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label" style="font-weight: 600; color: #b39b82;">Schedule For (Optional)</label>
-                        <input type="datetime-local" name="scheduled_for" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                        <label class="form-label" for="teacherAnnouncementSchedule" style="font-weight: 600; color: #b39b82;">Publish later (optional)</label>
+                        <input id="teacherAnnouncementSchedule" type="datetime-local" name="scheduled_for" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
                     </div>
                     <button type="submit" class="btn btn-primary w-100" style="background: var(--gold); border: none; font-weight: 600; color: #fff;">
                         <i class="bi bi-send-fill"></i> Post Announcement
@@ -565,7 +558,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!calendarEl || typeof FullCalendar === 'undefined') return;
     
     schoolCalendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
+        initialView: window.matchMedia('(max-width: 767.98px)').matches ? 'listWeek' : 'dayGridMonth',
         headerToolbar: false,
         height: 'auto',
         firstDay: 0,

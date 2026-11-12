@@ -14,7 +14,7 @@
         @php
             $attendanceFilterQuery = request()->only(['date','status','subject','student_name']);
         @endphp
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 teacher-page-actions">
             <a href="{{ route('teacher.attendance.preview', $attendanceFilterQuery) }}" class="btn btn-outline">
                 <i class="bi bi-eye-fill"></i> Preview PDF
             </a>
@@ -28,18 +28,18 @@
     </x-slot>
 
     <!-- Filters -->
-    <form method="GET" action="{{ route('teacher.attendance') }}" class="d-flex gap-3 flex-wrap mb-4 align-items-end">
+    <form method="GET" action="{{ route('teacher.attendance') }}" class="d-flex gap-3 flex-wrap mb-4 align-items-end teacher-filter-bar">
         <div class="ds-form-group mb-0" style="flex: 1; min-width: 200px;">
-            <label class="ds-label">Date</label>
-            <input type="date" name="date" class="ds-input" value="{{ request('date') }}">
+            <label class="ds-label" for="teacherAttendanceDate">Date</label>
+            <input type="date" id="teacherAttendanceDate" name="date" class="ds-input" value="{{ request('date') }}">
         </div>
         <div class="ds-form-group mb-0" style="flex: 1; min-width: 200px;">
-            <label class="ds-label">Student Name</label>
-            <input type="text" name="student_name" class="ds-input" placeholder="Name or ID" value="{{ request('student_name') }}">
+            <label class="ds-label" for="teacherAttendanceStudent">Student name or ID</label>
+            <input type="search" id="teacherAttendanceStudent" name="student_name" class="ds-input" placeholder="Name or ID" value="{{ request('student_name') }}">
         </div>
         <div class="ds-form-group mb-0" style="flex: 1; min-width: 200px;">
-            <label class="ds-label">Status</label>
-            <select name="status" class="ds-select">
+            <label class="ds-label" for="teacherAttendanceStatus">Status</label>
+            <select name="status" id="teacherAttendanceStatus" class="ds-select">
                 <option value="">All</option>
                 <option value="Present" {{ request('status')=='Present'?'selected':'' }}>Present</option>
                 <option value="Late"    {{ request('status')=='Late'?'selected':'' }}>Late</option>
@@ -48,8 +48,8 @@
             </select>
         </div>
         <div class="ds-form-group mb-0" style="flex: 1; min-width: 200px;">
-            <label class="ds-label">Subject</label>
-            <select name="subject" class="ds-select">
+            <label class="ds-label" for="teacherAttendanceSubject">Subject</label>
+            <select name="subject" id="teacherAttendanceSubject" class="ds-select">
                 <option value="">All Subjects</option>
                 @foreach($teacherSubjects as $subject)
                     <option value="{{ $subject->code }}" {{ request('subject') == $subject->code ? 'selected' : '' }}>

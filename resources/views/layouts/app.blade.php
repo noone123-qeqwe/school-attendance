@@ -47,6 +47,7 @@
     @endif
     @if(Auth::check() && Auth::user()->isTeacher() && !request()->routeIs('teacher.*.pdf', 'teacher.*.preview'))
         <link rel="stylesheet" href="{{ asset('css/teacher-portal-redesign.css') }}?v={{ filemtime(public_path('css/teacher-portal-redesign.css')) }}">
+        <link rel="stylesheet" href="{{ asset('css/teacher-simple.css') }}?v={{ filemtime(public_path('css/teacher-simple.css')) }}">
     @endif
     @if(Auth::user()?->isAdmin() && !request()->routeIs('admin.*.pdf'))
         <link rel="stylesheet" href="{{ asset('css/admin-portal-redesign.css') }}?v={{ filemtime(public_path('css/admin-portal-redesign.css')) }}">
@@ -858,7 +859,7 @@
         <div class="more-sheet d-md-none {{ Auth::user()->isAdmin() ? 'admin-navigation-sheet' : '' }}" id="moreSheet" role="dialog" aria-modal="true" aria-labelledby="moreSheetTitle" aria-hidden="true" inert>
             <div class="more-sheet-handle"></div>
             <div class="more-sheet-header">
-                <span class="more-sheet-title" id="moreSheetTitle">{{ Auth::user()->isAdmin() ? 'All admin pages' : (Auth::user()->isParent() ? 'Parent pages' : 'More') }}</span>
+                <span class="more-sheet-title" id="moreSheetTitle">{{ Auth::user()->isAdmin() ? 'All admin pages' : (Auth::user()->isParent() ? 'Parent pages' : (Auth::user()->isTeacher() ? 'Teacher pages' : 'More')) }}</span>
                 <button type="button" class="more-sheet-close" id="moreSheetCloseBtn" onclick="closeMoreSheet()" aria-label="Close More Menu">
                     <i class="bi bi-x-lg" style="pointer-events:none;"></i>
                 </button>
@@ -867,52 +868,7 @@
                 @if(Auth::user()->isAdmin())
                     @include('partials.admin-workspace-navigation', ['navigationId' => 'adminMobile'])
                 @elseif(Auth::user()->isTeacher())
-                    <a href="{{ route('teacher.subjects') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon" style="background: rgba(207,164,111,0.18); color: #ffd700; border-color: rgba(207,164,111,0.4);">
-                            <i class="bi bi-qr-code-scan"></i>
-                        </div>
-                        <span class="more-sheet-item-label" style="color: #f3e7cd; font-weight: 700;">QR Session</span>
-                    </a>
-                    <a href="{{ route('teacher.notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
-                        <span class="more-sheet-item-label">Notifications</span>
-                    </a>
-                    <a href="{{ route('teacher.classroom.index') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-journal-album"></i></div>
-                        <span class="more-sheet-item-label">Classes</span>
-                    </a>
-                    <a href="{{ route('teacher.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-calendar-event"></i></div>
-                        <span class="more-sheet-item-label">Calendar</span>
-                    </a>
-                    <a href="{{ route('teacher.absent') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-person-x-fill"></i></div>
-                        <span class="more-sheet-item-label">Absent</span>
-                    </a>
-                    <a href="{{ route('teacher.excuse.reviews') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-file-text-fill"></i></div>
-                        <span class="more-sheet-item-label">Excuses</span>
-                    </a>
-                    <a href="{{ route('teacher.reports') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-graph-up-arrow"></i></div>
-                        <span class="more-sheet-item-label">Reports</span>
-                    </a>
-                    <a href="{{ route('teacher.students') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-people-fill"></i></div>
-                        <span class="more-sheet-item-label">Students</span>
-                    </a>
-                    <a href="{{ route('teacher.attendance') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-clipboard-check-fill"></i></div>
-                        <span class="more-sheet-item-label">Attendance</span>
-                    </a>
-                    <a href="{{ route('teacher.corrections') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-pencil-square"></i></div>
-                        <span class="more-sheet-item-label">Corrections</span>
-                    </a>
-                    <a href="{{ route('teacher.profile') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-person-circle"></i></div>
-                        <span class="more-sheet-item-label">Profile</span>
-                    </a>
+                    @include('partials.teacher-navigation', ['mobile' => true])
                 @elseif(Auth::user()->isParent())
                     @include('partials.parent-navigation', ['mobile' => true])
                 @else

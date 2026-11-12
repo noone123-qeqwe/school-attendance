@@ -105,46 +105,46 @@
     ];
 @endphp
 
-<div style="display:flex; gap:8px; margin-bottom:20px; overflow-x:auto; padding-bottom:6px;">
+<nav class="teacher-report-navigation" aria-label="Attendance report type">
     @foreach($teacherReportTabs as $key => $meta)
     <a href="{{ route('teacher.reports', array_merge(request()->except(['page']), ['type' => $key])) }}"
-       class="saas-btn {{ $type === $key ? 'saas-btn-primary' : 'saas-btn-secondary' }}" 
+       class="saas-btn {{ $type === $key ? 'saas-btn-primary' : 'saas-btn-secondary' }}" @if($type === $key) aria-current="page" @endif
        style="padding:8px 14px; font-size:0.85rem; white-space:nowrap; text-decoration:none;">
         <i class="bi bi-{{ $meta['icon'] }} me-1"></i> {{ $meta['label'] }}
     </a>
     @endforeach
-</div>
+</nav>
 
 <!-- Filter Bar -->
 <div class="saas-card" style="margin-bottom:20px;">
     <div style="padding:16px 20px; background:rgba(0,0,0,0.15);">
-        <form method="GET" action="{{ route('teacher.reports') }}" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+        <form method="GET" action="{{ route('teacher.reports') }}" class="teacher-filter-bar" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
             <input type="hidden" name="type" value="{{ $type }}">
 
             @if($type === 'daily' || $type === 'weekly')
             <div class="saas-form-group" style="margin:0;">
-                <label class="saas-label" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Select Date</label>
-                <input type="date" name="date" class="saas-input" value="{{ $date }}" style="width:160px;">
+                <label class="saas-label" for="teacherReportDate" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Select Date</label>
+                <input type="date" id="teacherReportDate" name="date" class="saas-input" value="{{ $date }}" style="width:160px;">
             </div>
             @elseif($type === 'monthly')
             <div class="saas-form-group" style="margin:0;">
-                <label class="saas-label" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Select Month</label>
-                <input type="month" name="month" class="saas-input" value="{{ $month }}" style="width:160px;">
+                <label class="saas-label" for="teacherReportMonth" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Select Month</label>
+                <input type="month" id="teacherReportMonth" name="month" class="saas-input" value="{{ $month }}" style="width:160px;">
             </div>
             @else
             <div class="saas-form-group" style="margin:0;">
-                <label class="saas-label" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Start Date</label>
-                <input type="date" name="start_date" class="saas-input" value="{{ $start_date }}" style="width:150px;">
+                <label class="saas-label" for="teacherReportStart" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Start Date</label>
+                <input type="date" id="teacherReportStart" name="start_date" class="saas-input" value="{{ $start_date }}" style="width:150px;">
             </div>
             <div class="saas-form-group" style="margin:0;">
-                <label class="saas-label" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">End Date</label>
-                <input type="date" name="end_date" class="saas-input" value="{{ $end_date }}" style="width:150px;">
+                <label class="saas-label" for="teacherReportEnd" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">End Date</label>
+                <input type="date" id="teacherReportEnd" name="end_date" class="saas-input" value="{{ $end_date }}" style="width:150px;">
             </div>
             @endif
 
             <div class="saas-form-group" style="margin:0;">
-                <label class="saas-label" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Subject</label>
-                <select name="subject" class="saas-input saas-select" style="width:160px;">
+                <label class="saas-label" for="teacherReportSubject" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Subject</label>
+                <select name="subject" id="teacherReportSubject" class="saas-input saas-select" style="width:160px;">
                     <option value="">All My Subjects</option>
                     @foreach($teacherSubjects as $ts)
                         <option value="{{ $ts->code }}" {{ request('subject') == $ts->code ? 'selected' : '' }}>{{ $ts->code }} - {{ $ts->name }}</option>
@@ -166,7 +166,7 @@
 
     <!-- Summary Metrics -->
     @if(in_array($type, ['daily', 'weekly', 'monthly', 'range', 'late', 'absent']))
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; padding:14px 20px; background:rgba(0,0,0,0.06); border-bottom:1px solid rgba(207,164,111,0.15);">
+    <div class="teacher-report-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; padding:14px 20px; background:rgba(0,0,0,0.06); border-bottom:1px solid rgba(207,164,111,0.15);">
         <div>
             <div class="saas-text-muted" style="font-size:0.75rem; text-transform:uppercase;">Total Logs</div>
             <div style="font-size:1.3rem; font-weight:800; color:#f3e7cd;">{{ number_format($stats['total'] ?? 0) }}</div>
@@ -214,15 +214,15 @@
             <tbody>
                 @forelse($percentageData as $i => $row)
                 <tr>
-                    <td style="color:#b39b82;">{{ $i + 1 }}</td>
-                    <td style="font-weight:700; color:#f3e7cd;">{{ $row['student']->name }}</td>
-                    <td><span class="saas-badge saas-badge-default" style="font-family:monospace;">{{ $row['student']->student_number ?? 'N/A' }}</span></td>
-                    <td><span class="saas-badge saas-badge-info">{{ $row['student']->course ?? 'N/A' }} {{ $row['student']->section ? '- ' . $row['student']->section : '' }}</span></td>
-                    <td><strong>{{ $row['total'] }}</strong></td>
-                    <td style="color:#34d399; font-weight:600;">{{ $row['present'] }}</td>
-                    <td style="color:#fbbf24; font-weight:600;">{{ $row['late'] }}</td>
-                    <td style="color:#f87171; font-weight:600;">{{ $row['absent'] }} @if($row['excused'] > 0)<small style="color:#60a5fa;">({{ $row['excused'] }} exc)</small>@endif</td>
-                    <td>
+                    <td data-label="Rank" style="color:#b39b82;">{{ $i + 1 }}</td>
+                    <td data-label="Student" style="font-weight:700; color:#f3e7cd;">{{ $row['student']->name }}</td>
+                    <td data-label="Student ID"><span class="saas-badge saas-badge-default" style="font-family:monospace;">{{ $row['student']->student_number ?? 'N/A' }}</span></td>
+                    <td data-label="Course & Section"><span class="saas-badge saas-badge-info">{{ $row['student']->course ?? 'N/A' }} {{ $row['student']->section ? '- ' . $row['student']->section : '' }}</span></td>
+                    <td data-label="Total Classes"><strong>{{ $row['total'] }}</strong></td>
+                    <td data-label="Present" style="color:#34d399; font-weight:600;">{{ $row['present'] }}</td>
+                    <td data-label="Late" style="color:#fbbf24; font-weight:600;">{{ $row['late'] }}</td>
+                    <td data-label="Absent" style="color:#f87171; font-weight:600;">{{ $row['absent'] }} @if($row['excused'] > 0)<small style="color:#60a5fa;">({{ $row['excused'] }} exc)</small>@endif</td>
+                    <td data-label="Attendance Rate">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span style="font-family:monospace; font-weight:800; color:{{ $row['rate'] >= 80 ? '#34d399' : ($row['rate'] >= 70 ? '#fbbf24' : '#f87171') }};">{{ $row['rate'] }}%</span>
                             <div style="flex:1; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden; max-width:70px;">
@@ -258,13 +258,13 @@
             <tbody>
                 @forelse($records as $i => $att)
                 <tr>
-                    <td style="color:#b39b82;">{{ $i + 1 }}</td>
-                    <td style="font-weight:700;">{{ $att->date ? (is_string($att->date) ? \Carbon\Carbon::parse($att->date)->format('M d, Y') : $att->date->format('M d, Y')) : 'N/A' }}</td>
-                    <td style="color:#cfa46f; font-family:monospace;">{{ $att->time_in ?? '—' }}</td>
-                    <td style="font-weight:700; color:#f3e7cd;">{{ $att->user->name ?? 'Unknown' }}</td>
-                    <td><span class="saas-badge saas-badge-default" style="font-family:monospace;">{{ $att->user->student_number ?? 'N/A' }}</span></td>
-                    <td><span style="font-weight:700; color:#60a5fa;">{{ $att->subject_code }}</span></td>
-                    <td>
+                    <td data-label="#" style="color:#b39b82;">{{ $i + 1 }}</td>
+                    <td data-label="Date" style="font-weight:700;">{{ $att->date ? (is_string($att->date) ? \Carbon\Carbon::parse($att->date)->format('M d, Y') : $att->date->format('M d, Y')) : 'N/A' }}</td>
+                    <td data-label="Time In" style="color:#cfa46f; font-family:monospace;">{{ $att->time_in ?? '—' }}</td>
+                    <td data-label="Student" style="font-weight:700; color:#f3e7cd;">{{ $att->user->name ?? 'Unknown' }}</td>
+                    <td data-label="Student ID"><span class="saas-badge saas-badge-default" style="font-family:monospace;">{{ $att->user->student_number ?? 'N/A' }}</span></td>
+                    <td data-label="Subject"><span style="font-weight:700; color:#60a5fa;">{{ $att->subject_code }}</span></td>
+                    <td data-label="Status">
                         @if($att->excused)
                             <span class="badge-excused">Excused</span>
                         @elseif($att->status === 'Present')

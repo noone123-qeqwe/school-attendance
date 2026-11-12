@@ -24,7 +24,7 @@
     <x-card title="Requests for Your Classes" icon="bi bi-pencil-square">
         <x-slot name="headerActions">
             <form method="GET" class="d-flex gap-2 align-items-center m-0">
-                <select name="status" class="form-select form-select-sm" style="background:#140d07; border:1px solid rgba(207,164,111,0.3); color:#f3ede4; border-radius:8px; padding:6px 28px 6px 12px; font-weight:600; cursor:pointer;" onchange="this.form.submit()">
+                <select name="status" aria-label="Filter correction requests by status" class="form-select form-select-sm" style="background:#140d07; border:1px solid rgba(207,164,111,0.3); color:#f3ede4; border-radius:8px; padding:6px 28px 6px 12px; font-weight:600; cursor:pointer;" onchange="this.form.submit()">
                     <option value="">All Statuses</option>
                     <option value="pending"  {{ request('status')=='pending'  ? 'selected' : '' }}>Pending</option>
                     <option value="approved" {{ request('status')=='approved' ? 'selected' : '' }}>Approved</option>
@@ -47,21 +47,21 @@
                 <tbody>
                     @forelse($corrections as $c)
                     <tr style="border-bottom: 1px solid rgba(207,164,111,0.1);">
-                        <td>
+                        <td data-label="Student">
                             <div style="font-weight: 600; color: #f3e7cd;">{{ $c->student->name ?? 'Unknown Student' }}</div>
                             <div class="small text-muted">{{ $c->student->student_number ?? 'No ID' }}</div>
                         </td>
-                        <td>
+                        <td data-label="Class / Date">
                             <div style="font-weight: 500;">{{ $c->attendance->subject->name ?? $c->attendance->subject_code ?? 'Class' }}</div>
                             <div class="small text-muted">{{ \Carbon\Carbon::parse($c->attendance->date)->format('M d, Y') }} (Marked {{ $c->attendance->status }})</div>
                         </td>
-                        <td style="max-width: 280px;">
+                        <td data-label="Reason" style="max-width: 280px;">
                             <div style="font-size: 0.9rem; color: #e2d1b3;">{{ $c->reason }}</div>
                             @if($c->teacher_notes)
                                 <div class="small text-muted mt-1"><em>Note: {{ $c->teacher_notes }}</em></div>
                             @endif
                         </td>
-                        <td>
+                        <td data-label="Status">
                             @if($c->status === 'approved')
                                 <span class="badge bg-success">Approved</span>
                             @elseif($c->status === 'rejected')
@@ -70,7 +70,7 @@
                                 <span class="badge bg-warning text-dark">Pending</span>
                             @endif
                         </td>
-                        <td style="text-align: right;">
+                        <td data-label="Actions" style="text-align: right;">
                             @if($c->status === 'pending')
                                 <div class="d-inline-flex gap-2">
                                     <form action="{{ route('teacher.corrections.update', $c) }}" method="POST" class="d-inline">
