@@ -1,5 +1,6 @@
 <!-- Student QR & Code Scanner Modal Partial -->
-<div id="studentScannerModal" class="scanner-modal-backdrop {{ request()->routeIs('mobile.scan') ? 'scanner-page-screen' : '' }}" style="display: none;" @if(request()->routeIs('mobile.scan')) role="region" aria-label="Student Attendance Scanner" @else role="dialog" aria-modal="true" aria-label="Student Attendance Scanner" @endif>
+@php($scannerPage = request()->routeIs('mobile.scan'))
+<div id="studentScannerModal" class="scanner-modal-backdrop {{ $scannerPage ? 'scanner-page-screen' : '' }}" style="display: none;" @if($scannerPage) role="region" aria-labelledby="scannerPageTitle" @else role="dialog" aria-modal="true" aria-label="Student Attendance Scanner" @endif>
     <div class="scanner-modal-card">
         
         <!-- Mobile Bottom Sheet Drag Indicator -->
@@ -7,13 +8,16 @@
 
         <!-- Header & Top Floating Bar -->
         <div class="scanner-top-bar">
+            @if($scannerPage)
+                <h1 id="scannerPageTitle" class="scanner-page-title">Attendance check-in</h1>
+            @endif
             <!-- Mobile: Mode Switcher Tabs (QR vs Code) -->
-            <div class="scanner-mode-switcher" id="mobileModeSwitcher">
-                <button type="button" id="tabScanMode" class="scanner-mode-tab active" data-action="switch-scan">
-                    <i class="bi bi-qr-code-scan me-1"></i> Scan QR
+            <div class="scanner-mode-switcher" id="mobileModeSwitcher" role="group" aria-label="Check-in method">
+                <button type="button" id="tabScanMode" class="scanner-mode-tab active" data-action="switch-scan" aria-pressed="true" aria-controls="scannerActiveView">
+                    <i class="bi bi-qr-code-scan" aria-hidden="true"></i> Scan QR
                 </button>
-                <button type="button" id="tabCodeMode" class="scanner-mode-tab" data-action="switch-code">
-                    <i class="bi bi-key-fill me-1"></i> Enter Code
+                <button type="button" id="tabCodeMode" class="scanner-mode-tab" data-action="switch-code" aria-pressed="false" aria-controls="scannerCodeView">
+                    <i class="bi bi-key-fill" aria-hidden="true"></i> Enter code
                 </button>
             </div>
 
@@ -29,21 +33,21 @@
             </div>
             
             <div class="scanner-top-actions">
-                <button type="button" id="torchCameraBtn" data-action="toggle-torch" class="scanner-icon-btn" title="Toggle Flashlight" aria-label="Toggle Flashlight" style="display: none;">
-                    <i class="bi bi-lightning-charge"></i>
+                <button type="button" id="torchCameraBtn" data-action="toggle-torch" class="scanner-icon-btn" title="Flashlight" aria-label="Flashlight" aria-pressed="false" style="display: none;">
+                    <i class="bi bi-lightning-charge" aria-hidden="true"></i>
                 </button>
                 <button type="button" id="flipCameraBtn" data-action="flip-camera" class="scanner-icon-btn" title="Flip Camera" aria-label="Flip Camera" style="display: none !important;">
                     <i class="bi bi-camera-reverse"></i>
                 </button>
-                <button type="button" data-action="close-scanner" class="scanner-icon-btn close-btn" title="Close" aria-label="Close Scanner">
-                    <i class="bi bi-x-lg"></i>
+                <button type="button" data-action="close-scanner" class="scanner-icon-btn close-btn" title="{{ $scannerPage ? 'Back to dashboard' : 'Close scanner' }}" aria-label="{{ $scannerPage ? 'Back to dashboard' : 'Close scanner' }}">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
 
         <!-- Mode 1: Camera Scanner View -->
         <div id="scannerActiveView" class="scanner-active-content">
-            <div class="scanner-hero-heading">
+            <div class="scanner-hero-heading {{ $scannerPage ? 'visually-hidden' : '' }}">
                 <h4 class="scanner-title">Scan Attendance QR</h4>
             </div>
 
@@ -61,17 +65,16 @@
                 <div id="scannerLaser" class="scanner-laser-line" style="display: none;"></div>
 
                 <!-- Camera Loading Overlay -->
-                <div id="scannerLoadingOverlay" class="scanner-loading-overlay" style="display: none;">
-                    <div class="spinner-border text-warning" style="width: 2.4rem; height: 2.4rem; border-width: 2.5px;" role="status"></div>
+                <div id="scannerLoadingOverlay" class="scanner-loading-overlay" style="display: none;" role="status">
+                    <div class="spinner-border text-warning" style="width: 2.4rem; height: 2.4rem; border-width: 2.5px;" aria-hidden="true"></div>
                     <div class="loading-title">Starting camera…</div>
-                    <div class="loading-sub">Preparing live video feed</div>
                 </div>
 
                 <!-- QR Detected / Processing Overlay -->
-                <div id="scannerProcessingOverlay" class="scanner-processing-overlay" style="display: none;">
-                    <div class="spinner-border text-warning mb-2" style="width: 2.8rem; height: 2.8rem; border-width: 3px;" role="status"></div>
-                    <div class="processing-title">QR code detected — verifying…</div>
-                    <div class="processing-sub">Checking session code & GPS range</div>
+                <div id="scannerProcessingOverlay" class="scanner-processing-overlay" style="display: none;" role="status">
+                    <div class="spinner-border text-warning mb-2" style="width: 2.8rem; height: 2.8rem; border-width: 3px;" aria-hidden="true"></div>
+                    <div class="processing-title">Verifying attendance…</div>
+                    <div class="processing-sub"></div>
                 </div>
 
                 <!-- Fallback Notice (Permission Blocked / Unsupported / Inactive) -->
@@ -94,58 +97,38 @@
 
             <!-- Single Clean Guidance Instruction Below Scanner -->
             <div id="scannerGuideBadge" class="scanner-instruction-container">
-                <i class="bi bi-camera-fill text-gold me-1"></i>
-                <span class="scanner-instruction-text">Position the teacher’s QR code inside the frame.</span>
+                <span class="scanner-instruction-text">Place your teacher’s QR code inside the frame.</span>
             </div>
 
-            <!-- Secondary Manual Code Alternative Option -->
-            <div class="scanner-alt-action-card">
-                <span class="scanner-alt-label">Have a code or link?</span>
-                <div class="d-flex gap-2 w-100 mt-1">
-                    <button type="button" class="scanner-alt-btn flex-fill" data-action="paste-copied-code" id="cameraPasteBtn" title="Paste attendance code from clipboard">
-                        <i class="bi bi-clipboard-check me-1"></i> Paste Code
-                    </button>
-                    <button type="button" class="scanner-alt-btn flex-fill" data-action="switch-code" id="cameraManualCodeBtn" title="Type attendance code manually">
-                        <i class="bi bi-key-fill me-1"></i> Enter Code
-                    </button>
-                </div>
+            <div class="scanner-paste-shortcut">
+                <button type="button" class="scanner-alt-btn" data-action="paste-copied-code" id="cameraPasteBtn">
+                    <i class="bi bi-clipboard-check" aria-hidden="true"></i> Paste code
+                </button>
             </div>
-
-            <!-- Clean Bottom Cancel Action -->
-            <button type="button" class="scanner-cancel-action-btn" data-action="close-scanner" aria-label="Cancel & Return to Dashboard">
-                <i class="bi bi-x-lg me-1"></i> Cancel & Return to Dashboard
-            </button>
         </div>
 
         <!-- Mode 2: Direct Code / PIN Input View -->
-        <div id="scannerCodeView" class="scanner-active-content" style="display: none; padding: 4px 0;">
-            <div style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, rgba(207,164,111,0.22), rgba(140,109,70,0.28)); border: 1px solid rgba(207,164,111,0.35); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: #dfb784; margin: 0 auto 8px;">
-                <i class="bi bi-key-fill"></i>
-            </div>
-            
-            <h4 class="scanner-title">Enter Attendance Code</h4>
-            <p class="scanner-sub">Enter or paste the code shared by your teacher</p>
-
-            <div class="code-entry-container my-3">
-                <input type="text" id="directSessionCodeInput" class="code-entry-input" inputmode="numeric" placeholder="849 201" maxlength="500" autocomplete="one-time-code" autocorrect="off" autocapitalize="characters" spellcheck="false">
-                <div id="codeEntryHint" class="code-entry-hint mt-2">
+        <div id="scannerCodeView" class="scanner-active-content" style="display: none;">
+            <div class="code-entry-container">
+                <label class="scanner-code-label" for="directSessionCodeInput">Attendance code</label>
+                <input type="text" id="directSessionCodeInput" class="code-entry-input" inputmode="numeric" placeholder="000 000" maxlength="500" autocomplete="one-time-code" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-describedby="codeEntryHint">
+                <div id="codeEntryHint" class="code-entry-hint mt-2" aria-live="polite">
                     <i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token
                 </div>
             </div>
 
-            <div class="d-flex flex-column gap-2">
-                <button type="button" id="pasteClipboardBtn" class="btn scanner-paste-action-btn w-100" data-action="paste-copied-code" title="Paste code from clipboard">
-                    <i class="bi bi-clipboard-check me-1"></i> Paste Copied Code
-                </button>
+            <div class="scanner-code-actions d-flex flex-column gap-2">
                 <button type="button" id="codeSubmitBtn" class="btn scanner-primary-action-btn w-100" data-action="submit-code">
                     <i class="bi bi-check2-circle me-1"></i> Record Attendance
                 </button>
+                <button type="button" id="pasteClipboardBtn" class="btn scanner-paste-action-btn w-100" data-action="paste-copied-code">
+                    <i class="bi bi-clipboard-check me-1" aria-hidden="true"></i> Paste Copied Code
+                </button>
+                @unless($scannerPage)
                 <button type="button" id="switchToCameraBtn" class="btn scanner-secondary-action-btn w-100" data-action="switch-scan">
                     <i class="bi bi-camera-fill me-1"></i> Switch to Camera Scan
                 </button>
-                <button type="button" class="scanner-cancel-action-btn" data-action="close-scanner" aria-label="Cancel & Return to Dashboard">
-                    <i class="bi bi-x-lg me-1"></i> Cancel & Return to Dashboard
-                </button>
+                @endunless
             </div>
         </div>
 
@@ -580,6 +563,7 @@
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     display: inline-flex;
     align-items: center;
+    gap: 7px;
 }
 
 .scanner-mode-tab.active {
@@ -658,13 +642,6 @@
     color: #ffffff;
     margin-bottom: 0;
     letter-spacing: -0.015em;
-}
-
-.scanner-sub {
-    color: #a89582;
-    font-size: 0.75rem;
-    margin-top: 2px;
-    margin-bottom: 0;
 }
 
 /* Viewfinder Area */
@@ -851,12 +828,6 @@
     letter-spacing: -0.01em;
 }
 
-.loading-sub {
-    font-size: 0.72rem;
-    color: #a89582;
-    margin-top: 2px;
-}
-
 /* Processing Overlay */
 .scanner-processing-overlay {
     position: absolute;
@@ -1015,28 +986,6 @@
     line-height: 1.3;
 }
 
-/* Secondary Manual Code Card */
-.scanner-alt-action-card {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(207, 164, 111, 0.14);
-    border-radius: 12px;
-    padding: 6px 12px;
-    margin: 0 auto 10px;
-    max-width: 320px;
-    width: 100%;
-    gap: 8px;
-}
-
-.scanner-alt-label {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: #9c8b78;
-    text-align: left;
-}
-
 .scanner-alt-btn {
     background: rgba(207, 164, 111, 0.12);
     border: 1px solid rgba(207, 164, 111, 0.28);
@@ -1051,6 +1000,7 @@
     -webkit-user-select: none;
     display: inline-flex;
     align-items: center;
+    gap: 8px;
     white-space: nowrap;
     transition: all 0.2s;
 }
@@ -1062,37 +1012,21 @@
     transform: scale(0.98);
 }
 
-/* Clean bottom cancel action */
-.scanner-cancel-action-btn {
-    background: transparent;
-    border: none;
-    color: #8c7a67;
-    font-size: 0.78rem;
-    font-weight: 500;
-    border-radius: 8px;
-    padding: 6px 14px;
-    cursor: pointer !important;
-    touch-action: manipulation !important;
-    user-select: none;
-    -webkit-user-select: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    margin: 0 auto;
-    transition: color 0.2s;
-}
-
-.scanner-cancel-action-btn:hover, .scanner-cancel-action-btn:active {
-    color: #dfb784;
-}
-
 /* Code Entry Panel */
+.scanner-code-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #f3e7cd;
+}
+
 .code-entry-container {
     background: rgba(0, 0, 0, 0.4);
     border: 1.5px solid rgba(207, 164, 111, 0.25);
     border-radius: 16px;
     padding: 14px 12px;
+    margin-bottom: 12px;
     box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.6);
 }
 
@@ -1397,7 +1331,7 @@
 }
 </style>
 
-@if(request()->routeIs('mobile.scan'))
+@if($scannerPage)
 <style>
     html:has(body.scanner-page-layout),
     body.scanner-page-layout {
@@ -1407,12 +1341,7 @@
         background: #100d0b;
     }
 
-    body.scanner-page-layout .mobile-header,
-    body.scanner-page-layout #mobileBottomNav,
-    body.scanner-page-layout #installPrompt,
-    body.scanner-page-layout .mobile-menu-backdrop,
-    body.scanner-page-layout .mobile-navigation-menu,
-    body.scanner-page-layout .mobile-scan-page {
+    body.scanner-page-layout :is(.mobile-header, #mobileBottomNav, #installPrompt, .mobile-menu-backdrop, .mobile-navigation-menu, .mobile-scan-page) {
         display: none !important;
     }
 
@@ -1425,89 +1354,140 @@
         padding: 0;
     }
 
-    body.scanner-page-layout .scanner-page-screen {
-        position: fixed;
+    .scanner-page-screen.scanner-modal-backdrop {
         inset: 0;
-        z-index: 100000 !important;
-        display: flex !important;
-        width: 100%;
         height: 100dvh;
-        min-height: 100dvh;
         padding: 0;
-        overflow: auto;
-        align-items: stretch;
-        justify-content: center;
-        background: #100d0b;
+        overflow: hidden auto;
+        overscroll-behavior: contain;
+        align-items: flex-start;
+        background: linear-gradient(180deg, #1b1714 0%, #11100e 100%);
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
     }
 
-    body.scanner-page-layout .scanner-modal-card {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+    .scanner-page-screen .scanner-modal-card {
         width: 100%;
-        max-width: 900px;
-        min-height: 100dvh;
+        max-width: 520px;
+        min-height: 0;
         max-height: none;
-        margin: 0;
-        padding: max(18px, env(safe-area-inset-top, 0px)) clamp(18px, 4vw, 42px) max(18px, env(safe-area-inset-bottom, 0px));
-        overflow: visible;
+        margin: 0 !important;
+        padding: max(14px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+        overflow: visible !important;
         border: 0;
         border-radius: 0;
-        background: linear-gradient(180deg, #1b1714 0%, #11100e 100%);
+        background: transparent;
         box-shadow: none;
+        animation: none;
     }
 
-    body.scanner-page-layout .scanner-viewfinder-wrapper {
-        width: min(78vw, 48vh, 470px);
-        max-width: 100%;
+    .scanner-page-screen .scanner-top-bar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px 8px;
+        margin-bottom: 14px;
     }
 
-    body.scanner-page-layout .scanner-alt-action-card {
-        max-width: 470px;
+    .scanner-page-title {
+        margin: 0;
+        text-align: start;
+        color: #f3e7cd;
+        font-size: clamp(1.2rem, 4.6vw, 1.65rem);
+        font-weight: 750;
+        letter-spacing: -0.025em;
     }
 
-    body.scanner-page-layout .scanner-title {
-        font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+    .scanner-page-screen .scanner-top-actions {
+        grid-column: 2;
+        grid-row: 1;
+        gap: 6px;
     }
 
-    @media (max-width: 767px) {
-        body.scanner-page-layout .scanner-modal-card {
-            min-height: 100dvh;
-            padding: max(14px, env(safe-area-inset-top, 0px)) 16px max(18px, env(safe-area-inset-bottom, 0px));
-        }
+    .scanner-page-screen .scanner-mode-switcher {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        border-radius: 14px;
+        padding: 3px;
+    }
 
-        body.scanner-page-layout .scanner-modal-card.mode-scan {
-            justify-content: center;
-        }
+    .scanner-page-screen .scanner-mode-tab {
+        display: inline-flex !important;
+        flex: 1 1 0;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 6px 8px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+    }
 
-        body.scanner-page-layout .scanner-viewfinder-wrapper {
-            width: min(78vw, 45vh, 440px);
-            margin-bottom: 14px;
-        }
+    .scanner-page-screen .scanner-icon-btn {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+    }
 
-        body.scanner-page-layout .scanner-top-bar {
-            margin-bottom: 18px;
-        }
+    .scanner-page-screen .scanner-viewfinder-wrapper {
+        width: min(100%, clamp(216px, calc(100dvh - 232px), 456px));
+        margin: 0 auto 12px;
+    }
 
-        body.scanner-page-layout .scanner-title {
-            font-size: 1.2rem;
+    .scanner-page-screen .scanner-viewfinder-wrapper.camera-unavailable {
+        width: min(100%, 456px);
+        min-height: 224px;
+        aspect-ratio: auto;
+    }
+
+    .scanner-page-screen .scanner-instruction-container {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        margin: 0 auto 8px;
+        padding: 0;
+    }
+
+    .scanner-page-screen .scanner-instruction-text {
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .scanner-page-screen .camera-unavailable + .scanner-instruction-container {
+        display: none;
+    }
+
+    .scanner-page-screen :is(.scanner-alt-btn, .scanner-code-actions .btn, .permission-primary-btn, .permission-secondary-link, #resultDoneBtn, #resultRetryBtn) {
+        min-height: 44px;
+    }
+
+    .scanner-page-screen .scanner-alt-btn {
+        padding: 8px 16px;
+        border-radius: 11px;
+        font-size: 0.85rem;
+    }
+
+    .scanner-page-screen .scanner-code-label {
+        text-align: start;
+    }
+
+    .scanner-page-screen :is(button, input):focus-visible {
+        outline: 2px solid #dfb784 !important;
+        outline-offset: 2px;
+    }
+
+    @media (min-width: 768px) and (min-height: 640px) {
+        .scanner-page-screen .scanner-modal-card {
+            padding-top: max(28px, env(safe-area-inset-top, 0px));
         }
     }
 
-    @media (max-height: 700px) {
-        body.scanner-page-layout .scanner-modal-card {
-            justify-content: flex-start;
-        }
-
-        body.scanner-page-layout .scanner-viewfinder-wrapper {
-            width: min(68vw, 38vh, 360px);
+    @media (prefers-reduced-motion: reduce) {
+        .scanner-page-screen :is(.scanner-laser-line, .reticle-corner, .result-status-icon-wrap) {
+            animation: none;
         }
     }
 </style>
 @endif
-
 <script nonce="{{ csp_nonce() }}" src="{{ asset('js/html5-qrcode.min.js') }}?v={{ filemtime(public_path('js/html5-qrcode.min.js')) }}"></script>
 <script nonce="{{ csp_nonce() }}">
 let html5QrScanner = null;
@@ -1683,6 +1663,9 @@ function switchScannerMode(mode) {
     const codeBtn = document.getElementById('codeSubmitBtn');
     const hint = document.getElementById('codeEntryHint');
 
+    tabScan?.setAttribute('aria-pressed', String(mode === 'scan'));
+    tabCode?.setAttribute('aria-pressed', String(mode === 'code'));
+
     if (resultView) resultView.style.display = 'none';
 
     if (mode === 'scan') {
@@ -1717,8 +1700,7 @@ function switchScannerMode(mode) {
         safeStopScanner();
 
         setTimeout(() => {
-            const input = document.getElementById('directSessionCodeInput');
-            if (input) input.focus();
+            if (currentScannerMode === 'code') codeInput?.focus();
         }, 80);
     }
 
@@ -1992,7 +1974,12 @@ async function safeStopScanner() {
     if (laser) laser.style.display = 'none';
 
     const torchBtn = document.getElementById('torchCameraBtn');
-    if (torchBtn) torchBtn.style.display = 'none';
+    torchEnabled = false;
+    if (torchBtn) {
+        torchBtn.style.display = 'none';
+        torchBtn.classList.remove('active-torch');
+        torchBtn.setAttribute('aria-pressed', 'false');
+    }
 }
 
 async function safeClearScanner() {
@@ -2275,8 +2262,7 @@ function onScannerSuccessfullyStarted() {
     const loadingOverlay = document.getElementById('scannerLoadingOverlay');
     if (loadingOverlay) loadingOverlay.style.display = 'none';
 
-    const fallbackNotice = document.getElementById('scannerFallbackNotice');
-    if (fallbackNotice) fallbackNotice.style.display = 'none';
+    hideCameraError();
 
     const container = document.getElementById('scannerVideoContainer');
     if (container) container.classList.add('camera-active');
@@ -2311,7 +2297,10 @@ function showCameraError(type = 'init_failed', customMsg = null) {
     const container = document.getElementById('scannerVideoContainer');
 
     if (loadingOverlay) loadingOverlay.style.display = 'none';
-    if (container) container.classList.remove('camera-active');
+    if (container) {
+        container.classList.remove('camera-active');
+        container.classList.add('camera-unavailable');
+    }
     if (laser) laser.style.display = 'none';
 
     let headline = 'Camera Access Required';
@@ -2369,6 +2358,7 @@ function showCameraError(type = 'init_failed', customMsg = null) {
 
 function hideCameraError() {
     console.log('[Scanner] hideCameraError called');
+    document.getElementById('scannerVideoContainer')?.classList.remove('camera-unavailable');
     const notice = document.getElementById('scannerFallbackNotice');
     if (notice) {
         notice.style.display = 'none';
@@ -2398,26 +2388,24 @@ async function toggleCameraFacing() {
     if (window.triggerHaptic) window.triggerHaptic('light');
 }
 
-function toggleTorch() {
+async function toggleTorch() {
     if (!html5QrScanner || !isScannerRunning) return;
+    const torchBtn = document.getElementById('torchCameraBtn');
+    const nextEnabled = !torchEnabled;
+    if (torchBtn) torchBtn.disabled = true;
     try {
-        torchEnabled = !torchEnabled;
-        const torchBtn = document.getElementById('torchCameraBtn');
-        html5QrScanner.applyVideoConstraints({
-            advanced: [{ torch: torchEnabled }]
-        }).then(() => {
-            if (torchEnabled) {
-                if (torchBtn) torchBtn.classList.add('active-torch');
-            } else {
-                if (torchBtn) torchBtn.classList.remove('active-torch');
-            }
-        }).catch(() => {
-            if (torchBtn) torchBtn.classList.remove('active-torch');
-            if (typeof showToast === 'function') {
-                showToast('Flashlight is not supported on this camera/browser.', 'info', 2500);
-            }
-        });
-    } catch (e) {}
+        await html5QrScanner.applyVideoConstraints({ advanced: [{ torch: nextEnabled }] });
+        if (!isScannerRunning) return;
+        torchEnabled = nextEnabled;
+        torchBtn?.classList.toggle('active-torch', torchEnabled);
+        torchBtn?.setAttribute('aria-pressed', String(torchEnabled));
+    } catch (error) {
+        if (typeof showToast === 'function') {
+            showToast('Flashlight is not supported on this camera/browser.', 'info', 2500);
+        }
+    } finally {
+        if (torchBtn) torchBtn.disabled = false;
+    }
 }
 
 function closeStudentScanner(returnToDashboard = true) {
@@ -3014,6 +3002,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Guarantees buttons work on mobile browsers even when CSP Level 3
     // blocks inline onclick handlers despite 'unsafe-inline' being present
     // alongside a nonce in script-src.
+    let lastDelegatedAction = null;
     let lastDelegatedActionTime = 0;
     function handleModalDelegatedAction(e) {
         const trigger = e.target.closest('[data-action]');
@@ -3023,9 +3012,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!action) return;
 
         const now = Date.now();
-        if (now - lastDelegatedActionTime < 300) {
+        if (action === lastDelegatedAction && now - lastDelegatedActionTime < 300) {
             return;
         }
+        lastDelegatedAction = action;
         lastDelegatedActionTime = now;
 
         // Stop propagation to prevent multiple handlers

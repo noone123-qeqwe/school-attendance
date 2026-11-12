@@ -78,13 +78,13 @@ class MobileScanQrFeatureTest extends TestCase
         $response->assertSee('id="reader"', false);
 
         // Check requested guidance instruction text
-        $response->assertSee('Position the teacher’s QR code inside the frame.', false);
+        $response->assertSee('Place your teacher’s QR code inside the frame.', false);
 
         // Check requested permission error message
         $response->assertSee('Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.', false);
 
         // Check cancel / close button exists
-        $response->assertSee('Cancel & Return to Dashboard', false);
+        $response->assertSee('aria-label="Back to dashboard"', false);
     }
 
     public function test_mobile_home_shows_only_relevant_upcoming_classes_and_usable_actions(): void
@@ -135,6 +135,11 @@ class MobileScanQrFeatureTest extends TestCase
         $response->assertSee('data-action="open-scanner"', false);
         $response->assertSee('id="scanUnavailable"', false);
         $response->assertSee('id="studentScannerModal"', false);
+        $response->assertSee('aria-labelledby="scannerPageTitle"', false);
+        $response->assertSee('aria-controls="scannerActiveView"', false);
+        $response->assertSee('aria-controls="scannerCodeView"', false);
+        $response->assertSee('for="directSessionCodeInput"', false);
+        $this->assertSame(1, substr_count($response->getContent(), 'data-action="close-scanner"'));
     }
 
     public function test_all_rendered_scripts_in_mobile_layout_carry_csp_nonces(): void
