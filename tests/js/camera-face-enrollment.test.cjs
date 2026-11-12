@@ -12,10 +12,11 @@ function deferred() {
     return { promise, resolve };
 }
 
-function mount({ cameraGate = deferred(), response = { ok: true, json: async () => ({ success: true }) } } = {}) {
+function mount({ cameraGate = deferred(), response = { ok: true, json: async () => ({ success: true }) }, FaceDetector = null } = {}) {
     const elements = new Map();
     const windowListeners = {};
     const fetchCalls = [];
+    const timers = [];
     let trackStops = 0;
     let focusedElement = null;
     const element = id => {
@@ -28,6 +29,7 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
                 listeners: {},
                 dataset: { enrollmentUrl: '/profile/face-enrollment' },
                 querySelectorAll: () => ['front', 'left', 'right'].map(pose => element('pose-' + pose)),
+                querySelector: () => ({ textContent: '' }),
                 setAttribute() {}, removeAttribute() {},
                 click() { return this.listeners.click?.(); },
                 addEventListener(event, callback) { this.listeners[event] = callback; },
@@ -45,10 +47,15 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
     };
     const document = {
         readyState: 'complete',
+        hidden: false,
         getElementById: element,
         querySelector: () => ({ content: 'test-csrf-token' }),
+        addEventListener() {},
     };
     const window = {
+        FaceDetector,
+        setTimeout(callback) { const timer = { callback, cleared: false }; timers.push(timer); return timer; },
+        clearTimeout(timer) { if (timer) timer.cleared = true; },
         addEventListener(event, callback) { windowListeners[event] = callback; },
     };
     const fetch = async (...args) => {
@@ -63,6 +70,7 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
     vm.runInNewContext(script, {
         document,
         window,
+        timers,
         navigator: { mediaDevices: { getUserMedia: () => cameraGate.promise } },
         fetch,
         FormData: FormDataMock,
@@ -77,6 +85,13 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
         focusedElement: () => focusedElement,
         get trackStops() { return trackStops; },
         stream() { return { getTracks: () => [{ stop: () => { trackStops++; } }] }; },
+        async advanceScan() {
+            const timer = timers.find(item => !item.cleared && !item.fired);
+            assert.ok(timer, 'an automatic scan should be scheduled');
+            timer.fired = true;
+            timer.callback();
+            for (let i = 0; i < 30; i++) await Promise.resolve();
+        },
     };
 }
 
@@ -105,7 +120,7 @@ test('switching screens clears captures and ignores a late save response', async
     const opening = app.element('cameraFaceStartBtn').listeners.click();
     app.cameraGate.resolve(app.stream());
     await opening;
-    for (let i = 0; i < 3; i++) app.element('cameraFaceCaptureBtn').listeners.click();
+    for (let i = 0; i < 3; i++) await app.element('cameraFaceCaptureBtn').listeners.click();
     const saving = app.element('cameraFaceSaveBtn').listeners.click();
     assert.equal(app.element('cameraFaceCancelBtn').disabled, true);
     app.windowListeners.pagehide();
@@ -127,14 +142,14 @@ test('student must capture all three positions before submitting the camera enro
     assert.equal(app.element('cameraFaceCaptureBtn').style.display, '');
     assert.equal(app.focusedElement(), app.element('cameraFaceCaptureBtn'));
 
-    app.element('cameraFaceCaptureBtn').listeners.click();
+    await app.element('cameraFaceCaptureBtn').listeners.click();
     await app.element('cameraFaceSaveBtn').listeners.click();
     assert.equal(app.fetchCalls.length, 0, 'One view must not complete registration');
     assert.equal(app.trackStops, 0, 'Camera stays open for the next position');
     assert.match(app.element('cameraFacePoseInstruction').textContent, /left/);
-    app.element('cameraFaceCaptureBtn').listeners.click();
+    await app.element('cameraFaceCaptureBtn').listeners.click();
     assert.match(app.element('cameraFacePoseInstruction').textContent, /right/);
-    app.element('cameraFaceCaptureBtn').listeners.click();
+    await app.element('cameraFaceCaptureBtn').listeners.click();
     assert.equal(app.trackStops, 1);
     assert.equal(app.element('cameraFaceSaveBtn').style.display, '');
     assert.equal(app.focusedElement(), app.element('cameraFaceSaveBtn'));
@@ -157,7 +172,7 @@ test('pose validation errors keep the captures available for retry or retake', a
     const opening = app.element('cameraFaceStartBtn').listeners.click();
     app.cameraGate.resolve(app.stream());
     await opening;
-    for (let i = 0; i < 3; i++) app.element('cameraFaceCaptureBtn').listeners.click();
+    for (let i = 0; i < 3; i++) await app.element('cameraFaceCaptureBtn').listeners.click();
     await app.element('cameraFaceSaveBtn').listeners.click();
     assert.match(app.element('cameraFaceStatus').textContent, /opposite directions/);
     assert.equal(app.element('cameraFaceRetakeBtn').disabled, false);
@@ -167,4 +182,54 @@ test('pose validation errors keep the captures available for retry or retake', a
     assert.equal(app.focusedElement(), app.element('cameraFaceStartBtn'));
     await app.element('cameraFaceSaveBtn').listeners.click();
     assert.equal(app.fetchCalls.length, 1, 'Canceled captures cannot be submitted');
+});
+
+test('unsupported on-device pose detection leaves manual capture available', async () => {
+    const app = mount();
+    const opening = app.element('cameraFaceStartBtn').listeners.click();
+    app.cameraGate.resolve(app.stream());
+    await opening;
+
+    assert.equal(app.element('cameraFaceCaptureBtn').hidden, false);
+    assert.match(app.element('cameraFaceStatus').textContent, /not available in this browser/i);
+});
+
+test('supported face detection automatically captures a centered front view and opposite turns', async () => {
+    const face = offset => ({
+        boundingBox: { x: 192, y: 120, width: 256, height: 300 },
+        landmarks: [{ type: 'nose', locations: [{ x: 320 + (offset * 128), y: 260 }] }],
+    });
+    const offsets = [.01, .02, .01, .015, .24, .25, .23, .24, -.24, -.25, -.23, -.24];
+    class Detector {
+        constructor() { this.index = 0; }
+        async detect() { return [face(offsets[Math.min(this.index++, offsets.length - 1)])]; }
+    }
+    const app = mount({ FaceDetector: Detector });
+    const opening = app.element('cameraFaceStartBtn').listeners.click();
+    app.cameraGate.resolve(app.stream());
+    await opening;
+
+    assert.equal(app.element('cameraFaceCaptureBtn').hidden, true, 'automatic mode should not ask for a tap per pose');
+    for (let i = 0; i < offsets.length; i++) await app.advanceScan();
+
+    assert.equal(app.element('cameraFaceSaveBtn').hidden, false);
+    assert.equal(app.element('cameraFaceRetakeBtn').hidden, false);
+    assert.equal(app.trackStops, 1, 'camera shuts off after the third view');
+    assert.match(app.element('cameraFaceStatus').textContent, /Three views captured/);
+    await app.element('cameraFaceSaveBtn').listeners.click();
+    assert.deepEqual(app.fetchCalls[0][1].body.items.map(item => item[0]), ['face_images[front]', 'face_images[left]', 'face_images[right]']);
+});
+
+test('automatic scanning falls back to manual capture if the browser cannot report a nose landmark', async () => {
+    class Detector {
+        async detect() { return [{ boundingBox: { x: 192, y: 120, width: 256, height: 300 }, landmarks: [] }]; }
+    }
+    const app = mount({ FaceDetector: Detector });
+    const opening = app.element('cameraFaceStartBtn').listeners.click();
+    app.cameraGate.resolve(app.stream());
+    await opening;
+    await app.advanceScan();
+
+    assert.equal(app.element('cameraFaceCaptureBtn').hidden, false);
+    assert.match(app.element('cameraFaceStatus').textContent, /not supported by this camera/i);
 });

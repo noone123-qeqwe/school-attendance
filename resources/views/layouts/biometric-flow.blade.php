@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ asset('css/biometric-flow.css') }}?v={{ filemtime(public_path('css/biometric-flow.css')) }}">
 </head>
-<body class="biometric-flow-page">
+<body class="biometric-flow-page @yield('pageClass')">
     <main class="biometric-flow">
         <a class="biometric-flow-back" href="{{ route('settings') }}#tab-biometrics"><span aria-hidden="true">←</span> Back to Biometrics</a>
         <header class="biometric-flow-heading">

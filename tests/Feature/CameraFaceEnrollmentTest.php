@@ -59,13 +59,15 @@ class CameraFaceEnrollmentTest extends TestCase
         $student = User::factory()->create(['role' => 'student']);
         $response = $this->actingAs($student)->get(route('settings.biometrics.face'))
             ->assertOk()
+            ->assertSee('face-registration-page', false)
+            ->assertSee('id="cameraFaceStage"', false)
             ->assertSee('Back to Biometrics')
             ->assertSee('id="cameraFaceVideo"', false)
             ->assertSee('id="cameraFaceCaptureBtn" hidden', false)
             ->assertSee('id="cameraFaceSaveBtn" hidden', false)
-            ->assertSee('Capture three face views')
+            ->assertSee('Scan three face views')
             ->assertSee('Center your face')
-            ->assertSee('checked for quality, then encrypted for attendance matching', false)
+            ->assertSee('uploaded only when you tap Register face', false)
             ->assertDontSee('id="topHeader"', false)
             ->assertDontSee('id="startBioBtn"', false);
 
@@ -164,6 +166,8 @@ class CameraFaceEnrollmentTest extends TestCase
         $cameraFlow = file_get_contents(public_path('js/camera-face-enrollment.js'));
         $this->assertNotSame('', $cameraFlow);
         $this->assertStringContainsString('navigator.mediaDevices.getUserMedia', $cameraFlow);
+        $this->assertStringContainsString('window.FaceDetector', $cameraFlow);
+        $this->assertStringContainsString('automatic face scan', strtolower($cameraFlow));
         $this->assertStringNotContainsString('fingerprint', strtolower($cameraFlow));
         $this->assertStringNotContainsString('navigator.credentials.create', $cameraFlow);
     }

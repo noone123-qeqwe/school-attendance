@@ -5,6 +5,7 @@
         const root = document.getElementById('cameraFaceEnrollment');
         const start = document.getElementById('cameraFaceStartBtn');
         if (!root || !start) return;
+
         const video = document.getElementById('cameraFaceVideo');
         const canvas = document.getElementById('cameraFaceCanvas');
         const wrap = document.getElementById('cameraFacePreviewWrap');
@@ -14,19 +15,31 @@
         const cancel = document.getElementById('cameraFaceCancelBtn');
         const status = document.getElementById('cameraFaceStatus');
         const instruction = document.getElementById('cameraFacePoseInstruction');
+        const guide = document.getElementById('cameraFaceGuide');
         const done = document.getElementById('cameraFaceDone');
         const lighting = window.CameraLighting?.mount(document.getElementById('cameraFaceLight'));
         const poses = [
-            ['front', 'Look straight at the camera. Keep your head level and both eyes visible.'],
-            ['left', 'Turn your head slightly to your left. Keep both eyes visible and hold still.'],
-            ['right', 'Now turn slightly to your right. Keep both eyes visible and hold still.'],
+            ['front', 'Look straight at the camera. Keep your face centered and both eyes visible.'],
+            ['left', 'Turn your head slightly to your left, then hold still for the automatic scan.'],
+            ['right', 'Turn slightly to your right—the opposite direction—then hold still for the automatic scan.'],
         ];
+
         let stream = null;
+        let detector = null;
         let requestId = 0;
+        let scanTimer = null;
+        let scanning = false;
+        let scanInFlight = false;
         let views = {};
         let saving = false;
+        let stableCount = 0;
+        let lastSample = null;
+        let firstTurnSign = 0;
+        let lastStatus = '';
 
         function setStatus(message, color = 'var(--text-muted)') {
+            if (lastStatus === message) return;
+            lastStatus = message;
             status.textContent = message;
             status.style.color = color;
         }
@@ -34,10 +47,24 @@
             element.hidden = !show;
             element.style.display = show ? '' : 'none';
         }
+        function updateGuide(state, label) {
+            guide.dataset.state = state;
+            guide.querySelector('span').textContent = label;
+        }
+        function stopScanner() {
+            scanning = false;
+            if (scanTimer !== null) window.clearTimeout(scanTimer);
+            scanTimer = null;
+            scanInFlight = false;
+            stableCount = 0;
+            lastSample = null;
+        }
         function stopCamera() {
+            stopScanner();
             lighting?.stop();
             if (stream) stream.getTracks().forEach(track => track.stop());
             stream = null;
+            detector = null;
             video.srcObject = null;
         }
         function progress() {
@@ -49,21 +76,177 @@
             });
             instruction.textContent = poses[index]?.[1] || 'All three views are captured. Register them securely, or retake the sequence.';
             if (poses[index]) capture.textContent = 'Capture ' + poses[index][0] + ' view';
+            updateGuide('tracking', index === 0 ? 'Center your face' : 'Follow the position');
         }
         function reset() {
             stopCamera();
             views = {};
             saving = false;
+            firstTurnSign = 0;
+            lastStatus = '';
             wrap.style.display = 'none';
             video.style.display = 'block';
             canvas.style.display = 'none';
             [capture, retake, save, cancel].forEach(button => { visible(button, false); button.disabled = false; });
             start.disabled = false;
             start.removeAttribute('aria-busy');
-            start.innerHTML = '<i class="bi bi-camera" aria-hidden="true"></i> Open camera';
+            start.innerHTML = '<i class="bi bi-camera" aria-hidden="true"></i> Start face scan';
             visible(start, true);
             if (done) visible(done, false);
             progress();
+        }
+        function manualCaptureMode(message) {
+            stopScanner();
+            detector = null;
+            capture.disabled = false;
+            capture.removeAttribute('aria-busy');
+            visible(capture, Boolean(stream));
+            updateGuide('tracking', 'Center your face');
+            setStatus(message);
+            if (stream) capture.focus({ preventScroll: true });
+        }
+        function queueScan(delay = 240) {
+            if (!scanning || scanTimer !== null || !stream || document.hidden) return;
+            scanTimer = window.setTimeout(scanFrame, delay);
+        }
+        function noseOffset(face) {
+            const landmark = (face.landmarks || []).find(item => String(item.type || '').toLowerCase() === 'nose');
+            const point = landmark?.locations?.[0] || landmark?.location || landmark;
+            const box = face.boundingBox;
+            if (!point || !Number.isFinite(point.x) || !box?.width) return null;
+            return (point.x - (box.x + box.width / 2)) / (box.width / 2);
+        }
+        function isStable(sample) {
+            if (!lastSample || Math.abs(sample.x - lastSample.x) > .025 ||
+                Math.abs(sample.y - lastSample.y) > .03 || Math.abs(sample.size - lastSample.size) > .04 ||
+                Math.abs(sample.offset - lastSample.offset) > .045) {
+                lastSample = sample;
+                stableCount = 1;
+                return false;
+            }
+            lastSample = sample;
+            stableCount++;
+            return stableCount >= 4;
+        }
+        async function captureView(index, attempt, automatic) {
+            if (!poses[index] || !stream || attempt !== requestId) return false;
+            capture.disabled = true;
+            capture.setAttribute('aria-busy', 'true');
+            capture.textContent = automatic ? 'Capturing ' + poses[index][0] + ' view…' : 'Capturing…';
+            updateGuide('capturing', 'Capturing view ' + (index + 1) + ' of 3');
+            lighting?.lock(true);
+            try {
+                if (lighting) await lighting.settle();
+                if (attempt !== requestId || !stream) return false;
+                if (!video.videoWidth || !video.videoHeight) throw new Error('The camera is not ready. Wait a moment and try again.');
+                const scale = Math.min(1, 1280 / Math.max(video.videoWidth, video.videoHeight));
+                canvas.width = Math.round(video.videoWidth * scale);
+                canvas.height = Math.round(video.videoHeight * scale);
+                const context = canvas.getContext('2d', { alpha: false });
+                if (!context) throw new Error('This camera frame could not be read. Please try again.');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+                if (attempt !== requestId) return false;
+                if (!blob) throw new Error('This frame could not be captured. Please try again.');
+
+                if (poses[index][0] === 'left' && lastSample) firstTurnSign = Math.sign(lastSample.offset);
+                views[poses[index][0]] = blob;
+                progress();
+                if (index < 2) {
+                    setStatus(automatic
+                        ? poses[index][0][0].toUpperCase() + poses[index][0].slice(1) + ' view captured. ' + poses[index + 1][1]
+                        : 'Capture ' + (index + 2) + ' of 3: ' + poses[index + 1][0] + ' view.');
+                    if (automatic) queueScan(300);
+                } else {
+                    stopCamera();
+                    video.style.display = 'none';
+                    canvas.style.cssText = 'display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);';
+                    visible(capture, false);
+                    visible(retake, true);
+                    visible(save, true);
+                    setStatus('Three views captured. Review the sequence, then register them securely. The server will check face quality and identity.');
+                    save.focus({ preventScroll: true });
+                }
+                return true;
+            } catch (error) {
+                if (attempt === requestId) {
+                    stableCount = 0;
+                    lastSample = null;
+                    setStatus(error.message || 'This frame could not be captured. Please try again.', '#f87171');
+                }
+                return false;
+            } finally {
+                lighting?.lock(false);
+                capture.disabled = false;
+                capture.removeAttribute('aria-busy');
+                if (poses[index] && stream) capture.textContent = 'Capture ' + poses[index][0] + ' view';
+                if (automatic && attempt === requestId && stream && scanning && !document.hidden) queueScan(240);
+            }
+        }
+        function guideForPose(index, offset) {
+            if (index === 0) return Math.abs(offset) <= .12;
+            if (Math.abs(offset) < .16) return false;
+            if (index === 1) return true;
+            return firstTurnSign !== 0 && Math.sign(offset) === -firstTurnSign;
+        }
+        async function scanFrame() {
+            scanTimer = null;
+            if (!scanning || scanInFlight || !stream || document.hidden) return;
+            scanInFlight = true;
+            const attempt = requestId;
+            try {
+                const faces = await detector.detect(video);
+                if (!scanning || attempt !== requestId || !stream) return;
+                if (faces.length !== 1) {
+                    stableCount = 0;
+                    lastSample = null;
+                    updateGuide('tracking', faces.length ? 'Keep one face in frame' : 'Move into the frame');
+                    setStatus(faces.length ? 'More than one face is visible. Keep only your face in the frame.' : 'Move your face into the frame to begin the automatic scan.');
+                    return;
+                }
+                const face = faces[0];
+                const box = face.boundingBox;
+                const offset = noseOffset(face);
+                if (!box || !Number.isFinite(box.width) || !Number.isFinite(box.height) || offset === null) {
+                    manualCaptureMode('Automatic pose scanning is not supported by this camera. Capture each view when the on-screen guide is ready.');
+                    return;
+                }
+                const x = (box.x + box.width / 2) / video.videoWidth;
+                const y = (box.y + box.height / 2) / video.videoHeight;
+                const size = box.width / video.videoWidth;
+                if (size < .18 || size > .72 || x < .3 || x > .7 || y < .16 || y > .84) {
+                    stableCount = 0;
+                    lastSample = null;
+                    updateGuide('tracking', size < .18 ? 'Move a little closer' : size > .72 ? 'Move a little back' : 'Center your face');
+                    setStatus(size < .18 ? 'Move a little closer and keep your full face inside the guide.' : size > .72
+                        ? 'Move a little back so your full face fits inside the guide.'
+                        : 'Center your face in the guide and keep both eyes visible.');
+                    return;
+                }
+                const index = Object.keys(views).length;
+                const sample = { x, y, size, offset };
+                if (!guideForPose(index, offset)) {
+                    stableCount = 0;
+                    lastSample = null;
+                    updateGuide('tracking', index === 0 ? 'Look straight at camera' : index === 1 ? 'Turn slightly to your left' : 'Turn the other way');
+                    setStatus(index === 0 ? 'Look straight at the camera and hold still.' : index === 1
+                        ? 'Turn your head slightly to your left. Keep your face centered.'
+                        : 'Turn slightly to the opposite side. Keep your face centered.');
+                    return;
+                }
+                updateGuide('tracking', 'Hold still · scanning');
+                setStatus('Face position detected. Hold still while this view is captured automatically.');
+                if (isStable(sample)) {
+                    stableCount = 0;
+                    lastSample = sample;
+                    await captureView(index, attempt, true);
+                }
+            } catch (_) {
+                if (attempt === requestId) manualCaptureMode('Automatic face scanning stopped in this browser. You can still capture each view manually.');
+            } finally {
+                scanInFlight = false;
+                if (scanning && stream && !document.hidden) queueScan(240);
+            }
         }
 
         start.addEventListener('click', async () => {
@@ -93,10 +276,21 @@
                 lighting?.start(opened);
                 wrap.style.display = 'block';
                 visible(start, false);
-                visible(capture, true);
                 visible(cancel, true);
-                setStatus('Capture 1 of 3: front view. Use even lighting and keep only your face in the frame.');
-                capture.focus({ preventScroll: true });
+                try {
+                    const FaceDetector = window.FaceDetector;
+                    detector = typeof FaceDetector === 'function' ? new FaceDetector({ fastMode: true, maxDetectedFaces: 2 }) : null;
+                } catch (_) { detector = null; }
+                if (!detector) {
+                    manualCaptureMode('Automatic pose scanning is not available in this browser. Capture each view manually; face captures stay on this device until you register them.');
+                    return;
+                }
+                scanning = true;
+                visible(capture, false);
+                setStatus('Automatic scan is ready. Hold each position steady; your face captures stay on this device until you register them.');
+                updateGuide('tracking', 'Center your face');
+                instruction.focus({ preventScroll: true });
+                queueScan(250);
             } catch (error) {
                 if (attempt !== requestId) return;
                 reset();
@@ -107,60 +301,10 @@
             }
         });
 
-        capture.addEventListener('click', async () => {
-            const index = Object.keys(views).length;
-            if (!poses[index] || capture.disabled || !stream) return;
-            if (!video.videoWidth || !video.videoHeight) {
-                setStatus('The camera is not ready. Wait a moment and try again.', '#f87171');
-                return;
-            }
-            const attempt = requestId;
-            capture.disabled = true;
-            capture.setAttribute('aria-busy', 'true');
-            capture.textContent = 'Adjusting light…';
-            lighting?.lock(true);
-            if (lighting) await lighting.settle();
-            if (attempt !== requestId || !stream) return;
-            const scale = Math.min(1, 1280 / Math.max(video.videoWidth, video.videoHeight));
-            canvas.width = Math.round(video.videoWidth * scale);
-            canvas.height = Math.round(video.videoHeight * scale);
-            try {
-                canvas.getContext('2d', { alpha: false }).drawImage(video, 0, 0, canvas.width, canvas.height);
-            } catch (_) {
-                capture.disabled = false;
-                capture.removeAttribute('aria-busy');
-                capture.textContent = 'Capture ' + poses[index][0] + ' view';
-                lighting?.lock(false);
-                setStatus('This camera frame could not be read. Please try again.', '#f87171');
-                return;
-            }
-            canvas.toBlob(blob => {
-                if (attempt !== requestId) return;
-                capture.disabled = false;
-                capture.removeAttribute('aria-busy');
-                capture.textContent = 'Capture ' + poses[index][0] + ' view';
-                lighting?.lock(false);
-                if (!blob) {
-                    setStatus('This frame could not be captured. Please try again.', '#f87171');
-                    return;
-                }
-                views[poses[index][0]] = blob;
-                progress();
-                if (index < 2) {
-                    setStatus('Capture ' + (index + 2) + ' of 3: ' + poses[index + 1][0] + ' view.');
-                } else {
-                    stopCamera();
-                    video.style.display = 'none';
-                    canvas.style.cssText = 'display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);';
-                    visible(capture, false);
-                    visible(retake, true);
-                    visible(save, true);
-                    setStatus('Three views captured. The server will check face quality, head positions, and that all captures show the same person.');
-                    save.focus({ preventScroll: true });
-                }
-            }, 'image/jpeg', 0.88);
+        capture.addEventListener('click', () => {
+            if (scanning) return;
+            captureView(Object.keys(views).length, requestId, false);
         });
-
         save.addEventListener('click', async () => {
             if (saving || !poses.every(([pose]) => views[pose])) return;
             const attempt = requestId;
@@ -203,6 +347,16 @@
             setStatus('Capture canceled.');
             start.focus({ preventScroll: true });
         });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (scanTimer !== null) window.clearTimeout(scanTimer);
+                scanTimer = null;
+                stableCount = 0;
+                lastSample = null;
+            } else {
+                queueScan(100);
+            }
+        });
         window.addEventListener('pagehide', () => {
             const captureInProgress = Boolean(stream) || start.disabled || Object.keys(views).length > 0;
             requestId++;
@@ -211,6 +365,7 @@
         });
         progress();
     }
+
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialize, { once: true });
     else initialize();
 })();
