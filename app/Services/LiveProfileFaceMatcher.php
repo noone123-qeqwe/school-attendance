@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Process\Process;
 
 class LiveProfileFaceMatcher
@@ -22,9 +23,28 @@ class LiveProfileFaceMatcher
         return $this->compareFrameSet($user, $liveFrames, true);
     }
 
-    private function compareFrameSet(User $user, array $liveFrames, bool $requireConsistency): array
+    public function attendanceReady(): bool
     {
-        $references = app(ProfileFacePhotoService::class)->referenceImages($user);
+        $threshold = filter_var(config('face_match.attendance_pad_threshold'), FILTER_VALIDATE_FLOAT);
+        return $threshold !== false && is_finite($threshold) && $threshold > 0.5 && $threshold <= 1
+            && is_readable(config('face_match.attendance_pad_model'))
+            && is_readable(config('face_match.detector_model'))
+            && is_readable(config('face_match.recognizer_model'));
+    }
+
+    public function verifyAttendance(User $user, array $frames, array $poses): array
+    {
+        if (!$this->attendanceReady() || count($frames) !== FaceAttendanceChallenge::FRAME_COUNT) {
+            return $this->failure('MATCHER_UNAVAILABLE');
+        }
+
+        return $this->compareFrameSet($user, $frames, true, $poses);
+    }
+
+    private function compareFrameSet(User $user, array $liveFrames, bool $requireConsistency, ?array $poses = null): array
+    {
+        $photos = app(ProfileFacePhotoService::class);
+        $references = $poses === null ? $photos->referenceImages($user) : $photos->cameraReferences($user);
         if ($references === []) {
             return $this->failure('NO_PROFILE_PHOTO');
         }
@@ -36,6 +56,9 @@ class LiveProfileFaceMatcher
                 return $this->failure('INVALID_LIVE_FRAME');
             }
             $liveBytes[] = $bytes;
+        }
+        if ($poses !== null && !$this->freshEvidence($user, $liveBytes)) {
+            return $this->failure('LIVENESS_FAILED');
         }
 
         $threshold = filter_var(config('face_match.threshold'), FILTER_VALIDATE_FLOAT);
@@ -78,9 +101,14 @@ class LiveProfileFaceMatcher
                 }
             }
 
+            $attendanceOptions = $poses === null ? [] : [
+                '--attendance', implode(',', $poses), config('face_match.attendance_pad_model'),
+                (string) config('face_match.attendance_pad_threshold'),
+            ];
             $process = new Process([
                 config('face_match.python'),
                 base_path('scripts/match_profile_face.py'),
+                ...$attendanceOptions,
                 ...$referenceOptions,
                 $referencePath,
                 ...$framePaths,
@@ -110,15 +138,19 @@ class LiveProfileFaceMatcher
                 'LIVE_IMAGE_QUALITY', 'LIVE_FACE_NOT_FOUND',
                 'LIVE_MULTIPLE_FACES', 'LIVE_FACE_TOO_SMALL',
                 'LIVE_IMAGE_BLURRY', 'LIVE_FRAME_INCONSISTENT',
+                'LIVE_IMAGE_LIGHTING', 'LIVE_FACE_POSITION', 'LIVE_POSE_MISMATCH',
+                'LIVENESS_FAILED', 'LIVENESS_UNCERTAIN', 'IDENTITY_UNCERTAIN',
             ];
             if (!in_array($code, $allowedCodes, true)) {
                 return $this->failure('MATCHER_UNAVAILABLE');
             }
 
             $similarity = (float) $similarity;
-            $frameConsistent = ($result['frame_consistent'] ?? true) === true;
+            $frameConsistent = ($result['frame_consistent'] ?? ($poses === null)) === true;
+            $livenessPassed = $poses !== null && ($result['liveness_passed'] ?? null) === true
+                && ($result['frame_count'] ?? null) === FaceAttendanceChallenge::FRAME_COUNT;
             $match = $result['match'] && $code === 'MATCH' && $similarity >= $threshold
-                && (!$requireConsistency || $frameConsistent);
+                && (!$requireConsistency || $frameConsistent) && ($poses === null || $livenessPassed);
             if ($code === 'MATCH' && !$match) {
                 $code = 'BIOMETRIC_MISMATCH';
             }
@@ -129,6 +161,7 @@ class LiveProfileFaceMatcher
                 'similarity' => $similarity,
                 'method' => 'opencv_yunet_sface',
                 'frame_count' => count($liveFrames),
+                'liveness_passed' => $livenessPassed,
                 // Identical samples are recorded only as a diagnostic; they are not proof of spoofing.
                 'frames_identical' => count(array_unique(array_map('hash', array_fill(0, count($liveFrames), 'sha256'), $liveFrames))) === 1,
                 'message' => $this->message($code),
@@ -140,6 +173,21 @@ class LiveProfileFaceMatcher
                 @unlink($path);
             }
         }
+    }
+
+    private function freshEvidence(User $user, array $frames): bool
+    {
+        $hashes = array_map(fn (string $bytes) => hash('sha256', $bytes), $frames);
+        if (count(array_unique($hashes)) !== count($hashes)) {
+            return false;
+        }
+
+        // Exact repeats are rejected even if the submitted frame order changes.
+        // Store only a short-lived, keyed digest, never a frame or face embedding.
+        sort($hashes, SORT_STRING);
+        $key = hash_hmac('sha256', $user->id.':'.implode('', $hashes), (string) config('app.key'));
+
+        return Cache::add('qr_face_evidence:'.$key, true, 600);
     }
 
     private function decodeLiveFrame(?string $frame): ?string
@@ -155,7 +203,8 @@ class LiveProfileFaceMatcher
         }
 
         $size = @getimagesizefromstring($bytes);
-        if (!is_array($size) || min($size[0], $size[1]) < 100 || max($size[0], $size[1]) > 2000) {
+        if (!is_array($size) || !in_array($size['mime'] ?? null, ['image/jpeg', 'image/png', 'image/webp'], true)
+            || min($size[0], $size[1]) < 100 || max($size[0], $size[1]) > 2000) {
             return null;
         }
 
@@ -169,6 +218,7 @@ class LiveProfileFaceMatcher
             'code' => $code,
             'similarity' => 0.0,
             'method' => 'opencv_yunet_sface',
+            'liveness_passed' => false,
             'message' => $this->message($code),
         ];
     }
@@ -185,6 +235,12 @@ class LiveProfileFaceMatcher
                 'Move closer to the camera and keep your face clear and steady, then try again.',
             'LIVE_MULTIPLE_FACES' => 'Only one person can be in the camera frame. Please try again.',
             'LIVE_FRAME_INCONSISTENT' => 'Your face moved between the camera samples. Keep your face steady and retry.',
+            'LIVE_IMAGE_LIGHTING' => 'Use even light from the front. Avoid bright lights behind you and try again.',
+            'LIVE_FACE_POSITION' => 'Keep your face inside the oval and try again.',
+            'LIVE_POSE_MISMATCH' => 'The requested head movements could not be verified. Follow the directions and try again.',
+            'LIVENESS_FAILED' => 'Liveness could not be verified. Use the live camera, device verification, or ask your teacher for help.',
+            'LIVENESS_UNCERTAIN', 'IDENTITY_UNCERTAIN' =>
+                'The camera check was inconclusive. Try again in even light, use device verification, or ask your teacher for help.',
             'INCOMPLETE_MULTI_FRAME_CAPTURE' => 'The camera capture was incomplete. Please retry the face check.',
             'INVALID_LIVE_FRAME', 'LIVE_IMAGE_UNREADABLE' => 'The camera frame could not be read. Please retry the camera scan.',
             'BIOMETRIC_MISMATCH' => 'Your face samples did not match your registered face profile. Please try again in good lighting.',

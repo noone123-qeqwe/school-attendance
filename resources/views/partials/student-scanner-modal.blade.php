@@ -2592,15 +2592,17 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
     if (processingText) processingText.textContent = 'Getting accurate location...';
     if (hint) hint.textContent = 'Getting accurate location...';
     let scanLocation = null;
-    try {
-        scanLocation = await refreshStudentLocation(true);
-    } catch (error) {
-        console.warn('Geolocation refresh warning:', error);
-    }
-    if (!scanLocation) {
-        if (overlay) overlay.style.display = 'none';
-        renderScanError({ error_type: 'unreliable_gps', message: 'Getting accurate location failed. Enable high-accuracy GPS, move near a window, and retry.' });
-        return;
+    if (@json(app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification'))) {
+        try {
+            scanLocation = await refreshStudentLocation(true);
+        } catch (error) {
+            console.warn('Geolocation refresh warning:', error);
+        }
+        if (!scanLocation) {
+            if (overlay) overlay.style.display = 'none';
+            renderScanError({ error_type: 'unreliable_gps', message: 'Getting accurate location failed. Enable high-accuracy GPS, move near a window, and retry.' });
+            return;
+        }
     }
 
     const devKey = (typeof window.getOrCreateDeviceKey === 'function')
@@ -2613,10 +2615,10 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
         method: resolvedMethod,
         device_key: devKey,
         device_fingerprint: devKey,
-        latitude: scanLocation.lat,
-        longitude: scanLocation.lng,
-        accuracy: scanLocation.acc,
-        location_timestamp_ms: scanLocation.timestamp
+        latitude: scanLocation?.lat ?? null,
+        longitude: scanLocation?.lng ?? null,
+        accuracy: scanLocation?.acc ?? null,
+        location_timestamp_ms: scanLocation?.timestamp ?? null
     };
 
     try {
@@ -2636,6 +2638,15 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
         const data = await response.json();
         if (overlay) overlay.style.display = 'none';
 
+        if (response.ok && data.verification_url) {
+            const destination = new URL(data.verification_url, window.location.origin);
+            if (destination.origin === window.location.origin && destination.pathname.startsWith('/qr/scan/')) {
+                window.location.assign(destination.href);
+                return;
+            }
+            renderScanError({ message: 'Could not open identity verification. Please scan again.' });
+            return;
+        }
         if (response.ok && data.success) {
             renderScanSuccess(data);
         } else {

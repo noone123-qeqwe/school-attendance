@@ -69,6 +69,8 @@ return Application::configure(basePath: dirname(__DIR__))
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontFlash(['live_frame', 'live_frames', 'face_challenge', 'face_descriptor', 'credential']);
+
         $exceptions->render(function (\App\Exceptions\AppException $e, Request $request) {
             \Illuminate\Support\Facades\Log::error('Application domain exception.', [
                 'error_code' => $e->errorCode(),
@@ -99,7 +101,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return redirect()->route('login')
-                ->withInput($request->except('_token', 'password', 'password_confirmation'))
+                ->withInput($request->except('_token', 'password', 'password_confirmation', 'live_frame', 'live_frames', 'face_challenge', 'face_descriptor', 'credential'))
                 ->with('error', 'Your session expired. Please sign in again.');
         });
 
@@ -112,7 +114,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
 
                 return redirect()->route('login')
-                    ->withInput($request->except('_token', 'password', 'password_confirmation'))
+                    ->withInput($request->except('_token', 'password', 'password_confirmation', 'live_frame', 'live_frames', 'face_challenge', 'face_descriptor', 'credential'))
                     ->with('error', 'Your session expired. Please sign in again.');
             }
         });

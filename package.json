@@ -9,6 +9,7 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "0.10.32",
     "chart.js": "^4.5.1"
   },
   "engines": {

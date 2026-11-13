@@ -9,6 +9,14 @@ use App\Models\User;
 use App\Services\WebauthnService;
 use App\Services\LocationIntegrityService;
 use App\Services\AttendanceQrTokenService;
+use App\Services\FaceAttendanceChallenge;
+use App\Services\FaceAttendanceConsent;
+use App\Services\FaceVerificationAttemptLimiter;
+use App\Services\BiometricVerificationAuditService;
+use App\Services\LiveProfileFaceMatcher;
+use App\Services\ProfileFacePhotoService;
+use App\Services\FeatureFlagService;
+use App\Models\Setting;
 use App\Events\TeacherAttendanceUpdated;
 use App\Events\AttendanceSessionChanged;
 use Carbon\Carbon;
@@ -1549,12 +1557,11 @@ class QrAttendanceController extends Controller
         }
 
         $user = Auth::user();
-
-        // Temporarily disable device binding check to prevent false rejections
-        // Will re-enable once basic functionality is stable
+        $faceChallenge = app(FaceAttendanceChallenge::class);
+        $admittedId = $faceChallenge->admittedSession($request, $token);
         
         $signedQr = str_starts_with($token, 'aqr.')
-            ? app(AttendanceQrTokenService::class)->inspect($token) : null;
+            ? app(AttendanceQrTokenService::class)->inspect($token, $admittedId > 0) : null;
         if ($signedQr && $signedQr['status'] !== 'valid') {
             return view('qr.result', [
                 'status' => $signedQr['status'] === 'closed' ? 'closed' : 'expired',
@@ -1567,12 +1574,17 @@ class QrAttendanceController extends Controller
         $session = $signedQr
             ? $signedQr['token']->session
             : AttendanceSession::where('token', $token)->orWhere('previous_token', $token)->first();
+        $session ??= !$signedQr && $admittedId ? AttendanceSession::find($admittedId) : null;
 
         if (!$session) {
             return view('qr.result', ['status' => 'expired', 'message' => 'This QR code is no longer active. Please scan the latest QR from your teacher.']);
         }
 
-        $tokenValidation = $signedQr ? ['valid' => true] : $session->validateCodeOrToken($token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
+        if (!$signedQr && $session->qrTokens()->exists()) {
+            return view('qr.result', ['status' => 'expired', 'message' => 'This QR was replaced. Please scan the current QR.']);
+        }
+        $tokenValidation = $signedQr || $admittedId === (int) $session->id
+            ? ['valid' => true] : $session->validateCodeOrToken($token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
         if (!$tokenValidation['valid']) {
             return view('qr.result', ['status' => 'expired', 'message' => 'This QR code has expired (QR codes refresh every 15 seconds). Please scan the latest QR from your teacher.']);
         }
@@ -1615,19 +1627,13 @@ class QrAttendanceController extends Controller
             return view('qr.result', ['status' => 'error', 'message' => 'You are not enrolled in this class.']);
         }
 
-        $faceEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification');
-        $hasCustomPhoto = $faceEnabled && app(\App\Services\ProfileFacePhotoService::class)->bytes($user) !== null;
-        $hasCredentials = $user->webauthnCredentials()
-            ->where(function ($query) {
-                $query->whereNull('biometric_type')->orWhere('biometric_type', '!=', 'face');
-            })
-            ->where('public_key', 'like', '%BEGIN PUBLIC KEY%')
-            ->exists();
+        $hasCustomPhoto = $this->faceAttendanceAvailable($user);
+        $hasCredentials = $this->attendanceCredentials($user)->exists();
 
         if (!$hasCredentials && !$hasCustomPhoto) {
             return view('qr.verify', [
                 'status'          => 'setup',
-                'message'         => 'Upload a profile photo or register your biometric device before using QR attendance.',
+                'message'         => 'Register a device sign-in method or ask your teacher to help record your attendance. Camera attendance requires school approval and an existing camera face profile.',
                 'token'           => $token,
                 'subject'         => $subject,
                 'user'            => $user,
@@ -1666,11 +1672,11 @@ class QrAttendanceController extends Controller
         $classroomLng = $coords['schoolLng'];
         $radiusMeters = $gpsVerificationEnabled ? (int) $session->getAllowedRadius() : 0;
 
-        $hasHardwareFp = $user->webauthnCredentials()->where(function ($q) {
-            $q->whereNull('biometric_type')->orWhere('biometric_type', '!=', 'face');
-        })->where('public_key', 'like', '%BEGIN PUBLIC KEY%')->exists();
+        if (!$admittedId && $this->faceAttendanceApproved($user)) {
+            $faceChallenge->admitScan($request, $session, $token);
+        }
 
-        return view('qr.verify', [
+        return response()->view('qr.verify', [
             'status'          => 'ready',
             'message'         => 'Confirm GPS and biometric identity to finish clock-in.',
             'token'           => $token,
@@ -1680,16 +1686,22 @@ class QrAttendanceController extends Controller
             'radiusMeters'    => $radiusMeters,
             'user'            => $user,
             'hasProfilePhoto' => $hasCustomPhoto,
-            'profilePhotoUrl' => $user->profile_photo_url,
             'hasFaceMethod'   => $hasCustomPhoto,
-            'hasFingerprint'  => $hasHardwareFp,
+            'hasFingerprint'  => $hasCredentials,
             'defaultMethod'   => $hasCustomPhoto ? 'face' : 'fingerprint',
-            'faceAdditionalFactor' => \App\Models\Setting::get('face_verification_additional_factor', 'none'),
-        ]);
+            'faceAdditionalFactor' => Setting::get('face_verification_additional_factor', 'none'),
+        ])->header('Cache-Control', 'private, no-store');
     }
-    public function verificationOptions(Request $request, WebauthnService $webauthn)
+    public function verificationOptions(Request $request)
     {
-        $request->validate(['token' => 'required|string']);
+        $request->validate([
+            'token' => 'required|string|max:512',
+            'biometric_method' => 'nullable|in:face,fingerprint',
+        ]);
+        $user = $request->user();
+        $face = $request->input('biometric_method') === 'face';
+        $faceChallenge = app(FaceAttendanceChallenge::class);
+        $admittedId = $faceChallenge->admittedSession($request, $request->token);
 
         Log::debug('QR verificationOptions request', [
             'token_hash' => hash('sha256', $request->token),
@@ -1697,13 +1709,14 @@ class QrAttendanceController extends Controller
         ]);
 
         $signedQr = str_starts_with($request->token, 'aqr.')
-            ? app(AttendanceQrTokenService::class)->inspect($request->token) : null;
+            ? app(AttendanceQrTokenService::class)->inspect($request->token, $admittedId > 0) : null;
         if ($signedQr && $signedQr['status'] !== 'valid') {
             return response()->json(['success' => false, 'message' => 'This QR is expired or no longer active. Please scan the current QR.'], 422);
         }
         $session = $signedQr
             ? $signedQr['token']->session
             : AttendanceSession::where('token', $request->token)->orWhere('previous_token', $request->token)->first();
+        $session ??= !$signedQr && $admittedId ? AttendanceSession::find($admittedId) : null;
 
         if (!$session) {
             Log::error('QR verificationOptions - attendance session not found', [
@@ -1713,7 +1726,11 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'QR session not found. Please scan a fresh QR code.'], 422);
         }
 
-        $tokenValidation = $signedQr ? ['valid' => true] : $session->validateCodeOrToken($request->token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
+        if (!$signedQr && $session->qrTokens()->exists()) {
+            return response()->json(['success' => false, 'message' => 'This QR was replaced. Please scan the current QR.'], 422);
+        }
+        $tokenValidation = $signedQr || $admittedId === (int) $session->id
+            ? ['valid' => true] : $session->validateCodeOrToken($request->token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
         if (!$tokenValidation['valid']) {
             return response()->json(['success' => false, 'message' => 'This QR code has expired (QR codes refresh every 15 seconds). Please scan the latest QR code displayed by your teacher.'], 422);
         }
@@ -1741,76 +1758,60 @@ class QrAttendanceController extends Controller
         // The challenge should persist until the user completes verification or it's very old
         // $session->cleanupExpiredChallenge();
 
-        $faceEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification');
-        $hasCustomPhoto = $faceEnabled && app(\App\Services\ProfileFacePhotoService::class)->bytes($user) !== null;
-        if (!$user->webauthnCredentials()->where(function ($query) {
-                $query->whereNull('biometric_type')->orWhere('biometric_type', '!=', 'face');
-            })->where('public_key', 'like', '%BEGIN PUBLIC KEY%')->exists() && !$hasCustomPhoto) {
-            return response()->json(['success' => false, 'message' => 'Biometric verification is not set up on this account. Please upload a profile photo or register your biometric device.'], 422);
+        $hasCustomPhoto = $this->faceAttendanceAvailable($user);
+        $validCredentials = $this->attendanceCredentials($user)->get();
+        if ($face && (!$hasCustomPhoto || !$session->isSessionActive())) {
+            return response()->json(['success' => false, 'code' => 'FACE_VERIFICATION_UNAVAILABLE',
+                'message' => 'Camera attendance is unavailable. Use device verification or ask your teacher for help.'], 403);
         }
-
-        // Generate isolated per-student cryptographic challenge
-        $challenge = $this->base64UrlEncode(random_bytes(32));
-        
-        // Store the challenge only for the bounded biometric + GPS completion window.
-        $cacheKey = "webauthn_qr_challenge_{$user->id}_{$session->id}";
-        Cache::put($cacheKey, $challenge, now()->addSeconds(self::QR_SCAN_BUFFER_SECONDS));
-        // The visible QR may rotate while this student's device prompt is open.
-        // Bind only this validated scan to the student and session; do not extend
-        // the validity of the QR code for new scans.
-        $scanKey = "webauthn_qr_scan_{$user->id}_" . hash('sha256', $request->token);
-        Cache::put($scanKey, $session->id, now()->addSeconds(self::QR_SCAN_BUFFER_SECONDS));
-        
-        $rpId = $this->getRpId($request);
-        $validCredentials = $user->webauthnCredentials
-            ->filter(function ($credential) {
-                if ($credential->biometric_type === 'face' && !str_contains((string) $credential->public_key, 'BEGIN PUBLIC KEY')) {
-                    return false;
-                }
-                return true;
-            });
-
         if ($validCredentials->isEmpty() && !$hasCustomPhoto) {
             return response()->json([
                 'success' => false,
-                'message' => 'No biometric credentials or registered profile photo found. Please upload a profile photo or register your biometric device in Settings.'
+                'message' => 'No attendance verification method is available. Register a device sign-in method or ask your teacher for help.'
             ], 422);
         }
 
         $availableMethods = [];
-        if ($faceEnabled && $hasCustomPhoto) {
+        if ($hasCustomPhoto) {
             $availableMethods[] = 'face';
         }
         if ($validCredentials->isNotEmpty()) {
             $availableMethods[] = 'fingerprint';
         }
 
-        $options = [
-            'challenge' => $challenge,
-            'rpId' => $rpId,
-            'available_methods' => $availableMethods,
-            'has_profile_photo' => $hasCustomPhoto,
-            'profile_photo_url' => $user->profile_photo_url,
-            'student_name' => $user->name,
-            'student_number' => $user->student_number,
-            'allowCredentials' => $validCredentials
-                ->map(fn ($credential) => [
+        $makeOptions = function () use ($request, $user, $session, $availableMethods, $hasCustomPhoto, $validCredentials, $face, $faceChallenge) {
+            $challenge = $this->base64UrlEncode(random_bytes(32));
+            $cacheKey = "webauthn_qr_challenge_{$user->id}_{$session->id}";
+            Cache::put($cacheKey, $challenge, self::QR_SCAN_BUFFER_SECONDS);
+            $scanKey = "webauthn_qr_scan_{$user->id}_".hash('sha256', $request->token);
+            Cache::put($scanKey, $session->id, self::QR_SCAN_BUFFER_SECONDS);
+
+            return response()->json([
+                'success' => true,
+                'challenge' => $challenge,
+                'rpId' => $this->getRpId($request),
+                'available_methods' => $availableMethods,
+                'has_profile_photo' => $hasCustomPhoto,
+                'student_name' => $user->name,
+                'student_number' => $user->student_number,
+                'allowCredentials' => $validCredentials->map(fn ($credential) => [
                     'type' => 'public-key',
                     'id' => $credential->credential_id,
-                ])
-                ->values(),
-            'userVerification' => 'required',
-            'timeout' => 60000,
-        ];
+                ])->values(),
+                'userVerification' => 'required',
+                'timeout' => 60000,
+                'face_challenge' => $face ? $faceChallenge->issue($request, $session) : null,
+            ])->header('Cache-Control', 'private, no-store');
+        };
 
-        Log::debug('QR verification challenge generated and cached for student', [
-            'user_id' => $user->id,
-            'session_id' => $session->id,
-            'cache_key' => $cacheKey,
-            'available_methods' => $availableMethods,
-        ]);
+        return Cache::lock($faceChallenge->lockKey($user, $session), 30)->get(function () use ($user, $session, $face, $makeOptions) {
+            $limiter = app(FaceVerificationAttemptLimiter::class);
+            if ($face && $limiter->isLocked($user, (int) $session->id)) {
+                return $this->faceCooldown($limiter, $user, $session);
+            }
 
-        return response()->json(array_merge(['success' => true], $options));
+            return $makeOptions();
+        }) ?: $this->faceVerificationBusy();
     }
 
     public function confirm(Request $request, WebauthnService $webauthn)
@@ -1822,16 +1823,17 @@ class QrAttendanceController extends Controller
     {
         $gpsVerificationEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification');
         $request->validate([
-            'token'            => 'required|string',
+            'token'            => 'required|string|max:512',
             'latitude'         => [$gpsVerificationEnabled ? 'required' : 'nullable', ValidCoordinate::latitude()],
             'longitude'        => [$gpsVerificationEnabled ? 'required' : 'nullable', ValidCoordinate::longitude()],
             'accuracy'         => 'nullable|numeric',
             'location_timestamp_ms' => 'nullable|integer',
             'credential'       => 'nullable',
             'face_descriptor'  => 'nullable|string|max:4096',
-            'live_frame'       => 'nullable|string|max:4194304',
-            'live_frames'      => 'nullable|array|min:2|max:3',
-            'live_frames.*'    => 'required|string|max:4194304',
+            'live_frame'       => 'prohibited',
+            'live_frames'      => 'nullable|list|max:'.FaceAttendanceChallenge::FRAME_COUNT,
+            'live_frames.*'    => 'required|string|max:'.FaceAttendanceChallenge::MAX_FRAME_LENGTH,
+            'face_challenge'   => 'nullable|string|size:64',
             'biometric_method' => 'nullable|string',
         ]);
 
@@ -1842,10 +1844,15 @@ class QrAttendanceController extends Controller
         }
 
         $user    = $request->user();
+        $isFaceMethod = $request->input('biometric_method') === 'face' || $request->filled('face_descriptor')
+            || $request->filled('face_challenge') || $request->filled('live_frames')
+            || (is_array($credential) && (($credential['type'] ?? '') === 'face' || isset($credential['face_descriptor'])))
+            || (is_string($rawCredential) && str_starts_with($rawCredential, 'face_desc_'));
         $scanKey = "webauthn_qr_scan_{$user->id}_" . hash('sha256', $request->token);
         $startedSessionId = Cache::get($scanKey);
+        $admittedId = app(FaceAttendanceChallenge::class)->admittedSession($request, $request->token);
         $signedQr = str_starts_with($request->token, 'aqr.')
-            ? app(AttendanceQrTokenService::class)->inspect($request->token) : null;
+            ? app(AttendanceQrTokenService::class)->inspect($request->token, $admittedId > 0 && $admittedId === (int) $startedSessionId) : null;
         if ($signedQr && $signedQr['status'] !== 'valid') {
             return response()->json(['success' => false, 'message' => 'This QR is expired or no longer active. Please scan the current QR.'], 422);
         }
@@ -1886,7 +1893,7 @@ class QrAttendanceController extends Controller
         if (!is_string($challenge) || $challenge === '') {
             return response()->json([
                 'success' => false,
-                'message' => 'Fingerprint challenge expired or not found. Please request verification options again.',
+                'message' => 'The verification challenge expired. Start another check or scan the current QR.',
             ], 422);
         }
 
@@ -2108,97 +2115,24 @@ class QrAttendanceController extends Controller
             }
         }
 
-        $isFaceMethod = ($request->input('biometric_method') === 'face')
-            || $request->filled('face_descriptor')
-            || (is_array($credential) && (($credential['type'] ?? '') === 'face' || isset($credential['face_descriptor'])))
-            || (is_string($rawCredential) && str_starts_with($rawCredential, 'face_desc_'));
-
         $recordedMethod = 'qr';
-        $faceMatchResult = null;
 
         if ($isFaceMethod) {
-            if (!app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification')) {
-                return response()->json(['success' => false, 'code' => 'FACE_VERIFICATION_DISABLED', 'message' => 'Face verification is currently unavailable. Please use your registered fingerprint or ask your instructor for help.'], 403);
+            if (!$this->faceAttendanceAvailable($user)) {
+                return response()->json(['success' => false, 'code' => 'FACE_VERIFICATION_UNAVAILABLE',
+                    'message' => 'Camera attendance is unavailable. Use device verification or ask your teacher for help.'], 403);
             }
 
-            $attemptLimiter = app(\App\Services\FaceVerificationAttemptLimiter::class);
-            $audit = app(\App\Services\BiometricVerificationAuditService::class);
-            if ($attemptLimiter->isLocked($user, (int) $session->id)) {
-                $audit->record($user, $request, (int) $session->id, false, 'attempt_limit');
-                return response()->json([
-                    'success' => false,
-                    'code' => 'FACE_ATTEMPTS_EXHAUSTED',
-                    'message' => 'Too many unsuccessful face checks. Please wait ' . max(1, (int) ceil($attemptLimiter->secondsUntilRetry($user, (int) $session->id) / 60)) . ' minute(s), then retry or use your registered fingerprint.',
-                ], 429);
+            $faceResult = Cache::lock(app(FaceAttendanceChallenge::class)->lockKey($user, $session), 30)->get(
+                fn () => $this->verifyAttendanceFace($request, $user, $session, $credential, $challenge, $webauthn)
+            );
+            if ($faceResult === false) {
+                return $this->faceVerificationBusy();
             }
-
-            $liveFrames = $request->input('live_frames');
-            if (!is_array($liveFrames) || count($liveFrames) < 2 || count($liveFrames) > 3) {
-                $attemptLimiter->recordFailure($user, (int) $session->id);
-                $audit->record($user, $request, (int) $session->id, false, 'incomplete_capture');
-                return response()->json([
-                    'success' => false,
-                    'code' => 'INCOMPLETE_MULTI_FRAME_CAPTURE',
-                    'message' => 'The camera capture was incomplete. Please capture three samples and retry.',
-                ], 422);
+            if ($faceResult instanceof \Illuminate\Http\JsonResponse) {
+                return $faceResult;
             }
-
-            $faceMatchResult = app(\App\Services\LiveProfileFaceMatcher::class)->compareFrames($user, $liveFrames);
-
-            if (!$faceMatchResult['match']) {
-                $attemptLimiter->recordFailure($user, (int) $session->id);
-                $failureCategory = (string) ($faceMatchResult['code'] ?? 'biometric_mismatch');
-                $audit->record($user, $request, (int) $session->id, false, $failureCategory);
-                Log::warning('QR Face verification against profile photo failed', [
-                    'user_id' => $user->id,
-                    'session_id' => $session->id,
-                    'failure_category' => $failureCategory,
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'code' => $faceMatchResult['code'] ?? 'BIOMETRIC_MISMATCH',
-                    'message' => $faceMatchResult['message'] ?? 'Face verification failed: Live face does not match your registered profile photo.'
-                ], ($faceMatchResult['code'] ?? null) === 'MATCHER_UNAVAILABLE' ? 503 : 422);
-            }
-
-            $factor = \App\Models\Setting::get('face_verification_additional_factor', 'none');
-            if (!in_array($factor, ['none', 'fingerprint', 'device', 'fingerprint_and_device'], true)) {
-                $factor = 'none';
-            }
-
-            $requiresFingerprint = in_array($factor, ['fingerprint', 'fingerprint_and_device'], true);
-            $requiresDevice = in_array($factor, ['device', 'fingerprint_and_device'], true);
-
-            try {
-                if ($requiresFingerprint) {
-                    if (!is_array($credential)) {
-                        throw new RuntimeException('Fingerprint assertion is required.');
-                    }
-                    $this->verifyQrFingerprintAssertion($user, $credential, $challenge, $webauthn);
-                }
-
-                if ($requiresDevice) {
-                    $binding = $user->deviceBinding ?: \App\Models\DeviceBinding::where('user_id', $user->id)->first();
-                    if (!$binding || !app(\App\Services\DeviceBindingService::class)->isCurrentDevice($user, $request)) {
-                        throw new RuntimeException('This attendance check must be completed on your registered device.');
-                    }
-                }
-            } catch (RuntimeException) {
-                $attemptLimiter->recordFailure($user, (int) $session->id);
-                $audit->record($user, $request, (int) $session->id, false, $requiresFingerprint ? 'additional_fingerprint_failed' : 'device_binding_failed');
-                return response()->json([
-                    'success' => false,
-                    'code' => 'ADDITIONAL_VERIFICATION_FAILED',
-                    'message' => $requiresFingerprint
-                        ? 'Fingerprint verification did not complete. Please retry with your registered fingerprint.'
-                        : 'This check must be completed on your registered device.',
-                ], 422);
-            }
-
-            $attemptLimiter->clear($user, (int) $session->id);
-            $audit->record($user, $request, (int) $session->id, true, '');
-            $recordedMethod = $factor === 'none' ? 'qr_face' : 'qr_face_' . $factor;
+            $recordedMethod = $faceResult;
         } else {
             if (!is_array($credential)) {
                 return response()->json(['success' => false, 'message' => 'Invalid biometric assertion data.'], 422);
@@ -2285,7 +2219,18 @@ class QrAttendanceController extends Controller
         ];
         $alreadyRecorded = false;
         try {
-            $attendance = DB::transaction(function () use ($signedQr, $request, $session, $user, $todayDate, $attendanceData, &$alreadyRecorded) {
+            $attendance = DB::transaction(function () use ($signedQr, $request, $session, $user, $todayDate, $attendanceData, &$alreadyRecorded, $isFaceMethod, $admittedId, $startedSessionId) {
+                if ($isFaceMethod) {
+                    $session = AttendanceSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
+                    $student = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+                    if (!$session->isSessionActive() || !$student->isActive() || !$this->faceAttendanceApproved($student)
+                        || !app(ProfileFacePhotoService::class)->hasCameraEnrollment($student)
+                        || !$session->subject?->hasStudent($student)) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'qr' => 'Camera attendance is no longer available for this session.',
+                        ]);
+                    }
+                }
                 return app(AttendanceQrTokenService::class)->recordWhileValid(
                     $signedQr ? $request->token : null,
                     $session,
@@ -2307,7 +2252,8 @@ class QrAttendanceController extends Controller
                         }
 
                         return Attendance::create($attendanceData);
-                    }
+                    },
+                    $isFaceMethod || ($admittedId > 0 && $admittedId === (int) $startedSessionId)
                 );
             });
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -2355,6 +2301,10 @@ class QrAttendanceController extends Controller
         // consume its challenge only after attendance has been saved.
         Cache::forget($cacheKey);
         Cache::forget($scanKey);
+        if ($isFaceMethod) {
+            app(FaceVerificationAttemptLimiter::class)->clear($user, (int) $session->id);
+            app(BiometricVerificationAuditService::class)->record($user, $request, (int) $session->id, true, '');
+        }
 
         event(new \App\Events\AttendanceMarked($attendance));
 
@@ -2397,6 +2347,7 @@ class QrAttendanceController extends Controller
             'success'              => true,
             'redirect'             => route('home'),
             'message'              => 'Attendance recorded successfully.',
+            'face_verified'        => $isFaceMethod,
             'attendance_id'        => (string) $attendance->id,
             'attendanceId'         => (string) $attendance->id,
             'student_id'           => (string) $user->id,
@@ -2420,6 +2371,94 @@ class QrAttendanceController extends Controller
     // ─────────────────────────────────────────
     // STUDENT: Direct In-App QR Scanner Process
     // ─────────────────────────────────────────
+    private function faceAttendanceAvailable(User $student): bool
+    {
+        return $this->faceAttendanceApproved($student)
+            && app(LiveProfileFaceMatcher::class)->attendanceReady()
+            && app(ProfileFacePhotoService::class)->hasCameraEnrollment($student);
+    }
+
+    private function faceAttendanceApproved(User $student): bool
+    {
+        return app(FaceAttendanceConsent::class)->requiredForSelfCheckIn($student);
+    }
+
+    private function attendanceCredentials(User $student)
+    {
+        return $student->webauthnCredentials()->where('public_key', 'like', '%BEGIN PUBLIC KEY%');
+    }
+
+    private function faceVerificationBusy(): \Illuminate\Http\JsonResponse
+    {
+        return response()->json(['success' => false, 'code' => 'FACE_VERIFICATION_BUSY',
+            'message' => 'A camera check is already in progress. Wait a moment and try again.'], 409);
+    }
+
+    private function faceCooldown(FaceVerificationAttemptLimiter $limiter, User $user, AttendanceSession $session): \Illuminate\Http\JsonResponse
+    {
+        return response()->json(['success' => false, 'code' => 'FACE_ATTEMPTS_EXHAUSTED',
+            'message' => 'Too many unsuccessful camera checks. Wait before retrying, use device verification, or ask your teacher for help.'], 429)
+            ->header('Retry-After', $limiter->secondsUntilRetry($user, (int) $session->id));
+    }
+
+    private function verifyAttendanceFace(Request $request, User $user, AttendanceSession $session, mixed $credential, string $challenge, WebauthnService $webauthn): string|\Illuminate\Http\JsonResponse
+    {
+        $limiter = app(FaceVerificationAttemptLimiter::class);
+        $audit = app(BiometricVerificationAuditService::class);
+        $sessionId = (int) $session->id;
+        if ($limiter->isLocked($user, $sessionId)) {
+            return $this->faceCooldown($limiter, $user, $session);
+        }
+
+        $poses = app(FaceAttendanceChallenge::class)->consume($request, $session);
+        $frames = $request->input('live_frames', []);
+        if (!$poses || count($frames ?? []) !== FaceAttendanceChallenge::FRAME_COUNT) {
+            $audit->record($user, $request, $sessionId, false, 'invalid_challenge_or_capture');
+            $limiter->recordFailure($user, $sessionId);
+
+            return response()->json(['success' => false, 'code' => 'FACE_CHALLENGE_INVALID',
+                'message' => 'The camera check expired or was incomplete. Start a new scan.'], 422);
+        }
+
+        $result = app(LiveProfileFaceMatcher::class)->verifyAttendance($user, $frames, $poses);
+        if (($result['liveness_passed'] ?? false) !== true || ($result['match'] ?? false) !== true) {
+            $code = $result['code'] ?? 'MATCHER_UNAVAILABLE';
+            $audit->record($user, $request, $sessionId, false, $code);
+            if ($code !== 'MATCHER_UNAVAILABLE') {
+                $limiter->recordFailure($user, $sessionId);
+            }
+
+            return response()->json(['success' => false, 'code' => $code,
+                'message' => $result['message']], $code === 'MATCHER_UNAVAILABLE' ? 503 : 422);
+        }
+
+        $factor = Setting::get('face_verification_additional_factor', 'none');
+        if (!in_array($factor, ['none', 'fingerprint', 'device', 'fingerprint_and_device'], true)) {
+            $factor = 'none';
+        }
+
+        try {
+            if (in_array($factor, ['fingerprint', 'fingerprint_and_device'], true)) {
+                if (!is_array($credential)) {
+                    throw new RuntimeException('Device assertion is required.');
+                }
+                $this->verifyQrFingerprintAssertion($user, $credential, $challenge, $webauthn);
+            }
+            if (in_array($factor, ['device', 'fingerprint_and_device'], true)
+                && (!$user->deviceBinding()->exists() || !app(\App\Services\DeviceBindingService::class)->isCurrentDevice($user, $request))) {
+                throw new RuntimeException('Device binding is required.');
+            }
+        } catch (RuntimeException) {
+            $limiter->recordFailure($user, $sessionId);
+            $audit->record($user, $request, $sessionId, false, 'additional_verification_failed');
+
+            return response()->json(['success' => false, 'code' => 'ADDITIONAL_VERIFICATION_FAILED',
+                'message' => 'The additional device check failed. Use your registered device or ask your teacher for help.'], 422);
+        }
+
+        return $factor === 'none' ? 'qr_face' : 'qr_face_'.$factor;
+    }
+
     public function processScan(Request $request)
     {
         $request->validate([
@@ -2957,6 +2996,16 @@ class QrAttendanceController extends Controller
                     'message' => 'Recent GPS readings changed too quickly to verify your location. Please retry with a fresh GPS fix or ask your instructor for help.',
                 ], 422);
             }
+        }
+
+        // A student approved for guided camera attendance must use the same
+        // verifier when scanning in-app or typing the teacher's code.
+        if ($this->faceAttendanceApproved($user)) {
+            $verificationToken = $signedQr ? $extractedToken : (string) $session->token;
+            app(FaceAttendanceChallenge::class)->admitScan($request, $session, $verificationToken);
+
+            return response()->json(['success' => true, 'verification_url' => route('qr.scan', $verificationToken, false)])
+                ->header('Cache-Control', 'private, no-store');
         }
 
         // 4. Calculate Timing (Present vs Late threshold)

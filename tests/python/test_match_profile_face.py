@@ -21,12 +21,74 @@ fake_cv2 = types.ModuleType("cv2")
 fake_cv2.FaceDetectorYN = types.SimpleNamespace(create=Mock())
 fake_cv2.FaceRecognizerSF = types.SimpleNamespace(create=Mock())
 fake_cv2.FaceRecognizerSF_FR_COSINE = 0
+fake_cv2.setNumThreads = Mock()
 spec = importlib.util.spec_from_file_location(
     "face_matcher", Path(__file__).resolve().parents[2] / "scripts/match_profile_face.py"
 )
 matcher = importlib.util.module_from_spec(spec)
 with patch.dict(sys.modules, {"cv2": fake_cv2}):
     spec.loader.exec_module(matcher)
+
+
+class AttendanceLivenessRulesTest(unittest.TestCase):
+    poses = ["front", "left", "up", "right", "down"]
+
+    def samples(self, *, pad_score=0.98):
+        points = {"front": (0, .55), "left": (.25, .55), "right": (-.25, .55),
+                  "up": (0, .39), "down": (0, .71)}
+        sequence = ["front", "front"]
+        for pose in self.poses[1:]:
+            sequence.extend(["front", pose, pose])
+
+        class Pixels(float):
+            def __sub__(self, other):
+                return Pixels(float(self) - float(other))
+
+            def __abs__(self):
+                return Pixels(abs(float(self)))
+
+            def mean(self):
+                return float(self)
+
+        return [(points[pose], (.5, .5, .35, .5), pad_score, i, Pixels(i))
+                for i, pose in enumerate(sequence)]
+
+    def verify(self, samples, similarity=.9, poses=None):
+        output = io.StringIO()
+        recognizer = Mock()
+        recognizer.match.return_value = similarity
+        with contextlib.redirect_stdout(output):
+            matcher.verify_attendance(samples, poses or self.poses, ["reference"], recognizer, .363, .90)
+        return json.loads(output.getvalue()), recognizer
+
+    def test_print_or_screen_classified_as_spoof_fails_before_identity(self):
+        result, recognizer = self.verify(self.samples(pad_score=.12))
+        self.assertEqual("LIVENESS_FAILED", result["code"])
+        self.assertFalse(result["liveness_passed"])
+        recognizer.match.assert_not_called()
+
+    def test_frozen_frames_and_reordered_video_fail_active_challenge(self):
+        original = self.samples()
+        for samples, poses in (([original[0]] * 14, self.poses),
+                               (original, ["front", "right", "up", "left", "down"])):
+            with self.subTest(poses=poses):
+                result, recognizer = self.verify(samples, poses=poses)
+                self.assertEqual("LIVE_POSE_MISMATCH", result["code"])
+                recognizer.match.assert_not_called()
+
+    def test_uncertain_pad_and_identity_fail_separately(self):
+        result, _ = self.verify(self.samples(pad_score=.84))
+        self.assertEqual("LIVENESS_UNCERTAIN", result["code"])
+        self.assertFalse(result["liveness_passed"])
+        result, _ = self.verify(self.samples(), similarity=.37)
+        self.assertEqual("IDENTITY_UNCERTAIN", result["code"])
+        self.assertTrue(result["liveness_passed"])
+        self.assertFalse(result["match"])
+
+    def test_both_checks_pass_for_consistent_matching_sequence(self):
+        result, _ = self.verify(self.samples())
+        self.assertTrue(result["liveness_passed"])
+        self.assertTrue(result["match"])
 
 
 class FaceEnrollmentRulesTest(unittest.TestCase):

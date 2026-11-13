@@ -13,13 +13,14 @@ except ImportError:
     sys.exit(2)
 
 
-def result(match, code, similarity=0.0, frame_count=1, frame_consistent=True):
+def result(match, code, similarity=0.0, frame_count=1, frame_consistent=True, liveness_passed=False):
     print(json.dumps({
         "match": match,
         "code": code,
         "similarity": round(float(similarity), 4),
         "frame_count": frame_count,
         "frame_consistent": frame_consistent,
+        "liveness_passed": liveness_passed,
     }))
 
 
@@ -163,6 +164,123 @@ def face_feature(image_path, detector, recognizer, kind, include_pose=False):
     return (feature, box, pose_offset(face)) if include_pose else (feature, box)
 
 
+def attendance_sample(path, detector, recognizer, pad):
+    image = cv2.imread(path, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError("LIVE_IMAGE_UNREADABLE")
+    height, width = image.shape[:2]
+    detector.setInputSize((width, height))
+    _, faces = detector.detect(image)
+    if faces is None or len(faces) == 0:
+        raise ValueError("LIVE_FACE_NOT_FOUND")
+    if len(faces) != 1:
+        raise ValueError("LIVE_MULTIPLE_FACES")
+
+    face = faces[0]
+    x, y, w, h = map(float, face[:4])
+    if min(w, h) < 65 or w < width * 0.23 or h < height * 0.27:
+        raise ValueError("LIVE_FACE_TOO_SMALL")
+    if x < 0 or y < 0 or x + w > width or y + h > height:
+        raise ValueError("LIVE_FACE_POSITION")
+    box = ((x + w / 2) / width, (y + h / 2) / height, w / width, h / height)
+    if abs(box[0] - 0.5) > 0.20 or abs(box[1] - 0.5) > 0.23:
+        raise ValueError("LIVE_FACE_POSITION")
+
+    crop = image[int(y):math.ceil(y + h), int(x):math.ceil(x + w)]
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    mean, contrast = float(gray.mean()), float(gray.std())
+    if mean < 45 or mean > 225 or contrast < 13:
+        raise ValueError("LIVE_IMAGE_LIGHTING")
+    if cv2.Laplacian(gray, cv2.CV_64F).var() < 20:
+        raise ValueError("LIVE_IMAGE_BLURRY")
+
+    # Raw RGB face crop, normalized exactly as specified by the ONNX model.
+    rgb = cv2.cvtColor(cv2.resize(crop, (128, 128)), cv2.COLOR_BGR2RGB).astype("float32")
+    rgb = (rgb - (151.2405, 119.5950, 107.8395)) / (63.0105, 56.4570, 55.0035)
+    pad.setInput(rgb.transpose(2, 0, 1)[None].astype("float32"))
+    scores = pad.forward().reshape(-1)
+    if len(scores) != 2 or not all(math.isfinite(float(score)) and 0 <= score <= 1 for score in scores):
+        raise RuntimeError("Invalid PAD output")
+    if abs(float(scores.sum()) - 1) > 0.02:
+        raise RuntimeError("Invalid PAD probabilities")
+
+    # Order eyes in the unmirrored image. Use the perpendicular eye axis
+    # and mouth height to measure a change in pitch relative to the front view.
+    left, right = sorted([(float(face[4]), float(face[5])), (float(face[6]), float(face[7]))])
+    dx, dy = right[0] - left[0], right[1] - left[1]
+    eye_length = math.hypot(dx, dy)
+    if eye_length < 16 or abs(dy / eye_length) > 0.33:
+        raise ValueError("LIVE_POSE_MISMATCH")
+    ex, ey = (left[0] + right[0]) / 2, (left[1] + right[1]) / 2
+    nx, ny = float(face[8]) - ex, float(face[9]) - ey
+    mx, my = (float(face[10]) + float(face[12])) / 2 - ex, (float(face[11]) + float(face[13])) / 2 - ey
+    mouth_height = (my * dx - mx * dy) / eye_length
+    if mouth_height < 12:
+        raise ValueError("LIVE_POSE_MISMATCH")
+    pose = ((nx * dx + ny * dy) / eye_length ** 2, (ny * dx - nx * dy) / eye_length / mouth_height)
+    aligned = recognizer.alignCrop(image, face)
+    feature = recognizer.feature(normalize_face_lighting(aligned))
+    return pose, box, float(scores[0]), feature, cv2.resize(gray, (32, 32)).astype("float32")
+
+
+def attendance_motion(samples, poses):
+    """Check ordered movements and stable holds using server-detected landmarks."""
+    front_yaw, front_pitch = samples[0][0]
+    if not abs(front_yaw) <= 0.14 or not 0.32 <= front_pitch <= 0.76:
+        return False
+    expected = ["front", "front"]
+    for pose in poses[1:]:
+        expected.extend(["front", pose, pose])
+
+    for index, ((yaw, pitch), box, _, _, pixels) in enumerate(samples):
+        turn, tilt = yaw - front_yaw, pitch - front_pitch
+        limits = {
+            "front": abs(turn) <= 0.10 and abs(tilt) <= 0.075,
+            "left": 0.13 <= turn <= 0.65 and abs(tilt) <= 0.16,
+            "right": -0.65 <= turn <= -0.13 and abs(tilt) <= 0.16,
+            "up": -0.36 <= tilt <= -0.095 and abs(turn) <= 0.19,
+            "down": 0.095 <= tilt <= 0.36 and abs(turn) <= 0.19,
+        }
+        if not limits[expected[index]]:
+            return False
+        if index == 0:
+            continue
+        prev_pose, prev_box, _, _, prev_pixels = samples[index - 1]
+        if math.hypot(box[0] - prev_box[0], box[1] - prev_box[1]) > 0.20:
+            return False
+        if max(abs(box[i] - prev_box[i]) for i in (2, 3)) > 0.21:
+            return False
+        # Duplicate images sometimes differ only in metadata or compression.
+        if float(abs(pixels - prev_pixels).mean()) < 0.30:
+            return False
+        if expected[index] == expected[index - 1] and (
+            abs(yaw - prev_pose[0]) > 0.09 or abs(pitch - prev_pose[1]) > 0.075
+        ):
+            return False
+    return True
+
+
+def verify_attendance(samples, poses, references, recognizer, threshold, pad_threshold):
+    count = len(samples)
+    if not attendance_motion(samples, poses):
+        result(False, "LIVE_POSE_MISMATCH", frame_count=count, frame_consistent=False)
+        return
+    weakest_pad = min(sample[2] for sample in samples)
+    if weakest_pad < pad_threshold:
+        code = "LIVENESS_FAILED" if weakest_pad < 0.5 else "LIVENESS_UNCERTAIN"
+        result(False, code, frame_count=count)
+        return
+
+    features = [sample[3] for sample in samples]
+    scores = [best_reference_score(references, feature, recognizer) for feature in features]
+    consistency = min(best_reference_score([features[0]], feature, recognizer) for feature in features[1:])
+    score = min(min(scores), consistency)
+    # Leave a small rejection band above the ordinary matching threshold.
+    matched = score >= min(1.0, threshold + 0.025)
+    code = "MATCH" if matched else ("IDENTITY_UNCERTAIN" if score >= threshold else "BIOMETRIC_MISMATCH")
+    result(matched, code, score, count, liveness_passed=True)
+
+
 def main():
     if len(sys.argv) == 5 and sys.argv[1] == "--validate-profile":
         return validate_profile_image(sys.argv[2], sys.argv[3], sys.argv[4])
@@ -171,10 +289,27 @@ def main():
         return validate_views(sys.argv[2:5], sys.argv[5], sys.argv[6], sys.argv[7])
 
     arguments = sys.argv[1:]
+    poses = None
+    pad_model = None
+    pad_threshold = None
+    if arguments and arguments[0] == "--attendance":
+        if len(arguments) < 4:
+            result(False, "MATCHER_UNAVAILABLE")
+            return 2
+        poses = arguments[1].split(",")
+        pad_model = arguments[2]
+        try:
+            pad_threshold = float(arguments[3])
+        except ValueError:
+            pad_threshold = 0
+        if len(poses) != 5 or poses[0] != "front" or set(poses[1:]) != {"left", "right", "up", "down"} or not 0.5 < pad_threshold <= 1:
+            result(False, "MATCHER_UNAVAILABLE")
+            return 2
+        arguments = arguments[4:]
     reference_set = bool(arguments and arguments[0] == "--reference-set")
     if reference_set:
         arguments = arguments[1:]
-    if len(arguments) not in (5, 6, 7):
+    if len(arguments) not in ((18,) if poses else (5, 6, 7)):
         result(False, "MATCHER_UNAVAILABLE")
         return 2
 
@@ -199,6 +334,7 @@ def main():
         return 2
 
     try:
+        cv2.setNumThreads(1)
         detector = cv2.FaceDetectorYN.create(
             detector_path, "", (320, 320), score_threshold=0.9,
             nms_threshold=0.3, top_k=10
@@ -212,6 +348,11 @@ def main():
         else:
             reference_paths = [reference_path]
         references = [face_feature(path, detector, recognizer, "PROFILE")[0] for path in reference_paths]
+        if poses:
+            pad = cv2.dnn.readNetFromONNX(pad_model)
+            samples = [attendance_sample(path, detector, recognizer, pad) for path in live_paths]
+            verify_attendance(samples, poses, references, recognizer, threshold, pad_threshold)
+            return 0
         live_features = [face_feature(path, detector, recognizer, "LIVE") for path in live_paths]
         similarities = [
             best_reference_score(references, feature, recognizer)

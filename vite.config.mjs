@@ -33,7 +33,7 @@ function versionedServiceWorker() {
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/attendance-face-guidance.js'],
             refresh: true,
         }),
         tailwindcss(),
@@ -43,5 +43,9 @@ export default defineConfig({
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },
+    },
+    build: {
+        // The QR view imports the camera entry on demand and uses its exports.
+        rollupOptions: { preserveEntrySignatures: 'exports-only' },
     },
 });

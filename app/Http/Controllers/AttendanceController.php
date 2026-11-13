@@ -92,6 +92,12 @@ class AttendanceController extends Controller
     'accuracy' => 'nullable|numeric',
 ]);
     $user = auth()->user();
+    if (app(\App\Services\FaceAttendanceConsent::class)->requiredForSelfCheckIn($user)) {
+        $message = 'Scan your teacher’s QR code to verify your identity, or ask your teacher to help record attendance.';
+        return $request->expectsJson()
+            ? response()->json(['success' => false, 'message' => $message], 422)
+            : back()->with('error', $message);
+    }
     $now = now(); 
     $todayDate = $now->toDateString();
 

@@ -97,6 +97,20 @@ class ProfileFacePhotoService
         return $front === null ? [] : [$front];
     }
 
+    /** Attendance identity must come from camera enrollment, independent of the editable avatar. */
+    public function hasCameraEnrollment(User $user): bool
+    {
+        return ProfileFacePhoto::whereKey($user->id)->where('source_path', self::CAMERA_ENROLLMENT_SOURCE)->exists();
+    }
+
+    /** @return list<string> Decrypted attendance references for the verifier. */
+    public function cameraReferences(User $user): array
+    {
+        $photo = ProfileFacePhoto::whereKey($user->id)->where('source_path', self::CAMERA_ENROLLMENT_SOURCE)->first();
+
+        return $photo ? array_values($this->decryptViews($photo)) : [];
+    }
+
     /** Normalize enrollment input once before face-quality validation and encrypted storage. */
     public function normalizeForMatching(string $sourceBytes): ?string
     {

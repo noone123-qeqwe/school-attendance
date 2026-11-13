@@ -5,124 +5,104 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const blade = fs.readFileSync(path.join(__dirname, '../../resources/views/qr/verify.blade.php'), 'utf8');
-const startIndex = blade.indexOf('function startFaceScan()');
-const endIndex = blade.indexOf('async function captureAndVerifyFace()', startIndex);
-assert.notEqual(startIndex, -1, 'QR face camera flow must exist');
-assert.notEqual(endIndex, -1, 'face verification must follow camera setup');
-const script = blade.slice(startIndex, endIndex);
+const start = blade.indexOf('function showFaceIntro()');
+const end = blade.indexOf('function doFingerprint()', start);
+const script = blade.slice(start, end).replace('await import(FACE_GUIDANCE_URL)', 'await loadGuidance()');
 
 function deferred() {
     let resolve;
-    let reject;
-    const promise = new Promise((done, fail) => { resolve = done; reject = fail; });
-    return { promise, resolve, reject };
+    const promise = new Promise(done => { resolve = done; });
+    return { promise, resolve };
 }
 
-function mount(cameraGate, playGate = { promise: Promise.resolve() }) {
+function mount({ camera = deferred(), guidance = {}, play = Promise.resolve() } = {}) {
     const elements = new Map();
-    const statuses = [];
-    const messages = [];
-    let trackStops = 0;
-    let playCalls = 0;
+    let stops = 0, closed = 0, started = 0, submitted = null;
     const element = id => {
         if (!elements.has(id)) {
-            elements.set(id, {
-                id,
-                style: { display: '' },
-                className: '',
-                innerHTML: '',
-                disabled: false,
-                srcObject: null,
-                onloadedmetadata: null,
-                play() { playCalls++; return playGate.promise; },
-                getTracks: () => [{ stop: () => { trackStops++; } }],
-            });
+            elements.set(id, { style: {}, textContent: '', play: () => play });
         }
         return elements.get(id);
     };
+    const track = { stop: () => { stops++; }, addEventListener() {} };
     const context = {
-        activeStream: null,
-        currentFacingMode: 'user',
-        faceCameraRequestId: 0,
-        faceVerificationInProgress: false,
-        faceLighting: null,
-        document: { getElementById: element },
-        navigator: { mediaDevices: { getUserMedia: () => cameraGate.promise } },
-        setCameraStatus: (message, state) => statuses.push({ message, state }),
-        showMsg: (type, message) => messages.push({ type, message }),
-        hideMsg() {},
-        HAS_FINGERPRINT: false,
-        console: { error() {} },
-        Promise,
-        setTimeout() { throw new Error('The face camera must not capture automatically.'); },
-        clearTimeout() {},
+        document: { getElementById: element, querySelectorAll: () => [], addEventListener() {} },
+        window: { addEventListener() {} },
+        navigator: { mediaDevices: { getUserMedia: () => camera.promise } },
+        faceLighting: { start: () => { started++; }, stop() {} },
+        faceAttempt: null, faceSubmitting: false, activeStream: null,
+        AbortController, FACE_ADDITIONAL_FACTOR: 'none', QR_TOKEN: 'qr', CSRF: '',
+        showMsg() {}, hideMsg() {},
+        loadGuidance: async () => ({
+            createDetector: async () => ({ close: () => { closed++; } }),
+            captureSequence: async ({ onProgress }) => {
+                for (let n = 0; n < 5; n++) onProgress(n + 1, ['front', 'left', 'up', 'right', 'down'][n]);
+                return Array.from({ length: 14 }, (_, i) => 'frame' + i);
+            },
+            ...guidance,
+        }),
+        fetch: async () => ({ ok: true, json: async () => ({
+            face_challenge: { id: 'issued', poses: ['front', 'left', 'up', 'right', 'down'], expires_in: 65 },
+        }) }),
+        submitAttendance: async data => { submitted = data; },
     };
     vm.runInNewContext(script, context);
     return {
-        context,
-        statuses,
-        messages,
-        element,
-        get trackStops() { return trackStops; },
-        get playCalls() { return playCalls; },
-        stream() { return { getTracks: () => [{ stop: () => { trackStops++; } }] }; },
+        context, element,
+        resolve: () => camera.resolve({ getTracks: () => [track], getVideoTracks: () => [track] }),
+        get stops() { return stops; },
+        get closed() { return closed; },
+        get started() { return started; },
+        get submitted() { return submitted; },
     };
 }
 
-const flush = async () => { for (let i = 0; i < 12; i++) await Promise.resolve(); };
-
-test('a late camera permission response is stopped after the scan is cancelled', async () => {
-    const cameraGate = deferred();
-    const app = mount(cameraGate);
-
-    app.context.startFaceScan();
+test('late camera permission is released after closing the camera', async () => {
+    const app = mount();
+    const scan = app.context.startFaceScan();
     app.context.stopCamera();
-    cameraGate.resolve(app.stream());
-    await flush();
-
-    assert.equal(app.trackStops, 1);
-    assert.equal(app.context.activeStream, null);
-    assert.equal(app.element('faceCameraVideo').srcObject, null);
-    assert.equal(app.playCalls, 0);
+    app.resolve();
+    await scan;
+    assert.equal(app.stops, 1);
+    assert.equal(app.started, 0);
+    assert.equal(app.submitted, null);
 });
 
-test('capture stays disabled until video playback is ready and waits for the student to tap', async () => {
-    const cameraGate = deferred();
-    const playGate = deferred();
-    const app = mount(cameraGate, playGate);
-    const capture = app.element('btnCaptureFace');
-
-    app.context.startFaceScan();
-    cameraGate.resolve(app.stream());
-    await flush();
-
-    const video = app.element('faceCameraVideo');
-    assert.equal(typeof video.onloadedmetadata, 'function');
-    video.onloadedmetadata();
-    assert.equal(app.playCalls, 1);
-    assert.equal(capture.disabled, true);
-
-    playGate.resolve();
-    await flush();
-
-    assert.equal(capture.disabled, false);
-    assert.match(app.statuses.at(-1).message, /tap Verify My Face/i);
+test('camera submits the ordered evidence automatically after five captures', async () => {
+    const app = mount();
+    const scan = app.context.startFaceScan();
+    app.resolve();
+    await scan;
+    assert.equal(app.stops, 1);
+    assert.equal(app.closed, 1);
+    assert.equal(app.element('faceCaptureProgress').value, 5);
+    assert.equal(app.element('faceLivenessStatus').textContent, 'Checking liveness and identity…');
+    assert.equal(app.submitted.face_challenge, 'issued');
+    assert.equal(app.submitted.live_frames.length, 14);
 });
 
-test('video playback failure closes the stream and exposes a retry control', async () => {
-    const cameraGate = deferred();
-    const playGate = deferred();
-    const app = mount(cameraGate, playGate);
+test('interrupted video releases the camera and permits retry', async () => {
+    const app = mount({ guidance: { captureSequence: async () => { throw new Error('Camera interrupted'); } } });
+    const scan = app.context.startFaceScan();
+    app.resolve();
+    await scan;
+    assert.equal(app.stops, 1);
+    assert.equal(app.closed, 1);
+    assert.equal(app.submitted, null);
+    assert.equal(app.element('btnRetryFace').hidden, false);
+});
 
-    app.context.startFaceScan();
-    cameraGate.resolve(app.stream());
-    await flush();
-    app.element('faceCameraVideo').onloadedmetadata();
-    playGate.reject(new Error('playback failed'));
-    await flush();
-
-    assert.equal(app.trackStops, 1);
-    assert.equal(app.element('faceCameraVideo').srcObject, null);
-    assert.equal(app.element('btnRetryFace').style.display, 'block');
-    assert.equal(app.messages.at(-1).type, 'err');
+test('capture guidance recognizes all five directions and requires centered transitions', async () => {
+    const { matchesPose, captureSteps } = await import('../../resources/js/attendance-face-guidance.js');
+    const front = { yaw: 0.01, pitch: 0.54 };
+    assert.equal(matchesPose(front, 'front', null), true);
+    for (const [pose, yaw, pitch] of [
+        ['left', 0.23, 0.54], ['right', -0.20, 0.54], ['up', 0.01, 0.39], ['down', 0.01, 0.70],
+    ]) {
+        assert.equal(matchesPose({ yaw, pitch }, pose, front), true);
+        assert.equal(matchesPose(front, pose, front), false);
+    }
+    const steps = captureSteps(['front', 'down', 'right', 'up', 'left']);
+    assert.equal(steps.filter(step => step.transition).length, 4);
+    assert.equal(steps.reduce((sum, step) => sum + step.count, 0), 14);
 });

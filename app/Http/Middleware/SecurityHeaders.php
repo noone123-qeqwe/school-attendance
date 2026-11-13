@@ -68,11 +68,12 @@ class SecurityHeaders
         }
         $assetSource = $assetOrigin !== '' ? ' ' . $assetOrigin : '';
 
+        $faceGuidanceWasm = $request->routeIs('qr.scan') ? " 'wasm-unsafe-eval'" : '';
         $csp = implode(' ', [
             "default-src 'self';",
 
             // Scripts: per-request nonce plus self and unsafe-inline so inline event handlers and scripts execute securely
-            "script-src 'self' 'unsafe-inline' 'nonce-{$nonce}' https://cdn.jsdelivr.net{$assetSource};",
+            "script-src 'self' 'unsafe-inline' 'nonce-{$nonce}' https://cdn.jsdelivr.net{$assetSource}{$faceGuidanceWasm};",
             "script-src-attr 'unsafe-inline';",
 
             // Styles: nonce for inline styles; CDN origins for Bootstrap / Fonts.

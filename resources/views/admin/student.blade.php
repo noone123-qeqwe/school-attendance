@@ -153,6 +153,38 @@
     </div>
 </div>
 
+@if(auth()->user()->isSuperAdmin() && config('face_match.attendance_enabled'))
+<section class="adm-card mb-4" aria-labelledby="cameraAttendanceConsentHeading">
+    <div class="adm-card-head">
+        <h2 id="cameraAttendanceConsentHeading" class="adm-card-title">Camera attendance consent</h2>
+    </div>
+    <div class="p-3">
+        @if(app(\App\Services\FaceAttendanceConsent::class)->approved($student))
+            <p>Consent is on file for the five-angle attendance check.</p>
+            <form method="POST" action="{{ route('admin.student.face-attendance-consent.destroy', $student) }}">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="adm-btn adm-btn-ghost">Withdraw consent</button>
+            </form>
+        @else
+            <p>Confirm that the student or guardian received the camera attendance notice and freely agreed to this use. For minors, record verified guardian consent.</p>
+            <form method="POST" action="{{ route('admin.student.face-attendance-consent.store', $student) }}" class="d-grid gap-3">
+                @csrf
+                <label>Consent given by
+                    <select name="source" class="form-select" required>
+                        <option value="">Choose who gave consent</option>
+                        <option value="adult_student">Verified adult student</option>
+                        <option value="guardian">Verified parent or legal guardian</option>
+                    </select>
+                </label>
+                <label><input type="checkbox" name="documented" value="1" required> The school has verified and documented consent.</label>
+                <div><button type="submit" class="adm-btn adm-btn-primary">Record consent</button></div>
+            </form>
+        @endif
+    </div>
+</section>
+@endif
+
 <!-- Linked Parents / Guardians Management -->
 <div class="adm-card" style="margin-bottom:24px;">
     <div class="adm-card-head" style="display:flex;justify-content:space-between;align-items:center;">

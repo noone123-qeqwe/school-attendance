@@ -5,14 +5,11 @@ namespace Tests\Feature;
 use App\Models\Subject;
 use App\Models\User;
 use App\Models\Attendance;
-use App\Models\AttendanceSession;
 use App\Models\Setting;
 use App\Services\LiveProfileFaceMatcher;
 use App\Services\WebauthnService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 use Mockery;
 
@@ -100,281 +97,203 @@ class LiveFaceAttendanceVerificationTest extends TestCase
         return [$teacher, $student, $subject, $token, $sessionId];
     }
 
-    public function test_student_with_registered_profile_photo_can_access_qr_scan_without_webauthn()
+    protected function setUp(): void
     {
-        [$teacher, $student, $subject, $token] = $this->createTestEnvironment();
-
-        // Enroll profile photo
-        $photoBytes = $this->createSyntheticFaceImage(1);
-        Storage::disk('public')->put('profile_images/student_1.jpg', $photoBytes);
-        $student->update(['profile_image' => 'profile_images/student_1.jpg']);
-
-        // Student has NO WebAuthn credentials
-        $this->assertFalse($student->webauthnCredentials()->exists());
-
-        $scanUrl = URL::signedRoute('qr.scan', ['token' => $token]);
-        $response = $this->actingAs($student)->get($scanUrl);
-
-        $response->assertStatus(200);
-        $response->assertViewIs('qr.verify');
-        $response->assertViewHas('hasProfilePhoto', true);
-        $response->assertViewHas('hasFaceMethod', true);
-        $response->assertViewHas('defaultMethod', 'face');
-        $response->assertViewHas('status', 'ready');
-        $response->assertSee('attendance-verification-page', false);
-        $response->assertSee('href="'.route('mobile.scan').'"', false);
-        $response->assertSee('id="faceMatchLight"', false);
-    }
-
-    public function test_student_without_photo_or_webauthn_is_prompted_for_setup()
-    {
-        [$teacher, $student, $subject, $token] = $this->createTestEnvironment();
-
-        // Student has no photo and no WebAuthn
-        $student->update(['profile_image' => null]);
-        $this->assertFalse($student->webauthnCredentials()->exists());
-
-        $scanUrl = URL::signedRoute('qr.scan', ['token' => $token]);
-        $response = $this->actingAs($student)->get($scanUrl);
-
-        $response->assertStatus(200);
-        $response->assertViewIs('qr.verify');
-        $response->assertViewHas('status', 'setup');
-        $response->assertSee('href="'.route('settings.biometrics.face').'"', false);
-        $response->assertSee('href="'.route('settings.biometrics.fingerprint').'"', false);
-    }
-
-    public function test_student_can_fetch_verification_options_with_profile_photo()
-    {
-        [$teacher, $student, $subject, $token] = $this->createTestEnvironment();
-
-        $photoBytes = $this->createSyntheticFaceImage(1);
-        Storage::disk('public')->put('profile_images/student_opt.jpg', $photoBytes);
-        $student->update(['profile_image' => 'profile_images/student_opt.jpg']);
-
-        $response = $this->actingAs($student)->postJson('/qr/verify-options', [
-            'token' => $token,
-        ]);
-
-        $response->assertStatus(200);
-        $this->assertTrue($response->json('success'));
-        $this->assertContains('face', $response->json('available_methods'));
-        $this->assertTrue($response->json('has_profile_photo'));
-    }
-
-    public function test_face_descriptor_without_camera_frame_cannot_record_attendance()
-    {
-        [$teacher, $student, $subject, $token] = $this->createTestEnvironment();
-        $photoBytes = $this->createSyntheticFaceImage(1);
-        Storage::disk('public')->put('profile_images/student_descriptor.jpg', $photoBytes);
-        $student->update(['profile_image' => 'profile_images/student_descriptor.jpg']);
-        $this->actingAs($student)->postJson('/qr/verify-options', ['token' => $token])->assertOk();
-
-        $response = $this->actingAs($student)->postJson('/qr/verify-complete', [
-            'token' => $token,
-            'latitude' => 14.5001,
-            'longitude' => 121.0001,
-            'accuracy' => 10,
-            'biometric_method' => 'face',
-            'face_descriptor' => 'face_desc_100_fake',
-        ]);
-
-        $response->assertStatus(422)->assertJsonPath('code', 'INCOMPLETE_MULTI_FRAME_CAPTURE');
-        $this->assertDatabaseMissing('attendances', [
-            'user_id' => $student->id, 'subject_code' => $subject->code,
+        parent::setUp();
+        $this->freezeTime();
+        config([
+            'face_match.attendance_enabled' => true,
+            'face_match.attendance_pad_model' => __FILE__,
+            'face_match.detector_model' => __FILE__,
+            'face_match.recognizer_model' => __FILE__,
         ]);
     }
 
-    public function test_backfilled_profile_photo_remains_available_after_local_file_is_lost()
+    private function approve(User $student): void
     {
-        [$teacher, $student, $subject, $token] = $this->createTestEnvironment();
-        Storage::disk('public')->put('profile_images/student_durable.jpg', $this->createSyntheticFaceImage(1));
-        $student->update(['profile_image' => 'profile_images/student_durable.jpg']);
-
-        $this->actingAs($student)->postJson('/qr/verify-options', ['token' => $token])
-            ->assertStatus(200)->assertJsonPath('has_profile_photo', true);
-        $this->assertDatabaseHas('profile_face_photos', ['user_id' => $student->id]);
-        Storage::disk('public')->delete('profile_images/student_durable.jpg');
-
-        $this->actingAs($student)->postJson('/qr/verify-options', ['token' => $token])
-            ->assertStatus(200)->assertJsonPath('has_profile_photo', true);
+        $admin = User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']);
+        app(\App\Services\ProfileFacePhotoService::class)->saveCameraEnrollment($student, $this->createSyntheticFaceImage());
+        app(\App\Services\FaceAttendanceConsent::class)->update($student, $admin, 'guardian');
     }
 
-    public function test_student_can_complete_attendance_using_live_face_frame_matching_profile_photo()
+    private function startFaceCheck(User $student, string $token): array
     {
-        [$teacher, $student, $subject, $token, $sessionId] = $this->createTestEnvironment();
+        $page = $this->actingAs($student)->get(route('qr.scan', $token))->assertOk();
+        $this->withCredentials()->withUnencryptedCookie(config('session.cookie'), $page->getCookie(config('session.cookie'), false)->getValue());
 
-        $photoBytes = $this->createSyntheticFaceImage(1);
-        Storage::disk('public')->put('profile_images/student_match.jpg', $photoBytes);
-        $student->update(['profile_image' => 'profile_images/student_match.jpg']);
-        $this->actingAs($student)->postJson('/qr/verify-options', ['token' => $token])->assertOk();
+        $challenge = $this->postJson('/qr/verify-options', ['token' => $token, 'biometric_method' => 'face'])
+            ->assertOk()->json('face_challenge');
+        $this->assertSame('front', $challenge['poses'][0]);
+        $this->assertEqualsCanonicalizing(['front', 'left', 'right', 'up', 'down'], $challenge['poses']);
+        $this->travelTo(now()->addSeconds(4));
 
-        // Matching live camera frame
-        $matchingLiveFrame = $this->toDataUrl($photoBytes);
-        $matcher = Mockery::mock(LiveProfileFaceMatcher::class);
-        $matcher->shouldReceive('compareFrames')->once()->with($student, [$matchingLiveFrame, $matchingLiveFrame])->andReturn([
-            'match' => true, 'code' => 'MATCH', 'similarity' => 0.8,
-            'message' => 'Live face matched the registered profile photo.',
-        ]);
+        return $challenge;
+    }
+
+    private function facePayload(string $token, array $challenge): array
+    {
+        return [
+            'token' => $token, 'latitude' => 14.5001, 'longitude' => 121.0001, 'accuracy' => 10,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
+            'biometric_method' => 'face', 'face_challenge' => $challenge['id'],
+            'live_frames' => array_fill(0, 14, $this->toDataUrl($this->createSyntheticFaceImage())),
+        ];
+    }
+
+    public function test_only_approved_students_with_camera_references_can_open_face_check(): void
+    {
+        [, $student, , $token] = $this->createTestEnvironment();
+        Storage::disk('public')->put('profile_images/student.jpg', $this->createSyntheticFaceImage());
+        $student->update(['profile_image' => 'profile_images/student.jpg']);
+        $this->actingAs($student)->postJson('/qr/verify-options', ['token' => $token, 'biometric_method' => 'face'])
+            ->assertForbidden();
+        $this->approve($student);
+        $this->get(route('qr.scan', $token))->assertOk()->assertViewHas('hasFaceMethod', true)
+            ->assertSee('Start camera')->assertSee('faceCaptureProgress')->assertDontSee('btnCaptureFace', false);
+    }
+
+    public function test_disabled_rollout_preserves_device_setup(): void
+    {
+        [, $student, , $token] = $this->createTestEnvironment();
+        $this->approve($student);
+        config(['face_match.attendance_enabled' => false]);
+        $this->actingAs($student)->get(route('qr.scan', $token))
+            ->assertOk()->assertViewHas('status', 'setup')->assertSee('Or Register Fingerprint');
+        $this->postJson('/qr/verify-options', ['token' => $token, 'biometric_method' => 'face'])->assertForbidden();
+    }
+
+    public function test_no_attendance_without_both_server_verdicts(): void
+    {
+        [, $student, , $token] = $this->createTestEnvironment();
+        $this->approve($student);
+        $matcher = Mockery::mock(LiveProfileFaceMatcher::class)->makePartial();
+        $matcher->shouldReceive('verifyAttendance')->times(3)->andReturn(
+            ['match' => true, 'code' => 'LIVENESS_FAILED', 'liveness_passed' => false, 'message' => 'Spoof suspected.'],
+            ['match' => false, 'code' => 'BIOMETRIC_MISMATCH', 'liveness_passed' => true, 'message' => 'Identity did not match.'],
+            ['match' => false, 'code' => 'LIVENESS_UNCERTAIN', 'liveness_passed' => false, 'message' => 'Try again.'],
+        );
         $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
 
-        $response = $this->actingAs($student)->postJson('/qr/verify-complete', [
-            'token' => $token,
-            'latitude' => 14.5001,
-            'longitude' => 121.0001,
-            'accuracy' => 10,
-            'biometric_method' => 'face',
-            'live_frames' => [$matchingLiveFrame, $matchingLiveFrame],
-        ]);
-
-        $response->assertStatus(200);
-        $this->assertTrue($response->json('success'));
-
-        $this->assertDatabaseHas('attendances', [
-            'user_id' => $student->id,
-            'subject_code' => $subject->code,
-            'status' => 'Present',
-            'method' => 'qr_face',
-        ]);
-    }
-
-    public function test_attendance_recorded_during_face_matching_is_not_overwritten(): void
-    {
-        [$teacher, $student, $subject, $token, $sessionId] = $this->createTestEnvironment();
-        $frame = $this->toDataUrl($this->createSyntheticFaceImage());
-        Storage::disk('public')->put('profile_images/student_race.jpg', $this->createSyntheticFaceImage());
-        $student->update(['profile_image' => 'profile_images/student_race.jpg']);
-        $this->actingAs($student)->postJson('/qr/verify-options', ['token' => $token])->assertOk();
-        $matcher = Mockery::mock(LiveProfileFaceMatcher::class);
-        $matcher->shouldReceive('compareFrames')->once()->andReturnUsing(function () use ($student, $subject, $sessionId) {
-            Attendance::create([
-                'user_id' => $student->id, 'subject_id' => $subject->id,
-                'subject_code' => $subject->code, 'date' => today()->toDateString(),
-                'session_id' => $sessionId, 'status' => 'Present',
-                'method' => 'teacher_manual', 'time_in' => '09:00:00',
-            ]);
-            return ['match' => true, 'code' => 'MATCH', 'similarity' => 0.9];
-        });
-        $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
-
-        $this->actingAs($student)->postJson('/qr/verify-complete', [
-            'token' => $token, 'latitude' => 14.5001, 'longitude' => 121.0001,
-            'accuracy' => 10, 'biometric_method' => 'face', 'live_frames' => [$frame, $frame],
-        ])->assertOk()->assertJsonPath('already_clocked_in', true);
-
-        $this->assertDatabaseCount('attendances', 1);
-        $this->assertDatabaseHas('attendances', [
-            'user_id' => $student->id, 'subject_code' => $subject->code,
-            'status' => 'Present', 'method' => 'teacher_manual', 'time_in' => '09:00:00',
-        ]);
-    }
-
-    public function test_concurrent_finalized_attendance_is_not_replaced_by_face_match(): void
-    {
-        [$teacher, $student, $subject, $token, $sessionId] = $this->createTestEnvironment();
-        $frame = $this->toDataUrl($this->createSyntheticFaceImage());
-        Storage::disk('public')->put('profile_images/student_race.jpg', $this->createSyntheticFaceImage());
-        $student->update(['profile_image' => 'profile_images/student_race.jpg']);
-        $this->actingAs($student)->postJson('/qr/verify-options', ['token' => $token])->assertOk();
-        $matcher = Mockery::mock(LiveProfileFaceMatcher::class);
-        $matcher->shouldReceive('compareFrames')->once()->andReturnUsing(function () use ($student, $subject, $sessionId) {
-            Attendance::create([
-                'user_id' => $student->id, 'subject_id' => $subject->id,
-                'subject_code' => $subject->code, 'date' => today()->toDateString(),
-                'session_id' => $sessionId, 'status' => 'Escaped', 'method' => 'teacher_manual',
-            ]);
-            return ['match' => true, 'code' => 'MATCH', 'similarity' => 0.9];
-        });
-        $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
-
-        $this->actingAs($student)->postJson('/qr/verify-complete', [
-            'token' => $token, 'latitude' => 14.5001, 'longitude' => 121.0001,
-            'accuracy' => 10, 'biometric_method' => 'face', 'live_frames' => [$frame, $frame],
-        ])->assertConflict()->assertJsonPath('already_clocked_in', true);
-
-        $this->assertDatabaseCount('attendances', 1);
-        $this->assertDatabaseHas('attendances', [
-            'user_id' => $student->id, 'subject_code' => $subject->code,
-            'status' => 'Escaped', 'method' => 'teacher_manual',
-        ]);
-    }
-
-    public function test_student_face_verification_fails_when_live_face_is_impostor()
-    {
-        [$teacher, $student, $subject, $token] = $this->createTestEnvironment();
-
-        // Enrolled photo: Geometry 1
-        $enrolledBytes = $this->createSyntheticFaceImage(1);
-        Storage::disk('public')->put('profile_images/student_ref.jpg', $enrolledBytes);
-        $student->update(['profile_image' => 'profile_images/student_ref.jpg']);
-        $this->actingAs($student)->postJson('/qr/verify-options', ['token' => $token])->assertOk();
-
-        // Impostor live camera frame: Distinctly different geometry
-        $impostorBytes = $this->createSyntheticFaceImage(99);
-        $impostorLiveFrame = $this->toDataUrl($impostorBytes);
-        $matcher = Mockery::mock(LiveProfileFaceMatcher::class);
-        $matcher->shouldReceive('compareFrames')->once()->with($student, [$impostorLiveFrame, $impostorLiveFrame])->andReturn([
-            'match' => false, 'code' => 'BIOMETRIC_MISMATCH', 'similarity' => 0.1,
-            'message' => 'Your live face did not match your registered profile photo.',
-        ]);
-        $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
-
-        $response = $this->actingAs($student)->postJson('/qr/verify-complete', [
-            'token' => $token,
-            'latitude' => 14.5001,
-            'longitude' => 121.0001,
-            'accuracy' => 10,
-            'biometric_method' => 'face',
-            'live_frames' => [$impostorLiveFrame, $impostorLiveFrame],
-        ]);
-
-        $response->assertStatus(422);
-        $this->assertFalse($response->json('success'));
-        $this->assertEquals('BIOMETRIC_MISMATCH', $response->json('code'));
-
-        $this->assertDatabaseMissing('attendances', [
-            'user_id' => $student->id,
-            'subject_code' => $subject->code,
-        ]);
-    }
-
-    public function test_face_checks_use_multi_frame_path_and_lock_after_five_failures()
-    {
-        [$teacher, $student, $subject, $token] = $this->createTestEnvironment();
-        $frame = $this->toDataUrl($this->createSyntheticFaceImage());
-        Storage::disk('public')->put('profile_images/student_lockout.jpg', $this->createSyntheticFaceImage());
-        $student->update(['profile_image' => 'profile_images/student_lockout.jpg']);
-        $this->actingAs($student)->postJson('/qr/verify-options', ['token' => $token])->assertOk();
-        $matcher = Mockery::mock(LiveProfileFaceMatcher::class);
-        $matcher->shouldReceive('compareFrames')->times(5)->with($student, [$frame, $frame])->andReturn([
-            'match' => false, 'code' => 'BIOMETRIC_MISMATCH', 'similarity' => 0.1,
-            'message' => 'The face check did not match.',
-        ]);
-        $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
-
-        for ($attempt = 0; $attempt < 5; $attempt++) {
-            $this->actingAs($student)->postJson('/qr/verify-complete', [
-                'token' => $token,
-                'latitude' => 14.5001,
-                'longitude' => 121.0001,
-                'accuracy' => 10,
-                'biometric_method' => 'face',
-                'live_frames' => [$frame, $frame],
-            ])->assertStatus(422)->assertJsonPath('code', 'BIOMETRIC_MISMATCH');
+        foreach (['LIVENESS_FAILED', 'BIOMETRIC_MISMATCH', 'LIVENESS_UNCERTAIN'] as $code) {
+            $payload = $this->facePayload($token, $this->startFaceCheck($student, $token));
+            $this->postJson('/qr/verify-complete', $payload + ['liveness_passed' => true, 'match_score' => 1])
+                ->assertUnprocessable()->assertJsonPath('code', $code);
+            $this->assertDatabaseCount('attendances', 0);
         }
-
-        $this->actingAs($student)->postJson('/qr/verify-complete', [
-            'token' => $token,
-            'latitude' => 14.5001,
-            'longitude' => 121.0001,
-            'accuracy' => 10,
-            'biometric_method' => 'face',
-            'live_frames' => [$frame, $frame],
-        ])->assertStatus(429)->assertJsonPath('code', 'FACE_ATTEMPTS_EXHAUSTED');
-
-        $this->assertDatabaseMissing('attendances', ['user_id' => $student->id, 'subject_code' => $subject->code]);
     }
 
+    public function test_attendance_requires_single_use_challenge_and_records_only_once(): void
+    {
+        [, $student, $subject, $token] = $this->createTestEnvironment();
+        $this->approve($student);
+        $challenge = $this->startFaceCheck($student, $token);
+        $payload = $this->facePayload($token, $challenge);
+        $matcher = Mockery::mock(LiveProfileFaceMatcher::class)->makePartial();
+        $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
+
+        $this->postJson('/qr/verify-complete', array_replace($payload, ['live_frames' => [$payload['live_frames'][0]]]))
+            ->assertUnprocessable()->assertJsonPath('code', 'FACE_CHALLENGE_INVALID');
+        $this->postJson('/qr/verify-complete', $payload)->assertUnprocessable()->assertJsonPath('code', 'FACE_CHALLENGE_INVALID');
+        $nextChallenge = $this->startFaceCheck($student, $token);
+        $payload = $this->facePayload($token, $nextChallenge);
+        $matcher->shouldReceive('verifyAttendance')->once()->with(
+            Mockery::on(fn ($user) => $user->is($student)), $payload['live_frames'], $nextChallenge['poses']
+        )->andReturn(['match' => true, 'code' => 'MATCH', 'liveness_passed' => true]);
+        $this->postJson('/qr/verify-complete', $payload)->assertOk()->assertJsonPath('face_verified', true);
+        $this->postJson('/qr/verify-complete', $payload)->assertUnprocessable();
+        $this->assertDatabaseCount('attendances', 1);
+        $this->assertDatabaseHas('attendances', ['user_id' => $student->id, 'subject_code' => $subject->code, 'method' => 'qr_face']);
+    }
+
+    public function test_exact_repeated_frames_are_rejected_before_inference(): void
+    {
+        [, $student, , $token] = $this->createTestEnvironment();
+        $this->approve($student);
+        $payload = $this->facePayload($token, $this->startFaceCheck($student, $token));
+        $this->postJson('/qr/confirm', $payload)->assertUnprocessable()->assertJsonPath('code', 'LIVENESS_FAILED');
+        $this->assertDatabaseCount('attendances', 0);
+    }
+
+    public function test_withdrawal_during_inference_prevents_the_attendance_write(): void
+    {
+        [, $student, , $token] = $this->createTestEnvironment();
+        $this->approve($student);
+        $matcher = Mockery::mock(LiveProfileFaceMatcher::class)->makePartial();
+        $matcher->shouldReceive('verifyAttendance')->once()->andReturnUsing(function () use ($student) {
+            app(\App\Services\FaceAttendanceConsent::class)->update($student, $student, null);
+            return ['match' => true, 'code' => 'MATCH', 'liveness_passed' => true];
+        });
+        $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
+        $payload = $this->facePayload($token, $this->startFaceCheck($student, $token));
+
+        $this->postJson('/qr/verify-complete', $payload)->assertUnprocessable();
+        $this->assertDatabaseCount('attendances', 0);
+    }
+
+    public function test_a_teacher_mark_recorded_during_matching_is_preserved(): void
+    {
+        [, $student, $subject, $token, $sessionId] = $this->createTestEnvironment();
+        $this->approve($student);
+        $matcher = Mockery::mock(LiveProfileFaceMatcher::class)->makePartial();
+        $matcher->shouldReceive('verifyAttendance')->once()->andReturnUsing(function () use ($student, $subject, $sessionId) {
+            Attendance::create([
+                'user_id' => $student->id, 'subject_id' => $subject->id, 'subject_code' => $subject->code,
+                'date' => today()->toDateString(), 'session_id' => $sessionId,
+                'status' => 'Late', 'method' => 'teacher_manual', 'time_in' => '09:00:00',
+            ]);
+            return ['match' => true, 'code' => 'MATCH', 'liveness_passed' => true];
+        });
+        $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
+        $payload = $this->facePayload($token, $this->startFaceCheck($student, $token));
+
+        $this->postJson('/qr/verify-complete', $payload)->assertOk()->assertJsonPath('already_clocked_in', true);
+        $this->assertDatabaseCount('attendances', 1);
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id, 'status' => 'Late', 'method' => 'teacher_manual', 'time_in' => '09:00:00',
+        ]);
+    }
+
+    public function test_face_check_locks_after_five_failures(): void
+    {
+        [, $student, , $token] = $this->createTestEnvironment();
+        $this->approve($student);
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $payload = $this->facePayload($token, $this->startFaceCheck($student, $token));
+            $this->postJson('/qr/verify-complete', $payload)->assertUnprocessable()->assertJsonPath('code', 'LIVENESS_FAILED');
+        }
+        $this->postJson('/qr/verify-options', ['token' => $token, 'biometric_method' => 'face'])
+            ->assertStatus(429)->assertHeader('Retry-After');
+        $this->assertDatabaseCount('attendances', 0);
+    }
+
+    public function test_direct_scan_cannot_record_attendance_for_an_approved_camera_student(): void
+    {
+        [, $student, $subject, $token] = $this->createTestEnvironment();
+        $this->approve($student);
+        $this->actingAs($student)->postJson('/qr/scan-process', [
+            'token' => $token, 'latitude' => 14.5001, 'longitude' => 121.0001, 'accuracy' => 10,
+            'location_timestamp_ms' => now()->getTimestampMs(),
+        ])->assertOk()->assertJsonPath('verification_url', route('qr.scan', $token, false));
+        $this->postJson('/attendance/store', ['subject_code' => $subject->code, 'latitude' => 14.5001, 'longitude' => 121.0001])
+            ->assertUnprocessable();
+        $this->assertDatabaseCount('attendances', 0);
+    }
+
+    public function test_consent_requires_super_admin_and_documentation_and_student_can_withdraw(): void
+    {
+        [, $student, , $token] = $this->createTestEnvironment();
+        $admin = User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']);
+        $consentUrl = route('admin.student.face-attendance-consent.store', $student);
+        $this->actingAs($student)->postJson($consentUrl, ['source' => 'guardian', 'documented' => true])
+            ->assertRedirect();
+        $this->assertDatabaseMissing('face_attendance_consents', ['student_id' => $student->id]);
+        $this->actingAs($admin)->postJson($consentUrl, ['source' => 'guardian'])->assertUnprocessable();
+        $this->post($consentUrl, ['source' => 'guardian', 'documented' => '1'])->assertRedirect();
+        $this->assertDatabaseHas('face_attendance_consents', ['student_id' => $student->id, 'source' => 'guardian']);
+        $this->actingAs($student)->delete(route('student.face-attendance-consent.withdraw'))->assertRedirect(route('home'));
+        $this->assertDatabaseMissing('face_attendance_consents', ['student_id' => $student->id]);
+        $this->postJson('/qr/verify-options', ['token' => $token, 'biometric_method' => 'face'])->assertForbidden();
+    }
     public function test_face_with_device_factor_requires_a_binding_created_before_the_attempt()
     {
         [$teacher, $student, $subject, $token] = $this->createTestEnvironment();
@@ -394,25 +313,16 @@ class LiveFaceAttendanceVerificationTest extends TestCase
     {
         [$teacher, $student, $subject, $token] = $this->createTestEnvironment();
 
-        $photoBytes = $this->createSyntheticFaceImage(1);
-        Storage::disk('public')->put('profile_images/student_geo.jpg', $photoBytes);
-        $student->update(['profile_image' => 'profile_images/student_geo.jpg']);
-        $this->actingAs($student)->postJson('/qr/verify-options', ['token' => $token])->assertOk();
-
-        $matchingLiveFrame = $this->toDataUrl($photoBytes);
-        $matcher = Mockery::mock(LiveProfileFaceMatcher::class);
-        $matcher->shouldNotReceive('compare');
+        $this->approve($student);
+        $payload = $this->facePayload($token, $this->startFaceCheck($student, $token));
+        $matcher = Mockery::mock(LiveProfileFaceMatcher::class)->makePartial();
+        $matcher->shouldNotReceive('verifyAttendance');
         $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
 
         // Student is far outside classroom (e.g. 15.5 lat vs 14.5 lat ~ 111 km away)
-        $response = $this->actingAs($student)->postJson('/qr/verify-complete', [
-            'token' => $token,
-            'latitude' => 15.5000,
-            'longitude' => 121.0000,
-            'accuracy' => 10,
-            'biometric_method' => 'face',
-            'live_frames' => [$matchingLiveFrame, $matchingLiveFrame],
-        ]);
+        $response = $this->actingAs($student)->postJson('/qr/verify-complete', array_replace($payload, [
+            'latitude' => 15.5000, 'longitude' => 121.0000,
+        ]));
 
         $response->assertStatus(422);
         $this->assertFalse($response->json('success'));
@@ -433,10 +343,11 @@ class LiveFaceAttendanceVerificationTest extends TestCase
         Storage::disk('public')->put('profile_images/student_both.jpg', $photoBytes);
         $student->update(['profile_image' => 'profile_images/student_both.jpg']);
 
+        $this->approve($student);
         // Also enrolled WebAuthn fingerprint credential
         $student->webauthnCredentials()->create([
             'credential_id' => 'fp_cred_123',
-            'public_key' => 'fake_public_key',
+            'public_key' => '-----BEGIN PUBLIC KEY-----',
             'sign_count' => 0,
             'user_handle' => 'fp_handle',
         ]);
@@ -458,6 +369,7 @@ class LiveFaceAttendanceVerificationTest extends TestCase
             'latitude' => 14.5001,
             'longitude' => 121.0001,
             'accuracy' => 10,
+            'location_timestamp_ms' => now()->getTimestampMs(),
             'credential' => '{"id":"fp_cred_123","rawId":"fp_cred_123","response":{},"type":"public-key"}',
         ]);
 

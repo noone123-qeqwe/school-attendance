@@ -13,17 +13,17 @@ use Closure;
 
 class AttendanceQrTokenService
 {
-    public function recordWhileValid(?string $rawToken, AttendanceSession $session, Closure $record): mixed
+    public function recordWhileValid(?string $rawToken, AttendanceSession $session, Closure $record, bool $admittedScan = false): mixed
     {
         if ($rawToken === null) {
             return $record();
         }
 
-        return DB::transaction(function () use ($rawToken, $session, $record) {
+        return DB::transaction(function () use ($rawToken, $session, $record, $admittedScan) {
             // Serialize the final scan write with QR replacement. A token that
             // was valid when scanning began may have been replaced in between.
             AttendanceSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
-            $inspection = $this->inspect($rawToken);
+            $inspection = $this->inspect($rawToken, $admittedScan);
             if ($inspection['status'] !== 'valid'
                 || (int) $inspection['token']->attendance_session_id !== (int) $session->id) {
                 throw ValidationException::withMessages(['qr' => 'QR expired or no longer active. Please scan the current QR.']);
@@ -159,7 +159,7 @@ class AttendanceQrTokenService
     }
 
     /** @return array{status: string, token: AttendanceQrToken|null} */
-    public function inspect(string $raw): array
+    public function inspect(string $raw, bool $admittedScan = false): array
     {
         if (!preg_match('/^aqr\.(\d+)\.(\d+)\.([a-f0-9]{64})\.(\d+)\.(\d+)\.([a-f0-9]{64})$/', $raw, $parts)) {
             return ['status' => 'invalid', 'token' => null];
@@ -177,10 +177,14 @@ class AttendanceQrTokenService
         if (!$token->session?->isSessionActive()) {
             return ['status' => 'closed', 'token' => $token];
         }
-        if ($token->invalidated_at || (int) $token->active_session_id !== (int) $token->attendance_session_id) {
+        $replaced = $token->invalidated_at || (int) $token->active_session_id !== (int) $token->attendance_session_id;
+        $revokedDuringScan = $admittedScan && AttendanceQrToken::where('attendance_session_id', $token->attendance_session_id)
+            ->where('id', '>', $token->id)->whereIn('rotation_type', ['manual', 'emergency'])->exists();
+        $expiredNaturally = $token->invalidated_at && $token->invalidated_at->gte($token->expires_at);
+        if ($revokedDuringScan || ($replaced && !($admittedScan && $expiredNaturally))) {
             return ['status' => 'replaced', 'token' => $token];
         }
-        if ($token->expires_at->isPast()) {
+        if (!$admittedScan && $token->expires_at->isPast()) {
             return ['status' => 'expired', 'token' => $token];
         }
         if (!$this->hasAuthorizedIssuer($token)) {

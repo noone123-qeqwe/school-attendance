@@ -18,7 +18,7 @@ class BiometricVerificationAuditService
         $ip = (string) $request->ip();
         $key = (string) config('app.key') ?: 'attendance-biometric-audit';
 
-        Log::notice('Face verification attempt', [
+        $properties = [
             'user_id' => $user->getKey(),
             'attendance_session_id' => $sessionId,
             'device_type' => $deviceType,
@@ -26,6 +26,12 @@ class BiometricVerificationAuditService
             'attempted_at' => now()->toIso8601String(),
             'result' => $success ? 'success' : 'failure',
             'failure_category' => $success ? null : $failureCategory,
-        ]);
+        ];
+
+        try {
+            activity('face-attendance')->causedBy($user)->withProperties($properties)->log('Face verification attempt');
+        } catch (\Throwable) {
+            Log::error('Face attendance audit write failed', $properties);
+        }
     }
 }

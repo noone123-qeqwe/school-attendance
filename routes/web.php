@@ -367,6 +367,7 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/student/attendance-calendar', [App\Http\Controllers\HomeController::class, 'attendanceCalendar'])->name('student.attendance.calendar');
     Route::get('/student/dashboard-calendar-data', [App\Http\Controllers\HomeController::class, 'dashboardCalendarData'])->name('student.dashboard.calendar.data');
     Route::get('/student/calendar', [App\Http\Controllers\HomeController::class, 'calendar'])->name('student.calendar');
+    Route::delete('/student/camera-attendance-consent', [App\Http\Controllers\FaceAttendanceConsentController::class, 'withdraw'])->name('student.face-attendance-consent.withdraw');
     Route::get('/student/calendar/data', [App\Http\Controllers\HomeController::class, 'calendarData'])->name('student.calendar.data');
     Route::get('/student/calendar/search-invitees', [App\Http\Controllers\HomeController::class, 'searchInvitees'])->name('student.calendar.search-invitees');
     Route::post('/student/calendar/meetings', [App\Http\Controllers\HomeController::class, 'storeMeeting'])->name('student.calendar.meetings.store');
@@ -626,6 +627,8 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::post('/students/import-csv', [App\Http\Controllers\AdminController::class, 'importStudentsCsv'])->name('students.import');
     Route::get('/students/template', [App\Http\Controllers\AdminController::class, 'downloadStudentTemplate'])->name('students.template');
     Route::get('/student/{student}', [App\Http\Controllers\AdminController::class, 'studentDetail'])->name('student');
+    Route::post('/student/{student}/camera-attendance-consent', [App\Http\Controllers\FaceAttendanceConsentController::class, 'store'])->middleware('admin.super')->name('student.face-attendance-consent.store');
+    Route::delete('/student/{student}/camera-attendance-consent', [App\Http\Controllers\FaceAttendanceConsentController::class, 'destroy'])->middleware('admin.super')->name('student.face-attendance-consent.destroy');
     Route::post('/student/{student}/warn', [App\Http\Controllers\AdminController::class, 'sendWarning'])->name('student.warn');
     Route::get('/student/{student}/edit', [App\Http\Controllers\AdminController::class, 'editStudent'])->name('student.edit');
     Route::put('/student/{student}', [App\Http\Controllers\AdminController::class, 'updateStudent'])->name('student.update');

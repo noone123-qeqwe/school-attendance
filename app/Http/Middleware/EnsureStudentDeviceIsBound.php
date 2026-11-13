@@ -30,7 +30,7 @@ class EnsureStudentDeviceIsBound
             || $request->filled('live_frame')
             || $request->filled('live_frames');
         $requiresRegisteredDevice = in_array($faceFactor, ['device', 'fingerprint_and_device'], true);
-        if ($request->routeIs('qr.verify.complete') && $facePayload && $requiresRegisteredDevice
+        if ($request->routeIs('qr.verify.complete', 'qr.confirm') && $facePayload && $requiresRegisteredDevice
             && app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification')
             && !\App\Models\DeviceBinding::where('user_id', $user->id)->exists()) {
             return response()->json([
