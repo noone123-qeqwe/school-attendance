@@ -3,44 +3,38 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#1a1a1a">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Smart Attendance">
-    
-    <!-- Android/Chrome -->
-    <meta name="application-name" content="Smart Attendance">
-    
+
     <!-- Prevent zoom on input focus -->
     <meta name="format-detection" content="telephone=no">
 
     <title>@yield('title', config('app.name', 'Smart Attendance'))</title>
 
+    @include('partials.pwa-tags')
+
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
-    
-    <!-- Bootstrap CSS & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap CSS, Icons & Shared Design Tokens -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ asset('css/design-tokens.css') }}?v={{ filemtime(public_path('css/design-tokens.css')) }}">
 
     <!-- Mobile Styles -->
     <style>
         :root {
-            /* Colors */
-            --gold-primary: #CFA46F;
+            /* Colors mapped onto canonical design tokens */
+            --gold-primary: var(--ds-gold, #D4AF37);
             --gold-light: #F3E7CD;
-            --gold-dark: #B39B82;
-            --bg-dark: #1a1a1a;
+            --gold-dark: var(--ds-gold-dark, #A68822);
+            --bg-dark: var(--ds-bg, #110A0A);
             --bg-card: rgba(207, 164, 111, 0.08);
             --bg-card-hover: rgba(207, 164, 111, 0.12);
-            --text-primary: #F3E7CD;
-            --text-secondary: #B39B82;
-            --text-muted: #64748B;
+            --text-primary: var(--ds-text-primary, #FCF8F2);
+            --text-secondary: var(--ds-text-secondary, #D1C5B4);
+            --text-muted: var(--ds-text-muted, #A39683);
             --success: #22C55E;
             --warning: #F59E0B;
             --error: #EF4444;
@@ -86,7 +80,7 @@
         }
 
         body {
-            font-family: 'Figtree', sans-serif;
+            font-family: var(--ds-font-family, 'Inter', sans-serif);
             background-color: var(--bg-dark);
             color: var(--text-primary);
             min-height: 100vh;
@@ -179,7 +173,6 @@
         }
     </style>
 
-    @include('partials.pwa-tags')
     @stack('styles')
     <link rel="stylesheet" href="{{ asset('css/experience-refinements.css') }}?v={{ filemtime(public_path('css/experience-refinements.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/system-ui-modern.css') }}?v={{ filemtime(public_path('css/system-ui-modern.css')) }}">
@@ -400,6 +393,7 @@
     </script>
 
     <script @cspNonce src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @include('partials.pwa-body')
     @stack('scripts')
 </body>
 </html>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Auth\ResolveAuthenticatedUserAction;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Otp;
@@ -100,119 +101,32 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // 3. Attempt authentication via User lookup
-        $user = User::findByIdentifier($identifier);
-        $authenticated = false;
+        // 3. Resolve and authenticate user across identifier variants
+        $resolution = app(ResolveAuthenticatedUserAction::class)->execute($identifier, $password);
+        $user = $resolution['user'];
 
-        if ($user) {
-            $trimmedPassword = trim($password);
-            if (Hash::check($password, $user->password) || Hash::check($trimmedPassword, $user->password)) {
-                $authenticated = true;
-            } elseif ($user->isStudent() && ($password === 'password' || $password === 'student123') &&
-                (Hash::check('password', $user->password) || Hash::check('student123', $user->password))) {
-                $authenticated = true;
-            } elseif ($user->isTeacher() && ($password === 'password' || $password === 'teacher123') &&
-                (Hash::check('password', $user->password) || Hash::check('teacher123', $user->password))) {
-                $authenticated = true;
-            } elseif ($user->isParent() && ($password === 'password' || $password === 'parent123') &&
-                (Hash::check('password', $user->password) || Hash::check('parent123', $user->password))) {
-                $authenticated = true;
-            }
+        if ($resolution['status'] === 'inactive') {
+            Auth::logout();
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'Your account has been deactivated. Please contact the school administrator.',
+                'account_disabled' => true,
+            ], 403);
         }
 
-        // Fallback candidate attempts
-        if (!$authenticated) {
-            $normalizedIdentifier = preg_replace('/^(?:student[\s_-]*(?:id|number|no|#)?|id[\s:#_-]*|sn[\s:#_-]*|lrn[\s:#_-]*)\s*/i', '', $identifier);
-            $digitsOnly = preg_replace('/\D/', '', $normalizedIdentifier ?: $identifier);
-            $num = $digitsOnly !== '' ? (int)$digitsOnly : null;
-
-            $candidateVariants = array_filter(array_unique([
-                $identifier,
-                $normalizedIdentifier,
-                ltrim($identifier, '0'),
-                ltrim($normalizedIdentifier, '0'),
-                preg_replace('/[^a-zA-Z0-9]/', '', $identifier),
-                preg_replace('/[^a-zA-Z0-9]/', '', $normalizedIdentifier),
-                $num !== null ? sprintf('%06d', $num) : null,
-                $num !== null ? sprintf('%07d', $num) : null,
-                $num !== null ? sprintf('%08d', $num) : null,
-            ]));
-
-            $phoneVariants = User::getPhoneVariants($identifier);
-
-            $candidateUsers = User::whereNull('deleted_at')
-                ->where(function ($q) use ($candidateVariants, $phoneVariants, $num) {
-                    $q->whereIn('student_number', $candidateVariants)
-                      ->orWhereIn('employee_id', $candidateVariants)
-                      ->orWhereIn('email', $candidateVariants);
-                    if ($num !== null) {
-                        $q->orWhere('id', $num);
-                    }
-                    if (!empty($phoneVariants)) {
-                        $q->orWhereIn('phone', $phoneVariants);
-                    }
-                })
-                ->when($user, fn($q) => $q->where('id', '!=', $user->id))
-                ->get();
-
-            foreach ($candidateUsers as $cand) {
-                $trimmedPassword = trim($password);
-                $candMatches = Hash::check($password, $cand->password) || Hash::check($trimmedPassword, $cand->password);
-                if (!$candMatches) {
-                    if ($cand->isStudent() && ($password === 'password' || $password === 'student123')) {
-                        $candMatches = Hash::check('password', $cand->password) || Hash::check('student123', $cand->password);
-                    } elseif ($cand->isTeacher() && ($password === 'password' || $password === 'teacher123')) {
-                        $candMatches = Hash::check('password', $cand->password) || Hash::check('teacher123', $cand->password);
-                    } elseif ($cand->isParent() && ($password === 'password' || $password === 'parent123')) {
-                        $candMatches = Hash::check('password', $cand->password) || Hash::check('parent123', $cand->password);
-                    }
-                }
-
-                if ($candMatches) {
-                    $user = $cand;
-                    $authenticated = true;
-                    break;
-                }
-            }
+        if ($resolution['status'] === 'starter_password' && $user) {
+            Auth::logout();
+            $user->forceFill(['must_change_password' => true])->saveQuietly();
+            return response()->json([
+                'status' => 'error',
+                'code' => 'password_reset_required',
+                'password_change_required' => true,
+                'message' => 'This account uses a shared starter password. Verify your email through password recovery before signing in.',
+            ], 403);
         }
 
-        // Final fallback standard attempts
-        if (!$authenticated && !$user) {
-            $authenticated = Auth::attempt(['student_number' => $identifier, 'password' => $password])
-                || Auth::attempt(['email' => $identifier, 'password' => $password])
-                || Auth::attempt(['employee_id' => $identifier, 'password' => $password])
-                || Auth::attempt(['phone' => $identifier, 'password' => $password])
-                || Auth::attempt(['student_number' => $identifier, 'password' => trim($password)])
-                || Auth::attempt(['email' => $identifier, 'password' => trim($password)])
-                || Auth::attempt(['employee_id' => $identifier, 'password' => trim($password)])
-                || Auth::attempt(['phone' => $identifier, 'password' => trim($password)]);
-            if ($authenticated) {
-                $user = Auth::user();
-            }
-        }
-
-        if ($authenticated && $user) {
-            if (!$user->isActive()) {
-                Auth::logout();
-                return response()->json([
-                    'status' => 'error',
-                    'success' => false,
-                    'message' => 'Your account has been deactivated. Please contact the school administrator.',
-                    'account_disabled' => true,
-                ], 403);
-            }
-
-            if ($user->usesSharedStarterPassword()) {
-                Auth::logout();
-                $user->forceFill(['must_change_password' => true])->saveQuietly();
-                return response()->json([
-                    'status' => 'error',
-                    'code' => 'password_reset_required',
-                    'password_change_required' => true,
-                    'message' => 'This account uses a shared starter password. Verify your email through password recovery before signing in.',
-                ], 403);
-            }
-
+        if ($resolution['status'] === 'ok' && $user) {
             if ($user->ensurePasswordChangeRequired()) {
                 Auth::logout();
                 return response()->json([

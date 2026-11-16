@@ -10,47 +10,68 @@
         display: flex; flex-direction: column; align-items: center;
         min-height: 100dvh;
         padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-        background: linear-gradient(135deg, #f8f0f0 0%, #f1f5f9 50%, #f0f4ff 100%);
+        background:
+            radial-gradient(circle at top right, rgba(122, 26, 26, 0.28), transparent 48%),
+            radial-gradient(circle at bottom left, rgba(212, 175, 55, 0.12), transparent 52%),
+            var(--ds-bg, #110A0A);
+        color: var(--ds-text-primary, #FCF8F2);
     }
     .verify-card {
         max-width: 520px; width: 100%; border-radius: 24px;
-        padding: clamp(14px, 4vw, 24px); background: white;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.1); text-align: center;
+        padding: clamp(16px, 4vw, 26px);
+        background: linear-gradient(180deg, rgba(30, 21, 21, 0.96) 0%, rgba(20, 12, 12, 0.98) 100%);
+        border: 1px solid var(--ds-border, rgba(212, 175, 55, 0.22));
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 28px rgba(207, 164, 111, 0.08);
+        text-align: center;
     }
     .face-match-disclosure { margin-bottom: 12px; text-align: left; }
     .face-match-note {
         display: flex; align-items: flex-start; gap: 9px;
-        margin: 0; padding: 10px 12px; border: 1px solid #fde68a;
-        border-radius: 12px; background: #fffbeb; color: #78350f;
+        margin: 0; padding: 10px 12px;
+        border: 1px solid rgba(251, 191, 36, 0.28);
+        border-radius: 12px;
+        background: rgba(251, 191, 36, 0.1);
+        color: #fde68a;
         font-size: .82rem; line-height: 1.45;
     }
-    .face-match-note > i { flex: none; margin-top: 2px; color: #b45309; }
-    .face-match-details { margin-top: 6px; border: 1px solid #e2e8f0; border-radius: 10px; text-align: left; }
-    .face-match-details summary { display: flex; align-items: center; min-height: 44px; padding: 8px 11px; color: #475569; font-size: .78rem; font-weight: 700; cursor: pointer; }
-    .face-match-details p { margin: 0; padding: 0 11px 11px; color: #64748b; font-size: .77rem; line-height: 1.45; }
-    .face-match-details :focus-visible { outline: 2px solid #800000; outline-offset: 2px; border-radius: 4px; }
+    .face-match-note > i { flex: none; margin-top: 2px; color: #fbbf24; }
+    .face-match-details {
+        margin-top: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 10px;
+        text-align: left;
+    }
+    .face-match-details summary { display: flex; align-items: center; min-height: 44px; padding: 8px 11px; color: var(--ds-text-secondary, #D1C5B4); font-size: .78rem; font-weight: 700; cursor: pointer; }
+    .face-match-details p { margin: 0; padding: 0 11px 11px; color: var(--ds-text-muted, #A39683); font-size: .77rem; line-height: 1.45; }
+    .face-match-details :focus-visible { outline: 2px solid var(--ds-gold, #D4AF37); outline-offset: 2px; border-radius: 4px; }
     .verify-navigation { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; width: min(100%, 520px); margin-bottom: 12px; }
-    .verify-navigation h1 { margin: 0; font-size: clamp(1.15rem, 4vw, 1.5rem); color: #481f1f; }
-    .verify-navigation a { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding-inline: 8px; color: #800000; font-weight: 650; }
-    .verify-navigation a:focus-visible { outline: 2px solid #800000; outline-offset: 2px; border-radius: 6px; }
+    .verify-navigation h1 { margin: 0; font-size: clamp(1.15rem, 4vw, 1.5rem); color: var(--ds-text-primary, #FCF8F2); font-weight: 800; }
+    .verify-navigation a { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding-inline: 8px; color: var(--ds-gold, #D4AF37); font-weight: 650; text-decoration: none; }
+    .verify-navigation a:hover { color: var(--ds-gold-soft, #F9E596); }
+    .verify-navigation a:focus-visible { outline: 2px solid var(--ds-gold, #D4AF37); outline-offset: 2px; border-radius: 6px; }
 
     /* Biometric Method Selector */
     .method-selector {
-        display: flex; background: #f1f5f9; border-radius: 14px;
+        display: flex;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
         padding: 4px; margin-bottom: 20px; gap: 4px;
     }
     .method-btn {
         flex: 1; padding: 10px 14px; border: none; border-radius: 10px;
-        font-size: 0.82rem; font-weight: 700; color: #64748b;
+        font-size: 0.82rem; font-weight: 700; color: var(--ds-text-muted, #A39683);
         background: transparent; cursor: pointer; transition: all 0.25s ease;
         display: flex; align-items: center; justify-content: center; gap: 6px;
     }
     .method-btn.active {
-        background: white; color: #800000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        background: linear-gradient(135deg, rgba(122, 26, 26, 0.9), rgba(156, 39, 39, 0.9));
+        color: #F9E596;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
     }
 
-    /* Profile Photo Reference Card */
     /* Camera Viewport & HUD */
     .camera-viewport-card {
         position: relative; width: 100%; height: clamp(260px, 42svh, 440px);
@@ -136,46 +157,47 @@
     /* Buttons */
     .btn-verify-face {
         width: 100%; padding: 13px;
-        background: linear-gradient(135deg, #800000, #a31d1d);
-        color: white; font-weight: 800; font-size: 0.92rem;
+        background: linear-gradient(135deg, #D4AF37, #A68822);
+        color: #110A0A; font-weight: 800; font-size: 0.92rem;
         border: none; border-radius: 14px; cursor: pointer;
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        box-shadow: 0 8px 24px rgba(128, 0, 0, 0.25);
+        box-shadow: 0 8px 24px rgba(212, 175, 55, 0.25);
         transition: all 0.25s ease;
     }
-    .btn-verify-face:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(128, 0, 0, 0.35); }
+    .btn-verify-face:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(212, 175, 55, 0.38); }
     .btn-verify-face:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
     .btn-retry-face {
         width: 100%; padding: 11px;
-        background: #f1f5f9; color: #475569;
+        background: rgba(255, 255, 255, 0.06); color: var(--ds-text-secondary, #D1C5B4);
         font-weight: 700; font-size: 0.88rem;
-        border: 1px solid #cbd5e1; border-radius: 12px; cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 12px; cursor: pointer;
         display: flex; align-items: center; justify-content: center; gap: 6px;
         transition: all 0.2s;
     }
-    .btn-retry-face:hover { background: #e2e8f0; }
+    .btn-retry-face:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
     .face-capture-summary {
         display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-        margin-bottom: 8px; font-size: .82rem; font-weight: 700;
+        margin-bottom: 8px; font-size: .82rem; font-weight: 700; color: var(--ds-text-primary, #FCF8F2);
     }
     #faceCaptureProgress { width: 100%; height: 8px; accent-color: #cfa46f; }
-    #facePoseInstruction { margin: 8px 0 12px; font-weight: 700; }
-    #faceCaptureConfirmation { min-height: 1.4em; font-size: .82rem; }
+    #facePoseInstruction { margin: 8px 0 12px; font-weight: 700; color: var(--ds-text-primary, #FCF8F2); }
+    #faceCaptureConfirmation { min-height: 1.4em; font-size: .82rem; color: var(--ds-text-secondary, #D1C5B4); }
     #faceScanArea [hidden] { display: none !important; }
     .subject-pill {
-        background: #fff5f5; border: 1.5px solid #fecaca;
-        border-radius: 12px; padding: 12px 16px; margin-bottom: 24px; text-align: left;
+        background: rgba(122, 26, 26, 0.22); border: 1px solid rgba(212, 175, 55, 0.28);
+        border-radius: 14px; padding: 12px 16px; margin-bottom: 24px; text-align: left;
     }
-    .subject-pill-label { font-size: .65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
-    .subject-pill-name { font-size: .95rem; font-weight: 700; color: #1e293b; margin-top: 3px; }
+    .subject-pill-label { font-size: .65rem; font-weight: 700; color: var(--ds-gold, #D4AF37); text-transform: uppercase; letter-spacing: 1px; }
+    .subject-pill-name { font-size: .98rem; font-weight: 700; color: var(--ds-text-primary, #FCF8F2); margin-top: 3px; }
+    .subject-pill-meta { font-size: .78rem; color: var(--ds-text-secondary, #D1C5B4); margin-top: 4px; }
 
     /* Step dots */
     .step-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 28px; }
     .sdot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; transition: all .4s; }
     .sdot.done    { background: #16a34a; color: white; }
-    .sdot.active  { background: #800000; color: white; box-shadow: 0 0 0 4px rgba(128,0,0,.15); }
-    .sdot.pending { background: #f1f5f9; color: #94a3b8; }
-    .sline { flex: 1; height: 2px; background: #f1f5f9; max-width: 40px; transition: background .4s; }
+    .sdot.active  { background: linear-gradient(135deg, #D4AF37, #A68822); color: #110A0A; box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.22); }
+    .sdot.pending { background: rgba(255, 255, 255, 0.08); color: var(--ds-text-muted, #A39683); }
+    .sline { flex: 1; height: 2px; background: rgba(255, 255, 255, 0.1); max-width: 40px; transition: background .4s; }
     .sline.done { background: #16a34a; }
 
     /* Status icon */
@@ -183,15 +205,17 @@
         width: 80px; height: 80px; border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         margin: 0 auto 16px; font-size: 2rem; transition: all .4s;
+        background: rgba(212, 175, 55, 0.14);
+        border: 1px solid rgba(212, 175, 55, 0.25);
     }
-    .v-title { font-size: 1.15rem; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
-    .v-sub   { font-size: .85rem; color: #64748b; line-height: 1.5; margin-bottom: 0; }
+    .v-title { font-size: 1.15rem; font-weight: 800; color: var(--ds-text-primary, #FCF8F2); margin-bottom: 6px; }
+    .v-sub   { font-size: .85rem; color: var(--ds-text-secondary, #D1C5B4); line-height: 1.5; margin-bottom: 0; }
 
     /* Status messages */
-    .v-msg { border-radius: 10px; padding: 10px 14px; font-size: .82rem; margin-top: 16px; display: none; }
-    .v-ok  { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
-    .v-err { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
-    .v-info{ background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+    .v-msg { border-radius: 10px; padding: 10px 14px; font-size: .82rem; margin-top: 16px; display: none; text-align: left; }
+    .v-ok  { background: rgba(34, 197, 94, 0.14); border: 1px solid rgba(74, 222, 128, 0.3); color: #86efac; }
+    .v-err { background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(248, 113, 113, 0.3); color: #fca5a5; }
+    .v-info{ background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(96, 165, 250, 0.3); color: #93c5fd; }
 
     /* Retry button â€” only shown on fingerprint error */
     .retry-btn {
@@ -347,12 +371,12 @@
         <div class="subject-pill">
             <div class="subject-pill-label">Clocking in for</div>
             <div class="subject-pill-name">{{ $subject->name }}</div>
-            <div style="font-size:.75rem;color:#64748b;margin-top:2px;">
+            <div class="subject-pill-meta">
                 <i class="bi bi-clock me-1"></i>
                 @if($subject->start_time)
                     {{ \Carbon\Carbon::parse($subject->start_time)->format('h:i A') }}
                 @endif
-                &nbsp;Â·&nbsp; {{ $subject->code }}
+                &nbsp;&middot;&nbsp; {{ $subject->code }}
             </div>
         </div>
 
@@ -366,21 +390,21 @@
         </div>
 
         @if(isset($status) && $status === 'setup')
-        <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:18px;padding:22px 18px;margin-bottom:18px;text-align:center;">
-            <div style="width:56px;height:56px;border-radius:50%;background:rgba(245,158,11,0.15);color:#d97706;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 12px;">
+        <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(251,191,36,0.3);border-radius:18px;padding:22px 18px;margin-bottom:18px;text-align:center;">
+            <div style="width:56px;height:56px;border-radius:50%;background:rgba(245,158,11,0.18);color:#fbbf24;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 12px;">
                 <i class="bi bi-person-bounding-box"></i>
             </div>
-            <div style="font-size:1.1rem;font-weight:800;color:#92400e;margin-bottom:6px;">Biometric Verification Required</div>
-            <p style="font-size:0.85rem;color:#b45309;line-height:1.45;margin-bottom:16px;">
+            <div style="font-size:1.1rem;font-weight:800;color:#fde68a;margin-bottom:6px;">Biometric Verification Required</div>
+            <p style="font-size:0.85rem;color:var(--ds-text-secondary, #D1C5B4);line-height:1.45;margin-bottom:16px;">
                 {{ $message ?? 'You must have a registered profile photo or fingerprint on this device before clocking in with QR attendance.' }}
             </p>
             <div class="d-flex flex-column gap-2">
                 @if(app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification'))
-                <a href="{{ route('settings.biometrics.face') }}" class="btn w-100" style="background:linear-gradient(135deg,#cfa46f,#a07a4a);color:#20130c;font-weight:700;padding:12px;border-radius:12px;text-decoration:none;display:block;">
+                <a href="{{ route('settings.biometrics.face') }}" class="btn w-100" style="background:linear-gradient(135deg,#cfa46f,#a07a4a);color:#110A0A;font-weight:700;padding:12px;border-radius:12px;text-decoration:none;display:block;">
                     <i class="bi bi-camera me-1"></i> Register Your Face
                 </a>
                 @endif
-                <a href="{{ route('settings.biometrics.fingerprint') }}" class="btn w-100" style="background:#f1f5f9;color:#334155;font-weight:700;padding:10px;border-radius:12px;text-decoration:none;display:block;">
+                <a href="{{ route('settings.biometrics.fingerprint') }}" class="btn w-100" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:var(--ds-text-primary, #FCF8F2);font-weight:700;padding:10px;border-radius:12px;text-decoration:none;display:block;">
                     <i class="bi bi-fingerprint me-1"></i> Or Register Fingerprint
                 </a>
             </div>
@@ -462,8 +486,8 @@
         @endif
 
         {{-- Dynamic content area --}}
-        <div id="vIcon"  class="v-icon" style="background:#eff6ff; @if(isset($status) && $status === 'setup') display:none; @endif">
-            <i class="bi bi-geo-alt-fill" style="color:#2563eb;"></i>
+        <div id="vIcon"  class="v-icon" style="background:rgba(96, 165, 250, 0.16); @if(isset($status) && $status === 'setup') display:none; @endif">
+            <i class="bi bi-geo-alt-fill" style="color:#60a5fa;"></i>
         </div>
         <div class="v-title" id="vTitle" style="@if(isset($status) && $status === 'setup') display:none; @endif">Checking Location</div>
         <div class="v-sub"   id="vSub" style="@if(isset($status) && $status === 'setup') display:none; @endif">Verifying you are inside the classroom...</div>
@@ -606,14 +630,31 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 }
 
 function setIcon(bg, iconClass, iconColor) {
+    var darkSurfaceMap = {
+        '#ecfdf5': { bg: 'rgba(34, 197, 94, 0.16)', color: '#4ade80' },
+        '#f0fdf4': { bg: 'rgba(34, 197, 94, 0.16)', color: '#4ade80' },
+        '#fef2f2': { bg: 'rgba(239, 68, 68, 0.16)', color: '#f87171' },
+        '#fff5f5': { bg: 'rgba(239, 68, 68, 0.16)', color: '#f87171' },
+        '#fef3c7': { bg: 'rgba(245, 158, 11, 0.16)', color: '#fbbf24' },
+        '#eff6ff': { bg: 'rgba(59, 130, 246, 0.16)', color: '#60a5fa' }
+    };
+    var mapped = darkSurfaceMap[(bg || '').toLowerCase()];
     var el = document.getElementById('vIcon');
-    el.style.background = bg;
-    el.innerHTML = '<i class="' + iconClass + '" style="color:' + iconColor + ';font-size:2rem;"></i>';
+    el.style.background = mapped ? mapped.bg : bg;
+    el.replaceChildren();
+    var iconEl = document.createElement('i');
+    iconEl.className = iconClass;
+    iconEl.style.color = mapped ? mapped.color : iconColor;
+    iconEl.style.fontSize = '2rem';
+    el.appendChild(iconEl);
 }
 function setSpinner() {
     var el = document.getElementById('vIcon');
-    el.style.background = '#fff5f5';
-    el.innerHTML = '<div style="width:36px;height:36px;border:4px solid rgba(128,0,0,.15);border-top-color:#800000;border-radius:50%;animation:spin .7s linear infinite;"></div>';
+    el.style.background = 'rgba(212, 175, 55, 0.14)';
+    el.replaceChildren();
+    var spin = document.createElement('div');
+    spin.style.cssText = 'width:36px;height:36px;border:4px solid rgba(212,175,55,0.2);border-top-color:#D4AF37;border-radius:50%;animation:spin .7s linear infinite;';
+    el.appendChild(spin);
 }
 function showMsg(type, text) {
     var el = document.getElementById('vMsg');

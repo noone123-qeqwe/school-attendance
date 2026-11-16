@@ -46,7 +46,7 @@ services:
       - key: CACHE_STORE
         value: database
       - key: QUEUE_CONNECTION
-        value: sync
+        value: database
       - key: DB_CONNECTION
         value: pgsql
       # External face verification stays disabled until privacy and provider review is complete.

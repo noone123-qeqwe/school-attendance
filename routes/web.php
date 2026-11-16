@@ -270,7 +270,7 @@ Route::middleware('guest')->group(function () {
 
 // Authenticated Routes (Protected) - Shared
 Route::middleware('auth')->group(function () {
-    Route::match(['get', 'post'], '/logout', [PTController::class, 'logout'])->name('logout');
+    Route::post('/logout', [PTController::class, 'logout'])->name('logout');
     Route::get('/student/pending-approval', function () {
         abort_unless(auth()->user()?->isStudent(), 403);
         if (!auth()->user()->student_registration_pending) {
@@ -538,9 +538,6 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
 
     // Announcements
     Route::post('/announcements', [App\Http\Controllers\TeacherController::class, 'storeAnnouncement'])->name('announcements.store');
-
-    // Attendance Corrections
-    Route::get('/corrections', [App\Http\Controllers\TeacherController::class, 'corrections'])->name('corrections');
 
     // Offline Attendance Sync
     Route::post('/offline-attendance/sync', [App\Http\Controllers\OfflineAttendanceController::class, 'sync'])->middleware('feature:offline_attendance')->name('offline.sync');

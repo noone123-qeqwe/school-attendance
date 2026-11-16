@@ -21,6 +21,7 @@ use App\Listeners\AuditAttendanceSessionChange;
 use App\Listeners\QueueTeacherAttendanceNotification;
 use App\Http\Middleware\SecurityHeaders;
 use App\Services\VersionService;
+use App\View\Composers\SidebarComposer;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -94,6 +95,12 @@ class AppServiceProvider extends ServiceProvider
             }
             $view->with($data);
         });
+
+        View::composer([
+            'layouts.sidebars.teacher',
+            'partials.teacher-navigation',
+            'layouts.sidebars.student',
+        ], SidebarComposer::class);
 
         // ── CSP nonce Blade directive ─────────────────────────────────────────
         // @cspNonce  → renders: nonce="<per-request-value>"

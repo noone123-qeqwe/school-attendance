@@ -174,7 +174,10 @@ class AdminController extends Controller
             ->where('student_registration_pending', true)
             ->where(function ($q) { $q->whereNull('is_active')->orWhere('is_active', true); })
             ->count();
-        $query = User::query()->where('role', 'student')->with(['attendances', 'deviceBinding']);
+        $query = User::query()
+            ->where('role', 'student')
+            ->with('deviceBinding')
+            ->withCount(['attendances as absent_count' => fn ($q) => $q->where('status', 'Absent')]);
 
         if ($status === 'active') {
             $query->whereNull('deleted_at')->where(function($q) {
@@ -273,7 +276,9 @@ class AdminController extends Controller
 
      public function searchStudents(Request $request)
     {
-        $query = User::where('role', 'student')->with(['attendances', 'deviceBinding']);
+        $query = User::where('role', 'student')
+            ->with('deviceBinding')
+            ->withCount(['attendances as absent_count' => fn ($q) => $q->where('status', 'Absent')]);
 
         $status = $request->input('status', 'active');
         if ($status === 'pending') {
@@ -332,7 +337,8 @@ class AdminController extends Controller
 
     public function previewStudentsPdf(Request $request)
     {
-        $query = User::where('role', 'student')->with('attendances');
+        $query = User::where('role', 'student')
+            ->withCount(['attendances as absent_count' => fn ($q) => $q->where('status', 'Absent')]);
 
         if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
         if ($request->filled('semester'))   $query->where('semester', $request->semester);
@@ -352,7 +358,8 @@ class AdminController extends Controller
 
     public function exportStudentsPdf(Request $request)
     {
-        $query = User::where('role', 'student')->with('attendances');
+        $query = User::where('role', 'student')
+            ->withCount(['attendances as absent_count' => fn ($q) => $q->where('status', 'Absent')]);
 
         if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
         if ($request->filled('semester'))   $query->where('semester', $request->semester);

@@ -3,7 +3,7 @@
 @endphp
 @foreach($students as $student)
 @php
-    $absences = $student->attendances->where('status', 'Absent')->count();
+    $absences = (int) ($student->absent_count ?? $student->attendances->where('status', 'Absent')->count());
 @endphp
 <tr>
     @unless($isReadOnlyAuditor)

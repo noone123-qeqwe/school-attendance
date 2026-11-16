@@ -222,11 +222,21 @@ chmod 666 /var/run/php-fpm.sock 2>/dev/null || true
 # deployments should use separate web, worker, and scheduler process roles.
 if [ "$APP_PROCESS_ROLE" = "all" ]; then
     echo "⏱️ Starting Laravel Scheduler Worker..."
-    php artisan schedule:work >> /var/www/html/storage/logs/scheduler.log 2>&1 &
+    (
+        while true; do
+            php artisan schedule:work >> /var/www/html/storage/logs/scheduler.log 2>&1 || true
+            sleep 5
+        done
+    ) &
 
     if [ "${QUEUE_CONNECTION:-sync}" != "sync" ]; then
         echo "📨 Starting Laravel Queue Worker..."
-        php artisan queue:work --sleep="${QUEUE_SLEEP:-3}" --tries="${QUEUE_TRIES:-3}" --backoff="${QUEUE_BACKOFF:-5}" --timeout="${QUEUE_TIMEOUT:-90}" --max-jobs="${QUEUE_MAX_JOBS:-1000}" --max-time="${QUEUE_MAX_TIME:-3600}" --memory="${QUEUE_MEMORY:-192}" >> /var/www/html/storage/logs/queue.log 2>&1 &
+        (
+            while true; do
+                php artisan queue:work --sleep="${QUEUE_SLEEP:-3}" --tries="${QUEUE_TRIES:-3}" --backoff="${QUEUE_BACKOFF:-5}" --timeout="${QUEUE_TIMEOUT:-90}" --max-jobs="${QUEUE_MAX_JOBS:-1000}" --max-time="${QUEUE_MAX_TIME:-3600}" --memory="${QUEUE_MEMORY:-192}" >> /var/www/html/storage/logs/queue.log 2>&1 || true
+                sleep 2
+            done
+        ) &
     else
         echo "⏭️ Queue worker disabled because QUEUE_CONNECTION=sync."
     fi

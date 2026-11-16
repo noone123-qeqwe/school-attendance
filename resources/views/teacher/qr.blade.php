@@ -874,75 +874,89 @@ async function checkScheduleStatus() {
     }
 }
 
-function updateScheduleUI(scheduleData) {
+function renderStatusAlert(variantClass, iconClass, iconColor, titleIconClass, titleText, bodyLines) {
     const statusMessages = document.getElementById('statusMessages');
-    
+    if (!statusMessages) return;
+
+    const alertBox = document.createElement('div');
+    alertBox.className = `qr-alert ${variantClass}`;
+
+    const leadIcon = document.createElement('i');
+    leadIcon.className = `bi ${iconClass} mb-2`;
+    leadIcon.style.cssText = `font-size: 1.5rem; color: ${iconColor};`;
+
+    const contentWrap = document.createElement('div');
+    const titleEl = document.createElement('h6');
+    titleEl.className = 'qr-alert-title mb-1';
+    const titleIcon = document.createElement('i');
+    titleIcon.className = `bi ${titleIconClass} me-1`;
+    titleEl.append(titleIcon, document.createTextNode(String(titleText ?? '')));
+
+    const bodyEl = document.createElement('p');
+    bodyEl.className = 'qr-alert-body mb-0';
+    bodyEl.style.whiteSpace = 'pre-line';
+
+    bodyLines.forEach((entry, idx) => {
+        if (idx > 0) bodyEl.appendChild(document.createElement('br'));
+        if (entry && typeof entry === 'object' && 'label' in entry) {
+            const strong = document.createElement('strong');
+            strong.textContent = `${entry.label}: `;
+            bodyEl.append(strong, document.createTextNode(String(entry.value ?? '')));
+        } else {
+            bodyEl.appendChild(document.createTextNode(String(entry ?? '')));
+        }
+    });
+
+    contentWrap.append(titleEl, bodyEl);
+    alertBox.append(leadIcon, contentWrap);
+    statusMessages.replaceChildren(alertBox);
+}
+
+function updateScheduleUI(scheduleData) {
     switch (scheduleData.status) {
         case 'too_early':
             startBtn.disabled = true;
             startBtn.className = 'btn modern-btn warning btn-lg';
             startBtn.innerHTML = '<i class="bi bi-clock me-2"></i> Too Early';
-            
-            statusMessages.innerHTML = `
-                <div class="qr-alert qr-alert-warning">
-                    <i class="bi bi-clock-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
-                    <div>
-                        <h6 class="qr-alert-title mb-1"><i class="bi bi-clock me-1"></i> Session Opens in ${scheduleData.schedule.session_opens}</h6>
-                        <p class="qr-alert-body mb-0">
-                            <strong>Class Time:</strong> ${scheduleData.schedule.class_start} - ${scheduleData.schedule.class_end}<br>
-                            <strong>Current Time:</strong> ${scheduleData.schedule.current_time}<br>
-                            <strong>Wait Time:</strong> ${scheduleData.message}
-                        </p>
-                    </div>
-                </div>
-            `;
+
+            renderStatusAlert(
+                'qr-alert-warning',
+                'bi-clock-fill',
+                '#f59e0b',
+                'bi-clock',
+                `Session Opens in ${scheduleData.schedule.session_opens}`,
+                [
+                    { label: 'Class Time', value: `${scheduleData.schedule.class_start} - ${scheduleData.schedule.class_end}` },
+                    { label: 'Current Time', value: scheduleData.schedule.current_time },
+                    { label: 'Wait Time', value: scheduleData.message },
+                ]
+            );
             break;
-            
+
         case 'ad_hoc':
         case 'ready':
         default:
             startBtn.disabled = false;
             startBtn.className = 'btn modern-btn btn-lg';
             startBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Start Session';
-            
-            statusMessages.innerHTML = `
-                <div class="qr-alert qr-alert-success">
-                    <i class="bi bi-check-circle-fill mb-2" style="font-size: 1.5rem; color: #10b981;"></i>
-                    <div>
-                        <h6 class="qr-alert-title mb-1"><i class="bi bi-check2-circle me-1"></i> Ready to Start Session</h6>
-                        <p class="qr-alert-body mb-0">
-                            ${scheduleData.message ? scheduleData.message : 'Ready to generate attendance QR code for this subject.'}
-                        </p>
-                    </div>
-                </div>
-            `;
+
+            renderStatusAlert(
+                'qr-alert-success',
+                'bi-check-circle-fill',
+                '#10b981',
+                'bi-check2-circle',
+                'Ready to Start Session',
+                [scheduleData.message || 'Ready to generate attendance QR code for this subject.']
+            );
             break;
     }
 }
 
 function showScheduleMessage(type, message) {
-    const statusMessages = document.getElementById('statusMessages');
-    
     if (type === 'no-schedule') {
-        statusMessages.innerHTML = `
-            <div class="qr-alert qr-alert-warning">
-                <i class="bi bi-exclamation-triangle-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
-                <div>
-                    <h6 class="qr-alert-title mb-1"><i class="bi bi-info-circle me-1"></i> Cannot Start Session</h6>
-                    <p class="qr-alert-body mb-0">${message}</p>
-                </div>
-            </div>
-        `;
+        renderStatusAlert('qr-alert-warning', 'bi-exclamation-triangle-fill', '#f59e0b', 'bi-info-circle', 'Cannot Start Session', [message]);
     } else if (type === 'error') {
-        statusMessages.innerHTML = `
-            <div class="qr-alert qr-alert-danger">
-                <i class="bi bi-exclamation-triangle-fill mb-2" style="font-size: 1.5rem; color: #ef4444;"></i>
-                <div>
-                    <h6 class="qr-alert-title mb-1"><i class="bi bi-x-circle me-1"></i> Schedule Error</h6>
-                    <p class="qr-alert-body mb-0">${message}</p>
-                </div>
-            </div>
-        `;
+        renderStatusAlert('qr-alert-danger', 'bi-exclamation-triangle-fill', '#ef4444', 'bi-x-circle', 'Schedule Error', [message]);
     }
 }
 
@@ -1035,29 +1049,11 @@ startBtn.addEventListener('click', async () => {
             document.getElementById('statusMessages').innerHTML = '';
             showTeacherToast('Attendance session started using the ' + (selectedLocationSource === 'campus_anchor' ? 'campus anchor' : 'device location') + '.', 'success');
         } else {
-            const statusMessages = document.getElementById('statusMessages');
-            statusMessages.innerHTML = `
-                <div class="qr-alert qr-alert-warning">
-                    <i class="bi bi-exclamation-triangle-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
-                    <div>
-                        <h6 class="qr-alert-title mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Cannot Start Session</h6>
-                        <p class="qr-alert-body mb-0" style="white-space: pre-line;">${data.message}</p>
-                    </div>
-                </div>
-            `;
+            renderStatusAlert('qr-alert-warning', 'bi-exclamation-triangle-fill', '#f59e0b', 'bi-exclamation-triangle', 'Cannot Start Session', [data.message || 'Unable to start session.']);
         }
     } catch (error) {
         console.error('Error:', error);
-        const statusMessages = document.getElementById('statusMessages');
-        statusMessages.innerHTML = `
-            <div class="qr-alert qr-alert-danger">
-                <i class="bi bi-wifi-off mb-2" style="font-size: 1.5rem; color: #ef4444;"></i>
-                <div>
-                    <h6 class="qr-alert-title mb-1"><i class="bi bi-exclamation-octagon me-1"></i> Network Error</h6>
-                    <p class="qr-alert-body mb-0">${error.message}</p>
-                </div>
-            </div>
-        `;
+        renderStatusAlert('qr-alert-danger', 'bi-wifi-off', '#ef4444', 'bi-exclamation-octagon', 'Network Error', [error.message || 'Request failed.']);
     } finally {
         startBtn.disabled = false;
         startBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Start Session';
@@ -1105,16 +1101,41 @@ function playClockInChime() {
     } catch (e) {}
 }
 
+function copyTextWithFallback(value, successMsg, failTitle) {
+    const legacyCopy = () => {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = value;
+            ta.setAttribute('readonly', '');
+            ta.style.cssText = 'position:fixed;opacity:0;left:-9999px;';
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            if (ok) {
+                showTeacherToast(successMsg, 'success');
+                return;
+            }
+        } catch (e) {}
+        renderStatusAlert('qr-alert-info', 'bi-clipboard', '#cfa46f', 'bi-clipboard-check', failTitle, [value]);
+        showTeacherToast(`${failTitle}: ${value}`, 'info');
+    };
+
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(value).then(() => {
+            showTeacherToast(successMsg, 'success');
+        }).catch(legacyCopy);
+    } else {
+        legacyCopy();
+    }
+}
+
 function copyScanLink() {
     if (!currentSession || !currentSession.scan_url) {
         showTeacherToast('No active session URL to copy', 'error');
         return;
     }
-    navigator.clipboard.writeText(currentSession.scan_url).then(() => {
-        showTeacherToast('Attendance scan URL copied to clipboard!', 'success');
-    }).catch(() => {
-        prompt('Copy this attendance scan URL:', currentSession.scan_url);
-    });
+    copyTextWithFallback(currentSession.scan_url, 'Attendance scan URL copied to clipboard!', 'Copy Attendance URL');
 }
 
 function copySessionCode() {
@@ -1123,11 +1144,7 @@ function copySessionCode() {
         return;
     }
     const cleanCode = currentSession.session_code;
-    navigator.clipboard.writeText(cleanCode).then(() => {
-        showTeacherToast(`Attendance code (${cleanCode}) copied to clipboard!`, 'success');
-    }).catch(() => {
-        prompt('Copy Attendance Code:', cleanCode);
-    });
+    copyTextWithFallback(cleanCode, `Attendance code (${cleanCode}) copied to clipboard!`, 'Copy Attendance Code');
 }
 
 function openProjectorMode() {
@@ -1488,15 +1505,14 @@ function enterGracePeriod() {
         </div>
     `;
     
-    document.getElementById('statusMessages').innerHTML = `
-        <div class="qr-alert qr-alert-info">
-            <i class="bi bi-info-circle-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
-            <div>
-                <h6 class="qr-alert-title mb-1"><i class="bi bi-clock-history me-1"></i> Session Completed</h6>
-                <p class="qr-alert-body mb-0">Attendance has been recorded. Manual overrides can still be made using the roster menu on the right.</p>
-            </div>
-        </div>
-    `;
+    renderStatusAlert(
+        'qr-alert-info',
+        'bi-info-circle-fill',
+        '#3b82f6',
+        'bi-clock-history',
+        'Session Completed',
+        ['Attendance has been recorded. Manual overrides can still be made using the roster menu on the right.']
+    );
 }
 
 function showQRCode(url) {

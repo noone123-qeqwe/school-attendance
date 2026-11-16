@@ -58,16 +58,21 @@ class SemaphoreService
         }
 
         try {
+            $payload = [
+                'apikey' => $apiKey,
+                'number' => $normalizedNumber,
+                'message' => $message,
+            ];
+            $senderName = trim((string) ($this->senderName ?? config('services.semaphore.sender_name', '')));
+            if ($senderName !== '') {
+                $payload['sendername'] = $senderName;
+            }
+
             $response = Http::asForm()
                 ->acceptJson()
                 ->connectTimeout(3)
                 ->timeout(8)
-                ->post(self::ENDPOINT, [
-                    'apikey' => $apiKey,
-                    'number' => $normalizedNumber,
-                    'message' => $message,
-                    'sendername' => trim((string) ($this->senderName ?? config('services.semaphore.sender_name', ''))),
-                ]);
+                ->post(self::ENDPOINT, $payload);
         } catch (Throwable) {
             // Do not log exception text: HTTP client exceptions may contain request details.
             Log::warning('Semaphore SMS provider request failed before a response was received.', [

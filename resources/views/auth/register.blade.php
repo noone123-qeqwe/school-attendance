@@ -2257,5 +2257,6 @@
             }
         })();
     </script>
+    @include('partials.pwa-body')
 </body>
 </html>

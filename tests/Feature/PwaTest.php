@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PwaTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_manifest_file_is_valid_json_and_contains_required_pwa_fields(): void
     {
         $manifestPath = public_path('manifest.json');

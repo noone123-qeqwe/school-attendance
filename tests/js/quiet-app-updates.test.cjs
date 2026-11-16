@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const blade = fs.readFileSync(path.join(__dirname, '../../resources/views/partials/pwa-tags.blade.php'), 'utf8');
+const blade = fs.readFileSync(path.join(__dirname, '../../resources/views/partials/pwa-body.blade.php'), 'utf8');
 const source = blade.slice(blade.indexOf('    let swRegistration = null;'), blade.indexOf('    // ── Universal Background Lifecycle'))
     .replace(/\{\{[^}]+\}\}/g, '9.1.6');
 

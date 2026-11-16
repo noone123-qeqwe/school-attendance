@@ -35,7 +35,7 @@
         $courseStats = $students->groupBy('course');
         $yearStats = $students->groupBy('year_level');
         $totalAbsences = $students->sum(function($student) {
-            return $student->attendances->where('status', 'Absent')->count();
+            return (int) ($student->absent_count ?? $student->attendances->where('status', 'Absent')->count());
         });
     @endphp
     
@@ -73,7 +73,7 @@
         </thead>
         <tbody>
             @foreach($students as $i => $student)
-            @php $absences = $student->attendances->where('status', 'Absent')->count(); @endphp
+            @php $absences = (int) ($student->absent_count ?? $student->attendances->where('status', 'Absent')->count()); @endphp
             <tr>
                 <td class="text-center text-muted">{{ $i + 1 }}</td>
                 <td>

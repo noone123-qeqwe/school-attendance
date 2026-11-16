@@ -28,13 +28,20 @@ class AttendanceController extends Controller
      * This is intentionally loaded on demand so large histories do not slow every
      * dashboard visit or inflate the initial HTML response.
      */
-    public function historyData()
+    public function historyData(Request $request)
     {
+        $limit = min(max((int) $request->integer('limit', 250), 1), 500);
         $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission'])
             ->where('user_id', Auth::id())
             ->orderBy('date', 'desc')
             ->orderBy('time_in', 'desc')
+            ->limit($limit + 1)
             ->get();
+
+        $hasMore = $records->count() > $limit;
+        if ($hasMore) {
+            $records = $records->take($limit);
+        }
 
         $formattedRecords = $records->map(function (Attendance $record) {
             $date = Carbon::parse($record->date);
@@ -77,6 +84,8 @@ class AttendanceController extends Controller
 
         return response()->json([
             'records' => $formattedRecords,
+            'has_more' => $hasMore,
+            'limit' => $limit,
         ], 200, ['Cache-Control' => 'private, no-store']);
     }
 

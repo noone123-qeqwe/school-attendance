@@ -374,30 +374,31 @@
         </main>
     </div>
 
-    <!-- System Toast Container (for websocket notifications) -->
+    <!-- System Toast Container (for websocket notifications & flashes) -->
     <div class="toast-container" id="toastContainer" role="status" aria-live="polite" aria-atomic="false"></div>
+
+    @auth
+        <x-modal id="logoutConfirmModal" title="Confirm Log Out" icon="bi-box-arrow-right" maxWidth="sm">
+            <p style="margin: 0; color: var(--ds-text-secondary, #D1C5B4); line-height: 1.55;">
+                Are you sure you want to log out of your Smart Attendance session?
+            </p>
+            <x-slot:footer>
+                <button type="button" class="btn btn-sm" id="cancelLogoutModalBtn"
+                        style="background: rgba(255,255,255,0.06); color: var(--ds-text-secondary, #D1C5B4); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px 16px; font-weight: 600;">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-sm" id="confirmLogoutModalBtn"
+                        style="background: linear-gradient(135deg, #b91c1c, #7a1a1a); color: #fff; border: 1px solid rgba(248, 113, 113, 0.35); border-radius: 10px; padding: 8px 18px; font-weight: 700;">
+                    Log Out
+                </button>
+            </x-slot:footer>
+        </x-modal>
+    @endauth
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    @auth
     <script @cspNonce>
-        const sidebar     = document.getElementById('sidebar');
-        const burgerBtn   = document.getElementById('burgerBtn');
-        const topHeader   = document.getElementById('topHeader');
-        const mainContent = document.getElementById('mainContent');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-        const globalLogoutBtn = document.getElementById('globalLogoutBtn');
-        if (globalLogoutBtn) {
-            globalLogoutBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (confirm('Are you sure you want to log out?')) {
-                    const form = document.getElementById('globalLogoutForm');
-                    if (form) form.submit();
-                }
-            });
-        }
-
-        // ── TOAST HELPER ──
+        // ── UNIFIED TOAST HELPER ──
         function showToast(message, type = 'success', duration = 4500) {
             const container = document.getElementById('toastContainer');
             if (!container) return;
@@ -416,20 +417,78 @@
             const toast = document.createElement('div');
             toast.className = 'modern-toast';
             toast.style.borderLeft = `4px solid ${style.border}`;
-            toast.innerHTML = `
-                <div style="width: 32px; height: 32px; border-radius: 8px; background: ${style.bg}; display: flex; align-items: center; justify-content: center; color: ${style.border}; flex-shrink: 0;">
-                    <i class="bi bi-${style.icon}"></i>
-                </div>
-                <div class="modern-toast-content">${message}</div>
-                <button class="modern-toast-close" onclick="this.parentElement.remove()" aria-label="Close notification">
-                    <i class="bi bi-x"></i>
-                </button>
-            `;
+
+            const iconWrap = document.createElement('div');
+            iconWrap.style.cssText = `width:32px;height:32px;border-radius:8px;background:${style.bg};display:flex;align-items:center;justify-content:center;color:${style.border};flex-shrink:0;`;
+            const iconEl = document.createElement('i');
+            iconEl.className = `bi bi-${style.icon}`;
+            iconWrap.appendChild(iconEl);
+
+            const contentEl = document.createElement('div');
+            contentEl.className = 'modern-toast-content';
+            contentEl.textContent = String(message ?? '');
+
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'modern-toast-close';
+            closeBtn.setAttribute('aria-label', 'Close notification');
+            const closeIcon = document.createElement('i');
+            closeIcon.className = 'bi bi-x';
+            closeBtn.appendChild(closeIcon);
+            closeBtn.addEventListener('click', () => toast.remove());
+
+            toast.append(iconWrap, contentEl, closeBtn);
             container.appendChild(toast);
             setTimeout(() => {
                 toast.style.animation = 'toastSlideOut 0.3s ease forwards';
                 setTimeout(() => toast.remove(), 300);
             }, duration);
+        }
+
+        window.showToast = showToast;
+        window.showPremiumToast = function(message, type = 'success', duration = 4500) {
+            return showToast(message, type, duration);
+        };
+
+        // Auto-show Laravel flash messages once
+        document.addEventListener('DOMContentLoaded', () => {
+            @if(session('success')) showToast(@json(session('success')), 'success'); @endif
+            @if(session('error')) showToast(@json(session('error')), 'error'); @endif
+            @if(session('warning')) showToast(@json(session('warning')), 'warning'); @endif
+            @if(session('info')) showToast(@json(session('info')), 'info'); @endif
+            @if(session('status')) showToast(@json(session('status')), 'info'); @endif
+        });
+    </script>
+
+    @auth
+    <script @cspNonce>
+        const sidebar     = document.getElementById('sidebar');
+        const burgerBtn   = document.getElementById('burgerBtn');
+        const topHeader   = document.getElementById('topHeader');
+        const mainContent = document.getElementById('mainContent');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const globalLogoutBtn = document.getElementById('globalLogoutBtn');
+        const cancelLogoutModalBtn = document.getElementById('cancelLogoutModalBtn');
+        const confirmLogoutModalBtn = document.getElementById('confirmLogoutModalBtn');
+        if (globalLogoutBtn) {
+            globalLogoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (typeof window.openDsModal === 'function') {
+                    window.openDsModal('logoutConfirmModal');
+                } else {
+                    const form = document.getElementById('globalLogoutForm');
+                    if (form) form.submit();
+                }
+            });
+        }
+        if (cancelLogoutModalBtn) {
+            cancelLogoutModalBtn.addEventListener('click', () => window.closeDsModal?.('logoutConfirmModal'));
+        }
+        if (confirmLogoutModalBtn) {
+            confirmLogoutModalBtn.addEventListener('click', () => {
+                const form = document.getElementById('globalLogoutForm');
+                if (form) form.submit();
+            });
         }
 
         // Online / Offline connection listeners
@@ -439,13 +498,6 @@
         window.addEventListener('online', () => {
             showToast('Connection restored.', 'success', 3000);
         });
-
-        // Auto-show Laravel flash messages
-        @if(session('success')) showToast(@json(session('success')), 'success'); @endif
-        @if(session('error')) showToast(@json(session('error')), 'error'); @endif
-        @if(session('warning')) showToast(@json(session('warning')), 'warning'); @endif
-        @if(session('info')) showToast(@json(session('info')), 'info'); @endif
-        @if(session('status')) showToast(@json(session('status')), 'info'); @endif
 
         const isMobileViewport = () => window.matchMedia('(max-width: 767.98px)').matches;
 
@@ -641,27 +693,40 @@
                     }
                 }
 
-                // 2. Update dropdown header badge
+                // 2. Update dropdown header badge safely
                 const headerActions = document.getElementById('topNavNotifHeaderActions');
                 if (headerActions) {
+                    headerActions.replaceChildren();
                     if (data.unread_count > 0) {
-                        headerActions.innerHTML = `
-                            <span id="topNavNotifCountBadge" style="background:#fef2f2;color:#dc2626;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;">${data.unread_count} new</span>
-                            <button onclick="markAllRead()" class="mark-all-read-btn">Mark all read</button>
-                        `;
-                    } else {
-                        headerActions.innerHTML = '';
+                        const badgeSpan = document.createElement('span');
+                        badgeSpan.id = 'topNavNotifCountBadge';
+                        badgeSpan.style.cssText = 'background:#fef2f2;color:#dc2626;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;';
+                        badgeSpan.textContent = `${data.unread_count} new`;
+
+                        const markBtn = document.createElement('button');
+                        markBtn.type = 'button';
+                        markBtn.className = 'mark-all-read-btn';
+                        markBtn.textContent = 'Mark all read';
+                        markBtn.addEventListener('click', () => window.markAllRead?.());
+
+                        headerActions.append(badgeSpan, markBtn);
                     }
                 }
 
-                // 3. Update dropdown notification list
+                // 3. Update dropdown notification list safely via DOM APIs
                 const listEl = document.getElementById('topNavNotifList');
                 if (listEl && Array.isArray(data.notifications) && data.notifications.length === 0) {
-                    listEl.innerHTML = `
-                        <div style="text-align:center;padding:32px 20px;color:#94a3b8;">
-                            <i class="bi bi-bell-slash" style="font-size:1.8rem;display:block;margin-bottom:8px;opacity:.3;"></i>
-                            <span style="font-size:.85rem;">No notifications yet</span>
-                        </div>`;
+                    listEl.replaceChildren();
+                    const emptyBox = document.createElement('div');
+                    emptyBox.style.cssText = 'text-align:center;padding:32px 20px;color:#94a3b8;';
+                    const emptyIcon = document.createElement('i');
+                    emptyIcon.className = 'bi bi-bell-slash';
+                    emptyIcon.style.cssText = 'font-size:1.8rem;display:block;margin-bottom:8px;opacity:.3;';
+                    const emptyLabel = document.createElement('span');
+                    emptyLabel.style.fontSize = '.85rem';
+                    emptyLabel.textContent = 'No notifications yet';
+                    emptyBox.append(emptyIcon, emptyLabel);
+                    listEl.appendChild(emptyBox);
                 } else if (listEl && Array.isArray(data.notifications)) {
                     const iconMap = {
                         system_update: 'bi-rocket-takeoff-fill',
@@ -678,45 +743,77 @@
                         custom: 'background:rgba(59, 130, 246, 0.15);color:#60a5fa;'
                     };
 
-                    let html = '';
                     const todayList = data.notifications.filter(n => n.is_today);
                     const olderList = data.notifications.filter(n => !n.is_today);
+                    const isParent = {{ Auth::user()->isParent() ? 'true' : 'false' }};
+                    const frag = document.createDocumentFragment();
 
-                    const renderItem = (n) => {
-                        const style = colorMap[n.type] || 'background:rgba(207, 164, 111, 0.15);color:#f3e7cd;';
-                        const icon = iconMap[n.type] || 'bi-bell-fill';
+                    const buildNotifNode = (n) => {
+                        const row = document.createElement('div');
+                        row.id = `notif-${n.id}`;
                         const bgRow = n.is_read ? 'transparent' : (n.type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(212, 175, 55, 0.08)');
-                        const dotColor = n.type === 'system_update' ? '#10b981' : '#f59e0b';
-                        const isParent = {{ Auth::user()->isParent() ? 'true' : 'false' }};
-                        return `
-                            <div id="notif-${n.id}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:${bgRow};transition:all .2s;">
-                                <div style="display:flex;gap:10px;align-items:flex-start;">
-                                    <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;${style}">
-                                        <i class="bi ${icon}"></i>
-                                    </div>
-                                    <div style="flex:1;min-width:0;">
-                                        <div style="font-size:.82rem;color:#f3e7cd;line-height:1.4;">${n.message}</div>
-                                        <div style="font-size:.72rem;color:rgba(255,255,255,0.5);margin-top:4px;">${n.created_at_human}</div>
-                                    </div>
-                                    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-                                        ${!n.is_read ? `<div style="width:8px;height:8px;border-radius:50%;background:${dotColor};"></div>` : ''}
-                                        ${!isParent ? `<button onclick="archiveNotif(${n.id}, this)" title="Archive" class="notif-archive-btn"><i class="bi bi-archive-fill"></i></button>` : ''}
-                                    </div>
-                                </div>
-                            </div>
-                        `;
+                        row.style.cssText = `padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:${bgRow};transition:all .2s;`;
+
+                        const inner = document.createElement('div');
+                        inner.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
+
+                        const badgeWrap = document.createElement('div');
+                        badgeWrap.style.cssText = `width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;${colorMap[n.type] || 'background:rgba(207, 164, 111, 0.15);color:#f3e7cd;'}`;
+                        const badgeIcon = document.createElement('i');
+                        badgeIcon.className = `bi ${iconMap[n.type] || 'bi-bell-fill'}`;
+                        badgeWrap.appendChild(badgeIcon);
+
+                        const bodyCol = document.createElement('div');
+                        bodyCol.style.cssText = 'flex:1;min-width:0;';
+                        const msgEl = document.createElement('div');
+                        msgEl.style.cssText = 'font-size:.82rem;color:#f3e7cd;line-height:1.4;';
+                        msgEl.textContent = String(n.message ?? '');
+                        const timeEl = document.createElement('div');
+                        timeEl.style.cssText = 'font-size:.72rem;color:rgba(255,255,255,0.5);margin-top:4px;';
+                        timeEl.textContent = String(n.created_at_human ?? '');
+                        bodyCol.append(msgEl, timeEl);
+
+                        const rightCol = document.createElement('div');
+                        rightCol.style.cssText = 'display:flex;align-items:center;gap:4px;flex-shrink:0;';
+                        if (!n.is_read) {
+                            const dot = document.createElement('div');
+                            const dotColor = n.type === 'system_update' ? '#10b981' : '#f59e0b';
+                            dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${dotColor};`;
+                            rightCol.appendChild(dot);
+                        }
+                        if (!isParent) {
+                            const archBtn = document.createElement('button');
+                            archBtn.type = 'button';
+                            archBtn.title = 'Archive';
+                            archBtn.className = 'notif-archive-btn';
+                            const archIcon = document.createElement('i');
+                            archIcon.className = 'bi bi-archive-fill';
+                            archBtn.appendChild(archIcon);
+                            archBtn.addEventListener('click', () => window.archiveNotif?.(n.id, archBtn));
+                            rightCol.appendChild(archBtn);
+                        }
+
+                        inner.append(badgeWrap, bodyCol, rightCol);
+                        row.appendChild(inner);
+                        return row;
                     };
 
                     if (todayList.length > 0) {
-                        html += '<div class="notif-group-label">Today</div>';
-                        todayList.forEach(n => html += renderItem(n));
+                        const group = document.createElement('div');
+                        group.className = 'notif-group-label';
+                        group.textContent = 'Today';
+                        frag.appendChild(group);
+                        todayList.forEach(n => frag.appendChild(buildNotifNode(n)));
                     }
                     if (olderList.length > 0) {
-                        html += '<div class="notif-group-label">Earlier</div>';
-                        olderList.forEach(n => html += renderItem(n));
+                        const group = document.createElement('div');
+                        group.className = 'notif-group-label';
+                        group.textContent = 'Earlier';
+                        frag.appendChild(group);
+                        olderList.forEach(n => frag.appendChild(buildNotifNode(n)));
                     }
 
-                    listEl.innerHTML = html;
+                    listEl.replaceChildren(frag);
                 }
             } catch(e) {
                 showNotificationLoadError();
@@ -753,61 +850,6 @@
         window.addEventListener('focus', () => window.refreshNotificationBell());
     </script>
     @endauth
-
-    <!-- Premium Toast Container (for session messages) -->
-    <div class="premium-toast-container" id="premiumToastContainer"></div>
-    <script @cspNonce>
-    function showPremiumToast(message, type = 'success') {
-        const container = document.getElementById('premiumToastContainer');
-        if (!container) return;
-        const toast = document.createElement('div');
-        toast.className = 'premium-toast';
-
-        let iconClass = 'bi-check-circle-fill';
-        let iconColor = 'var(--gold)';
-
-        if (type === 'error') {
-            iconClass = 'bi-x-circle-fill';
-            iconColor = '#f87171';
-            toast.style.borderLeftColor = '#f87171';
-        } else if (type === 'warning') {
-            iconClass = 'bi-exclamation-triangle-fill';
-            iconColor = '#fbbf24';
-            toast.style.borderLeftColor = '#fbbf24';
-        }
-
-        toast.innerHTML = `
-            <i class="bi ${iconClass} premium-toast-icon" style="color: ${iconColor};"></i>
-            <div class="premium-toast-content">${message}</div>
-        `;
-
-        container.appendChild(toast);
-
-        requestAnimationFrame(() => {
-            setTimeout(() => toast.classList.add('show'), 50);
-        });
-
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 400);
-        }, 2000);
-    }
-    </script>
-
-    @if(session('success'))
-    <script @cspNonce>
-        document.addEventListener('DOMContentLoaded', () => {
-            showPremiumToast("{{ session('success') }}", 'success');
-        });
-    </script>
-    @endif
-    @if(session('error'))
-    <script @cspNonce>
-        document.addEventListener('DOMContentLoaded', () => {
-            showPremiumToast("{{ session('error') }}", 'error');
-        });
-    </script>
-    @endif
 
     <!-- Premium Drawer -->
     <div class="premium-drawer-overlay" id="globalDrawerOverlay" onclick="closeDrawer()"></div>
@@ -1072,50 +1114,10 @@
                         el.style.overflow = 'hidden';
                         setTimeout(() => el.remove(), 500);
                     });
-                }, 1000);
+                }, 4500);
             }
         });
     </script>
-    @auth
-    <script @cspNonce>
-        // Idle Timeout (15 minutes = 900,000 ms)
-        let idleTime = 0;
-        const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
-
-        function resetIdleTimer() {
-            idleTime = 0;
-        }
-
-        // Increment idle time every second
-        // const idleInterval = setInterval(() => {
-        //     idleTime += 1000;
-        //     if (idleTime >= IDLE_TIMEOUT_MS) {
-        //         clearInterval(idleInterval);
-        //         // Trigger logout
-        //         const logoutForm = document.createElement('form');
-        //         logoutForm.method = 'POST';
-        //         logoutForm.action = '{{ route("logout") }}';
-        //
-        //         const csrfInput = document.createElement('input');
-        //         csrfInput.type = 'hidden';
-        //         csrfInput.name = '_token';
-        //         csrfInput.value = '{{ csrf_token() }}';
-        //
-        //         logoutForm.appendChild(csrfInput);
-        //         document.body.appendChild(logoutForm);
-        //         logoutForm.submit();
-        //     }
-        // }, 1000);
-
-        // Reset timer on any interaction
-        window.onload = resetIdleTimer;
-        window.onmousemove = resetIdleTimer;
-        window.onmousedown = resetIdleTimer;
-        window.ontouchstart = resetIdleTimer;
-        window.onclick = resetIdleTimer;
-        window.onkeydown = resetIdleTimer;
-    </script>
-    @endauth
 
     <!-- Global Loading Overlay -->
     <div id="global-loader" style="display: none; position: fixed; inset: 0; background: rgba(17,10,10,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column;">
@@ -1173,154 +1175,6 @@
                         if (loader) loader.style.display = 'flex';
                     }
                 });
-            });
-
-            // ── Universal Global Password Toggle Handler ──
-            function togglePassword(inputId, btn, e) {
-                if (e) {
-                    if (e._pwToggled) return;
-                    e._pwToggled = true;
-                    if (e.preventDefault) e.preventDefault();
-                    if (e.stopPropagation) e.stopPropagation();
-                }
-
-                let button = btn;
-                if (!button && e && e.target) {
-                    button = e.target.closest('.eye-btn, .eye-toggle, [data-toggle-password], [id^="btn-toggle-password"]');
-                }
-
-                // Debounce protection per button (300ms)
-                const now = Date.now();
-                if (button) {
-                    if (button._lastToggleTime && (now - button._lastToggleTime < 300)) {
-                        return;
-                    }
-                    button._lastToggleTime = now;
-                }
-
-                if (!inputId && button) {
-                    inputId = button.getAttribute('data-toggle-password') || button.getAttribute('aria-controls');
-                }
-
-                let input = null;
-                if (typeof inputId === 'string') {
-                    input = document.getElementById(inputId);
-                } else if (inputId && inputId.nodeType === 1) {
-                    input = inputId;
-                }
-
-                if (!input && button && button.parentElement) {
-                    input = button.parentElement.querySelector('input[type="password"], input[type="text"]');
-                }
-                if (!input) return;
-
-                if (!button) {
-                    const id = input.id;
-                    if (id) {
-                        button = document.querySelector(`button[data-toggle-password="${id}"], button[aria-controls="${id}"], button[onclick*="${id}"]`);
-                    }
-                    if (!button && input.parentElement) {
-                        button = input.parentElement.querySelector('.eye-btn, .eye-toggle, [data-toggle-password], [id^="btn-toggle-password"]');
-                    }
-                }
-
-                const isCurrentlyFocused = (document.activeElement === input);
-                let start = null;
-                let end = null;
-                try {
-                    start = input.selectionStart;
-                    end = input.selectionEnd;
-                } catch (err) {}
-
-                const isPassword = input.type === 'password';
-                input.type = isPassword ? 'text' : 'password';
-
-                if (button) {
-                    const icon = button.querySelector('i');
-                    if (icon) {
-                        icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
-                    }
-                    const isConf = input.name === 'password_confirmation' || (input.id && (input.id.includes('2') || input.id.includes('conf')));
-                    const label = isPassword
-                        ? (isConf ? 'Hide password confirmation' : 'Hide password')
-                        : (isConf ? 'Show password confirmation' : 'Show password');
-                    button.setAttribute('aria-label', label);
-                    button.setAttribute('title', label);
-                    button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
-                }
-
-                if (isCurrentlyFocused) {
-                    try {
-                        input.focus({ preventScroll: true });
-                        if (start !== null && end !== null) {
-                            input.setSelectionRange(start, end);
-                        }
-                    } catch (err) {}
-                }
-            }
-            window.togglePassword = togglePassword;
-            window.togglePw = togglePassword;
-            window.toggleEye = togglePassword;
-
-            // Pointerdown for touch & mouse without focus loss
-            document.addEventListener('pointerdown', function(e) {
-                if (e.button !== undefined && e.button !== 0) return;
-                const btn = e.target.closest('.eye-btn, .eye-toggle, [data-toggle-password], [id^="btn-toggle-password"]');
-                if (!btn) return;
-
-                e.preventDefault();
-                const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
-                let input = targetId ? document.getElementById(targetId) : null;
-                if (!input && btn.parentElement) {
-                    input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
-                }
-                togglePassword(input, btn, e);
-            });
-
-            if (!window.PointerEvent) {
-                document.addEventListener('touchstart', function(e) {
-                    const btn = e.target.closest('.eye-btn, .eye-toggle, [data-toggle-password], [id^="btn-toggle-password"]');
-                    if (!btn) return;
-                    e.preventDefault();
-                    const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
-                    let input = targetId ? document.getElementById(targetId) : null;
-                    if (!input && btn.parentElement) {
-                        input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
-                    }
-                    togglePassword(input, btn, e);
-                }, { passive: false });
-            }
-
-            document.addEventListener('click', function(e) {
-                const btn = e.target.closest('.eye-btn, .eye-toggle, [data-toggle-password], [id^="btn-toggle-password"]');
-                if (!btn) return;
-
-                e.preventDefault();
-                if (e.stopPropagation) e.stopPropagation();
-
-                const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
-                let input = targetId ? document.getElementById(targetId) : null;
-                if (!input && btn.parentElement) {
-                    input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
-                }
-                togglePassword(input, btn, e);
-            });
-
-            document.addEventListener('keydown', function(e) {
-                if (e.key === ' ' || e.key === 'Enter' || e.keyCode === 32 || e.keyCode === 13) {
-                    const btn = e.target.closest('.eye-btn, .eye-toggle, [data-toggle-password], [id^="btn-toggle-password"]');
-                    if (!btn) return;
-
-                    e.preventDefault();
-                    if (e.stopPropagation) e.stopPropagation();
-
-                    const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
-                    let input = targetId ? document.getElementById(targetId) : null;
-                    if (!input && btn.parentElement) {
-                        input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
-                    }
-                    togglePassword(input, btn, e);
-                }
             });
 
             // ── Modern Header Search Bar Keyboard Shortcuts & UX ──
@@ -1485,5 +1339,6 @@
     @if(Auth::user()?->isAdmin() && !request()->routeIs('admin.*.pdf'))
         <script src="{{ asset('js/admin-workspace.js') }}?v={{ filemtime(public_path('js/admin-workspace.js')) }}" defer></script>
     @endif
+    @include('partials.pwa-body')
 </body>
 </html>

@@ -16,10 +16,17 @@ const PRECACHE_ASSETS = [
     '/css/design-tokens.css',
     '/css/premium.css',
     '/css/dashboard-enterprise.css',
+    '/css/experience-refinements.css',
     '/css/mobile-enterprise.css',
+    '/css/desktop-layout.css',
+    '/css/portal-layout-refinements.css',
+    '/css/system-ui-modern.css',
+    '/css/auth-login.css',
+    '/css/settings-page.css',
     '/js/html5-qrcode.min.js',
     '/js/password-toggle.js',
     '/js/offline-attendance.js',
+    '/js/settings-page.js',
 ];
 
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Attendance\RecordQrAttendanceAction;
 use App\Models\AttendanceSession;
 use App\Models\Attendance;
 use App\Models\Subject;
@@ -2061,7 +2062,7 @@ class QrAttendanceController extends Controller
                         'distance'           => round($distance),
                         'effective_distance' => round($distance),
                         'radius'             => $radiusMeters,
-                        'message'            => 'Failed to scan: You are ' . round($distance) . 'm from the session location (allowed within ' . $radiusMeters . 'm). If you are beside the instructor, ask them to check the saved location center or select the verified campus anchor.'
+                        'message'            => 'Failed to scan: You are outside the classroom boundary (' . round($distance) . 'm from the session location; allowed within ' . $radiusMeters . 'm). If you are beside the instructor, ask them to check the saved location center or select the verified campus anchor.'
                     ], 422);
                 }
             }
@@ -2154,108 +2155,46 @@ class QrAttendanceController extends Controller
                 return response()->json(['success' => false, 'message' => 'Fingerprint verification failed. Please retry or use another enabled verification method.'], 422);
             }
         }
-        // Get class start time for late threshold calculation
+        // Determine status and persist atomically via shared QR attendance action
         $subject = $session->subject;
-        $startTime = null;
-        
-        // Try to get start time from schedules matching current time or active session
-        $todayName = $now->format('l');
-        $matchingSchedules = $subject->schedules->filter(function ($schedule) use ($todayName) {
-            return strcasecmp(trim($schedule->day ?? ''), $todayName) === 0;
-        });
-            
-        if ($matchingSchedules->isNotEmpty()) {
-            $todaySchedule = $matchingSchedules->first(function ($sched) use ($now, $todayDate) {
-                $slotStart = Carbon::parse($todayDate . ' ' . $sched->start_time)->subMinutes(30);
-                $slotEnd = Carbon::parse($todayDate . ' ' . $sched->end_time)->addMinutes(30);
-                return $now->between($slotStart, $slotEnd);
-            }) ?? $matchingSchedules->first();
+        $recordAction = app(RecordQrAttendanceAction::class);
+        $status = $recordAction->resolveStatus($subject, $now, true);
 
-            $startTime = Carbon::parse($todayDate . ' ' . $todaySchedule->start_time);
-        }
-        
-        // Fallback to subject start_time if available
-        if (!$startTime && $subject->start_time) {
-            $startTime = Carbon::parse($todayDate . ' ' . $subject->start_time);
-        }
+        $beforeWrite = $isFaceMethod
+            ? function () use ($session, $user) {
+                $lockedSession = AttendanceSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
+                $lockedStudent = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+                if (!$lockedSession->isSessionActive() || !$lockedStudent->isActive() || !$this->faceAttendanceApproved($lockedStudent)
+                    || !app(ProfileFacePhotoService::class)->hasCameraEnrollment($lockedStudent)
+                    || !$lockedSession->subject?->hasStudent($lockedStudent)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'qr' => 'Camera attendance is no longer available for this session.',
+                    ]);
+                }
+            }
+            : null;
+        $allowChallengeGrace = $isFaceMethod || ($admittedId > 0 && $admittedId === (int) $startedSessionId);
 
-        // Determine status based on timing using configurable late threshold setting
-        $status = 'Present';
-        $lateMinutes = (int) \App\Models\Setting::get('late_threshold', 15);
-        if ($startTime) {
-            $lateThreshold = $startTime->copy()->addMinutes($lateMinutes);
-            $status = $now->lte($lateThreshold) ? 'Present' : 'Late';
-        }
-
-        $currentAcademicYearId = \App\Models\AcademicYear::where('is_current', true)->value('id');
-
-        $attendanceData = [
-            'user_id'                  => $user->id,
-            'subject_id'               => $subject->id,
-            'subject_code'             => $session->subject_code,
-            'date'                     => $todayDate,
-            'subject_name'             => $subject->name,
-            'class'                    => $subject->section ?? $user->section ?? 'Regular',
-            'session_id'               => $session->id,
-            'status'                   => $status,
-            'excused'                  => false,
-            'excuse_note'              => null,
-            'time_in'                  => $now->format('H:i:s'),
-            'checked_in_at'            => $now,
-            'last_location_check_at'   => $now,
-            'last_latitude'            => $request->latitude,
-            'last_longitude'           => $request->longitude,
-            'last_accuracy'            => $request->filled('accuracy') ? $request->accuracy : null,
-            'last_distance_meters'     => isset($distance) ? $distance : 0,
-            'outside_since'            => null,
-            'consecutive_outside_count'=> 0,
-            'escaped_at'               => null,
-            'monitoring_status'        => 'active',
-            'latitude'                 => $request->latitude,
-            'longitude'                => $request->longitude,
-            'gps_accuracy'             => $request->filled('accuracy') ? $request->accuracy : null,
-            'method'                   => $recordedMethod,
-            'academic_year_id'         => $currentAcademicYearId,
-        ];
         $alreadyRecorded = false;
         try {
-            $attendance = DB::transaction(function () use ($signedQr, $request, $session, $user, $todayDate, $attendanceData, &$alreadyRecorded, $isFaceMethod, $admittedId, $startedSessionId) {
-                if ($isFaceMethod) {
-                    $session = AttendanceSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
-                    $student = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
-                    if (!$session->isSessionActive() || !$student->isActive() || !$this->faceAttendanceApproved($student)
-                        || !app(ProfileFacePhotoService::class)->hasCameraEnrollment($student)
-                        || !$session->subject?->hasStudent($student)) {
-                        throw \Illuminate\Validation\ValidationException::withMessages([
-                            'qr' => 'Camera attendance is no longer available for this session.',
-                        ]);
-                    }
-                }
-                return app(AttendanceQrTokenService::class)->recordWhileValid(
-                    $signedQr ? $request->token : null,
-                    $session,
-                    function () use ($user, $session, $todayDate, $attendanceData, &$alreadyRecorded) {
-                        // Face matching and passkey verification happen before this write.
-                        // Recheck inside the transaction so an intervening attendance
-                        // decision cannot be silently replaced by a late response.
-                        $current = Attendance::withTrashed()->where('user_id', $user->id)
-                            ->where('subject_code', $session->subject_code)
-                            ->whereDate('date', $todayDate)->lockForUpdate()->first();
-                        if ($current && ($current->status !== 'Absent' || $current->excused)) {
-                            $alreadyRecorded = true;
-                            return $current;
-                        }
-                        if ($current) {
-                            if ($current->trashed()) $current->restore();
-                            $current->fill($attendanceData)->save();
-                            return $current;
-                        }
-
-                        return Attendance::create($attendanceData);
-                    },
-                    $isFaceMethod || ($admittedId > 0 && $admittedId === (int) $startedSessionId)
-                );
-            });
+            $persisted = $recordAction->persistCheckIn(
+                $user,
+                $subject,
+                $session,
+                $now,
+                $status,
+                isset($studentLat) ? $studentLat : $request->latitude,
+                isset($studentLng) ? $studentLng : $request->longitude,
+                isset($studentAccuracy) ? $studentAccuracy : ($request->filled('accuracy') ? $request->accuracy : null),
+                isset($distance) ? (float) $distance : 0.0,
+                $recordedMethod,
+                $signedQr ? $request->token : null,
+                false,
+                $beforeWrite,
+                $allowChallengeGrace
+            );
+            $attendance = $persisted['attendance'];
+            $alreadyRecorded = $persisted['already_recorded'];
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['success' => false, 'message' => $e->errors()['qr'][0]], 422);
         } catch (\Illuminate\Database\QueryException $e) {
@@ -2309,39 +2248,7 @@ class QrAttendanceController extends Controller
         event(new \App\Events\AttendanceMarked($attendance));
 
         // Broadcast a real-time update to the teacher dashboard / QR session view.
-        try {
-            $attendanceRecords = Attendance::where('subject_code', $session->subject_code)
-                ->whereDate('date', $todayDate)
-                ->whereNotNull('time_in')
-                ->get();
-
-            $totalStudents = $subject->getAllStudents()->count();
-
-            $stats = [
-                'total_present'  => $attendanceRecords->count(),
-                'total_late'     => $attendanceRecords->where('status', 'Late')->count(),
-                'total_absent'   => max($totalStudents - $attendanceRecords->count(), 0),
-                'total_students' => $totalStudents,
-            ];
-
-            broadcast(new TeacherAttendanceUpdated(
-                (int) $session->created_by,
-                $user->name,
-                $session->subject_code,
-                $status,
-                'clock_in',
-                null,
-                null,
-                $stats
-            ));
-        } catch (\Throwable $e) {
-            Log::warning('Teacher attendance broadcast failed', [
-                'error'        => $e->getMessage(),
-                'subject_code' => $session->subject_code,
-                'session_id'   => $session->id,
-                'teacher_id'   => $session->created_by,
-            ]);
-        }
+        $recordAction->broadcastTeacherUpdate($session, $subject, $user, $status, $todayDate);
 
         return response()->json([
             'success'              => true,
@@ -2974,7 +2881,7 @@ class QrAttendanceController extends Controller
                             'distance'           => round($distance),
                             'effective_distance' => round($distance),
                             'radius'             => $radiusMeters,
-                            'message'            => 'You are ' . round($distance) . 'm from the session location (allowed within ' . $radiusMeters . 'm). If you are beside the instructor, ask them to check the saved location center or select the verified campus anchor.'
+                            'message'            => 'You are outside the classroom boundary (' . round($distance) . 'm from the session location; allowed within ' . $radiusMeters . 'm). If you are beside the instructor, ask them to check the saved location center or select the verified campus anchor.'
                         ], 422);
                     }
                 }
@@ -3008,66 +2915,27 @@ class QrAttendanceController extends Controller
                 ->header('Cache-Control', 'private, no-store');
         }
 
-        // 4. Calculate Timing (Present vs Late threshold)
-        $startTime = null;
-        $todayName = $now->format('l');
-        $matchingSchedule = $subject->schedules->first(function ($sched) use ($todayName) {
-            return strcasecmp(trim($sched->day ?? ''), $todayName) === 0;
-        });
-        if ($matchingSchedule) {
-            $startTime = Carbon::parse($todayDate . ' ' . $matchingSchedule->start_time);
-        }
-        if (!$startTime && $subject->start_time) {
-            $startTime = Carbon::parse($todayDate . ' ' . $subject->start_time);
-        }
-
-        $status = 'Present';
-        $lateMinutes = (int) \App\Models\Setting::get('late_threshold', 15);
-        if ($startTime) {
-            $lateThreshold = $startTime->copy()->addMinutes($lateMinutes);
-            $status = $now->lte($lateThreshold) ? 'Present' : 'Late';
-        }
-
-        $currentAcademicYearId = \App\Models\AcademicYear::where('is_current', true)->value('id');
+        // 4. Calculate Timing (Present vs Late threshold) & persist via shared action
+        $recordAction = app(RecordQrAttendanceAction::class);
+        $status = $recordAction->resolveStatus($subject, $now, false);
 
         // 5. Record Attendance in Database
         try {
-            $attendance = app(AttendanceQrTokenService::class)->recordWhileValid(
-                $signedQr ? $extractedToken : null,
+            $persisted = $recordAction->persistCheckIn(
+                $user,
+                $subject,
                 $session,
-                fn () => Attendance::updateOrCreateRecord(
-                [
-                    'user_id'      => $user->id,
-                    'subject_id'   => $subject->id,
-                    'subject_code' => $session->subject_code,
-                    'date'         => $todayDate,
-                ],
-                [
-                    'subject_name'              => $subject->name,
-                    'class'                     => $subject->section ?? $user->section ?? 'Regular',
-                    'session_id'                => $session->id,
-                    'status'                    => $status,
-                    'excused'                   => false,
-                    'excuse_note'               => null,
-                    'time_in'                   => $now->format('H:i:s'),
-                    'checked_in_at'             => $now,
-                    'last_location_check_at'    => $now,
-                    'last_latitude'             => isset($studentLat) ? $studentLat : $request->latitude,
-                    'last_longitude'            => isset($studentLng) ? $studentLng : $request->longitude,
-                    'last_accuracy'             => $request->accuracy,
-                    'last_distance_meters'      => isset($distance) ? $distance : 0,
-                    'outside_since'             => null,
-                    'consecutive_outside_count' => 0,
-                    'escaped_at'                => null,
-                    'monitoring_status'         => 'active',
-                    'latitude'                  => isset($studentLat) ? $studentLat : $request->latitude,
-                    'longitude'                 => isset($studentLng) ? $studentLng : $request->longitude,
-                    'gps_accuracy'              => $request->accuracy,
-                    'method'                    => $isCodeMethod ? 'code' : 'qr',
-                    'academic_year_id'          => $currentAcademicYearId,
-                ]
-                )
+                $now,
+                $status,
+                isset($studentLat) ? $studentLat : $request->latitude,
+                isset($studentLng) ? $studentLng : $request->longitude,
+                $request->accuracy,
+                isset($distance) ? (float) $distance : 0.0,
+                $isCodeMethod ? 'code' : 'qr',
+                $signedQr ? $extractedToken : null,
+                true
             );
+            $attendance = $persisted['attendance'];
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -3096,40 +2964,8 @@ class QrAttendanceController extends Controller
             ], 500);
         }
 
-        // 6. Broadcast Real-Time Update to Teacher
-        try {
-            $attendanceRecords = Attendance::where('subject_code', $session->subject_code)
-                ->whereDate('date', $todayDate)
-                ->whereNotNull('time_in')
-                ->get();
-
-            $totalStudents = User::where('role', 'student')
-                ->where('year_level', $subject->year_level)
-                ->where('semester', $subject->semester)
-                ->when(!empty($subject->course), fn($query) => $query->where('course', $subject->course))
-                ->when(!empty($subject->section), fn($query) => $query->where('section', $subject->section))
-                ->count();
-
-            $stats = [
-                'total_present'  => $attendanceRecords->where('status', 'Present')->count(),
-                'total_late'     => $attendanceRecords->where('status', 'Late')->count(),
-                'total_absent'   => max($totalStudents - $attendanceRecords->count(), 0),
-                'total_students' => $totalStudents,
-            ];
-
-            broadcast(new TeacherAttendanceUpdated(
-                (int) $session->created_by,
-                $user->name,
-                $session->subject_code,
-                $status,
-                'clock_in',
-                null,
-                null,
-                $stats
-            ));
-        } catch (\Throwable $e) {
-            // Ignore broadcast failure in local/test
-        }
+        // 6. Broadcast Real-Time Update to Teacher using canonical SubjectRosterService
+        $recordAction->broadcastTeacherUpdate($session, $subject, $user, $status, $todayDate);
 
         $legacyInstructor = $subject->getAttribute('instructor');
         $instructorName = $subject->instructorUser()->value('name')

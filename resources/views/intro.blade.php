@@ -457,5 +457,6 @@
 
         window.addEventListener('pagehide', () => clearTimeout(recoveryTimer));
     </script>
+    @include('partials.pwa-body')
 </body>
 </html>

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\QrSessionException;
 use App\Models\AttendanceSession;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
@@ -16,7 +17,7 @@ class QrSessionService
     {
         $subject = \App\Models\Subject::with('schedules')->where('code', $subjectCode)->first();
         if (!$subject) {
-            throw new \Exception('Subject not found.');
+            throw QrSessionException::subjectNotFound((string) $subjectCode);
         }
 
         $now = now('Asia/Manila');
@@ -77,12 +78,12 @@ class QrSessionService
         return DB::transaction(function () use ($session) {
         $session = AttendanceSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
         if ($session->qrTokens()->exists()) {
-            throw new \Exception('Signed QR rotation is active for this session.');
+            throw QrSessionException::signedRotationActive();
         }
         $session->markInactiveIfExpired();
 
         if (!$session->isSessionActive()) {
-            throw new \Exception('Session expired.');
+            throw QrSessionException::sessionExpired();
         }
         
         $oldToken = $session->token;

@@ -100,6 +100,11 @@
                 <span class="scanner-instruction-text">Place your teacher’s QR code inside the frame.</span>
             </div>
 
+            <div id="scannerGpsBadge" class="scanner-gps-badge" data-gps-state="searching" role="status" aria-live="polite">
+                <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+                <span class="scanner-gps-text">Acquiring GPS location…</span>
+            </div>
+
             <div class="scanner-paste-shortcut">
                 <button type="button" class="scanner-alt-btn" data-action="paste-copied-code" id="cameraPasteBtn">
                     <i class="bi bi-clipboard-check" aria-hidden="true"></i> Paste code
@@ -114,6 +119,10 @@
                 <input type="text" id="directSessionCodeInput" class="code-entry-input" inputmode="numeric" placeholder="000 000" maxlength="500" autocomplete="one-time-code" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-describedby="codeEntryHint">
                 <div id="codeEntryHint" class="code-entry-hint mt-2" aria-live="polite">
                     <i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token
+                </div>
+                <div id="scannerCodeGpsBadge" class="scanner-gps-badge mt-2" data-gps-state="searching" role="status" aria-live="polite">
+                    <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+                    <span class="scanner-gps-text">Acquiring GPS location…</span>
                 </div>
             </div>
 
@@ -986,6 +995,32 @@
     line-height: 1.3;
 }
 
+.scanner-gps-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin: 0 auto 8px;
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    background: rgba(251, 191, 36, 0.08);
+    color: #fde68a;
+    transition: all 0.2s ease;
+}
+.scanner-gps-badge[data-gps-state="ready"] {
+    border-color: rgba(74, 222, 128, 0.3);
+    background: rgba(34, 197, 94, 0.12);
+    color: #86efac;
+}
+.scanner-gps-badge[data-gps-state="error"] {
+    border-color: rgba(248, 113, 113, 0.35);
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+}
+
 .scanner-alt-btn {
     background: rgba(207, 164, 111, 0.12);
     border: 1px solid rgba(207, 164, 111, 0.28);
@@ -1508,25 +1543,49 @@ const studentScannerPageUrl = @json(route('mobile.scan'));
 const studentDashboardUrl = @json(route('home'));
 const isDedicatedStudentScannerPage = @json(request()->routeIs('mobile.scan'));
 
+function updateScannerGpsStatus(state, message) {
+    document.querySelectorAll('#scannerGpsBadge, #scannerCodeGpsBadge').forEach(badge => {
+        badge.setAttribute('data-gps-state', state);
+        const textEl = badge.querySelector('.scanner-gps-text');
+        if (textEl) textEl.textContent = message;
+    });
+}
+
 function startContinuousLocationWatch() {
-    if (!navigator.geolocation || studentLocationWatchId !== null) return;
+    if (!navigator.geolocation) {
+        updateScannerGpsStatus('error', 'Location unsupported on this browser');
+        return;
+    }
+    if (studentLocationWatchId !== null) return;
+    updateScannerGpsStatus('searching', 'Acquiring GPS location…');
     studentLocationWatchId = navigator.geolocation.watchPosition(
         pos => {
             if (pos && pos.coords) {
                 const acc = pos.coords.accuracy || 0;
-                // If more accurate, or existing fix is older than 5s, accept it
+                const fixTs = pos.timestamp || Date.now();
+                // Reject coarse/invalid fixes when a better fix exists
+                if (!Number.isFinite(acc) || acc <= 0) return;
                 if (!studentGeoCoords || acc <= (studentGeoCoords.acc || Infinity) || (Date.now() - studentGeoTimestamp > 5000)) {
                     studentGeoCoords = {
                         lat: pos.coords.latitude,
                         lng: pos.coords.longitude,
-                        acc: acc
+                        acc: acc,
+                        timestamp: fixTs
                     };
-                    studentGeoTimestamp = Date.now();
+                    studentGeoTimestamp = fixTs;
+                    if (acc <= 50) {
+                        updateScannerGpsStatus('ready', `Location ready (±${Math.round(acc)}m)`);
+                    } else {
+                        updateScannerGpsStatus('searching', `Refining GPS (±${Math.round(acc)}m)…`);
+                    }
                 }
             }
         },
         err => {
             console.warn('Continuous GPS watch warning:', err);
+            if (err && err.code === 1) {
+                updateScannerGpsStatus('error', 'Enable location permission to clock in');
+            }
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
     );
@@ -1594,6 +1653,11 @@ function refreshStudentLocation(force = false) {
                 studentGeoPromise = null;
                 studentGeoCoords = coords;
                 studentGeoTimestamp = coords ? coords.timestamp : 0;
+                if (coords && coords.acc <= 50) {
+                    updateScannerGpsStatus('ready', `Location ready (±${Math.round(coords.acc)}m)`);
+                } else if (!coords) {
+                    updateScannerGpsStatus('error', 'GPS signal unavailable — move near window');
+                }
             }
             resolve(requestSerial === studentGeoRequestSerial ? coords : null);
         };
@@ -2587,14 +2651,14 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
     const parsedData = extractQrToken(decodedText);
     const resolvedMethod = (method === 'code' || currentScannerMode === 'code' || (parsedData.code && !parsedData.token)) ? 'code' : 'qr';
 
-    // A scan must use its own fresh, reliable reading, not a background watch fix.
+    // Reuse a fresh pre-warmed fix (<= 5s old, <= 50m accuracy) so 15s QR tokens do not expire waiting for GPS.
     const processingText = document.querySelector('#scannerProcessingOverlay .processing-sub');
-    if (processingText) processingText.textContent = 'Getting accurate location...';
-    if (hint) hint.textContent = 'Getting accurate location...';
+    if (processingText) processingText.textContent = 'Checking location…';
+    if (hint) hint.textContent = 'Checking location…';
     let scanLocation = null;
     if (@json(app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification'))) {
         try {
-            scanLocation = await refreshStudentLocation(true);
+            scanLocation = await refreshStudentLocation(false);
         } catch (error) {
             console.warn('Geolocation refresh warning:', error);
         }

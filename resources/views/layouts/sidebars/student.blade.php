@@ -23,7 +23,7 @@
         <span class="nav-link-text">Classes & Schedule</span>
         <span class="d-none" aria-hidden="true">My Schedule My Classes</span>
     </a>
-    @if(auth()->user()?->studentAssistantAssignments()->whereNotNull('active_slot')->whereNull('revoked_at')->where('starts_at', '<=', now())->where('expires_at', '>=', now())->exists())
+    @if(!empty($hasActiveAssistantAssignment))
         <a href="{{ route('student-assistant.classes') }}" class="nav-link {{ request()->routeIs('student-assistant.*') ? 'active' : '' }}">
             <i class="bi bi-qr-code"></i>
             <span class="nav-link-text">Student Assistant</span>
