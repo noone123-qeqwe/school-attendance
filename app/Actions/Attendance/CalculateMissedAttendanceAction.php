@@ -38,7 +38,7 @@ class CalculateMissedAttendanceAction
 
         // 1. Fetch relevant subjects with preloaded schedules
         if ($subjects === null) {
-            $subjects = method_exists($student, 'getAllSubjects') && $student->isStudent()
+            $subjects = $student->isStudent()
                 ? app(\App\Services\StudentScheduleService::class)->subjectsFor($student)
                 : Subject::where('year_level', $student->year_level)
                     ->where('semester', $student->semester)

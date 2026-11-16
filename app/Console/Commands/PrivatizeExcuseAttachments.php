@@ -229,7 +229,7 @@ class PrivatizeExcuseAttachments extends Command
 
         $publicIdParts = array_slice($segments, $versionIndex + 1);
         $filename = array_pop($publicIdParts);
-        if (!is_string($filename) || $filename === '') {
+        if (!is_string($filename)) {
             throw new \RuntimeException('Cloudinary URL does not contain an asset ID.');
         }
 
@@ -240,12 +240,12 @@ class PrivatizeExcuseAttachments extends Command
         } else {
             $filename = pathinfo($filename, PATHINFO_FILENAME);
         }
+        if ($filename === '') {
+            throw new \RuntimeException('Cloudinary URL has an empty public ID.');
+        }
 
         $publicIdParts[] = $filename;
         $publicId = implode('/', $publicIdParts);
-        if ($publicId === '') {
-            throw new \RuntimeException('Cloudinary URL has an empty public ID.');
-        }
 
         return [
             'public_id' => $publicId,

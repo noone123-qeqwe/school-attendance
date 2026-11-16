@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
+/**
+ * @property string|null $type
+ */
 class Holiday extends Model
 {
     use HasFactory;
@@ -71,7 +74,7 @@ class Holiday extends Model
 
         $event = \App\Models\Event::where('type', 'holiday')->where('status', '!=', 'cancelled')->whereDate('date', $dateStr)->first();
         if ($event) {
-            $h = new static([
+            $h = new self([
                 'name' => $event->name,
                 'description' => $event->description,
                 'type' => 'school',
@@ -101,7 +104,7 @@ class Holiday extends Model
             ->orderBy('date')
             ->get()
             ->map(function($e) {
-                $h = new static([
+                $h = new self([
                     'name' => $e->name,
                     'description' => $e->description,
                     'type' => 'school',
@@ -113,7 +116,7 @@ class Holiday extends Model
             
         return $holidays->concat($events)
             ->unique(function ($item) {
-                $d = $item->date instanceof \DateTimeInterface ? $item->date->format('Y-m-d') : Carbon::parse($item->date)->format('Y-m-d');
+                $d = $item->date->format('Y-m-d');
                 return $d . '_' . strtolower(trim($item->name));
             })
             ->sortBy('date')

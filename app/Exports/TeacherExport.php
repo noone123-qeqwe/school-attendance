@@ -15,6 +15,7 @@ class TeacherExport implements FromQuery, WithHeadings, WithMapping, WithStyles,
 {
     use SanitizesExport;
 
+    /** @return \Illuminate\Database\Eloquent\Builder<\App\Models\User> */
     public function query()
     {
         return User::where('role', 'teacher')->orderBy('name');

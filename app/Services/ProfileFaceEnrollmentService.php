@@ -62,8 +62,8 @@ class ProfileFaceEnrollmentService
     public function validate(string $normalizedJpeg): array
     {
         $metadata = @getimagesizefromstring($normalizedJpeg);
-        if (!is_array($metadata) || ($metadata['mime'] ?? null) !== 'image/jpeg' ||
-            !isset($metadata[0], $metadata[1]) || min($metadata[0], $metadata[1]) < 100 ||
+        if (!is_array($metadata) || $metadata['mime'] !== 'image/jpeg' ||
+            min($metadata[0], $metadata[1]) < 100 ||
             max($metadata[0], $metadata[1]) > 1280) {
             return $this->failure('PROFILE_IMAGE_UNREADABLE');
         }

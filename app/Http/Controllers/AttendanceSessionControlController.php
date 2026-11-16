@@ -22,10 +22,12 @@ class AttendanceSessionControlController extends Controller
         $events = Activity::with('causer')->where('subject_type', AttendanceSession::class)
             ->where('subject_id', $session->id)
             ->whereIn('log_name', ['attendance-qr', 'attendance-session'])
-            ->latest('id')->limit(50)->get()->map(fn (Activity $activity) => [
+            ->latest('id')->limit(50)->get()->toBase()->map(fn (Activity $activity) => [
                 'id' => $activity->id,
                 'action' => $activity->description,
-                'actor' => $activity->causer?->name,
+                'actor' => $activity->causer instanceof \App\Models\User
+                    ? $activity->causer->name
+                    : $activity->causer?->getAttribute('name'),
                 'reason' => $activity->properties->get('reason'),
                 'at' => $activity->created_at->toIso8601String(),
             ]);

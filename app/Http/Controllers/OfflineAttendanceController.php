@@ -199,8 +199,9 @@ class OfflineAttendanceController extends Controller
         $subjects = Subject::where('instructor_id', $teacher->id)
             ->with('schedules')
             ->get()
+            ->toBase()
             ->map(function ($subject) {
-                $students = $subject->getAllStudents()->map(function ($s) {
+                $students = $subject->getAllStudents()->toBase()->map(function ($s) {
                     return [
                         'id'             => $s->id,
                         'name'           => $s->name,

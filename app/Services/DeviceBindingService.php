@@ -486,7 +486,7 @@ class DeviceBindingService
                 return [
                     'conflict'  => true,
                     'peer_id'   => $peerAttendance->user_id,
-                    'peer_name' => $peerAttendance->user?->name ?? 'Another student',
+                    'peer_name' => $peerAttendance->user->name ?? 'Another student',
                     'session_id'=> $sessionId,
                 ];
             }

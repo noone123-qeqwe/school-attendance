@@ -89,7 +89,7 @@ class DeviceBindingController extends Controller
                 'message'           => 'This device has been successfully bound to your account for attendance.',
                 'is_bound'          => true,
                 'is_current_device' => true,
-                'binding'           => $binding ? [
+                'binding'           => [
                     'id'                  => $binding->id,
                     'device_name'         => $binding->device_name ?: 'Registered Device',
                     'ip_address'          => $binding->ip_address,
@@ -104,7 +104,7 @@ class DeviceBindingController extends Controller
                     'display_info'        => $binding->getDisplayInfo(),
                     'change_count'        => (int) $binding->change_count,
                     'metadata'            => $binding->client_metadata,
-                ] : null,
+                ],
             ]);
         }
 

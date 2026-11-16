@@ -35,8 +35,8 @@ class ProfileFacePhotoService
         }
         $metadata = @getimagesizefromstring($jpeg);
         if (strlen($jpeg) < 128 || strlen($jpeg) > self::MAX_SOURCE_BYTES ||
-            !is_array($metadata) || ($metadata['mime'] ?? null) !== 'image/jpeg' ||
-            !isset($metadata[0], $metadata[1]) || min($metadata[0], $metadata[1]) < 100 ||
+            !is_array($metadata) || $metadata['mime'] !== 'image/jpeg' ||
+            min($metadata[0], $metadata[1]) < 100 ||
             max($metadata[0], $metadata[1]) > self::MAX_SIDE) {
             throw new \RuntimeException('Normalized profile photo is invalid.');
         }
@@ -222,8 +222,8 @@ class ProfileFacePhotoService
         // allocating a huge bitmap for a small, highly-compressed upload.
         $metadata = @getimagesizefromstring($bytes);
         $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        if (!is_array($metadata) || !in_array($metadata['mime'] ?? '', $allowedMimes, true) ||
-            !isset($metadata[0], $metadata[1]) || min($metadata[0], $metadata[1]) < 100 ||
+        if (!is_array($metadata) || !in_array($metadata['mime'], $allowedMimes, true) ||
+            min($metadata[0], $metadata[1]) < 100 ||
             max($metadata[0], $metadata[1]) > 5000) {
             return null;
         }

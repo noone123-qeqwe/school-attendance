@@ -177,7 +177,7 @@ class AttendanceAutoCloseService
      */
     private function sendAutomaticOsasWarning($studentId, $subjectCode)
     {
-        $student = User::find($studentId);
+        $student = User::find((int) $studentId);
         $subject = Subject::where('code', $subjectCode)->first();
         $subjectName = $subject ? $subject->name : $subjectCode;
 
@@ -220,7 +220,7 @@ class AttendanceAutoCloseService
         
         Log::info('Auto-sent OSAS warning', [
             'student_id' => $studentId,
-            'student_name' => $student->name,
+            'student_name' => $student?->name,
             'subject_code' => $subjectCode,
             'subject_name' => $subjectName,
         ]);

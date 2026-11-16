@@ -34,7 +34,7 @@ class GuestExcuseController extends Controller
         $attendance->loadMissing(['user.parents', 'subject.instructorUser']);
 
         if (!in_array($attendance->status, ['Absent', 'Late'], true)
-            || ($attendance->date && $attendance->date->isAfter(today()))) {
+            || $attendance->date->isAfter(today())) {
             abort(422, 'An excuse can only be submitted for a recorded absence or late arrival.');
         }
 
@@ -92,8 +92,8 @@ class GuestExcuseController extends Controller
         // Notify the Instructor for this subject
         $subject = $attendance->subject ?? Subject::where('code', $attendance->subject_code)->first();
         $instructorId = $subject?->instructor_id;
-        $studentName = $attendance->user?->name ?? 'Student';
-        $formattedDate = $attendance->date ? $attendance->date->format('M d, Y') : 'Session';
+        $studentName = $attendance->user->name ?? 'Student';
+        $formattedDate = $attendance->date->format('M d, Y');
 
         if ($instructorId) {
             try {
@@ -121,7 +121,7 @@ class GuestExcuseController extends Controller
         }
 
         // Notify linked parent user(s) if applicable
-        if ($attendance->user && $attendance->user->parents && $attendance->user->parents->isNotEmpty()) {
+        if ($attendance->user && $attendance->user->parents->isNotEmpty()) {
             foreach ($attendance->user->parents as $parent) {
                 try {
                     Notification::create([

@@ -44,7 +44,7 @@ class OtpService
         }
         if (str_contains($ip, ':')) {
             $parts = explode(':', $ip);
-            return ($parts[0] ?? '') . ':' . ($parts[1] ?? '') . ':****:****';
+            return $parts[0] . ':' . ($parts[1] ?? '') . ':****:****';
         }
         $parts = explode('.', $ip);
         if (count($parts) === 4) {
@@ -191,7 +191,7 @@ class OtpService
 
             // Resolve name if not explicitly passed
             if (!$recipientName) {
-                $recipientName = $user?->name ?? 'User';
+                $recipientName = $user->name ?? 'User';
             }
 
             // 6. Deliver email through decoupled EmailDeliveryService

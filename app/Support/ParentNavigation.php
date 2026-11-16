@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 
 class ParentNavigation
 {
-    /** @return array<int, array{string, string, string, array<int, string>, string}> */
+    /** @return array<int, array{string, string, string, array<int, string>, string, string}> */
     public static function items(): array
     {
         return [

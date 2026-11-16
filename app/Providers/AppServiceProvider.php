@@ -196,7 +196,7 @@ class AppServiceProvider extends ServiceProvider
         // 2. OTP send: Enforce a 30s per-account pace, with a 10/min ceiling for shared IPs.
         RateLimiter::for('otp.send', function (Request $request) {
             $email = $this->requestIdentifier($request, ['email', 'identifier', 'username', 'phone', 'phone_number', 'mobile', 'account_id', 'gmail', 'student_id', 'student_number', 'employee_id']);
-            $email = $email ?: strtolower(trim((string) ($request->user()?->email ?? '')));
+            $email = $email ?: strtolower(trim((string) ($request->user()->email ?? '')));
             $ip = $request->ip() ?: 'unknown';
             $accountKey = $this->rateLimitKey('otp_send_id', $email ?: 'missing|' . $ip);
             $ipKey = $this->rateLimitKey('otp_send_ip', $ip);
@@ -223,7 +223,7 @@ class AppServiceProvider extends ServiceProvider
         // 3. OTP verify: Max 5 attempts/min to prevent code brute-forcing
         RateLimiter::for('otp.verify', function (Request $request) {
             $email = $this->requestIdentifier($request, ['email', 'identifier', 'username', 'phone', 'phone_number', 'mobile', 'account_id', 'gmail', 'student_id', 'student_number', 'employee_id']);
-            $email = $email ?: strtolower(trim((string) ($request->user()?->email ?? '')));
+            $email = $email ?: strtolower(trim((string) ($request->user()->email ?? '')));
             $ip = $request->ip() ?: 'unknown';
             $accountKey = $this->rateLimitKey('otp_verify_id', $email ?: 'missing|' . $ip);
             $ipKey = $this->rateLimitKey('otp_verify_ip', $ip);
@@ -293,7 +293,7 @@ class AppServiceProvider extends ServiceProvider
         // 5. Email verification & resend protection
         RateLimiter::for('email.verify', function (Request $request) {
             $email = $this->requestIdentifier($request, ['email', 'identifier', 'gmail']);
-            $email = $email ?: strtolower(trim((string) ($request->user()?->email ?? '')));
+            $email = $email ?: strtolower(trim((string) ($request->user()->email ?? '')));
             $ip = $request->ip() ?: 'unknown';
             $accountKey = $this->rateLimitKey('email_verify_id', $email ?: 'missing|' . $ip);
             $ipKey = $this->rateLimitKey('email_verify_ip', $ip);

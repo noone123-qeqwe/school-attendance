@@ -10,8 +10,9 @@ class AdminApiTwoFactor
 {
     public function handle(Request $request, Closure $next): Response
     {
+        /** @var \Laravel\Sanctum\PersonalAccessToken|\Laravel\Sanctum\TransientToken|null $token */
         $token = $request->user()?->currentAccessToken();
-        $abilities = $token?->abilities ?? [];
+        $abilities = $token instanceof \Laravel\Sanctum\PersonalAccessToken ? ($token->abilities ?? []) : [];
 
         // Wildcard abilities on older tokens do not establish OTP verification.
         if (!in_array('admin-2fa-verified', $abilities, true)) {

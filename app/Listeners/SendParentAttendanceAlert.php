@@ -31,7 +31,7 @@ class SendParentAttendanceAlert
         }
 
         // We assume attendance has a related user
-        $student = User::with('parents')->find($attendance->user_id);
+        $student = User::with('parents')->find((int) $attendance->user_id);
         if (!$student) {
             return;
         }

@@ -43,7 +43,7 @@ class AttendanceController extends Controller
             $records = $records->take($limit);
         }
 
-        $formattedRecords = $records->map(function (Attendance $record) {
+        $formattedRecords = $records->toBase()->map(function (Attendance $record) {
             $date = Carbon::parse($record->date);
             $dayName = $date->format('l');
             $schedule = $record->subject?->schedules?->firstWhere('day', $dayName)
@@ -65,10 +65,10 @@ class AttendanceController extends Controller
                 'date_formatted' => $date->format('F j, Y'),
                 'date_month' => $date->format('Y-m'),
                 'day_name' => $dayName,
-                'subject' => $record->subject?->name ?? $record->subject_name ?? $record->subject_code ?? 'Class',
-                'code' => $record->subject_code ?? $record->subject?->code ?? '',
-                'instructor' => $record->subject?->instructorUser?->name
-                    ?? $record->subject?->instructor
+                'subject' => $record->subject->name ?? $record->subject_name ?? $record->subject_code ?? 'Class',
+                'code' => $record->subject_code ?? $record->subject->code ?? '',
+                'instructor' => $record->subject->instructorUser->name
+                    ?? $record->subject->instructor
                     ?? 'Instructor TBA',
                 'schedule' => ($scheduleStart && $scheduleEnd) ? "{$scheduleStart} – {$scheduleEnd}" : 'Schedule TBA',
                 'status' => $status,
@@ -76,7 +76,7 @@ class AttendanceController extends Controller
                 'clock_in' => $clockIn ?? ($status === 'Absent' ? 'No clock-in' : '—'),
                 'clock_out' => $clockOut ?? '—',
                 'remarks' => $record->excuse_note
-                    ?? $record->excuseSubmission?->reason
+                    ?? $record->excuseSubmission->reason
                     ?? ($record->excused ? 'Excused Absence' : '—'),
                 'excused' => (bool) $record->excused,
             ];
@@ -281,15 +281,13 @@ if (!$scheduledDays->contains($todayFull)) {
             }
 
             // Broadcast to parents
-            if ($user->parents) {
-                foreach ($user->parents as $parent) {
-                    broadcast(new \App\Events\LiveNotification(
-                        userId: $parent->id,
-                        title: 'Attendance Update',
-                        message: "{$user->name} was marked as {$status} in {$subject->name}.",
-                        type: $status === 'Present' ? 'success' : ($status === 'Late' ? 'warning' : 'error')
-                    ))->toOthers();
-                }
+            foreach ($user->parents as $parent) {
+                broadcast(new \App\Events\LiveNotification(
+                    userId: $parent->id,
+                    title: 'Attendance Update',
+                    message: "{$user->name} was marked as {$status} in {$subject->name}.",
+                    type: $status === 'Present' ? 'success' : 'warning'
+                ))->toOthers();
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Attendance broadcast non-blocking error: ' . $e->getMessage());
@@ -297,7 +295,7 @@ if (!$scheduledDays->contains($todayFull)) {
 
         // Real-Time Web Push Alerts
         try {
-            $pushTitle = $status === 'Present' ? "✓ Checked in: {$subject->name}" : ($status === 'Late' ? "⚠️ Marked Late: {$subject->name}" : "❌ Attendance Alert: {$subject->name}");
+            $pushTitle = $status === 'Present' ? "✓ Checked in: {$subject->name}" : "⚠️ Marked Late: {$subject->name}";
             $pushBody = "{$user->name} was marked as {$status} on " . $now->format('h:i A');
 
             // Push to linked parents

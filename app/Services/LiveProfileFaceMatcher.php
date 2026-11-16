@@ -203,7 +203,7 @@ class LiveProfileFaceMatcher
         }
 
         $size = @getimagesizefromstring($bytes);
-        if (!is_array($size) || !in_array($size['mime'] ?? null, ['image/jpeg', 'image/png', 'image/webp'], true)
+        if (!is_array($size) || !in_array($size['mime'], ['image/jpeg', 'image/png', 'image/webp'], true)
             || min($size[0], $size[1]) < 100 || max($size[0], $size[1]) > 2000) {
             return null;
         }

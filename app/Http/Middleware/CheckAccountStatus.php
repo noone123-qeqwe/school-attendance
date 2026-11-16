@@ -26,8 +26,10 @@ class CheckAccountStatus
                 }
 
                 // Revoke Sanctum tokens for API requests
-                if ($user->currentAccessToken()) {
-                    $user->currentAccessToken()->delete();
+                /** @var \Laravel\Sanctum\PersonalAccessToken|\Laravel\Sanctum\TransientToken|null $token */
+                $token = $user->currentAccessToken();
+                if ($token instanceof \Laravel\Sanctum\PersonalAccessToken) {
+                    $token->delete();
                 }
 
                 if ($request->expectsJson() || $request->ajax()) {

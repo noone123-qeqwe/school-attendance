@@ -10,12 +10,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * @property array<string, mixed>|null $notification_preferences
+ * @property float|int|null $attendance_rate
+ * @property string|null $last_attendance
+ * @property string|null $risk_level
+ * @property int|string|null $present_count
+ * @property int|string|null $late_count
+ * @property int|string|null $absent_count
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -48,6 +58,8 @@ class User extends Authenticatable
 
     /**
      * Get and set the user's name correctly capitalized.
+     *
+     * @return Attribute<string|null, string|null>
      */
     protected function name(): Attribute
     {
@@ -709,6 +721,8 @@ class User extends Authenticatable
     /**
      * RELATIONSHIP: Attendance
      * This allows us to call $user->attendances in the dashboard.
+     *
+     * @return HasMany<Attendance, $this>
      */
     public function attendances(): HasMany
     {
@@ -718,6 +732,8 @@ class User extends Authenticatable
     /**
      * RELATIONSHIP: Subjects (for teachers)
      * Get subjects taught by this teacher
+     *
+     * @return HasMany<Subject, $this>
      */
     public function subjects(): HasMany
     {
@@ -726,32 +742,41 @@ class User extends Authenticatable
 
     /**
      * RELATIONSHIP: Subjects (alternative method using instructor_id)
+     *
+     * @return HasMany<Subject, $this>
      */
-    public function teachingSubjects()
+    public function teachingSubjects(): HasMany
     {
         return $this->hasMany(Subject::class, 'instructor_id');
     }
 
     /**
      * RELATIONSHIP: Enrolled Subjects (for students)
+     *
+     * @return BelongsToMany<Subject, $this>
      */
-    public function enrolledSubjects()
+    public function enrolledSubjects(): BelongsToMany
     {
         return $this->belongsToMany(Subject::class, 'enrollments', 'user_id', 'subject_id')
                     ->withTimestamps();
     }
 
-    public function studentAssistantAssignments()
+    /** @return HasMany<ClassStudentAssistant, $this> */
+    public function studentAssistantAssignments(): HasMany
     {
         return $this->hasMany(ClassStudentAssistant::class, 'student_id');
     }
 
     /**
      * Get all subjects for this student (explicitly enrolled + implicitly via year level / semester)
+     *
+     * @return EloquentCollection<int, Subject>
      */
-    public function getAllSubjects()
+    public function getAllSubjects(): EloquentCollection
     {
-        if (!$this->isStudent() || $this->student_registration_pending) return collect();
+        if (!$this->isStudent() || $this->student_registration_pending) {
+            return new EloquentCollection();
+        }
         
         $explicit = $this->enrolledSubjects()->get();
         
@@ -776,8 +801,8 @@ class User extends Authenticatable
         });
             
         $implicit = $query->get();
-            
-        return $explicit->merge($implicit)->unique('id')->values();
+
+        return new EloquentCollection($explicit->merge($implicit)->unique('id')->values()->all());
     }
 
     /** @return HasMany<ExcuseSubmission, $this> */
@@ -798,17 +823,20 @@ class User extends Authenticatable
         return $this->hasOne(DeviceBinding::class);
     }
 
-    public function leaves()
+    /** @return HasMany<Leave, $this> */
+    public function leaves(): HasMany
     {
         return $this->hasMany(Leave::class, 'student_id');
     }
 
-    public function organizedEvents()
+    /** @return HasMany<Event, $this> */
+    public function organizedEvents(): HasMany
     {
         return $this->hasMany(Event::class, 'organizer_id');
     }
 
-    public function invitedEvents()
+    /** @return BelongsToMany<Event, $this> */
+    public function invitedEvents(): BelongsToMany
     {
         return $this->belongsToMany(Event::class, 'event_attendees', 'user_id', 'event_id')
                     ->withPivot('response', 'decline_reason')

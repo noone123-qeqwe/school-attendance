@@ -39,7 +39,7 @@ class AbsenceAlert extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $studentName = $this->attendance->user?->name ?? 'Student';
+        $studentName = $this->attendance->user->name ?? 'Student';
         $status = $this->attendance->status ?? 'Absent';
         $formattedDate = $this->attendance->date ? \Illuminate\Support\Carbon::parse($this->attendance->date)->format('M d, Y') : 'Session';
 
@@ -63,7 +63,7 @@ class AbsenceAlert extends Notification implements ShouldQueue
      */
     public function toSemaphore(object $notifiable): string
     {
-        $studentName = $this->attendance->user?->name ?? 'Student';
+        $studentName = $this->attendance->user->name ?? 'Student';
         $status = $this->attendance->status ?? 'Absent';
         $formattedDate = $this->attendance->date ? \Illuminate\Support\Carbon::parse($this->attendance->date)->format('M d, Y') : 'Session';
         $link = $this->signedUrl ? " Submit excuse: {$this->signedUrl}" : "";
@@ -77,7 +77,7 @@ class AbsenceAlert extends Notification implements ShouldQueue
      */
     public function toArray(object $notifiable): array
     {
-        $studentName = $this->attendance->user?->name ?? 'Student';
+        $studentName = $this->attendance->user->name ?? 'Student';
         return [
             'type' => 'absence_alert',
             'attendance_id' => $this->attendance->id,

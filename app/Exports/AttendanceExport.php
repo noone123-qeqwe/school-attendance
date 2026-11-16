@@ -43,10 +43,10 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
     public function map($row): array
     {
         return [
-            $this->sanitizeField($row->user?->name ?? 'N/A'),
-            $this->sanitizeField($row->user?->student_number ?? 'N/A'),
+            $this->sanitizeField($row->user->name ?? 'N/A'),
+            $this->sanitizeField($row->user->student_number ?? 'N/A'),
             $this->sanitizeField($row->subject_code),
-            $this->sanitizeField($row->subject?->name ?? 'N/A'),
+            $this->sanitizeField($row->subject->name ?? 'N/A'),
             $this->sanitizeField($row->date),
             $this->sanitizeField($row->status),
             $row->excused ? 'Yes' : 'No',

@@ -56,10 +56,10 @@ final class SchedulePublicationService
         }
 
         $recipients = $this->recipientHashes($snapshot['subjects'], $snapshot['classSchedules']);
-        $previousHashes = $publication?->recipient_hashes ?? [];
+        $previousHashes = $publication->recipient_hashes ?? [];
 
         $changedRecipientIds = collect(array_unique(array_merge(array_keys($previousHashes), array_keys($recipients))))
-            ->filter(fn (string $id) => ($previousHashes[$id]['hash'] ?? null) !== ($recipients[$id]['hash'] ?? null))
+            ->filter(fn (int|string $id) => ($previousHashes[$id]['hash'] ?? null) !== ($recipients[$id]['hash'] ?? null))
             ->map(fn ($id) => (int) $id)
             ->all();
 
@@ -176,7 +176,7 @@ final class SchedulePublicationService
     /**
      * @param Collection<int, Subject> $subjects
      * @param Collection<int, ClassSchedule> $classSchedules
-     * @return array<string, array{role: string, hash: string}>
+     * @return array<int, array{role: string, hash: string}>
      */
     private function recipientHashes(Collection $subjects, Collection $classSchedules): array
     {
@@ -243,7 +243,7 @@ final class SchedulePublicationService
 
     /**
      * @param array<int, array<int, array<string, mixed>>> $entries
-     * @return array<string, array{role: string, hash: string}>
+     * @return array<int, array{role: string, hash: string}>
      */
     private function hashEntries(array $entries, string $role): array
     {

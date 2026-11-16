@@ -242,7 +242,7 @@ class CalendarController extends Controller
             }
 
             // Update event
-            $event->date = $newDate;
+            $event->date = Carbon::parse($newDate);
             $event->start_time = $newStart;
             $event->end_time = $newEnd;
             $event->location = $newLocation;
@@ -256,17 +256,12 @@ class CalendarController extends Controller
 
             // Send EventRescheduledNotification to appropriate users
             $attendees = $event->attendees()->pluck('users.id');
+            $formattedDate = Carbon::parse($newDate)->format('M d, Y');
+            $formattedTime = $newStart
+                ? Carbon::parse((string) $newStart)->format('h:i A')
+                : 'All Day';
             foreach ($attendees as $uid) {
                 if ($uid !== Auth::id()) {
-                    $formattedDate = $event->date instanceof \DateTimeInterface
-                        ? $event->date->format('M d, Y')
-                        : \Carbon\Carbon::parse((string) $event->date)->format('M d, Y');
-                    $formattedTime = $event->start_time
-                        ? ($event->start_time instanceof \DateTimeInterface
-                            ? $event->start_time->format('h:i A')
-                            : \Carbon\Carbon::parse((string) $event->start_time)->format('h:i A'))
-                        : 'All Day';
-
                     \App\Models\Notification::create([
                         'user_id' => $uid,
                         'sent_by' => Auth::id(),

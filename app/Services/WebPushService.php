@@ -157,7 +157,7 @@ class WebPushService
         }
 
         $parents = $studentUser->parents;
-        if (!$parents || $parents->isEmpty()) {
+        if ($parents->isEmpty()) {
             return 0;
         }
 

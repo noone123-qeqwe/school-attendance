@@ -24,26 +24,31 @@ class Notification extends Model
         'is_read' => 'boolean',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function relatedStudent(): BelongsTo
     {
         return $this->belongsTo(User::class, 'related_user_id');
     }
 
+    /** @return HasMany<ParentNotificationRead, $this> */
     public function parentReads(): HasMany
     {
         return $this->hasMany(ParentNotificationRead::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sent_by');
     }
 
+    /** @return BelongsTo<Subject, $this> */
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class, 'subject_code', 'code');

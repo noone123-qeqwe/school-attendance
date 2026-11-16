@@ -162,7 +162,10 @@ class ParentService
                 throw new Exception('Invalid student ID or expired Link Code.');
             }
 
-            if ($parent->children()->where('student_id', $student->id)->exists()) {
+            if (DB::table('parent_student')
+                ->where('parent_id', $parent->id)
+                ->where('student_id', $student->id)
+                ->exists()) {
                 throw new Exception("This student ({$student->name}) is already linked to your account.");
             }
 

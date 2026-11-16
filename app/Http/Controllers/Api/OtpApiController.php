@@ -178,7 +178,7 @@ class OtpApiController extends Controller
 
         // Resolve user by email, student_number, or employee_id
         $user   = User::findByIdentifier($identifier);
-        $userId = $user?->id ?? $identifier;
+        $userId = $user->id ?? $identifier;
 
         $otpRecord = null;
         if ($user) {
@@ -366,7 +366,7 @@ class OtpApiController extends Controller
             'status'           => 'success',
             'success'          => true,
             'message'          => "If your account is registered, a password reset code has been sent.",
-            'masked_email'     => $maskedEmail ?? null,
+            'masked_email'     => $maskedEmail,
             'cooldown_seconds' => Otp::COOLDOWN_SECONDS,
         ]);
     }
@@ -472,7 +472,7 @@ class OtpApiController extends Controller
      */
     public function sendEmailVerification(Request $request)
     {
-        $email = strtolower(trim((string) $request->input('email', $request->user()?->email ?? '')));
+        $email = strtolower(trim((string) $request->input('email', $request->user()->email ?? '')));
         $ip = $request->ip() ?: 'unknown';
 
         // Enforce cooldown per email

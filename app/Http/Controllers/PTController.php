@@ -204,7 +204,7 @@ class PTController extends Controller
             Auth::login($user, $remember);
         }
 
-        if ($authenticated && $user) {
+        if ($authenticated) {
 
             $lockoutService->clear($identifier, $request->ip());
             if ($user->email) $lockoutService->clear($user->email, $request->ip());

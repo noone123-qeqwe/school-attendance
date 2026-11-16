@@ -6,6 +6,7 @@ use RuntimeException;
 use Throwable;
 
 /** Base exception for failures that may be safely shown to application users. */
+/** @phpstan-consistent-constructor */
 class AppException extends RuntimeException
 {
     private const SENSITIVE_CONTEXT_KEYS = '/password|otp|token|secret|credential|biometric|face|image|photo|authorization|cookie|session|phone|email|student[_-]?id|account[_-]?id|user[_-]?id|payload|request|body/i';

@@ -879,7 +879,7 @@ class QrAttendanceController extends Controller
             }
         }
 
-        $clockins = $students->map(function (User $student) use ($todayRecords, $peerVouchers): array {
+        $clockins = $students->toBase()->map(function (User $student) use ($todayRecords, $peerVouchers): array {
             $record = $todayRecords->firstWhere('user_id', $student->id);
             $rawStatus = $record ? $record->status : 'Missing';
             $monitoringStatus = $record ? ($record->monitoring_status ?? 'active') : null;
@@ -999,7 +999,7 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'This student is not enrolled in the session subject.'], 403);
         }
 
-        $attendance = \Illuminate\Support\Facades\DB::transaction(function () use ($student, $session, $request) {
+        $attendance = \Illuminate\Support\Facades\DB::transaction(function () use ($student, $session, $subject, $request) {
             $isAbsent = $request->status === 'Absent';
             $isEscaped = $request->status === 'Escaped';
             $now = now();
@@ -1024,9 +1024,9 @@ class QrAttendanceController extends Controller
                     'status'                    => $request->status,
                     'time_in'                   => $timeIn,
                     'session_id'                => $session->id,
-                    'subject_id'                => $session->subject?->id,
-                    'subject_name'              => $session->subject?->name,
-                    'class'                     => $session->subject->section ?? $student->section ?? 'Regular',
+                    'subject_id'                => $subject->id,
+                    'subject_name'              => $subject->name,
+                    'class'                     => $subject->section ?? $student->section ?? 'Regular',
                     'method'                    => 'manual',
                     'excused'                   => false,
                     'academic_year_id'          => \App\Models\AcademicYear::where('is_current', true)->value('id'),
@@ -2212,13 +2212,6 @@ class QrAttendanceController extends Controller
             } else {
                 throw $e;
             }
-        }
-
-        if (!$attendance) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to save attendance record. Please try again or notify your instructor.'
-            ], 500);
         }
 
         if ($alreadyRecorded) {

@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 class AdminNavigation
 {
-    /** @return array<int, array{label: string, icon: string, items: array}> */
+    /** @return array<int, array{label: string, icon: string, description: string, items: array}> */
     public static function groups(User $user): array
     {
         $groups = [

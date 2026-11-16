@@ -10,6 +10,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property \Illuminate\Database\Eloquent\Relations\Pivot|null $pivot
+ * @property bool|null $has_attendance_today
+ * @property int|string|null $attendance_count_today
+ * @property float|int|null $class_health
+ * @property-read string|null $start_time
+ * @property-read string|null $end_time
+ * @property-read string $days
+ */
 class Subject extends Model
 {
     use HasFactory, SoftDeletes;

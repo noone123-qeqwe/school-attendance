@@ -363,12 +363,12 @@ class BackupController extends Controller
                 $pdo->exec($stmt);
             }
 
-            if ($inTransaction && $pdo->inTransaction()) {
+            if ($inTransaction && DB::connection()->getPdo()->inTransaction()) {
                 $pdo->commit();
                 $inTransaction = false;
             }
         } catch (\Throwable $e) {
-            if ($inTransaction && $pdo->inTransaction()) {
+            if ($inTransaction && DB::connection()->getPdo()->inTransaction()) {
                 $pdo->rollBack();
             }
             throw $e;

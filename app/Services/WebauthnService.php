@@ -221,7 +221,7 @@ class WebauthnService
             throw new RuntimeException('Device verification was not completed. Please use your fingerprint, Face ID, or device PIN and try again.');
         }
         
-        Log::debug('WebAuthn flags OK', ['flags' => $parsed['flags'], 'up' => ($parsed['flags'] & 0x01) === 0x01, 'uv' => ($parsed['flags'] & 0x04) === 0x04]);
+        Log::debug('WebAuthn flags OK', ['flags' => $parsed['flags'], 'up' => true, 'uv' => true]);
 
         $signedData = $authenticatorData . hash('sha256', $clientDataJson, true);
         $signature = $this->base64UrlDecode($assertion['response']['signature'] ?? '');
@@ -334,7 +334,7 @@ class WebauthnService
 
         $origin = $clientData['origin'] ?? '';
         $originHost = strtolower((string) (parse_url($origin, PHP_URL_HOST) ?: ''));
-        $requestHost = strtolower((string) (request() ? request()->getHost() : ''));
+        $requestHost = strtolower(app()->bound('request') ? (string) request()->getHost() : '');
         $rpId = strtolower((string) $this->rpId());
 
         // Check if origin matches rpId, request host, loopback alias, or is an allowed subdomain
@@ -356,7 +356,7 @@ class WebauthnService
     {
         $host = '';
 
-        if (function_exists('request') && request()) {
+        if (app()->bound('request')) {
             // Try x-forwarded-host first (set by proxies like Render / ngrok / Cloudflare)
             $host = trim((string) request()->header('x-forwarded-host'));
             

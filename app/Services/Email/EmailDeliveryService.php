@@ -291,9 +291,7 @@ class EmailDeliveryService
 
         try {
             $symfonySent = $sentMessage->getSymfonySentMessage();
-            if ($symfonySent && method_exists($symfonySent, 'getMessageId')) {
-                return $symfonySent->getMessageId();
-            }
+            return $symfonySent->getMessageId();
         } catch (Throwable) {
             // Non-critical fallback
         }
@@ -316,15 +314,13 @@ class EmailDeliveryService
 
         try {
             $symfonySent = $sentMessage->getSymfonySentMessage();
-            if ($symfonySent && method_exists($symfonySent, 'getDebug')) {
-                $debug = (string) $symfonySent->getDebug();
-                // Strip any potential auth lines for security
-                $lines = explode("\n", $debug);
-                $filtered = array_filter($lines, function ($line) {
-                    return !str_contains($line, 'AUTH') && !str_contains($line, '334');
-                });
-                return trim(implode("\n", array_slice($filtered, -5)));
-            }
+            $debug = (string) $symfonySent->getDebug();
+            // Strip any potential auth lines for security
+            $lines = explode("\n", $debug);
+            $filtered = array_filter($lines, function ($line) {
+                return !str_contains($line, 'AUTH') && !str_contains($line, '334');
+            });
+            return trim(implode("\n", array_slice($filtered, -5)));
         } catch (Throwable) {
             // Non-critical fallback
         }

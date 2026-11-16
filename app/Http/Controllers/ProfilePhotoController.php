@@ -71,12 +71,12 @@ class ProfilePhotoController extends Controller
         }
 
         $quality = app(ProfileFaceEnrollmentService::class)->validate($jpeg);
-        if (!($quality['valid'] ?? false)) {
-            $status = ($quality['code'] ?? '') === 'MATCHER_UNAVAILABLE' ? 503 : 422;
+        if (!$quality['valid']) {
+            $status = $quality['code'] === 'MATCHER_UNAVAILABLE' ? 503 : 422;
             return response()->json([
                 'success' => false,
-                'code' => $quality['code'] ?? 'PROFILE_IMAGE_QUALITY',
-                'message' => $quality['message'] ?? 'The captured face image did not pass quality checks.',
+                'code' => $quality['code'],
+                'message' => $quality['message'],
             ], $status);
         }
 
@@ -105,7 +105,7 @@ class ProfilePhotoController extends Controller
             'profile_image.dimensions' => 'Image dimensions must be between 100×100 and 5000×5000 pixels.',
         ]);
 
-        /** @var \App\Models\User $user */
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         if (!$user) {
             return response()->json([
@@ -135,8 +135,8 @@ class ProfilePhotoController extends Controller
             && app(FeatureFlagService::class)->enabled('feature.face_verification');
         if ($faceMatchingEnabled) {
             $quality = app(ProfileFaceEnrollmentService::class)->validate($normalizedFacePhoto);
-            if (!($quality['valid'] ?? false)) {
-                $status = ($quality['code'] ?? '') === 'MATCHER_UNAVAILABLE' ? 503 : 422;
+            if (!$quality['valid']) {
+                $status = $quality['code'] === 'MATCHER_UNAVAILABLE' ? 503 : 422;
                 return $this->faceEnrollmentFailure($request, $quality, $status);
             }
         }
@@ -156,7 +156,11 @@ class ProfilePhotoController extends Controller
 
             // Handle cloud storage if Cloudinary is explicitly configured, otherwise store to public disk
             if (config('filesystems.default') === 'cloudinary' && config('filesystems.disks.cloudinary.url')) {
-                $storedPath = $file->storeOnCloudinary('profile_images')->getSecurePath();
+                $uploaded = app(\Cloudinary\Cloudinary::class)->uploadApi()->upload($file->getRealPath(), [
+                    'folder' => 'profile_images',
+                    'resource_type' => 'image',
+                ]);
+                $storedPath = isset($uploaded['secure_url']) ? (string) $uploaded['secure_url'] : null;
             } else {
                 $storedPath = $file->storeAs('profile_images', $safeFilename, 'public');
             }
@@ -239,7 +243,7 @@ class ProfilePhotoController extends Controller
      */
     public function destroy(Request $request)
     {
-        /** @var \App\Models\User $user */
+        /** @var \App\Models\User|null $user */
         $user = Auth::user();
         if (!$user) {
             return response()->json([

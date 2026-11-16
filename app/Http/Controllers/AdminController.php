@@ -497,7 +497,7 @@ class AdminController extends Controller
                         'name'              => $name,
                         'email'             => $email,
                         'student_number'    => $studentNumber ?: ($existing ? $existing->student_number : null),
-                        'course'            => $course ?: 'BSCS',
+                        'course'            => $course,
                         'year_level'        => $yearLevel,
                         'semester'          => $semester,
                         'section'           => $sectionInput !== '' ? $sectionInput : ($existing?->section),
@@ -885,7 +885,7 @@ class AdminController extends Controller
             }
 
             if (!empty($data['instructor_id'])) {
-                $data['instructor'] = User::findOrFail($data['instructor_id'])->name;
+                $data['instructor'] = User::findOrFail((int) $data['instructor_id'])->name;
             }
 
             $subject->update($data);
@@ -1387,7 +1387,7 @@ class AdminController extends Controller
             }
         }
 
-        if (app()->environment('local', 'testing') && $validOtp) {
+        if (app()->environment('local', 'testing')) {
             session()->flash('dev_otp', $validOtp->code);
         }
         

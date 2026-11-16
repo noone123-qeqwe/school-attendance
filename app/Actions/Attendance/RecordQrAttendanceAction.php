@@ -47,7 +47,7 @@ class RecordQrAttendanceAction
                 }) ?? $matchingSchedules->first())
                 : $matchingSchedules->first();
 
-            if ($todaySchedule) {
+            if (!empty($todaySchedule->start_time)) {
                 $startTime = Carbon::parse($todayDate . ' ' . $todaySchedule->start_time);
             }
         }

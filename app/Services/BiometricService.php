@@ -637,7 +637,7 @@ class BiometricService
                 $edgeSamples++;
             }
         }
-        $avgEdgeGradient = $edgeSamples > 0 ? ($totalEdgeEnergy / $edgeSamples) : 1.0;
+        $avgEdgeGradient = $totalEdgeEnergy / max(1, $edgeSamples);
 
         $getNormLuma = function (int $x, int $y) use (&$luma, $targetW, $targetH): float {
             $cx = max(0, min($targetW - 1, $x));
@@ -752,7 +752,7 @@ class BiometricService
                     }
                 }
 
-                $zoneAvg = $zoneSamples > 0 ? ($zoneGradSum / $zoneSamples) : 0.0;
+                $zoneAvg = $zoneGradSum / max(1, $zoneSamples);
                 $gradientEnergies[] = $zoneAvg;
                 $totalGradEnergy += $zoneAvg * $zoneAvg;
             }
@@ -820,7 +820,7 @@ class BiometricService
                     }
                 }
 
-                $zoneLbpAvg = $zoneLbpSamples > 0 ? ($zoneLbpSum / $zoneLbpSamples) : 0.5;
+                $zoneLbpAvg = $zoneLbpSum / max(1, $zoneLbpSamples);
                 $lbpEnergies[] = $zoneLbpAvg;
                 $totalLbpEnergy += $zoneLbpAvg * $zoneLbpAvg;
             }
@@ -876,7 +876,7 @@ class BiometricService
                     }
                 }
 
-                $zoneMrAvg = $zoneMrSamples > 0 ? ($zoneMrSum / $zoneMrSamples) : 0.4;
+                $zoneMrAvg = $zoneMrSum / max(1, $zoneMrSamples);
                 $multiRadiusEnergies[] = $zoneMrAvg;
                 $mrTotalEnergy += $zoneMrAvg * $zoneMrAvg;
             }

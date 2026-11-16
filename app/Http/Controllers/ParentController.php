@@ -261,7 +261,7 @@ class ParentController extends Controller
             'student_id' => 'required|exists:users,id',
         ]);
 
-        $child = User::findOrFail($request->student_id);
+        $child = User::findOrFail((int) $request->student_id);
 
         try {
             $this->parentService->unlink(Auth::user(), Auth::user(), $child);
@@ -413,7 +413,7 @@ class ParentController extends Controller
         }
 
         if (!in_array($attendance->status, ['Absent', 'Late'], true)
-            || ($attendance->date && Carbon::parse($attendance->date)->isAfter(today()))) {
+            || $attendance->date->copy()->startOfDay()->isAfter(today())) {
             return back()->with('error', 'Excuses can only be submitted for recorded absences or late arrivals.');
         }
 
@@ -477,7 +477,7 @@ class ParentController extends Controller
         }
 
         if (!in_array($attendance->status, ['Absent', 'Late'], true)
-            || ($attendance->date && Carbon::parse($attendance->date)->isAfter(today()))) {
+            || $attendance->date->copy()->startOfDay()->isAfter(today())) {
             return back()->with('error', 'Excuses can only be submitted for recorded absences or late arrivals.')->withInput();
         }
 
@@ -716,6 +716,7 @@ class ParentController extends Controller
         }
 
         foreach ($subjects as $subject) {
+            /** @var \App\Models\Schedule|object $schedule */
             foreach ($subject->schedules as $schedule) {
                 if (in_array($schedule->day, $days)) {
                     if ($schedule instanceof \Illuminate\Database\Eloquent\Model) {

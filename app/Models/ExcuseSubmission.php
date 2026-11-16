@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
+/**
+ * @property-read User|null $user
+ * @property-read Attendance|null $attendance
+ */
 class ExcuseSubmission extends Model
 {
     use HasFactory, LogsActivity;

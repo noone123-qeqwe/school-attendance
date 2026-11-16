@@ -25,21 +25,6 @@ class WebAuthnController extends Controller
         ]);
     }
 
-    private function getRpId(Request $request): string
-    {
-        $host = trim((string) $request->header('x-forwarded-host', $request->getHost()));
-        if (str_contains($host, ',')) {
-            $host = trim(explode(',', $host)[0]);
-        }
-        $host = preg_replace('/:\d+$/', '', $host);
-
-        if ($host === '') {
-            $host = parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost';
-        }
-
-        return strtolower($host);
-    }
-
     public function registerOptions(Request $request, WebauthnService $webauthn)
     {
         $user = Auth::user();
@@ -732,7 +717,7 @@ class WebAuthnController extends Controller
             'assertion_received' => !empty($request->assertion),
         ]);
 
-        if (!$user || !$dbCredential) {
+        if (!$user) {
             \Illuminate\Support\Facades\Log::error('WebAuthn login - unrecognized credential', [
                 'credential_id' => $credentialId,
                 'session_user_id' => $sessionUserId,

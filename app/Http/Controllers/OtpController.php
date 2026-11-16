@@ -231,7 +231,7 @@ class OtpController extends Controller
              session('otp_verified_account'));
 
         if ($isResend && session('otp_verified_account') && session('otp_user_id')) {
-            $user = User::find(session('otp_user_id'));
+            $user = User::find((int) session('otp_user_id'));
             if ($user) {
                 $registeredEmail = strtolower(trim((string) $user->email));
                 $cooldown = Otp::getCooldownRemaining($registeredEmail, 'forgot_password');

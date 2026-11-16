@@ -210,7 +210,7 @@ class ParentManagementController extends Controller
         // Connect additional student if provided
         $studentToLink = null;
         if ($request->filled('student_id')) {
-            $studentToLink = User::where('role', 'student')->find($request->student_id);
+            $studentToLink = User::where('role', 'student')->find((int) $request->student_id);
         } elseif ($request->filled('student_number')) {
             $num = trim($request->student_number);
             $studentToLink = User::where('role', 'student')->where(function($q) use ($num) {
@@ -253,7 +253,7 @@ class ParentManagementController extends Controller
      */
     public function reactivate($id)
     {
-        $parent = User::where('role', 'parent')->findOrFail($id);
+        $parent = User::where('role', 'parent')->findOrFail((int) $id);
         $parent->update(['is_active' => true]);
 
         return redirect()->route('admin.parents.index')->with('success', "Parent account '{$parent->name}' has been reactivated.");
@@ -285,7 +285,7 @@ class ParentManagementController extends Controller
             'student_id' => 'required|exists:users,id',
         ]);
 
-        $student = User::where('role', 'student')->findOrFail($request->student_id);
+        $student = User::where('role', 'student')->findOrFail((int) $request->student_id);
 
         try {
             $parentService->linkDirectlyByAdmin(auth()->user(), $parent, $student);

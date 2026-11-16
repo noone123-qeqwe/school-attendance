@@ -12,6 +12,10 @@ use Spatie\Activitylog\LogOptions;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @property int|string|null $checked_in_count
+ * @property string|null $qr_status
+ */
 class AttendanceSession extends Model
 {
     use HasFactory, LogsActivity;
@@ -57,16 +61,19 @@ class AttendanceSession extends Model
             ->dontSubmitEmptyLogs();
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /** @return HasMany<Attendance, $this> */
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class, 'session_id');
     }
 
+    /** @return HasMany<AttendanceQrToken, $this> */
     public function qrTokens(): HasMany
     {
         return $this->hasMany(AttendanceQrToken::class);

@@ -8,7 +8,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 /**
  * Validate that a coordinate value is within acceptable GPS range.
  */
-class ValidCoordinate implements ValidationRule
+final class ValidCoordinate implements ValidationRule
 {
     public function __construct(
         private string $type = 'latitude'

@@ -36,7 +36,7 @@ class EnrollmentController extends Controller
         ]);
 
         // Ensure the user is actually a student
-        $student = User::findOrFail($request->student_id);
+        $student = User::findOrFail((int) $request->student_id);
         if ($student->role !== 'student') {
             return back()->with('error', 'Only students can be enrolled in a subject.');
         }

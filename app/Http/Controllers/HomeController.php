@@ -210,7 +210,7 @@ class HomeController extends Controller
 
             $joinedAt = $userCreated;
             if (!$subject->matchesStudentProfile($user)) {
-                $pivotCreatedAt = $subjectsById->get($subject->id)?->pivot?->created_at;
+                $pivotCreatedAt = $subjectsById->get($subject->id)?->pivot?->getAttribute('created_at');
                 if ($pivotCreatedAt) {
                     $enrolledAt = Carbon::parse($pivotCreatedAt)->timezone('Asia/Manila');
                     if (!$joinedAt || $enrolledAt->greaterThan($joinedAt)) {
@@ -404,10 +404,10 @@ class HomeController extends Controller
 
             $calendar[$dateKey][] = [
                 'id' => $record->id,
-                'subject' => $record->subject?->name ?? $record->subject_name ?? $record->subject_code ?? 'Class',
-                'code' => $record->subject_code ?? $record->subject?->code ?? '',
-                'instructor' => $record->subject?->instructorUser?->name
-                    ?? $record->subject?->instructor
+                'subject' => $record->subject->name ?? $record->subject_name ?? $record->subject_code ?? 'Class',
+                'code' => $record->subject_code ?? $record->subject->code ?? '',
+                'instructor' => $record->subject->instructorUser->name
+                    ?? $record->subject->instructor
                     ?? 'Instructor TBA',
                 'schedule' => ($scheduleStart && $scheduleEnd) ? "{$scheduleStart} – {$scheduleEnd}" : 'Schedule TBA',
                 'schedule_start' => $scheduleStart,
@@ -418,7 +418,7 @@ class HomeController extends Controller
                 'clock_in' => $clockIn ?? 'No clock-in',
                 'time_out' => $clockOut,
                 'remarks' => $record->excuse_note
-                    ?? $record->excuseSubmission?->reason
+                    ?? $record->excuseSubmission->reason
                     ?? ($record->excused ? 'Excused Absence' : null),
             ];
         }
@@ -475,9 +475,7 @@ class HomeController extends Controller
         $calendarEvents = collect();
 
         foreach ($holidays as $hol) {
-            $dateStr = $hol->date instanceof \DateTimeInterface 
-                ? $hol->date->format('Y-m-d') 
-                : Carbon::parse($hol->date)->format('Y-m-d');
+            $dateStr = $hol->date->format('Y-m-d');
 
             $calendarEvents->push((object)[
                 'id'          => 'hol_' . $hol->id,
@@ -492,9 +490,7 @@ class HomeController extends Controller
         }
 
         foreach ($studentEvents as $evt) {
-            $dateStr = $evt->date instanceof \DateTimeInterface 
-                ? $evt->date->format('Y-m-d') 
-                : Carbon::parse($evt->date)->format('Y-m-d');
+            $dateStr = $evt->date->format('Y-m-d');
 
             $type = match($evt->type) {
                 'exam' => 'exam',
@@ -502,14 +498,9 @@ class HomeController extends Controller
                 default => 'event',
             };
 
-            $timeStr = null;
-            if ($evt->start_time && $evt->end_time) {
-                $startFormatted = Carbon::parse($evt->start_time)->format('g:i A');
-                $endFormatted   = Carbon::parse($evt->end_time)->format('g:i A');
-                $timeStr = "{$startFormatted} – {$endFormatted}";
-            } elseif ($evt->start_time) {
-                $timeStr = Carbon::parse($evt->start_time)->format('g:i A');
-            }
+            $startFormatted = $evt->start_time->format('g:i A');
+            $endFormatted   = $evt->end_time->format('g:i A');
+            $timeStr = "{$startFormatted} – {$endFormatted}";
 
             $subjectName = $evt->subject ? ($evt->subject->name ?? $evt->subject->code) : null;
 
@@ -796,7 +787,7 @@ class HomeController extends Controller
                 ->get();
         }
 
-        $formatted = $notifications->map(function ($notif) use ($user) {
+        $formatted = $notifications->toBase()->map(function ($notif) use ($user) {
             return [
                 'id' => $notif->id,
                 'type' => $notif->type,
@@ -807,7 +798,7 @@ class HomeController extends Controller
                 'created_at_human' => $notif->created_at->diffForHumans(),
                 'is_today' => $notif->created_at->isToday(),
                 'sender_name' => $notif->sender?->name,
-                'subject_name' => $notif->subject?->name ?? $notif->subject_code,
+                'subject_name' => $notif->subject->name ?? $notif->subject_code,
             ];
         });
 

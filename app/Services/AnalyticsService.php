@@ -317,7 +317,7 @@ class AnalyticsService
 
         $cacheKey = "teacher_dash_{$teacher->id}_{$targetDateStr}";
 
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($teacher, $targetDate, $targetDateStr) {
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($teacher, $targetDate) {
             // Get subjects taught by this teacher
             $teacherSubjects = Subject::where('instructor_id', $teacher->id)
                 ->with('schedules')

@@ -8,6 +8,18 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+/**
+ * @property string|null $time_out
+ * @property int|string|null $infractions
+ * @property int|string|null $record_count
+ * @property int|string|null $excused_count
+ * @property int|string|null $total
+ * @property int|string|null $present_count
+ * @property int|string|null $total_sessions
+ * @property int|string|null $present_sessions
+ * @property string|null $last_attendance
+ * @property float|int|null $rate
+ */
 class Attendance extends Model
 {
     use SoftDeletes, LogsActivity;
@@ -169,16 +181,19 @@ class Attendance extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasOne<ExcuseSubmission, $this> */
     public function excuseSubmission(): HasOne
     {
         return $this->hasOne(ExcuseSubmission::class);
     }
 
+    /** @return HasOne<AttendanceCorrection, $this> */
     public function correction(): HasOne
     {
         return $this->hasOne(AttendanceCorrection::class);
     }
 
+    /** @return BelongsTo<AcademicYear, $this> */
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);
@@ -284,7 +299,7 @@ class Attendance extends Model
             throw new \InvalidArgumentException('Automatic absence requires a student, subject, and date.');
         }
 
-        if (!$subjectId && $subjectCode) {
+        if (!$subjectId) {
             $subjectId = \App\Models\Subject::where('code', $subjectCode)->value('id');
             if ($subjectId) {
                 $data['subject_id'] = $subjectId;

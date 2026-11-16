@@ -112,6 +112,7 @@ class MobileController extends Controller
         $attendanceRate = $weekTotal > 0 ? round(($weekPresent / $weekTotal) * 100) : 0;
 
         // Upcoming classes today
+        /** @var array<int, array{sort_time: string, time: string, name: string, room: string, teacher: string}> $upcomingClasses */
         $upcomingClasses = [];
         
         foreach ($todaySubjects as $subject) {
@@ -123,7 +124,7 @@ class MobileController extends Controller
                         'time' => $startTime->format('g:i A'),
                         'name' => $subject->name ?? $subject->code,
                         'room' => $schedule->room ?? 'TBA',
-                        'teacher' => $subject->instructorUser?->name ?? 'TBA',
+                        'teacher' => $subject->instructorUser->name ?? 'TBA',
                     ];
                 }
             }
@@ -163,7 +164,7 @@ class MobileController extends Controller
 
             $recentActivity[$dateLabel][] = [
                 'title' => ucfirst($att->status),
-                'subtitle' => ($att->subject->name ?? $att->subject_code) . ' - ' . ($att->subject?->schedules?->first()?->room ?? 'Room TBA'),
+                'subtitle' => ($att->subject->name ?? $att->subject_code) . ' - ' . ($att->subject->schedules->first()->room ?? 'Room TBA'),
                 'time' => $att->time_in ? Carbon::parse($att->time_in)->format('g:i A') : '',
                 'icon' => $icon,
                 'status' => $status,

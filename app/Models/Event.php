@@ -42,38 +42,45 @@ class Event extends Model
         'rescheduled_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
-    
+
+    /** @return BelongsTo<User, $this> */
     public function organizer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'organizer_id');
     }
 
+    /** @return BelongsTo<Subject, $this> */
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class, 'class_id');
     }
 
+    /** @return HasMany<EventAttendance, $this> */
     public function attendances(): HasMany
     {
         return $this->hasMany(EventAttendance::class);
     }
-    
+
+    /** @return BelongsToMany<User, $this> */
     public function attendees(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'event_attendees', 'event_id', 'user_id')
                     ->withPivot('response', 'decline_reason')
                     ->withTimestamps();
     }
-    
+
+    /** @return HasMany<EventAttendeeGroup, $this> */
     public function attendeeGroups(): HasMany
     {
         return $this->hasMany(EventAttendeeGroup::class);
     }
-    
+
+    /** @return HasMany<EventRescheduleLog, $this> */
     public function rescheduleLogs(): HasMany
     {
         return $this->hasMany(EventRescheduleLog::class);

@@ -144,15 +144,9 @@ class CalendarController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $existingDate = $event->date instanceof \DateTimeInterface
-            ? $event->date->format('Y-m-d')
-            : ($event->date ? Carbon::parse((string) $event->date)->format('Y-m-d') : null);
-        $existingStart = $event->start_time instanceof \DateTimeInterface
-            ? $event->start_time->format('H:i:s')
-            : ($event->start_time ? Carbon::parse((string) $event->start_time)->format('H:i:s') : null);
-        $existingEnd = $event->end_time instanceof \DateTimeInterface
-            ? $event->end_time->format('H:i:s')
-            : ($event->end_time ? Carbon::parse((string) $event->end_time)->format('H:i:s') : null);
+        $existingDate = $event->date->format('Y-m-d');
+        $existingStart = $event->start_time->format('H:i:s');
+        $existingEnd = $event->end_time->format('H:i:s');
 
         $newDate = $request->has('date') ? Carbon::parse($request->date)->format('Y-m-d') : $existingDate;
         $newStart = $request->has('start_time') ? $request->start_time : $existingStart;
@@ -202,7 +196,7 @@ class CalendarController extends Controller
                 }
             }
             
-            $event->date = $newDate;
+            $event->date = Carbon::parse($newDate);
             $event->start_time = $newStart;
             $event->end_time = $newEnd;
             if ($event->type !== 'holiday') {
@@ -215,17 +209,12 @@ class CalendarController extends Controller
             if ($isReschedule) {
                 // Send EventRescheduledNotification to appropriate users
                 $attendees = $event->attendees()->pluck('users.id');
+                $formattedDate = Carbon::parse($newDate)->format('M d, Y');
+                $formattedTime = $newStart
+                    ? Carbon::parse((string) $newStart)->format('h:i A')
+                    : 'All Day';
                 foreach ($attendees as $uid) {
                     if ($uid !== Auth::id()) {
-                        $formattedDate = $event->date instanceof \DateTimeInterface
-                            ? $event->date->format('M d, Y')
-                            : \Carbon\Carbon::parse((string) $event->date)->format('M d, Y');
-                        $formattedTime = $event->start_time
-                            ? ($event->start_time instanceof \DateTimeInterface
-                                ? $event->start_time->format('h:i A')
-                                : \Carbon\Carbon::parse((string) $event->start_time)->format('h:i A'))
-                            : 'All Day';
-
                         \App\Models\Notification::create([
                             'user_id' => $uid,
                             'sent_by' => Auth::id(),

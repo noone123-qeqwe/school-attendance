@@ -937,15 +937,13 @@ class TeacherController extends Controller
             ));
             
             // Broadcast to parents
-            if ($student->parents) {
-                foreach ($student->parents as $parent) {
-                    broadcast(new \App\Events\LiveNotification(
-                        userId: $parent->id,
-                        title: 'Warning Issued',
-                        message: $messages[$request->type],
-                        type: 'error'
-                    ))->toOthers();
-                }
+            foreach ($student->parents as $parent) {
+                broadcast(new \App\Events\LiveNotification(
+                    userId: $parent->id,
+                    title: 'Warning Issued',
+                    message: $messages[$request->type],
+                    type: 'error'
+                ))->toOthers();
             }
         } catch (\Exception $e) {}
 
@@ -1160,20 +1158,18 @@ class TeacherController extends Controller
 
             // Step 2: Update attendance record
             $attendance = $excuseSubmission->attendance;
-            if ($attendance) {
-                $attendance->excused = true;
-                $attendance->excuse_note = $adminNotes ?: 'Approved by instructor ' . $teacher->name;
+            $attendance->excused = true;
+            $attendance->excuse_note = $adminNotes ?: 'Approved by instructor ' . $teacher->name;
 
-                if ($statusOverride && $statusOverride !== 'keep') {
-                    $attendance->status = $statusOverride;
-                }
-                $attendance->save();
+            if ($statusOverride && $statusOverride !== 'keep') {
+                $attendance->status = $statusOverride;
             }
+            $attendance->save();
 
             // Step 3: Notifications
             $student = $excuseSubmission->user;
-            $subjectLabel = $attendance ? ($attendance->subject?->name ?? $attendance->subject_code ?? 'class') : 'class';
-            $dateLabel = $attendance && $attendance->date ? \Carbon\Carbon::parse($attendance->date)->format('M j, Y') : 'session';
+            $subjectLabel = $attendance->subject->name ?? $attendance->subject_code ?: 'class';
+            $dateLabel = $attendance->date->format('M j, Y');
             $approvalMessage = "Your excuse request for {$subjectLabel} on {$dateLabel} has been approved" . ($adminNotes ? ": {$adminNotes}" : ".");
 
             // 3a. In-App Notification to Student
@@ -1181,7 +1177,7 @@ class TeacherController extends Controller
                 'user_id' => $excuseSubmission->user_id,
                 'sent_by' => $teacher->id,
                 'type' => 'excuse_approved',
-                'subject_code' => $attendance?->subject_code,
+                'subject_code' => $attendance->subject_code,
                 'message' => $approvalMessage,
                 'is_read' => false,
             ]);
@@ -1202,7 +1198,7 @@ class TeacherController extends Controller
             }
 
             // 3c. Notify Linked Parents
-            if ($student && $student->parents && $student->parents->isNotEmpty()) {
+            if ($student && $student->parents->isNotEmpty()) {
                 $parentMessage = "Excuse letter for {$student->name} in {$subjectLabel} ({$dateLabel}) was approved by {$teacher->name}" . ($adminNotes ? ": {$adminNotes}" : ".");
                 foreach ($student->parents as $parent) {
                     try {
@@ -1210,7 +1206,7 @@ class TeacherController extends Controller
                             'user_id' => $parent->id,
                             'sent_by' => $teacher->id,
                             'type' => 'excuse_approved',
-                            'subject_code' => $attendance?->subject_code,
+                            'subject_code' => $attendance->subject_code,
                             'message' => $parentMessage,
                             'is_read' => false,
                         ]);
@@ -1234,7 +1230,7 @@ class TeacherController extends Controller
                 'success' => true, 
                 'message' => 'Excuse approved successfully!',
                 'status' => 'approved',
-                'attendance_status' => $attendance?->status,
+                'attendance_status' => $attendance->status,
                 'excused' => true,
             ]);
             
@@ -1275,15 +1271,13 @@ class TeacherController extends Controller
 
             // Update attendance record
             $attendance = $excuseSubmission->attendance;
-            if ($attendance) {
-                $attendance->excused = false;
-                $attendance->excuse_note = 'Rejected: ' . $adminNotes;
-                $attendance->save();
-            }
+            $attendance->excused = false;
+            $attendance->excuse_note = 'Rejected: ' . $adminNotes;
+            $attendance->save();
 
             $student = $excuseSubmission->user;
-            $subjectCode = $attendance?->subject_code ?? 'Class';
-            $dateLabel = $attendance && $attendance->date ? \Carbon\Carbon::parse($attendance->date)->format('M j, Y') : 'session';
+            $subjectCode = $attendance->subject_code ?: 'Class';
+            $dateLabel = $attendance->date->format('M j, Y');
             $rejectMessage = "Your excuse for {$subjectCode} on {$dateLabel} was declined. Reason: {$adminNotes}";
 
             // In-app notification for student
@@ -1316,7 +1310,7 @@ class TeacherController extends Controller
             }
 
             // Notify Linked Parents
-            if ($student && $student->parents && $student->parents->isNotEmpty()) {
+            if ($student && $student->parents->isNotEmpty()) {
                 $parentRejectMessage = "Excuse letter for {$student->name} in {$subjectCode} ({$dateLabel}) was declined by {$teacher->name}. Reason: {$adminNotes}";
                 foreach ($student->parents as $parent) {
                     try {
@@ -1401,7 +1395,7 @@ class TeacherController extends Controller
                 // Notify student & parents
                 try {
                     $student = $submission->user;
-                    $subjectName = $submission->attendance?->subject?->name ?? $submission->attendance?->subject_code ?? 'class';
+                    $subjectName = $submission->attendance->subject->name ?? $submission->attendance->subject_code ?? 'class';
                     $msg = "Your excuse request for {$subjectName} has been approved.";
                     \App\Models\Notification::create([
                         'user_id' => $submission->user_id,
@@ -1412,7 +1406,7 @@ class TeacherController extends Controller
                         'is_read' => false,
                     ]);
 
-                    if ($student && $student->parents) {
+                    if ($student && $student->parents->isNotEmpty()) {
                         foreach ($student->parents as $p) {
                             \App\Models\Notification::create([
                                 'user_id' => $p->id,
@@ -1480,7 +1474,7 @@ class TeacherController extends Controller
 
                 try {
                     $student = $submission->user;
-                    $subjectName = $submission->attendance?->subject?->name ?? $submission->attendance?->subject_code ?? 'class';
+                    $subjectName = $submission->attendance->subject->name ?? $submission->attendance->subject_code ?? 'class';
                     $msg = "Your excuse request for {$subjectName} was declined: {$adminNotes}";
                     \App\Models\Notification::create([
                         'user_id' => $submission->user_id,
@@ -1578,9 +1572,7 @@ class TeacherController extends Controller
         // Handle Notification Preferences Update
         if ($request->has('notif_email') || $request->has('notif_push') || $request->isMethod('post')) {
             $rawPrefs = $teacher->notification_preferences;
-            $prefs = is_array($rawPrefs)
-                ? $rawPrefs
-                : (is_string($rawPrefs) ? (json_decode($rawPrefs, true) ?: []) : []);
+            $prefs = is_array($rawPrefs) ? $rawPrefs : [];
             
             // Only update if it's the notification form (it won't have name)
             if (!$request->has('name')) {
