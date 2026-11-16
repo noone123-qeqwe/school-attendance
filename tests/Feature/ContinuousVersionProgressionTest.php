@@ -15,6 +15,7 @@ class ContinuousVersionProgressionTest extends TestCase
     private ?string $originalPackageJson = null;
     private ?string $originalManifestJson = null;
     private ?string $originalSwJs = null;
+    private ?string $originalAndroidGradle = null;
 
     protected function setUp(): void
     {
@@ -31,6 +32,9 @@ class ContinuousVersionProgressionTest extends TestCase
         if (file_exists(public_path('sw.js'))) {
             $this->originalSwJs = file_get_contents(public_path('sw.js'));
         }
+        if (file_exists(base_path('apps/android_app/app/build.gradle'))) {
+            $this->originalAndroidGradle = file_get_contents(base_path('apps/android_app/app/build.gradle'));
+        }
     }
 
     protected function tearDown(): void
@@ -46,6 +50,9 @@ class ContinuousVersionProgressionTest extends TestCase
         }
         if ($this->originalSwJs !== null) {
             file_put_contents(public_path('sw.js'), $this->originalSwJs);
+        }
+        if ($this->originalAndroidGradle !== null) {
+            file_put_contents(base_path('apps/android_app/app/build.gradle'), $this->originalAndroidGradle);
         }
         parent::tearDown();
     }

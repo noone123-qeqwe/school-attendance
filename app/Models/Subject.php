@@ -3,12 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Collection;
 
 class Subject extends Model
 {
@@ -95,8 +95,8 @@ class Subject extends Model
     /**
      * Get all students for this subject (both explicitly enrolled and implicitly via year level / semester)
      */
-    /** @return Collection<int, User> */
-    public function getAllStudents(): Collection
+    /** @return EloquentCollection<int, User> */
+    public function getAllStudents(): EloquentCollection
     {
         $explicit = $this->enrolledStudents()->where('student_registration_pending', false)->get();
         

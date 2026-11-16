@@ -19,17 +19,20 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
     const timers = [];
     let trackStops = 0;
     let focusedElement = null;
+    const makeClassList = () => ({ add() {}, remove() {}, toggle() {}, contains() { return false; } });
     const element = id => {
         if (!elements.has(id)) {
             elements.set(id, {
                 id,
-                style: { display: 'none', cssText: '' },
+                style: { display: 'none', cssText: '', setProperty() {}, removeProperty() {} },
+                classList: makeClassList(),
+                offsetWidth: 0,
                 disabled: false,
                 textContent: '',
                 listeners: {},
                 dataset: { enrollmentUrl: '/profile/face-enrollment' },
                 querySelectorAll: () => ['front', 'left', 'right'].map(pose => element('pose-' + pose)),
-                querySelector: () => ({ textContent: '' }),
+                querySelector: () => ({ textContent: '', classList: makeClassList(), offsetWidth: 0 }),
                 setAttribute() {}, removeAttribute() {},
                 click() { return this.listeners.click?.(); },
                 addEventListener(event, callback) { this.listeners[event] = callback; },
@@ -86,7 +89,7 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
         get trackStops() { return trackStops; },
         stream() { return { getTracks: () => [{ stop: () => { trackStops++; } }] }; },
         async advanceScan() {
-            const timer = timers.find(item => !item.cleared && !item.fired);
+            const timer = timers.find(item => !item.cleared && !item.fired && item.callback?.name === 'scanFrame');
             assert.ok(timer, 'an automatic scan should be scheduled');
             timer.fired = true;
             timer.callback();

@@ -21,6 +21,7 @@ class CentralizedVersionSystemTest extends TestCase
     private string $originalManifestJson = '';
     private string $originalPackageJson = '';
     private string $originalSwJs = '';
+    private string $originalAndroidGradle = '';
 
     protected function setUp(): void
     {
@@ -38,6 +39,9 @@ class CentralizedVersionSystemTest extends TestCase
         if (File::exists(public_path('sw.js'))) {
             $this->originalSwJs = File::get(public_path('sw.js'));
         }
+        if (File::exists(base_path('apps/android_app/app/build.gradle'))) {
+            $this->originalAndroidGradle = File::get(base_path('apps/android_app/app/build.gradle'));
+        }
     }
 
     protected function tearDown(): void
@@ -53,6 +57,9 @@ class CentralizedVersionSystemTest extends TestCase
         }
         if (!empty($this->originalSwJs) && File::exists(public_path('sw.js'))) {
             File::put(public_path('sw.js'), $this->originalSwJs);
+        }
+        if (!empty($this->originalAndroidGradle) && File::exists(base_path('apps/android_app/app/build.gradle'))) {
+            File::put(base_path('apps/android_app/app/build.gradle'), $this->originalAndroidGradle);
         }
 
         parent::tearDown();

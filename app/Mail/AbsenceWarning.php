@@ -15,7 +15,7 @@ class AbsenceWarning extends Mailable
     use Queueable, SerializesModels;
 
     public $user;
-    public $subject;
+    public $courseSubject;
     public $absencesCount;
 
     /**
@@ -24,7 +24,7 @@ class AbsenceWarning extends Mailable
     public function __construct($user, $subject, $absencesCount)
     {
         $this->user = $user;
-        $this->subject = $subject;
+        $this->courseSubject = $subject;
         $this->absencesCount = $absencesCount;
     }
 
@@ -42,7 +42,7 @@ class AbsenceWarning extends Mailable
         }
 
         return new Envelope(
-            subject: '⚠️ Attendance Warning: ' . $this->subject->name,
+            subject: '⚠️ Attendance Warning: ' . $this->courseSubject->name,
             cc: $cc,
         );
     }
@@ -54,6 +54,9 @@ class AbsenceWarning extends Mailable
     {
         return new Content(
             view: 'emails.absence_warning',
+            with: [
+                'subject' => $this->courseSubject,
+            ],
         );
     }
 

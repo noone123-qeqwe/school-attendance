@@ -216,7 +216,7 @@ class QrDistanceValidationTest extends TestCase
             'longitude' => $this->classroomLng,
             'accuracy' => 10,
             'credential' => ['id' => 'fake', 'response' => []],
-        ])->assertStatus(422)->assertSeeText('challenge expired or not found');
+        ])->assertStatus(422)->assertSeeText('verification challenge expired');
     }
 
     public function test_ordinary_movement_is_not_flagged_as_gps_spoofing()
@@ -787,7 +787,7 @@ class QrDistanceValidationTest extends TestCase
         $response->assertStatus(422);
         $this->assertFalse($response->json('success'));
         $this->assertEquals('teacher_location_unavailable', $response->json('error_type'));
-        $this->assertStringContainsString('teacher\'s laptop location is not available', $response->json('message'));
+        $this->assertStringContainsString('The session location center is not set', $response->json('message'));
     }
 
     public function test_teacher_can_update_active_session_location_via_endpoint()

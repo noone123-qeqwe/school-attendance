@@ -258,11 +258,20 @@ class CalendarController extends Controller
             $attendees = $event->attendees()->pluck('users.id');
             foreach ($attendees as $uid) {
                 if ($uid !== Auth::id()) {
+                    $formattedDate = $event->date instanceof \DateTimeInterface
+                        ? $event->date->format('M d, Y')
+                        : \Carbon\Carbon::parse((string) $event->date)->format('M d, Y');
+                    $formattedTime = $event->start_time
+                        ? ($event->start_time instanceof \DateTimeInterface
+                            ? $event->start_time->format('h:i A')
+                            : \Carbon\Carbon::parse((string) $event->start_time)->format('h:i A'))
+                        : 'All Day';
+
                     \App\Models\Notification::create([
                         'user_id' => $uid,
                         'sent_by' => Auth::id(),
                         'type' => 'calendar_reschedule',
-                        'message' => "The event '{$event->name}' has been rescheduled to {$event->date->format('M d, Y')} at {$event->start_time->format('h:i A')}. Reason: {$request->reschedule_reason}",
+                        'message' => "The event '{$event->name}' has been rescheduled to {$formattedDate} at {$formattedTime}. Reason: {$request->reschedule_reason}",
                     ]);
                 }
             }

@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Course;
+use App\Models\Department;
+use App\Models\Section;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -9,6 +12,13 @@ use Tests\TestCase;
 class RegistrationContinueFlowTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function createBscsSection(int $yearLevel = 1): Section
+    {
+        $department = Department::firstOrCreate(['code' => 'COMP'], ['name' => 'Computing']);
+        $course = Course::firstOrCreate(['code' => 'BSCS'], ['department_id' => $department->id, 'name' => 'BSCS']);
+        return Section::firstOrCreate(['course_id' => $course->id, 'name' => 'A', 'year_level' => $yearLevel]);
+    }
 
     public function test_register_page_renders_step1_inputs_and_continue_button(): void
     {
@@ -71,8 +81,9 @@ class RegistrationContinueFlowTest extends TestCase
 
     public function test_exact_student_registration_payload_succeeds(): void
     {
+        $section = $this->createBscsSection(4);
         // Simulate email verification session flag
-        session(['reg_email_verified' => 'janessa.herminado@example.com']);
+        session(['reg_email_verified' => 'janessa.herminado@gmail.com']);
 
         $payload = [
             'first_name' => 'Janessa',
@@ -81,9 +92,10 @@ class RegistrationContinueFlowTest extends TestCase
             'surname' => 'Herminado',
             'role' => 'student',
             'course' => 'BSCS',
+            'section_id' => $section->id,
             'year_level' => 4,
             'semester' => '1',
-            'email' => 'janessa.herminado@example.com',
+            'email' => 'janessa.herminado@gmail.com',
             'password' => 'SecurePass123!',
             'password_confirmation' => 'SecurePass123!',
             'terms' => '1',
@@ -91,24 +103,25 @@ class RegistrationContinueFlowTest extends TestCase
 
         $response = $this->post('/register', $payload);
 
-        $response->assertRedirect('/home');
+        $response->assertRedirect(route('student.pending-approval'));
         $this->assertDatabaseHas('users', [
             'name' => 'Janessa Almosara Herminado',
-            'email' => 'janessa.herminado@example.com',
+            'email' => 'janessa.herminado@gmail.com',
             'role' => 'student',
             'course' => 'BSCS',
             'year_level' => 4,
             'semester' => '1',
         ]);
 
-        $user = User::where('email', 'janessa.herminado@example.com')->first();
+        $user = User::where('email', 'janessa.herminado@gmail.com')->first();
         $this->assertNotNull($user);
         $this->assertSame('2312001', $user->student_number);
     }
 
     public function test_student_registration_without_middle_name_succeeds(): void
     {
-        session(['reg_email_verified' => 'janessa.nomn@example.com']);
+        $section = $this->createBscsSection(4);
+        session(['reg_email_verified' => 'janessa.nomn@gmail.com']);
 
         $payload = [
             'first_name' => 'Janessa',
@@ -118,9 +131,10 @@ class RegistrationContinueFlowTest extends TestCase
             'surname' => 'Herminado',
             'role' => 'student',
             'course' => 'BSCS',
+            'section_id' => $section->id,
             'year_level' => 4,
             'semester' => '1',
-            'email' => 'janessa.nomn@example.com',
+            'email' => 'janessa.nomn@gmail.com',
             'password' => 'SecurePass123!',
             'password_confirmation' => 'SecurePass123!',
             'terms' => '1',
@@ -128,56 +142,59 @@ class RegistrationContinueFlowTest extends TestCase
 
         $response = $this->post('/register', $payload);
 
-        $response->assertRedirect('/home');
-        $user = User::where('email', 'janessa.nomn@example.com')->first();
+        $response->assertRedirect(route('student.pending-approval'));
+        $user = User::where('email', 'janessa.nomn@gmail.com')->first();
         $this->assertNotNull($user);
         $this->assertSame('2312002', $user->student_number);
     }
 
     public function test_student_registration_requires_an_official_student_id(): void
     {
-        session(['reg_email_verified' => 'student1@example.com']);
+        $section = $this->createBscsSection(1);
+        session(['reg_email_verified' => 'student1@gmail.com']);
         $payload1 = [
             'first_name' => 'Alice',
             'surname' => 'Smith',
             'role' => 'student',
             'course' => 'BSCS',
+            'section_id' => $section->id,
             'year_level' => 1,
             'semester' => '1',
-            'email' => 'student1@example.com',
+            'email' => 'student1@gmail.com',
             'password' => 'SecurePass123!',
             'password_confirmation' => 'SecurePass123!',
             'terms' => '1',
         ];
         $this->post('/register', $payload1)
             ->assertSessionHasErrors('student_number');
-        $this->assertDatabaseMissing('users', ['email' => 'student1@example.com']);
+        $this->assertDatabaseMissing('users', ['email' => 'student1@gmail.com']);
 
         $payload1['student_number'] = '2312101';
-        $this->post('/register', $payload1)->assertRedirect('/home');
+        $this->post('/register', $payload1)->assertRedirect(route('student.pending-approval'));
 
-        $student1 = User::where('email', 'student1@example.com')->first();
+        $student1 = User::where('email', 'student1@gmail.com')->first();
         $this->assertNotNull($student1);
         $this->assertSame('2312101', $student1->student_number);
 
         auth()->logout();
-        session(['reg_email_verified' => 'student2@example.com']);
+        session(['reg_email_verified' => 'student2@gmail.com']);
         $payload2 = [
             'first_name' => 'Bob',
             'student_number' => '2312205',
             'surname' => 'Jones',
             'role' => 'student',
             'course' => 'BSCS',
+            'section_id' => $section->id,
             'year_level' => 1,
             'semester' => '1',
-            'email' => 'student2@example.com',
+            'email' => 'student2@gmail.com',
             'password' => 'SecurePass123!',
             'password_confirmation' => 'SecurePass123!',
             'terms' => '1',
         ];
-        $this->post('/register', $payload2)->assertRedirect('/home');
+        $this->post('/register', $payload2)->assertRedirect(route('student.pending-approval'));
 
-        $student2 = User::where('email', 'student2@example.com')->first();
+        $student2 = User::where('email', 'student2@gmail.com')->first();
         $this->assertNotNull($student2);
         $this->assertSame('2312205', $student2->student_number);
 
@@ -191,21 +208,23 @@ class RegistrationContinueFlowTest extends TestCase
             'role' => 'admin',
             'email_verified_at' => now(),
         ]);
+        $section = $this->createBscsSection(1);
 
-        session(['admin_reg_email_verified' => 'admin.created@example.com']);
+        session(['admin_reg_email_verified' => 'admin.created@gmail.com']);
 
         $response = $this->actingAs($admin)->post(route('admin.student.store'), [
             'name' => 'Admin Created Student',
-            'email' => 'admin.created@example.com',
+            'email' => 'admin.created@gmail.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
+            'section_id' => $section->id,
             'year_level' => 1,
             'semester' => 1,
         ]);
 
         $response->assertRedirect(route('admin.students'));
 
-        $student = User::where('email', 'admin.created@example.com')->first();
+        $student = User::where('email', 'admin.created@gmail.com')->first();
         $this->assertNotNull($student);
         $this->assertNotEmpty($student->student_number);
 
@@ -247,7 +266,8 @@ class RegistrationContinueFlowTest extends TestCase
 
     public function test_student_registration_with_custom_student_id_preserves_id(): void
     {
-        session(['reg_email_verified' => 'custom.student@example.com']);
+        $section = $this->createBscsSection(3);
+        session(['reg_email_verified' => 'custom.student@gmail.com']);
 
         $payload = [
             'first_name' => 'Custom',
@@ -255,19 +275,20 @@ class RegistrationContinueFlowTest extends TestCase
             'student_number' => '2319999',
             'role' => 'student',
             'course' => 'BSCS',
+            'section_id' => $section->id,
             'year_level' => 3,
             'semester' => '2',
-            'email' => 'custom.student@example.com',
+            'email' => 'custom.student@gmail.com',
             'password' => 'SecurePass123!',
             'password_confirmation' => 'SecurePass123!',
             'terms' => '1',
         ];
 
         $response = $this->post('/register', $payload);
-        $response->assertRedirect('/home');
+        $response->assertRedirect(route('student.pending-approval'));
 
         $this->assertDatabaseHas('users', [
-            'email' => 'custom.student@example.com',
+            'email' => 'custom.student@gmail.com',
             'student_number' => '2319999',
             'role' => 'student',
         ]);

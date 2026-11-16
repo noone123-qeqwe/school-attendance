@@ -67,7 +67,7 @@ class CameraFaceEnrollmentTest extends TestCase
             ->assertSee('id="cameraFaceSaveBtn" hidden', false)
             ->assertSee('Scan three face views')
             ->assertSee('Center your face')
-            ->assertSee('uploaded only when you tap Register face', false)
+            ->assertSee('Captures stay on this device until you register.', false)
             ->assertDontSee('id="topHeader"', false)
             ->assertDontSee('id="startBioBtn"', false);
 

@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Course;
+use App\Models\Department;
+use App\Models\Section;
 use App\Models\User;
 use App\Services\PolicyService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,50 +85,59 @@ class PolicyAndTermsTest extends TestCase
 
     public function test_registration_requires_explicit_acceptance_of_terms_and_privacy()
     {
-        session(['reg_email_verified' => 'newstudent@example.com']);
+        $department = Department::firstOrCreate(['code' => 'COMP'], ['name' => 'Computing']);
+        $course = Course::firstOrCreate(['code' => 'BSCS'], ['department_id' => $department->id, 'name' => 'BSCS']);
+        $section = Section::firstOrCreate(['course_id' => $course->id, 'name' => 'A', 'year_level' => 1]);
+        session(['reg_email_verified' => 'newstudent@gmail.com']);
 
         // Attempt registration without accepting terms
         $response = $this->from('/register')->post('/register', [
             'name'                  => 'John Doe',
             'first_name'            => 'John',
             'surname'               => 'Doe',
-            'email'                 => 'newstudent@example.com',
+            'email'                 => 'newstudent@gmail.com',
             'password'              => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role'                  => 'student',
             'student_number'        => '0703999',
             'course'                => 'BSCS',
+            'section_id'            => $section->id,
             'year_level'            => 1,
             'semester'              => '1',
             // 'terms' omitted!
         ]);
 
         $response->assertSessionHasErrors(['terms' => 'You must read and agree to the Privacy Notice and Terms & Conditions to create an account.']);
-        $this->assertDatabaseMissing('users', ['email' => 'newstudent@example.com']);
+        $this->assertDatabaseMissing('users', ['email' => 'newstudent@gmail.com']);
     }
 
     public function test_registration_succeeds_when_terms_are_accepted()
     {
-        session(['reg_email_verified' => 'approvedstudent@example.com']);
+        $department = Department::firstOrCreate(['code' => 'COMP'], ['name' => 'Computing']);
+        $course = Course::firstOrCreate(['code' => 'BSCS'], ['department_id' => $department->id, 'name' => 'BSCS']);
+        $section = Section::firstOrCreate(['course_id' => $course->id, 'name' => 'A', 'year_level' => 2]);
+        session(['reg_email_verified' => 'approvedstudent@gmail.com']);
 
         $response = $this->from('/register')->post('/register', [
             'name'                  => 'Jane Smith',
             'first_name'            => 'Jane',
             'surname'               => 'Smith',
-            'email'                 => 'approvedstudent@example.com',
+            'email'                 => 'approvedstudent@gmail.com',
             'password'              => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role'                  => 'student',
             'student_number'        => '0703888',
             'course'                => 'BSCS',
+            'section_id'            => $section->id,
             'year_level'            => 2,
             'semester'              => '1',
             'terms'                 => '1', // Accepted!
         ]);
 
         $response->assertSessionDoesntHaveErrors();
+        $response->assertRedirect(route('student.pending-approval'));
         $this->assertDatabaseHas('users', [
-            'email'          => 'approvedstudent@example.com',
+            'email'          => 'approvedstudent@gmail.com',
             'student_number' => '0703888',
             'role'           => 'student',
         ]);

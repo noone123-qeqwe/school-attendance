@@ -414,6 +414,7 @@ class WebAuthnController extends Controller
                 return response()->json([
                     'success' => true,
                     'requires_device_enrollment' => true,
+                    'available_methods' => [],
                     'identifier' => $user->student_number ?? $user->email ?? $identifier,
                     'message' => 'An older camera-only face profile cannot be used for secure sign-in. Verify your password to enroll a device passkey instead.',
                 ]);
@@ -629,7 +630,7 @@ class WebAuthnController extends Controller
 
         $expectedUser = null;
         if ($sessionUserId) {
-            $expectedUser = User::find($sessionUserId);
+            $expectedUser = User::find((int) $sessionUserId);
         } elseif ($hasExplicitIdentifier) {
             $expectedUser = $this->findUserByIdentifier(trim($rawIdentifier));
         }

@@ -1070,17 +1070,24 @@ window.addEventListener('popstate', () => {
 function scalRenderDay(dateStr) {
     const evts = scalEventMap[dateStr] || [];
     const recordsLink = document.getElementById('daySummaryRecordsLink');
-    const recordsUrl = new URL(@json(route('parent.calendar')));
-    recordsUrl.search = new URLSearchParams({
-        child_id: scalChildId, year: scalYear, month: scalMonth, date_from: dateStr, date_to: dateStr,
-    });
-    recordsUrl.hash = 'attendance-records';
-    recordsLink.href = recordsUrl.href;
-    const hasRecords = evts.some(event => event.type === 'attendance');
-    recordsLink.classList.toggle('d-none', scalChildId === null || (scalDataState === 'ready' && !hasRecords));
+    if (recordsLink) {
+        const recordsUrl = new URL(@json(route('parent.calendar')), window.location?.origin || 'http://localhost');
+        const params = { year: scalYear, month: scalMonth, date_from: dateStr, date_to: dateStr };
+        if (scalChildId !== null) {
+            params.child_id = scalChildId;
+        }
+        recordsUrl.search = new URLSearchParams(params);
+        recordsUrl.hash = 'attendance-records';
+        recordsLink.href = recordsUrl.href;
+        const hasRecords = evts.some(event => event.type === 'attendance');
+        recordsLink.classList.toggle('d-none', scalChildId === null || (scalDataState === 'ready' && !hasRecords));
+    }
     const dateObj = new Date(dateStr + 'T00:00:00');
-    document.getElementById('daySummaryTitle').textContent =
-        dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const titleEl = document.getElementById('daySummaryTitle');
+    if (titleEl) {
+        titleEl.textContent =
+            dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
 
     const content = document.getElementById('daySummaryContent');
     content.innerHTML = '';
@@ -1088,8 +1095,10 @@ function scalRenderDay(dateStr) {
     let hasAbsent = false, hasPresent = false, hasLate = false, hasEvent = false;
 
     if (scalDataState !== 'ready' || evts.length === 0) {
-        document.getElementById('daySummarySubtitle').style.display = 'none';
-        document.getElementById('daySummarySectionTitle').style.display = 'none';
+        const subEl = document.getElementById('daySummarySubtitle');
+        const secEl = document.getElementById('daySummarySectionTitle');
+        if (subEl) subEl.style.display = 'none';
+        if (secEl) secEl.style.display = 'none';
         const message = scalDataState === 'loading'
             ? 'Loading attendance and events for this date…'
             : scalDataState === 'error'
@@ -1100,7 +1109,8 @@ function scalRenderDay(dateStr) {
         notice.textContent = message;
         content.append(notice);
     } else {
-        document.getElementById('daySummarySectionTitle').style.display = 'block';
+        const secEl = document.getElementById('daySummarySectionTitle');
+        if (secEl) secEl.style.display = 'block';
 
         evts.forEach(ev => {
             const t = (ev.type || '').toLowerCase();
@@ -1170,14 +1180,17 @@ function scalRenderDay(dateStr) {
             }
         });
 
-        document.getElementById('daySummarySubtitle').style.display = 'flex';
+        const subEl = document.getElementById('daySummarySubtitle');
+        if (subEl) subEl.style.display = 'flex';
         const dot = document.getElementById('daySummaryStatusDot');
         const txt = document.getElementById('daySummaryStatusText');
-        if (hasAbsent)       { dot.style.background = '#ef4444'; txt.textContent = 'Absent'; }
-        else if (hasLate)    { dot.style.background = '#f59e0b'; txt.textContent = 'Late'; }
-        else if (hasPresent) { dot.style.background = '#10b981'; txt.textContent = 'Present'; }
-        else if (hasEvent)   { dot.style.background = '#8b5cf6'; txt.textContent = 'School Event'; }
-        else                 { dot.style.background = '#6b7280'; txt.textContent = 'No Status'; }
+        if (dot && txt) {
+            if (hasAbsent)       { dot.style.background = '#ef4444'; txt.textContent = 'Absent'; }
+            else if (hasLate)    { dot.style.background = '#f59e0b'; txt.textContent = 'Late'; }
+            else if (hasPresent) { dot.style.background = '#10b981'; txt.textContent = 'Present'; }
+            else if (hasEvent)   { dot.style.background = '#8b5cf6'; txt.textContent = 'School Event'; }
+            else                 { dot.style.background = '#6b7280'; txt.textContent = 'No Status'; }
+        }
     }
 }
 

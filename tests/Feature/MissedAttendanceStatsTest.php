@@ -34,7 +34,7 @@ class MissedAttendanceStatsTest extends TestCase
                 'year_level' => 3,
                 'semester' => 1,
                 'course' => 'BSED',
-                'section' => 'B',
+                'section' => null,
             ]);
             Schedule::create([
                 'subject_id' => $subject->id,
@@ -76,7 +76,7 @@ class MissedAttendanceStatsTest extends TestCase
                 'year_level' => 3,
                 'semester' => 1,
                 'course' => 'BSED',
-                'section' => 'B',
+                'section' => null,
             ]);
             Schedule::create([
                 'subject_id' => $subject->id,

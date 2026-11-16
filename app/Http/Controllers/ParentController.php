@@ -114,7 +114,7 @@ class ParentController extends Controller
         $currentTime = $now->format('H:i:s');
 
         // Calculate stats per child
-        $childrenData = $children->map(function ($child) use ($allStreakRecords, $allWarnings, $allPendingExcuses, $allApprovedExcuses, $now, $todayDate, $currentDayName, $currentTime) {
+        $childrenData = $children->map(function ($child) use ($allStreakRecords, $allWarnings, $allPendingExcuses, $allApprovedExcuses) {
             $present = (int) $child->present_count;
             $late = (int) $child->late_count;
             $absent = (int) $child->absent_count;
@@ -718,7 +718,11 @@ class ParentController extends Controller
         foreach ($subjects as $subject) {
             foreach ($subject->schedules as $schedule) {
                 if (in_array($schedule->day, $days)) {
-                    $schedule->subject = $subject; // Attach subject to schedule for easy access
+                    if ($schedule instanceof \Illuminate\Database\Eloquent\Model) {
+                        $schedule->setRelation('subject', $subject);
+                    } else {
+                        $schedule->subject = $subject;
+                    }
                     $weeklySchedule[$schedule->day]->push($schedule);
                 }
             }

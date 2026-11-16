@@ -593,7 +593,7 @@ class AdminController extends Controller
             'parent_id' => 'required|exists:users,id',
         ]);
 
-        $parent = User::findOrFail($request->parent_id);
+        $parent = User::findOrFail($request->integer('parent_id'));
 
         try {
             $parentService->linkDirectlyByAdmin(Auth::user(), $parent, $student);
@@ -752,7 +752,7 @@ class AdminController extends Controller
 
     public function reactivateStudent($id)
     {
-        $student = User::withTrashed()->findOrFail($id);
+        $student = User::withTrashed()->findOrFail((int) $id);
         abort_unless($student->role === 'student', 404);
         if ($student->trashed()) {
             $student->restore();
@@ -832,7 +832,7 @@ class AdminController extends Controller
         ]);
 
         if (!empty($data['instructor_id'])) {
-            $teacher = User::find($data['instructor_id']);
+            $teacher = User::find((int) $data['instructor_id']);
             if ($teacher) {
                 $data['instructor'] = $teacher->name;
             }
@@ -1626,7 +1626,7 @@ class AdminController extends Controller
     public function reactivateAdmin($id)
     {
         abort_if(!Auth::user()->isSuperAdmin(), 403);
-        $admin = User::withTrashed()->findOrFail($id);
+        $admin = User::withTrashed()->findOrFail((int) $id);
         abort_unless($admin->role === 'admin', 404);
         if ($admin->trashed()) {
             $admin->restore();
@@ -1980,7 +1980,7 @@ class AdminController extends Controller
 
     public function reactivateTeacher($id)
     {
-        $teacher = User::withTrashed()->findOrFail($id);
+        $teacher = User::withTrashed()->findOrFail((int) $id);
         abort_unless($teacher->role === 'teacher', 404);
         if ($teacher->trashed()) {
             $teacher->restore();

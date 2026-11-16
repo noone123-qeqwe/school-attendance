@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\ClassSchedule;
 use App\Models\Subject;
 use App\Models\User;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 
 final class StudentScheduleService
 {
@@ -14,17 +14,21 @@ final class StudentScheduleService
      * Legacy subject schedules remain available for subjects that have not been
      * moved to the section-aware class schedule table.
      *
-     * @return Collection<int, Subject>
+     * @return EloquentCollection<int, Subject>
      */
-    public function subjectsFor(User $student): Collection
+    public function subjectsFor(User $student): EloquentCollection
     {
         if (!$student->isStudent() || $student->student_registration_pending) {
-            return collect();
+            /** @var EloquentCollection<int, Subject> $empty */
+            $empty = new EloquentCollection();
+            return $empty;
         }
 
         $subjects = $student->getAllSubjects();
         if ($subjects->isEmpty()) {
-            return $subjects;
+            /** @var EloquentCollection<int, Subject> $emptySubjects */
+            $emptySubjects = new EloquentCollection($subjects->all());
+            return $emptySubjects;
         }
 
         $subjects->load(['schedules', 'instructorUser']);
@@ -36,7 +40,7 @@ final class StudentScheduleService
             ->get()
             ->groupBy('subject_id');
 
-        return $subjects->map(function (Subject $subject) use ($student, $sectionSchedules) {
+        $resolved = $subjects->map(function (Subject $subject) use ($student, $sectionSchedules) {
             $configuredSlots = $sectionSchedules->get($subject->id, collect());
 
             if ($configuredSlots->isNotEmpty()) {
@@ -66,6 +70,10 @@ final class StudentScheduleService
 
             return $studentSubject;
         })->values();
+
+        /** @var EloquentCollection<int, Subject> $result */
+        $result = new EloquentCollection($resolved->all());
+        return $result;
     }
 
     private function belongsToStudentSection(ClassSchedule $slot, User $student): bool

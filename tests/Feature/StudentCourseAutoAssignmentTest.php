@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Course;
+use App\Models\Department;
+use App\Models\Section;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -9,6 +12,13 @@ use Tests\TestCase;
 class StudentCourseAutoAssignmentTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function createBscsSection(int $yearLevel = 1): Section
+    {
+        $department = Department::firstOrCreate(['code' => 'COMP'], ['name' => 'Computing']);
+        $course = Course::firstOrCreate(['code' => 'BSCS'], ['department_id' => $department->id, 'name' => 'BSCS']);
+        return Section::firstOrCreate(['course_id' => $course->id, 'name' => 'A', 'year_level' => $yearLevel]);
+    }
 
     public function test_registration_view_does_not_contain_course_options_and_has_hidden_bscs(): void
     {
@@ -45,23 +55,25 @@ class StudentCourseAutoAssignmentTest extends TestCase
 
     public function test_student_registration_automatically_assigns_bscs_course(): void
     {
+        $section = $this->createBscsSection(1);
         // Set OTP verified session
-        session(['reg_email_verified' => 'teststudent@example.com']);
+        session(['reg_email_verified' => 'teststudent@gmail.com']);
 
         $response = $this->post(route('register'), [
             'name' => 'John Doe',
             'student_number' => '2312003',
-            'email' => 'teststudent@example.com',
+            'email' => 'teststudent@gmail.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'role' => 'student',
+            'section_id' => $section->id,
             'year_level' => 1,
             'semester' => 1,
             'terms' => '1',
         ]);
 
-        $response->assertRedirect(route('home'));
-        $student = User::where('email', 'teststudent@example.com')->first();
+        $response->assertRedirect(route('student.pending-approval'));
+        $student = User::where('email', 'teststudent@gmail.com')->first();
         $this->assertNotNull($student);
         $this->assertEquals('student', $student->role);
         $this->assertEquals('BSCS', $student->course);
@@ -87,21 +99,23 @@ class StudentCourseAutoAssignmentTest extends TestCase
             'role' => 'admin',
             'email_verified_at' => now(),
         ]);
+        $section = $this->createBscsSection(1);
 
-        session(['admin_reg_email_verified' => 'newstudent@example.com']);
+        session(['admin_reg_email_verified' => 'newstudent@gmail.com']);
 
         $response = $this->actingAs($admin)->post(route('admin.student.store'), [
             'name' => 'Jane Smith',
-            'email' => 'newstudent@example.com',
+            'email' => 'newstudent@gmail.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
+            'section_id' => $section->id,
             'year_level' => 1,
             'semester' => 1,
         ]);
 
         $response->assertRedirect(route('admin.students'));
 
-        $student = User::where('email', 'newstudent@example.com')->first();
+        $student = User::where('email', 'newstudent@gmail.com')->first();
         $this->assertNotNull($student);
         $this->assertEquals('BSCS', $student->course);
     }

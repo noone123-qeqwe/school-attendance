@@ -121,7 +121,7 @@ class OtpApiController extends Controller
             }
         } else {
             // Unregistered user / guest OTP
-            $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $hash = hash('sha256', $code);
             $cacheKey = 'guest_otp:' . sha1($identifier . ':' . $purpose);
             Cache::put($cacheKey, $hash, now()->addMinutes(10));
@@ -534,7 +534,7 @@ class OtpApiController extends Controller
             $otp = Otp::generate($user->id, 'email_verify');
             $code = $otp->code;
         } else {
-            $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $hash = hash('sha256', $code);
             Cache::put('guest_otp:' . sha1($email . ':email_verify'), $hash, now()->addMinutes(10));
         }

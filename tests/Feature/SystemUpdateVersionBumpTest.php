@@ -18,6 +18,7 @@ class SystemUpdateVersionBumpTest extends TestCase
     private string $initialManifestContent = '';
     private string $initialVersionContent = '';
     private string $initialPackageContent = '';
+    private string $initialAndroidGradleContent = '';
 
     protected function setUp(): void
     {
@@ -38,6 +39,10 @@ class SystemUpdateVersionBumpTest extends TestCase
         if (File::exists($packagePath)) {
             $this->initialPackageContent = File::get($packagePath);
         }
+        $gradlePath = base_path('apps/android_app/app/build.gradle');
+        if (File::exists($gradlePath)) {
+            $this->initialAndroidGradleContent = File::get($gradlePath);
+        }
     }
 
     protected function tearDown(): void
@@ -57,6 +62,10 @@ class SystemUpdateVersionBumpTest extends TestCase
         $packagePath = base_path('package.json');
         if (!empty($this->initialPackageContent) && File::exists($packagePath)) {
             File::put($packagePath, $this->initialPackageContent);
+        }
+        $gradlePath = base_path('apps/android_app/app/build.gradle');
+        if (!empty($this->initialAndroidGradleContent) && File::exists($gradlePath)) {
+            File::put($gradlePath, $this->initialAndroidGradleContent);
         }
         parent::tearDown();
     }

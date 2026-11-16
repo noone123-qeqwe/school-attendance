@@ -1172,7 +1172,7 @@ class TeacherController extends Controller
 
             // Step 3: Notifications
             $student = $excuseSubmission->user;
-            $subjectLabel = $attendance ? ($attendance->subject->name ?? $attendance->subject_code ?? 'class') : 'class';
+            $subjectLabel = $attendance ? ($attendance->subject?->name ?? $attendance->subject_code ?? 'class') : 'class';
             $dateLabel = $attendance && $attendance->date ? \Carbon\Carbon::parse($attendance->date)->format('M j, Y') : 'session';
             $approvalMessage = "Your excuse request for {$subjectLabel} on {$dateLabel} has been approved" . ($adminNotes ? ": {$adminNotes}" : ".");
 
@@ -1577,7 +1577,10 @@ class TeacherController extends Controller
 
         // Handle Notification Preferences Update
         if ($request->has('notif_email') || $request->has('notif_push') || $request->isMethod('post')) {
-            $prefs = is_string($teacher->notification_preferences) ? json_decode($teacher->notification_preferences, true) : (is_array($teacher->notification_preferences) ? $teacher->notification_preferences : []);
+            $rawPrefs = $teacher->notification_preferences;
+            $prefs = is_array($rawPrefs)
+                ? $rawPrefs
+                : (is_string($rawPrefs) ? (json_decode($rawPrefs, true) ?: []) : []);
             
             // Only update if it's the notification form (it won't have name)
             if (!$request->has('name')) {

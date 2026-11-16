@@ -21,7 +21,11 @@ class PasswordToggleVisibilityTest extends TestCase
         $response->assertSee('aria-label="Show password"', false);
         $response->assertSee('type="button"', false);
         $response->assertDontSee('onpointerdown="event.preventDefault();"', false);
-        $response->assertDontSee('tabindex="-1"', false);
+
+        $document = new \DOMDocument();
+        @$document->loadHTML('<?xml encoding="utf-8" ?>' . $response->getContent());
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(0, $xpath->query("//button[contains(@class, 'eye-toggle') and @tabindex='-1']")->length);
     }
 
     public function test_register_page_renders_password_eye_toggle_buttons()

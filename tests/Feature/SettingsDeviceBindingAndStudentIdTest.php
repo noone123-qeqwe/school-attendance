@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Course;
+use App\Models\Department;
 use App\Models\DeviceBinding;
+use App\Models\Section;
 use App\Models\User;
 use App\Services\StudentIdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +26,10 @@ class SettingsDeviceBindingAndStudentIdTest extends TestCase
 
     public function test_student_registration_accepts_7_character_student_id(): void
     {
-        session(['reg_email_verified' => 'valid7@example.com']);
+        $department = Department::firstOrCreate(['code' => 'COMP'], ['name' => 'Computing']);
+        $course = Course::firstOrCreate(['code' => 'BSCS'], ['department_id' => $department->id, 'name' => 'BSCS']);
+        $section = Section::firstOrCreate(['course_id' => $course->id, 'name' => 'A', 'year_level' => 2]);
+        session(['reg_email_verified' => 'valid7@gmail.com']);
 
         $response = $this->post('/register', [
             'first_name'            => 'Valid',
@@ -31,17 +37,18 @@ class SettingsDeviceBindingAndStudentIdTest extends TestCase
             'student_number'        => '2311969', // 7 chars
             'role'                  => 'student',
             'course'                => 'BSCS',
+            'section_id'            => $section->id,
             'year_level'            => 2,
             'semester'              => '1',
-            'email'                 => 'valid7@example.com',
+            'email'                 => 'valid7@gmail.com',
             'password'              => 'Password123!',
             'password_confirmation' => 'Password123!',
             'terms'                 => '1',
         ]);
 
-        $response->assertRedirect('/home');
+        $response->assertRedirect(route('student.pending-approval'));
         $this->assertDatabaseHas('users', [
-            'email'          => 'valid7@example.com',
+            'email'          => 'valid7@gmail.com',
             'student_number' => '2311969',
         ]);
     }

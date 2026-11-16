@@ -133,8 +133,8 @@ class AdminDashboardTest extends TestCase
 
     public function test_admin_can_search_students(): void
     {
-        User::factory()->create(['role' => 'student', 'name' => 'John Smith', 'student_number' => '3000001']);
-        User::factory()->create(['role' => 'student', 'name' => 'Jane Doe', 'student_number' => '3000002']);
+        User::factory()->create(['role' => 'student', 'name' => 'John Smith', 'email' => 'john.smith@school.test', 'student_number' => '3000001']);
+        User::factory()->create(['role' => 'student', 'name' => 'Jane Doe', 'email' => 'jane.doe@school.test', 'student_number' => '3000002']);
 
         $response = $this->actingAs($this->admin)->get('/admin/students?search=John');
 

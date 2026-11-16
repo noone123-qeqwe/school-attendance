@@ -5,6 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const workspace = fs.readFileSync(path.join(__dirname, '../../public/js/parent-workspace.js'), 'utf8');
 const calendar = fs.readFileSync(path.join(__dirname, '../../resources/views/parent/calendar.blade.php'), 'utf8');
+const monthGrid = fs.readFileSync(path.join(__dirname, '../../resources/views/partials/calendar-month-grid.blade.php'), 'utf8');
 const calendarText = fs.readFileSync(path.join(__dirname, '../../resources/views/partials/parent-calendar-text.blade.php'), 'utf8');
 
 // DOM fixtures verify state transitions; visual browser checks remain a separate step.
@@ -40,7 +41,7 @@ function fixture({ admin = false, account = '7', saved = null, contextTemplate =
     document.getElementById = id => ids.get(id) ?? null;
     document.querySelector = selector => selector.includes('auth-user-id') ? { content: account } : selector.includes('csrf-token') ? { content: 'fixture-token' } : selector.includes('child-context-switch') && contextTemplate ? contextPicker : selector.includes('child-picker') ? picker : null;
     document.querySelectorAll = selector => selector.includes('child-panel') ? panels : selector.includes('child-tab') ? tabs : selector.includes('unread-count') ? [...counts, newBadge] : selector.includes('alert-unread') ? [unread] : [];
-    const context = { document, window: { location: { origin: 'https://attendance.test', pathname: '/parent/child/11', href: 'https://attendance.test/parent/child/11' }, history: { replaceState() {} }, refreshNotificationBell() { refreshes++; } }, localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) }, fetch: (...args) => new Promise(resolve => requests.push({ args, resolve })) };
+    const context = { document, URL, window: { location: { origin: 'https://attendance.test', pathname: '/parent/child/11', href: 'https://attendance.test/parent/child/11' }, history: { replaceState() {} }, refreshNotificationBell() { refreshes++; } }, localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) }, fetch: (...args) => new Promise(resolve => requests.push({ args, resolve })) };
     vm.runInNewContext(workspace, context);
     return { ...context, panels, tabs, picker, contextPicker, main, button, feedback, counts, unread, newBadge, field, verify, requests, storage, get refreshes() { return refreshes; } };
 }
@@ -127,95 +128,90 @@ test('calendar text is encoded and event colors cannot inject markup', () => {
 });
 
 function calendarLoader() {
-    const start = calendar.indexOf('function scalFetchEvents('), end = calendar.indexOf('/* ── Derive dominant status', start);
+    const start = monthGrid.indexOf('function calendarMonthKey('), end = monthGrid.indexOf('</script>', start);
     assert.ok(start > 0 && end > start);
     const requests = [], timers = [], feedback = { textContent: '' }, retry = { hidden: true };
-    const context = { scalChildId: 11, scalRequestId: 0, scalFetchController: null, scalEventMap: {},
-        document: { getElementById: id => id === 'parentCalendarRetry' ? retry : feedback }, AbortController: class { constructor() { this.signal = {}; } abort() { this.signal.aborted = true; } },
+    const context = {
+        calendarLoadStatus: feedback, calendarRetry: retry, calendarMonthRequest: null,
+        location: { origin: 'https://attendance.test' }, URL, URLSearchParams,
+        AbortController: class { constructor() { this.signal = {}; } abort() { this.signal.aborted = true; } },
         setTimeout: callback => { timers.push(callback); return timers.length; }, clearTimeout() {},
-        fetch: (url, options) => new Promise((resolve, reject) => requests.push({ url, options, resolve, reject })),
+        fetch: (url, options) => new Promise((resolve, reject) => requests.push({ url: String(url), options, resolve, reject })),
     };
-    vm.createContext(context); vm.runInContext(calendar.slice(start, end), context);
+    vm.createContext(context); vm.runInContext(monthGrid.slice(start, end), context);
     return { context, requests, timers, feedback, retry };
 }
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
 test('a slower calendar response cannot replace the newly selected child', async () => {
-    const app = calendarLoader(), calls = [];
-    app.context.scalFetchEvents(2026, 11, () => calls.push('first child'));
-    app.context.scalChildId = 12;
-    app.context.scalFetchEvents(2026, 11, () => calls.push('second child'));
+    const app = calendarLoader(), snapshots = [];
+    app.context.loadCalendarMonth('/parent/calendar/data', 2026, 11, (state, events) => snapshots.push({ child: 11, state, events }), 11);
+    app.context.loadCalendarMonth('/parent/calendar/data', 2026, 11, (state, events) => snapshots.push({ child: 12, state, events }), 12);
     assert.equal(app.requests[0].options.signal.aborted, true);
     app.requests[1].resolve({ ok: true, json: async () => [{ start: '2026-11-11', title: 'Second child record' }] });
     await settle();
     app.requests[0].resolve({ ok: true, json: async () => [{ start: '2026-11-11', title: 'Wrong older response' }] });
     await settle();
-    assert.deepEqual(calls, ['second child']);
-    assert.equal(app.context.scalEventMap['2026-11-11'][0].title, 'Second child record');
+    const ready = snapshots.filter(item => item.state === 'ready');
+    assert.equal(ready.length, 1);
+    assert.equal(ready[0].child, 12);
+    assert.equal(ready[0].events['2026-11-11'][0].title, 'Second child record');
 });
 
 test('a calendar failure removes prior child data and gives a useful retry message', async () => {
-    const app = calendarLoader();
-    app.context.scalEventMap['2026-11-10'] = [{ title: 'Old record' }];
-    let rendered = false;
-    app.context.scalFetchEvents(2026, 11, () => { rendered = true; });
+    const app = calendarLoader(), states = [];
+    let latestEvents = { '2026-11-10': [{ title: 'Old record' }] };
+    app.context.loadCalendarMonth('/parent/calendar/data', 2026, 11, (state, events) => {
+        states.push(state);
+        latestEvents = events;
+    }, 11);
     app.requests[0].resolve({ ok: false });
     await settle();
-    assert.deepEqual(Object.keys(app.context.scalEventMap), []);
-    assert.equal(rendered, true);
-    assert.match(app.feedback.textContent, /could not load/);
+    assert.deepEqual(Object.keys(latestEvents), []);
+    assert.deepEqual(states, ['loading', 'error']);
+    assert.match(app.feedback.textContent, /couldn’t load/);
     assert.equal(app.retry.hidden, false);
 });
 
 test('a calendar timeout ends the loading state and exposes retry', async () => {
-    const app = calendarLoader();
-    let rendered = false;
-    app.context.scalFetchEvents(2026, 11, () => { rendered = true; });
+    const app = calendarLoader(), states = [];
+    app.context.loadCalendarMonth('/parent/calendar/data', 2026, 11, state => states.push(state), 11);
     app.timers[0]();
     app.requests[0].reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
     await settle();
     assert.equal(app.requests[0].options.signal.aborted, true);
-    assert.equal(rendered, true);
+    assert.deepEqual(states, ['loading', 'error']);
     assert.equal(app.retry.hidden, false);
 });
 
-test('school-calendar child changes keep the surrounding parent navigation on that same child', () => {
-    const start = calendar.indexOf('function scalSelectChild('), end = calendar.indexOf('function scalSwitchChild(', start);
-    assert.ok(start > 0 && end > start);
-    const classList = { toggle() {} };
-    const pickerItem = { getAttribute: name => ({ 'data-child-id': '12' })[name], classList, querySelector: () => null };
-    const navLink = { href: 'https://attendance.test/parent/attendance-calendar' };
-    const scheduleLink = { href: 'https://attendance.test/parent/schedule' };
-    const fields = {
-        activeStudentName: { textContent: '' }, activeStudentAvatar: { textContent: '' }, activeStudentSub: { textContent: '' },
-        parentCalendarScheduleLink: scheduleLink,
-    };
-    const context = {
-        scalChildId: 11,
-        window: { location: { href: 'https://attendance.test/parent/calendar?child_id=11', origin: 'https://attendance.test' }, history: { replaceState() {} } },
-        URL,
-        document: {
-            getElementById: id => fields[id] ?? null,
-            querySelectorAll: selector => selector === '.scal-picker-item' ? [pickerItem] : selector === '[data-parent-child-context]' ? [navLink] : [],
-        },
-        scalLoadAndRender() {},
-    };
-    vm.createContext(context); vm.runInContext(calendar.slice(start, end), context);
-    context.scalSelectChild({ getAttribute: name => ({ 'data-name': 'Second child', 'data-initials': 'SC', 'data-number': '5558872' })[name] }, 12);
+test('school-calendar child changes keep the surrounding parent navigation on that same child', async () => {
+    const app = fixture();
+    const navLink = { href: 'https://attendance.test/parent/calendar?child_id=11' };
+    const scheduleLink = { href: 'https://attendance.test/parent/schedule?child_id=11' };
+    const prevQueryAll = app.document.querySelectorAll;
+    app.document.querySelectorAll = selector => selector === '[data-parent-child-context]' ? [navLink, scheduleLink] : prevQueryAll(selector);
+    assert.equal(app.window.switchDashboardChild('12'), true);
     assert.match(scheduleLink.href, /child_id=12/);
     assert.match(navLink.href, /child_id=12/);
 });
 
 test('school calendar dialogs render special-character names and titles as text', () => {
     const nodes = new Map();
-    const document = { getElementById(id) { if (id === 'daySummaryModal') return null; if (!nodes.has(id)) nodes.set(id, { style: {}, textContent: '', innerHTML: '', insertAdjacentHTML(_position, html) { this.innerHTML += html; } }); return nodes.get(id); } };
+    const document = { getElementById(id) { if (id === 'daySummaryModal') return null; if (!nodes.has(id)) nodes.set(id, { style: {}, classList: { toggle() {} }, textContent: '', innerHTML: '', insertAdjacentHTML(_position, html) { this.innerHTML += html; }, append(node) { this.innerHTML += node.textContent || ''; } }); return nodes.get(id); } };
     const payload = '<img src=x onerror=attack()>';
-    const context = { document, window: {}, scalChildCount: 2, scalEventMap: { '2026-11-11': [
-        { type: 'attendance', status: 'Present', student_name: payload, subject_name: payload, time_string: payload, instructor_name: payload },
-        { type: 'event', title: payload, color: 'red;" onmouseover="attack()' },
-    ] } };
-    const start = calendar.indexOf('function scalDayClick('), end = calendar.indexOf('function closeDaySummaryModal(', start);
-    vm.createContext(context); vm.runInContext(calendarText + '\n' + calendar.slice(start, end), context);
+    const context = {
+        document, window: { location: { origin: 'https://attendance.test' } },
+        URL, URLSearchParams,
+        scalYear: 2026, scalMonth: 11, scalChildId: 11, scalDataState: 'ready', scalChildCount: 2,
+        scalEventMap: { '2026-11-11': [
+            { type: 'attendance', status: 'Present', student_name: payload, subject_name: payload, time_string: payload, instructor_name: payload },
+            { type: 'event', title: payload, color: 'red;" onmouseover="attack()' },
+        ] },
+    };
+    const start = calendar.indexOf('function scalRenderDay('), end = calendar.indexOf('function closeDaySummaryModal(', start);
+    assert.ok(start > 0 && end > start);
+    const script = calendar.slice(start, end).replace("@json(route('parent.calendar'))", "'https://attendance.test/parent/calendar'");
+    vm.createContext(context); vm.runInContext(calendarText + '\n' + script, context);
     context.scalDayClick('2026-11-11');
     const html = nodes.get('daySummaryContent').innerHTML;
     assert.equal(html.includes(payload), false);

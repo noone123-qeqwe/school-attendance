@@ -66,7 +66,7 @@ class ComprehensiveBugAuditTest extends TestCase
             ->get(route('admin.admins'));
 
         $response->assertStatus(200);
-        $response->assertSee('Admins');
+        $response->assertSee('Administrators');
         $response->assertSee($this->superAdmin->name);
     }
 

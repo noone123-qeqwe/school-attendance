@@ -123,12 +123,12 @@
                     @endif
                     <div class="header-title-container">
                         <div class="header-page-title">
-                            @if(Auth::user()?->isAdmin())
+                            @if(View::hasSection('page-title'))
+                                @yield('page-title')
+                            @elseif(Auth::user()?->isAdmin())
                                 {{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['title'] }}
                             @elseif(Auth::user()?->isParent())
                                 {{ \App\Support\ParentNavigation::context(request()->route()?->getName())['title'] }}
-                            @elseif(View::hasSection('page-title'))
-                                @yield('page-title')
                             @else
                                 @if(request()->routeIs('home') || request()->routeIs('teacher.dashboard') || request()->routeIs('parent.dashboard'))
                                     Dashboard
@@ -139,7 +139,7 @@
                                 @endif
                             @endif
                         </div>
-                        <div class="header-page-sub">@if(Auth::user()?->isAdmin()){{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['group'] }}@elseif(Auth::user()?->isParent()){{ \App\Support\ParentNavigation::context(request()->route()?->getName())['group'] }}@elseif(View::hasSection('page-sub'))@yield('page-sub')@else{{ now()->format('l, F j, Y') }}@endif</div>
+                        <div class="header-page-sub">@if(View::hasSection('page-sub'))@yield('page-sub')@elseif(Auth::user()?->isAdmin()){{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['group'] }}@elseif(Auth::user()?->isParent()){{ \App\Support\ParentNavigation::context(request()->route()?->getName())['group'] }}@else{{ now()->format('l, F j, Y') }}@endif</div>
                     </div>
                 </div>
 

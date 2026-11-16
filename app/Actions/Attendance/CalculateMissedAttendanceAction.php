@@ -55,7 +55,9 @@ class CalculateMissedAttendanceAction
             return [];
         }
 
-        $subjects->loadMissing('schedules');
+        if ($subjects instanceof \Illuminate\Database\Eloquent\Collection) {
+            $subjects->loadMissing('schedules');
+        }
 
         // 2. Resolve tracking start date (bounded by student registration and enrollment)
         $earliestRecord = Attendance::where('user_id', $student->id)->min('date');

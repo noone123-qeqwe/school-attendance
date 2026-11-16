@@ -2305,7 +2305,7 @@ class QrAttendanceController extends Controller
     {
         return response()->json(['success' => false, 'code' => 'FACE_ATTEMPTS_EXHAUSTED',
             'message' => 'Too many unsuccessful camera checks. Wait before retrying, use device verification, or ask your teacher for help.'], 429)
-            ->header('Retry-After', $limiter->secondsUntilRetry($user, (int) $session->id));
+            ->header('Retry-After', (string) $limiter->secondsUntilRetry($user, (int) $session->id));
     }
 
     private function verifyAttendanceFace(Request $request, User $user, AttendanceSession $session, mixed $credential, string $challenge, WebauthnService $webauthn): string|\Illuminate\Http\JsonResponse

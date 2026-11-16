@@ -159,7 +159,7 @@
             guide.style.setProperty('--face-stability-progress', String(Math.min(stableCount / 4, 1)));
             return stableCount >= 4;
         }
-        async function captureView(index, attempt, automatic) {
+        async function captureView(index, attempt, automatic, capturedOffset = null) {
             if (!poses[index] || !stream || attempt !== requestId) return false;
             capture.disabled = true;
             capture.setAttribute('aria-busy', 'true');
@@ -181,7 +181,8 @@
                 if (!blob) throw new Error('This frame could not be captured. Please try again.');
 
                 showCaptureFeedback();
-                if (poses[index][0] === 'left' && lastSample) firstTurnSign = Math.sign(lastSample.offset);
+                const turnOffset = capturedOffset ?? lastSample?.offset ?? 0;
+                if (poses[index][0] === 'left' && turnOffset !== 0) firstTurnSign = Math.sign(turnOffset);
                 views[poses[index][0]] = blob;
                 progress();
                 if (index < 2) {
@@ -265,8 +266,9 @@
                 updateGuide('ready', 'Hold still · scanning');
                 setStatus('Face position detected. Hold still while this view is captured automatically.');
                 if (isStable(sample)) {
+                    const sampleOffset = sample.offset;
                     resetStability();
-                    await captureView(index, attempt, true);
+                    await captureView(index, attempt, true, sampleOffset);
                 }
             } catch (_) {
                 if (attempt === requestId) manualCaptureMode('Automatic face scanning stopped in this browser. You can still capture each view manually.');

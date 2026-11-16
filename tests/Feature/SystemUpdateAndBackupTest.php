@@ -18,6 +18,7 @@ class SystemUpdateAndBackupTest extends TestCase
     private string $initialManifestContent = '';
     private string $initialVersionContent = '';
     private string $initialPackageContent = '';
+    private string $initialAndroidGradleContent = '';
 
     protected function setUp(): void
     {
@@ -38,6 +39,10 @@ class SystemUpdateAndBackupTest extends TestCase
         $packagePath = base_path('package.json');
         if (\Illuminate\Support\Facades\File::exists($packagePath)) {
             $this->initialPackageContent = \Illuminate\Support\Facades\File::get($packagePath);
+        }
+        $gradlePath = base_path('apps/android_app/app/build.gradle');
+        if (\Illuminate\Support\Facades\File::exists($gradlePath)) {
+            $this->initialAndroidGradleContent = \Illuminate\Support\Facades\File::get($gradlePath);
         }
 
         $this->superAdmin = User::factory()->create([
@@ -72,6 +77,10 @@ class SystemUpdateAndBackupTest extends TestCase
         $packagePath = base_path('package.json');
         if (!empty($this->initialPackageContent) && \Illuminate\Support\Facades\File::exists($packagePath)) {
             \Illuminate\Support\Facades\File::put($packagePath, $this->initialPackageContent);
+        }
+        $gradlePath = base_path('apps/android_app/app/build.gradle');
+        if (!empty($this->initialAndroidGradleContent) && \Illuminate\Support\Facades\File::exists($gradlePath)) {
+            \Illuminate\Support\Facades\File::put($gradlePath, $this->initialAndroidGradleContent);
         }
 
         parent::tearDown();

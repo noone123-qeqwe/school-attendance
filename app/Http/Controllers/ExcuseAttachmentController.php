@@ -81,7 +81,7 @@ class ExcuseAttachmentController extends Controller
         abort_unless($remote->successful() && strlen($body) <= 10 * 1024 * 1024, 404);
 
         return response($body, 200, $this->safeHeaders(
-            (string) $remote->header('Content-Type', 'application/octet-stream'),
+            (string) ($remote->header('Content-Type') ?: 'application/octet-stream'),
             basename($parts['path'] ?? 'attachment')
         ));
     }

@@ -210,8 +210,27 @@ class StudentDashboardTest extends TestCase
             'course' => 'BSCS',
         ]);
 
+        $sub3 = Subject::create([
+            'code' => 'CS203',
+            'name' => 'Discrete Math',
+            'year_level' => 2,
+            'semester' => 1,
+            'course' => 'BSCS',
+        ]);
+
+        // Excuse submissions attach only to existing official absences.
+        foreach ([$sub1, $sub2] as $absentSubject) {
+            Attendance::create([
+                'user_id' => $this->student->id,
+                'subject_id' => $absentSubject->id,
+                'subject_code' => $absentSubject->code,
+                'date' => '2026-08-24',
+                'status' => 'Absent',
+            ]);
+        }
+
         $response = $this->actingAs($this->student)->post('/excuses/general/store', [
-            'subject_codes' => ['CS201', 'CS202'],
+            'subject_codes' => ['CS201', 'CS202', 'CS203'],
             'date' => '2026-08-24',
             'reason' => 'Medical/Health Issues',
             'description' => 'Had a severe fever and medical checkup.',
@@ -229,6 +248,12 @@ class StudentDashboardTest extends TestCase
         $this->assertDatabaseHas('attendances', [
             'user_id' => $this->student->id,
             'subject_code' => 'CS202',
+            'date' => '2026-08-24',
+        ]);
+
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $this->student->id,
+            'subject_code' => 'CS203',
             'date' => '2026-08-24',
         ]);
 
@@ -338,46 +363,31 @@ class StudentDashboardTest extends TestCase
             'created_by' => $this->student->id,
         ]);
 
-        $response = $this->actingAs($this->student)->get(route('student.attendance.calendar', ['cal_year' => 2026, 'cal_month' => 9]));
+        $redirect = $this->actingAs($this->student)->get(route('student.attendance.calendar', ['cal_year' => 2026, 'cal_month' => 9]));
+        $redirect->assertRedirect(route('student.calendar'));
+
+        $response = $this->actingAs($this->student)->get(route('student.calendar', ['year' => 2026, 'month' => 9]));
         $response->assertStatus(200);
 
         $content = $response->getContent();
-
-        // Check Attendance Calendar title
-        $this->assertStringContainsString('Attendance Calendar', $content);
-        // Note: View Records button is accessible from the attendance calendar page
+        $this->assertStringContainsString('Attendance &amp; school calendar', $content);
         $this->assertStringContainsString('closeDaySummaryModal', $content);
 
-        // Check calendar legend indicators
-        $this->assertStringContainsString('Present', $content);
-        $this->assertStringContainsString('Late', $content);
-        $this->assertStringContainsString('Absent', $content);
-        $this->assertStringContainsString('Exam', $content);
-        $this->assertStringContainsString('Event', $content);
-        $this->assertStringContainsString('Holiday', $content);
+        foreach (['Present', 'Late', 'Absent', 'Exam', 'Event', 'Holiday'] as $legend) {
+            $this->assertStringContainsString($legend, $content);
+        }
 
-        // Check dot indicators in calendar (att-cal-dot format used by attendance-calendar page)
-        $this->assertStringContainsString('att-cal-dot present', $content);
-        $this->assertStringContainsString('att-cal-dot event', $content);
-        $this->assertStringContainsString('att-cal-dot exam', $content);
-        $this->assertStringContainsString('att-cal-dot holiday', $content);
-
-        // Check day cell status classes
-        $this->assertStringContainsString('status-event', $content);
-        $this->assertStringContainsString('status-exam', $content);
-        $this->assertStringContainsString('status-holiday', $content);
-
-        // Check events map JSON payload passed to JavaScript
-        $this->assertStringContainsString('Science Fair', $content);
-        $this->assertStringContainsString('School Gym', $content);
-        $this->assertStringContainsString('Midterm Examination', $content);
-        $this->assertStringContainsString('National Holiday', $content);
-
-        // Check Day Summary Inspector modal structure
         $this->assertStringContainsString('daySummaryModal', $content);
-        $this->assertStringContainsString('No records or events for this date.', $content);
-        $this->assertStringContainsString('EVENTS / IMPORTANT DATES', $content);
-        $this->assertStringContainsString('ATTENDANCE', $content);
+
+        $data = $this->actingAs($this->student)
+            ->getJson(route('student.calendar.data', ['start' => '2026-09-01', 'end' => '2026-09-30']))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('Science Fair', $data);
+        $this->assertStringContainsString('School Gym', $data);
+        $this->assertStringContainsString('Midterm Examination', $data);
+        $this->assertStringContainsString('National Holiday', $data);
     }
 
     public function test_student_attendance_calendar_dedicated_page_renders_events(): void
@@ -391,14 +401,19 @@ class StudentDashboardTest extends TestCase
             'created_by' => $this->student->id,
         ]);
 
-        $response = $this->actingAs($this->student)->get(route('student.attendance.calendar', ['cal_year' => 2026, 'cal_month' => 9]));
-        $response->assertStatus(200);
+        $this->actingAs($this->student)
+            ->get(route('student.attendance.calendar', ['cal_year' => 2026, 'cal_month' => 9]))
+            ->assertRedirect(route('student.calendar'));
 
-        $content = $response->getContent();
-        $this->assertStringContainsString('Attendance Calendar', $content);
-        $this->assertStringContainsString('Special Non-Working Holiday', $content);
-        $this->assertStringContainsString('att-cal-dot holiday', $content);
-        $this->assertStringContainsString('No records or events for this date.', $content);
+        $response = $this->actingAs($this->student)->get(route('student.calendar', ['year' => 2026, 'month' => 9]));
+        $response->assertStatus(200);
+        $this->assertStringContainsString('Attendance &amp; school calendar', $response->getContent());
+
+        $data = $this->actingAs($this->student)
+            ->getJson(route('student.calendar.data', ['start' => '2026-09-01', 'end' => '2026-09-30']))
+            ->assertOk()
+            ->getContent();
+        $this->assertStringContainsString('Special Non-Working Holiday', $data);
     }
 
     public function test_student_profile_displays_student_id(): void

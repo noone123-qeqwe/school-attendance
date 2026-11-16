@@ -669,7 +669,8 @@ class User extends Authenticatable
         return $this->role === $role;
     }
 
-    public function children()
+    /** @return BelongsToMany<User, $this> */
+    public function children(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'parent_student', 'parent_id', 'student_id');
     }

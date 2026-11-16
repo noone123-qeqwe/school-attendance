@@ -392,9 +392,9 @@ class StudentParentBindingTest extends TestCase
         $response->assertStatus(200)
             ->assertSee('Juan Dela Cruz')
             ->assertSee('20260099')
-            ->assertSee('Instant Link Code')
-            ->assertSee('Student ID / Number')
-            ->assertSee('Student ID &amp; Email OTP', false);
+            ->assertSee('Use a link code')
+            ->assertSee("Child's student ID", false)
+            ->assertSee('Use student ID and email code');
     }
 
     public function test_student_settings_page_renders_family_tab(): void
