@@ -2,7 +2,7 @@ name: Automatic Application Versioning
 
 on:
   workflow_run:
-    workflows: ["Laravel CI Test Suite"]
+    workflows: ["Laravel CI Build Validation"]
     types: [completed]
     branches: [main]
 

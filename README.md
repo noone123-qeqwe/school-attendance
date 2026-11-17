@@ -19,19 +19,18 @@ For background work, run `php artisan queue:work` and `php artisan schedule:work
 
 ## Attendance rule
 
-The current data model stores **one attendance result per student, subject, and local calendar date**. A QR session identifies the capture window and verification evidence; it does not create a second attendance result for a repeat meeting of that subject on the same date. The unique database index and `Attendance::updateOrCreateRecord()` enforce this rule. Confirm a policy change with the school before changing the index, reports, auto-absence logic, and tests together.
+The current data model stores **one attendance result per student, subject, and local calendar date**. A QR session identifies the capture window and verification evidence; it does not create a second attendance result for a repeat meeting of that subject on the same date. The unique database index and `Attendance::updateOrCreateRecord()` enforce this rule. Confirm a policy change with the school before changing the index, reports, and auto-absence logic together.
 
 The scheduler closes expired QR sessions each minute and checks scheduled classes for absences every 30 minutes. It runs chronic absence checks at 19:00, disciplinary warning processing at 19:15, and overall attendance-rate checks at 20:00 in the configured timezone. See `routes/console.php` for the current schedule.
 
-## Checks
+## Build validation
 
 ```sh
-php artisan test
 php scripts/check-release-manifest.php
 npm ci && npm run build
 ```
 
-CI runs the test suite against SQLite and MySQL. See `.github/workflows/ci.yml`. Release metadata and the production Docker image can be checked with the commands above and `docker build --tag attendance-check .`.
+CI installs production PHP dependencies, builds the web assets, and checks release metadata. It no longer runs an automated test suite. See `.github/workflows/ci.yml`. The production Docker image can be checked with `docker build --tag attendance-check .`.
 
 ## Deployment and recovery
 

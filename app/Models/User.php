@@ -28,7 +28,6 @@ use Illuminate\Support\Facades\Hash;
  */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes, LogsActivity;
 
     public function getActivitylogOptions(): LogOptions

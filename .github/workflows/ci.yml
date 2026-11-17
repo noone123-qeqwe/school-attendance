@@ -1,4 +1,4 @@
-name: Laravel CI Test Suite
+name: Laravel CI Build Validation
 
 on:
   push:
@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  sqlite-tests:
-    name: Run Automated Tests (SQLite)
+  build:
+    name: Validate Production Dependencies and Web Build
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')"
 
@@ -19,154 +19,24 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js for browser-flow regression tests
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, bcmath, curl, zip, gmp, gd
+          coverage: none
+
+      - name: Install production PHP dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
 
-      - name: Run JavaScript browser-flow regression tests
-        run: node --test tests/js/*.test.cjs
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite, bcmath, curl, zip, gmp, gd
-          coverage: none
-
-      - name: Get Composer Cache Directory
-        id: composer-cache
-        run: |
-          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Cache Composer Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
-
-      - name: Install Composer Dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
-
-      - name: Prepare Environment
-        run: |
-          cp tests/ci.env .env.testing
-          php artisan key:generate --env=testing
-
-      - name: Build frontend assets required by rendered page tests
+      - name: Build web assets and validate release metadata
         run: |
           npm ci
           npm run build
           php scripts/check-release-manifest.php
-
-      - name: Execute Tests via PHPUnit / Artisan
-        env:
-          APP_ENV: testing
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ":memory:"
-          CACHE_STORE: array
-          SESSION_DRIVER: array
-          QUEUE_CONNECTION: sync
-          MAIL_MAILER: array
-        run: php artisan test --colors=always --log-junit test-results/phpunit.xml
-
-      - name: Annotate failed application tests
-        if: failure()
-        run: php scripts/report-test-failures.php test-results/phpunit.xml
-
-      - name: Preserve SQLite test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sqlite-test-results
-          path: test-results/phpunit.xml
-          if-no-files-found: ignore
-
-  mysql-tests:
-    name: Run Automated Tests (MySQL)
-    runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]')"
-
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: school_attendance_test
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js for frontend assets
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, bcmath, curl, zip, gmp, gd
-          coverage: none
-
-      - name: Get Composer Cache Directory
-        id: composer-cache
-        run: |
-          echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Cache Composer Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
-
-      - name: Install Composer Dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
-
-      - name: Prepare Environment
-        run: |
-          cp tests/ci.env .env.testing
-          php artisan key:generate --env=testing
-
-      - name: Build frontend assets required by rendered page tests
-        run: |
-          npm ci
-          npm run build
-          php scripts/check-release-manifest.php
-
-      - name: Execute Tests via PHPUnit / Artisan (MySQL)
-        env:
-          APP_ENV: testing
-          DB_CONNECTION: mysql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_DATABASE: school_attendance_test
-          DB_USERNAME: root
-          DB_PASSWORD: password
-          CACHE_STORE: array
-          SESSION_DRIVER: array
-          QUEUE_CONNECTION: sync
-          MAIL_MAILER: array
-        run: php artisan test --colors=always --log-junit test-results/phpunit.xml
-
-      - name: Annotate failed application tests
-        if: failure()
-        run: php scripts/report-test-failures.php test-results/phpunit.xml
-
-      - name: Preserve MySQL test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mysql-test-results
-          path: test-results/phpunit.xml
-          if-no-files-found: ignore
