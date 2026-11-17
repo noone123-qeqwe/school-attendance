@@ -10,6 +10,7 @@
     <title>@yield('title', config('app.name', 'Smart Attendance'))</title>
 
     @include('partials.pwa-tags')
+    <script @cspNonce src="{{ asset('js/gps-sampler.js') }}?v={{ filemtime(public_path('js/gps-sampler.js')) }}"></script>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

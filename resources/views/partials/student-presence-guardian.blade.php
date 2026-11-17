@@ -190,36 +190,70 @@
 
             this.isChecking = true;
 
-            if (!navigator.geolocation) {
-                this.handleLocationError('Geolocation not supported by device/browser');
+            try {
+                if (!navigator.geolocation) {
+                    this.handleLocationError('Geolocation not supported by device/browser');
+                    return;
+                }
+
+                if (window.GpsSampler) {
+                    const result = await window.GpsSampler.capturePosition({
+                        timeoutMs: 8000,
+                        settleMs: 2200,
+                        targetAccuracy: 20,
+                        maxAcceptableAccuracy: 50,
+                        maxSamples: 4,
+                        minClusterSamples: 2,
+                        allowSingleFallback: false,
+                        requireClusterIfDisagreeing: true,
+                        fallbackToBestCoarse: true,
+                    });
+
+                    if (result.ok && result.fix) {
+                        await this.sendVerificationPayload({
+                            latitude: result.fix.lat,
+                            longitude: result.fix.lng,
+                            accuracy: result.fix.acc,
+                            timestamp: result.fix.timestamp,
+                        });
+                        return;
+                    }
+
+                    const fallbackErr = result.error || {
+                        code: result.reason === 'permission_denied' ? 1 : 2,
+                        message: 'Location unavailable',
+                    };
+                    await this.reportLocationFailure(fallbackErr);
+                    this.handleLocationError(fallbackErr.message, fallbackErr.code);
+                    return;
+                }
+
+                await new Promise((resolve) => {
+                    navigator.geolocation.getCurrentPosition(
+                        async (position) => {
+                            await this.sendVerificationPayload({
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude,
+                                accuracy: position.coords.accuracy,
+                                timestamp: position.timestamp,
+                            });
+                            resolve();
+                        },
+                        async (error) => {
+                            await this.reportLocationFailure(error);
+                            this.handleLocationError(error.message, error.code);
+                            resolve();
+                        },
+                        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+                    );
+                });
+            } finally {
                 this.isChecking = false;
                 if (isManual && this.pingBtn) {
                     this.pingBtn.disabled = false;
                     this.pingBtn.innerHTML = '<i class="bi bi-geo-alt-fill"></i>';
                 }
-                return;
             }
-
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    await this.sendVerificationPayload(position.coords);
-                    this.isChecking = false;
-                    if (isManual && this.pingBtn) {
-                        this.pingBtn.disabled = false;
-                        this.pingBtn.innerHTML = '<i class="bi bi-geo-alt-fill"></i>';
-                    }
-                },
-                async (error) => {
-                    await this.reportLocationFailure(error);
-                    this.handleLocationError(error.message, error.code);
-                    this.isChecking = false;
-                    if (isManual && this.pingBtn) {
-                        this.pingBtn.disabled = false;
-                        this.pingBtn.innerHTML = '<i class="bi bi-geo-alt-fill"></i>';
-                    }
-                },
-                { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }
-            );
         }
 
         async reportLocationFailure(error) {
@@ -279,6 +313,7 @@
                         latitude: coords.latitude,
                         longitude: coords.longitude,
                         accuracy: coords.accuracy,
+                        location_timestamp_ms: coords.timestamp,
                         device_key: devKey,
                         device_fingerprint: devKey
                     })

@@ -182,6 +182,7 @@ class MobileScanQrFeatureTest extends TestCase
                 'token' => $token,
                 'latitude' => 14.5995,
                 'longitude' => 120.9842,
+                'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
             ]);
 
@@ -234,6 +235,7 @@ class MobileScanQrFeatureTest extends TestCase
                 'token' => '849201',
                 'latitude' => 14.5995,
                 'longitude' => 120.9842,
+                'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
             ]);
 

@@ -99,6 +99,7 @@ class AttendanceController extends Controller
     'latitude' => [$gpsVerificationEnabled ? 'required' : 'nullable', ValidCoordinate::latitude()],
     'longitude' => [$gpsVerificationEnabled ? 'required' : 'nullable', ValidCoordinate::longitude()],
     'accuracy' => 'nullable|numeric',
+    'location_timestamp_ms' => 'nullable|integer',
 ]);
     $user = auth()->user();
     if (app(\App\Services\FaceAttendanceConsent::class)->requiredForSelfCheckIn($user)) {
@@ -136,7 +137,11 @@ class AttendanceController extends Controller
             return redirect()->back()->with('error', 'The teacher\'s laptop location is not available for this session. Please ask your instructor to enable location on their laptop.');
         }
 
-        [$schoolLat, $schoolLng] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $activeSession->classroom_lat, (float) $activeSession->classroom_lng);
+        try {
+            [$schoolLat, $schoolLng] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $activeSession->classroom_lat, (float) $activeSession->classroom_lng);
+        } catch (\InvalidArgumentException) {
+            return redirect()->back()->with('error', 'The teacher session has an invalid location center. Please ask your instructor to refresh the session location.');
+        }
 
         // GPS VALIDATION — use is_null() so 0.0 is accepted
         if (is_null($request->latitude) || is_null($request->longitude)) {
@@ -154,14 +159,22 @@ class AttendanceController extends Controller
             return redirect()->back()->with('error', "GPS signal accuracy is too low (±" . round($accuracy) . "m) to verify your proximity. Please move near a window, enable High Accuracy GPS, and try again.");
         }
 
+        $integrity = app(\App\Services\LocationIntegrityService::class);
+        if ($integrity->isStaleClientFix($request->filled('location_timestamp_ms') ? (int) $request->input('location_timestamp_ms') : null)) {
+            return redirect()->back()->with('error', 'Your GPS reading is stale. Acquire a fresh location fix and try again.');
+        }
+
         // CALCULATE DISTANCE (Haversine formula in meters)
-        $distance = $this->distance(
+        $distance = $integrity->distanceMeters(
             $studentLat,
             $studentLng,
             $schoolLat,
             $schoolLng
         );
 
+        if ($integrity->isUncertainBoundary($distance, $radiusMeters, $accuracy)) {
+            return redirect()->back()->with('error', 'GPS uncertainty overlaps the classroom boundary (' . round($distance) . 'm). Wait for a clearer GPS fix and retry, or ask your instructor for help.');
+        }
         if ($distance > $radiusMeters) {
             return redirect()->back()->with('error', "You are outside the attendance boundary (" . round($distance) . "m away, allowed within {$radiusMeters}m). Attendance can only be marked while near the teacher's laptop.");
         }
@@ -324,26 +337,4 @@ if (!$scheduledDays->contains($todayFull)) {
 
     return redirect()->route('home')->with('success', "Clock-in successful! Status: $status");
 }
-    private function distance($lat1, $lon1, $lat2, $lon2)
-    {
-        [$lat1, $lon1] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $lat1, (float) $lon1);
-        [$lat2, $lon2] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $lat2, (float) $lon2);
-
-        $earthRadius = 6371000.0;
-
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLon = deg2rad($lon2 - $lon1);
-
-        $a = sin($dLat / 2) * sin($dLat / 2) +
-             cos(deg2rad($lat1)) *
-             cos(deg2rad($lat2)) *
-             sin($dLon / 2) *
-             sin($dLon / 2);
-
-        $a = min(1.0, max(0.0, $a));
-
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return $earthRadius * $c;
-    }
 }

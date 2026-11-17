@@ -157,59 +157,66 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('display-lng').innerText = lng.toFixed(6);
     });
     
-    document.getElementById('getCurrentLocation').addEventListener('click', function() {
+    document.getElementById('getCurrentLocation').addEventListener('click', async function() {
         const btn = this;
         btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Getting location...';
-        
-        if (!navigator.geolocation) {
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Locking GPS...';
+
+        if (!navigator.geolocation || !window.GpsSampler) {
             alert('GPS not supported on this device');
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-crosshair"></i> Use My Current Location';
             return;
         }
-        
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                let lat = position.coords.latitude;
-                let lng = position.coords.longitude;
-                
-                updateInputs(lat, lng);
-                let newLatLng = new L.LatLng(lat, lng);
-                marker.setLatLng(newLatLng);
-                circle.setLatLng(newLatLng);
-                map.setView(newLatLng, 17);
-                
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-check-circle"></i> Location Updated';
-                btn.classList.remove('btn-outline-secondary');
-                btn.classList.add('btn-success');
-                
-                setTimeout(() => {
-                    btn.innerHTML = '<i class="bi bi-crosshair"></i> Use My Current Location';
-                    btn.classList.remove('btn-success');
-                    btn.classList.add('btn-outline-secondary');
-                }, 2000);
-            },
-            function(error) {
-                let message = 'GPS Error: ';
-                switch(error.code) {
-                    case 1: message += 'Permission denied'; break;
-                    case 2: message += 'Position unavailable'; break;
-                    case 3: message += 'Timeout'; break;
-                    default: message += 'Unknown error';
+
+        const result = await window.GpsSampler.capturePosition({
+            timeoutMs: 15000,
+            settleMs: 4000,
+            targetAccuracy: 12,
+            maxAcceptableAccuracy: 50,
+            minClusterSamples: 3,
+            maxSamples: 6,
+            allowSingleFallback: true,
+            onSample: ({ estimate, bestRawAccuracy, sampleCount }) => {
+                if (estimate) {
+                    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Averaging (±' + Math.round(estimate.acc) + 'm, ' + sampleCount + ')...';
+                } else if (Number.isFinite(bestRawAccuracy)) {
+                    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Refining (±' + Math.round(bestRawAccuracy) + 'm)...';
                 }
-                alert(message);
-                
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-crosshair"></i> Use My Current Location';
             },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 60000
-            }
-        );
+        });
+
+        if (!result.ok || !result.fix || result.fix.acc > 50) {
+            const msg = result.reason === 'permission_denied'
+                ? 'GPS Error: Permission denied'
+                : (Number.isFinite(result.bestRawAccuracy)
+                    ? 'GPS accuracy is too low (±' + Math.round(result.bestRawAccuracy) + 'm). Move near a window or use a device with GPS.'
+                    : 'GPS Error: Unable to obtain a reliable fix');
+            alert(msg);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-crosshair"></i> Use My Current Location';
+            return;
+        }
+
+        const lat = result.fix.lat;
+        const lng = result.fix.lng;
+
+        updateInputs(lat, lng);
+        const newLatLng = new L.LatLng(lat, lng);
+        marker.setLatLng(newLatLng);
+        circle.setLatLng(newLatLng);
+        map.setView(newLatLng, 17);
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Updated (±' + Math.round(result.fix.acc) + 'm)';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-success');
+
+        setTimeout(() => {
+            btn.innerHTML = '<i class="bi bi-crosshair"></i> Use My Current Location';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-secondary');
+        }, 2500);
     });
 });
 </script>

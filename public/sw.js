@@ -26,6 +26,7 @@ const PRECACHE_ASSETS = [
     '/js/html5-qrcode.min.js',
     '/js/password-toggle.js',
     '/js/offline-attendance.js',
+    '/js/gps-sampler.js',
     '/js/settings-page.js',
 ];
 

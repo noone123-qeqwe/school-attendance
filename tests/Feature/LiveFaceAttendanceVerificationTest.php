@@ -86,6 +86,7 @@ class LiveFaceAttendanceVerificationTest extends TestCase
         $response = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
             'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000,
             'radius_meters' => 50,
@@ -274,7 +275,12 @@ class LiveFaceAttendanceVerificationTest extends TestCase
             'token' => $token, 'latitude' => 14.5001, 'longitude' => 121.0001, 'accuracy' => 10,
             'location_timestamp_ms' => now()->getTimestampMs(),
         ])->assertOk()->assertJsonPath('verification_url', route('qr.scan', $token, false));
-        $this->postJson('/attendance/store', ['subject_code' => $subject->code, 'latitude' => 14.5001, 'longitude' => 121.0001])
+        $this->postJson('/attendance/store', [
+            'subject_code' => $subject->code,
+            'latitude' => 14.5001,
+            'longitude' => 121.0001,
+            'location_timestamp_ms' => now()->getTimestampMs(),
+        ])
             ->assertUnprocessable();
         $this->assertDatabaseCount('attendances', 0);
     }
@@ -322,6 +328,7 @@ class LiveFaceAttendanceVerificationTest extends TestCase
         // Student is far outside classroom (e.g. 15.5 lat vs 14.5 lat ~ 111 km away)
         $response = $this->actingAs($student)->postJson('/qr/verify-complete', array_replace($payload, [
             'latitude' => 15.5000, 'longitude' => 121.0000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
         ]));
 
         $response->assertStatus(422);

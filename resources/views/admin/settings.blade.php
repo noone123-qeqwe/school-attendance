@@ -197,9 +197,9 @@
                     document.getElementById('setting_anti_proxy_device_check').checked = true;
                 }
 
-                function detectCampusGps() {
+                async function detectCampusGps() {
                     const statusEl = document.getElementById('campusGpsStatus');
-                    if (!navigator.geolocation) {
+                    if (!navigator.geolocation || !window.GpsSampler) {
                         if (statusEl) {
                             statusEl.style.display = 'block';
                             statusEl.style.color = '#ef4444';
@@ -210,32 +210,47 @@
                     if (statusEl) {
                         statusEl.style.display = 'block';
                         statusEl.style.color = 'var(--saas-gold, #cfa46f)';
-                        statusEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px;"></span> Detecting current location...';
+                        statusEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px;"></span> Stabilizing high-accuracy GPS samples...';
                     }
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            if (!Number.isFinite(pos.coords.accuracy) || pos.coords.accuracy <= 0 || pos.coords.accuracy > 50) {
-                                if (statusEl) {
-                                    statusEl.style.color = '#ef4444';
-                                    statusEl.textContent = 'Location accuracy is too low (±' + Math.round(pos.coords.accuracy || 0) + 'm). Enable precise location or use a phone with GPS, then try again.';
-                                }
-                                return;
-                            }
-                            document.getElementById('setting_gps_lat').value = pos.coords.latitude.toFixed(6);
-                            document.getElementById('setting_gps_lng').value = pos.coords.longitude.toFixed(6);
-                            if (statusEl) {
-                                statusEl.style.color = '#10b981';
-                                statusEl.innerHTML = '<i class="bi bi-check-circle me-1"></i> Location captured: ' + pos.coords.latitude.toFixed(6) + ', ' + pos.coords.longitude.toFixed(6) + ' (Accuracy: ±' + Math.round(pos.coords.accuracy) + 'm). Click Save Changes to apply.';
-                            }
-                        },
-                        (err) => {
-                            if (statusEl) {
-                                statusEl.style.color = '#ef4444';
-                                statusEl.textContent = 'Unable to detect location (' + err.message + '). Please enter coordinates manually.';
+                    const result = await window.GpsSampler.capturePosition({
+                        timeoutMs: 15000,
+                        settleMs: 4000,
+                        targetAccuracy: 12,
+                        maxAcceptableAccuracy: 50,
+                        minClusterSamples: 3,
+                        maxSamples: 6,
+                        allowSingleFallback: true,
+                        onSample: ({ estimate, bestRawAccuracy, sampleCount }) => {
+                            if (!statusEl) return;
+                            if (estimate) {
+                                statusEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px;"></span> Averaging GPS fixes (±' + Math.round(estimate.acc) + 'm, ' + sampleCount + ' samples)...';
+                            } else if (Number.isFinite(bestRawAccuracy)) {
+                                statusEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px;"></span> Refining coarse GPS signal (±' + Math.round(bestRawAccuracy) + 'm)...';
                             }
                         },
-                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                    );
+                    });
+
+                    if (!result.ok || !result.fix || result.fix.acc > 50) {
+                        if (statusEl) {
+                            statusEl.style.color = '#ef4444';
+                            if (result.reason === 'permission_denied') {
+                                statusEl.textContent = 'Location permission denied. Allow location access and retry.';
+                            } else if (Number.isFinite(result.bestRawAccuracy)) {
+                                statusEl.textContent = 'Location accuracy is too low (±' + Math.round(result.bestRawAccuracy) + 'm). Enable precise location or use a phone with GPS, then try again.';
+                            } else {
+                                statusEl.textContent = 'Unable to detect a reliable GPS fix. Please move near a window or enter coordinates manually.';
+                            }
+                        }
+                        return;
+                    }
+
+                    const { lat, lng, acc, sampleCount } = result.fix;
+                    document.getElementById('setting_gps_lat').value = lat.toFixed(6);
+                    document.getElementById('setting_gps_lng').value = lng.toFixed(6);
+                    if (statusEl) {
+                        statusEl.style.color = '#10b981';
+                        statusEl.innerHTML = '<i class="bi bi-check-circle me-1"></i> Location captured: ' + lat.toFixed(6) + ', ' + lng.toFixed(6) + ' (Accuracy: ±' + Math.round(acc) + 'm' + (sampleCount > 1 ? ', ' + sampleCount + '-fix average' : '') + '). Click Save Changes to apply.';
+                    }
                 }
             </script>
 

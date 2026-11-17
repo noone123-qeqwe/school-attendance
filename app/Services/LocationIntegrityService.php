@@ -6,18 +6,38 @@ use App\Models\Attendance;
 
 class LocationIntegrityService
 {
+    /**
+     * Normalize only an unmistakably reversed pair where the supplied latitude
+     * is impossible. Valid coordinate pairs are never guessed or re-ordered.
+     *
+     * @return array{0: float, 1: float}
+     */
+    public static function normalizeCoordinates(float $lat, float $lng): array
+    {
+        if (abs($lat) > 90.0 && abs($lat) <= 180.0 && abs($lng) <= 90.0) {
+            [$lat, $lng] = [$lng, $lat];
+        }
+
+        if (!is_finite($lat) || !is_finite($lng) || abs($lat) > 90.0 || abs($lng) > 180.0) {
+            throw new \InvalidArgumentException('GPS coordinates are outside valid latitude/longitude ranges.');
+        }
+
+        return [$lat, $lng];
+    }
+
     /** A close outside fix is inconclusive, but it must never count as inside. */
     public function isUncertainBoundary(float $distance, int $radius, float $accuracy): bool
     {
-        return $distance > $radius
-            && $distance <= $radius + min(10.0, $accuracy / 2);
+        return is_finite($distance) && is_finite($accuracy) && $accuracy > 0
+            && $distance + $accuracy > $radius
+            && $distance - $accuracy <= $radius;
     }
 
     /** Browser timestamps help reject accidental stale fixes; they are not attestation. */
     public function isStaleClientFix(?int $timestampMs): bool
     {
         if ($timestampMs === null) {
-            return false; // Older clients do not send a timestamp.
+            return true;
         }
 
         $ageMs = (int) round(microtime(true) * 1000) - $timestampMs;
@@ -56,7 +76,11 @@ class LocationIntegrityService
             return null;
         }
 
-        $distance = $this->distanceMeters($lat, $lng, (float) $prior->last_latitude, (float) $prior->last_longitude);
+        try {
+            $distance = $this->distanceMeters($lat, $lng, (float) $prior->last_latitude, (float) $prior->last_longitude);
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
         $minimumDistance = max(0, $distance - $accuracy - (float) $prior->last_accuracy);
         $speedMetersPerSecond = $minimumDistance / $seconds;
 
@@ -73,13 +97,17 @@ class LocationIntegrityService
         ];
     }
 
-    private function distanceMeters(float $lat1, float $lng1, float $lat2, float $lng2): float
+    public function distanceMeters(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
+        [$lat1, $lng1] = self::normalizeCoordinates($lat1, $lng1);
+        [$lat2, $lng2] = self::normalizeCoordinates($lat2, $lng2);
+
         $latDelta = deg2rad($lat2 - $lat1);
         $lngDelta = deg2rad($lng2 - $lng1);
         $a = sin($latDelta / 2) ** 2
             + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($lngDelta / 2) ** 2;
+        $a = min(1.0, max(0.0, $a));
 
-        return 6371000 * 2 * atan2(sqrt($a), sqrt(max(0, 1 - $a)));
+        return 6371000.0 * 2.0 * atan2(sqrt($a), sqrt(max(0.0, 1.0 - $a)));
     }
 }

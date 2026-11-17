@@ -96,6 +96,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $this->session->token,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
 
@@ -118,6 +119,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $token,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ])->assertUnprocessable()->assertJsonPath('error_type', 'location_jump_review');
 
@@ -146,6 +148,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $token,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ])->assertForbidden()->assertJsonPath('error_type', 'device_mismatch');
 
@@ -169,6 +172,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $this->session->token,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
             'device_key' => 'other-phone',
             'credential' => ['id' => 'fake', 'response' => []],
@@ -194,6 +198,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $this->session->token,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
             'credential' => ['id' => 'fake', 'response' => []],
         ]);
@@ -214,6 +219,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $this->session->token,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
             'credential' => ['id' => 'fake', 'response' => []],
         ])->assertStatus(422)->assertSeeText('verification challenge expired');
@@ -227,6 +233,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $this->session->token,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 15,
         ]);
 
@@ -241,6 +248,7 @@ class QrDistanceValidationTest extends TestCase
                 'token' => $this->session->token,
                 'latitude' => 14.600000,
                 'longitude' => $this->classroomLng,
+                'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 5,
             ]);
 
@@ -257,6 +265,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $legacy,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ])->assertStatus(422);
 
@@ -266,6 +275,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $signed,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ])->assertOk()->assertJsonPath('success', true);
         $audit = \Spatie\Activitylog\Models\Activity::where('description', 'qr_scanned')->latest('id')->firstOrFail();
@@ -295,6 +305,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $signed,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ])->assertOk()->assertJsonPath('success', true);
 
@@ -319,6 +330,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $old,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ])->assertStatus(422)->assertJsonPath('error_detail', 'qr_replaced');
 
@@ -327,6 +339,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $new,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ])->assertStatus(422)->assertJsonPath('error_detail', 'qr_expired');
     }
@@ -342,6 +355,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $legacy,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
             'credential' => ['id' => 'fake', 'response' => []],
         ])->assertStatus(422);
@@ -367,6 +381,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $originalToken,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
             'credential' => ['id' => 'fake', 'response' => []],
         ])->assertOk()->assertJsonPath('success', true);
@@ -400,6 +415,7 @@ class QrDistanceValidationTest extends TestCase
             'token' => $originalToken,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
             'credential' => ['id' => 'fake', 'response' => []],
         ])->assertStatus(422);
@@ -433,6 +449,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 5,
         ]);
 
@@ -452,6 +469,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 14.500300,
             'longitude' => 121.000000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 10,
         ]);
 
@@ -461,15 +479,17 @@ class QrDistanceValidationTest extends TestCase
 
     public function test_student_beyond_50_meters_is_rejected_even_with_accuracy_margin()
     {
-        // Reported accuracy must never reduce the measured 64.5m distance.
+        // The ±25m uncertainty overlaps 50m, so the system should request a
+        // clearer fix instead of labeling this point definitely outside.
         $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
             'token'     => $this->session->token,
             'latitude'  => 14.500580,
             'longitude' => 121.000000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 25,
         ]);
 
-        $response->assertStatus(422)->assertJsonPath('error_type', 'outside_classroom');
+        $response->assertStatus(422)->assertJsonPath('error_type', 'location_uncertain');
         $this->assertGreaterThan(50, $response->json('distance'));
     }
 
@@ -481,8 +501,8 @@ class QrDistanceValidationTest extends TestCase
             'token' => $this->session->token,
             'latitude' => 14.500495,
             'longitude' => $this->classroomLng,
-            'accuracy' => 20,
             'location_timestamp_ms' => (int) round(microtime(true) * 1000),
+            'accuracy' => 20,
         ]);
 
         $response->assertUnprocessable()->assertJsonPath('error_type', 'location_uncertain');
@@ -517,6 +537,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 14.501800,
             'longitude' => 121.000000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 15,
         ]);
 
@@ -537,6 +558,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 14.500800,
             'longitude' => 121.000000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 180, // Very weak signal / cell tower fix
         ]);
 
@@ -553,6 +575,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 0, // Mock or corrupted GPS
         ]);
 
@@ -575,6 +598,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 14.500670,
             'longitude' => 121.000000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 10,
         ]);
 
@@ -595,6 +619,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 14.501500, // ~166m away
             'longitude' => 121.000000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 10,
         ]);
 
@@ -619,7 +644,8 @@ class QrDistanceValidationTest extends TestCase
             'token'      => $this->session->token,
             'latitude'   => 14.500300,
             'longitude'  => 121.000000,
-            'accuracy'   => 25,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
+            'accuracy'   => 10,
             'credential' => '{"id":"fake","rawId":"fake","response":{},"type":"public-key"}',
         ]);
 
@@ -646,16 +672,17 @@ class QrDistanceValidationTest extends TestCase
 
         $outsideResponse = $this->actingAs($student2)->postJson('/qr/verify-complete', [
             'token'      => $this->session->token,
-            'latitude'   => 14.500580, // ~64.5m: accuracy must not expand the 50m boundary
+            'latitude'   => 14.500580, // ~64.5m, with uncertainty overlapping the 50m boundary
             'longitude'  => 121.000000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'   => 25,
             'credential' => '{"id":"fake2","rawId":"fake2","response":{},"type":"public-key"}',
         ]);
 
         $outsideResponse->assertStatus(422);
         $this->assertFalse($outsideResponse->json('success'));
-        $this->assertEquals('outside_classroom', $outsideResponse->json('error_type'));
-        $this->assertStringContainsString('outside the classroom', $outsideResponse->json('message'));
+        $this->assertEquals('location_uncertain', $outsideResponse->json('error_type'));
+        $this->assertStringContainsString('uncertainty overlaps', $outsideResponse->json('message'));
         $this->assertEquals(50, $outsideResponse->json('radius'));
 
         // Weak GPS accuracy check on verify-complete
@@ -663,6 +690,7 @@ class QrDistanceValidationTest extends TestCase
             'token'      => $this->session->token,
             'latitude'   => 14.500200,
             'longitude'  => 121.000000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'   => 200,
             'credential' => '{"id":"fake2","rawId":"fake2","response":{},"type":"public-key"}',
         ]);
@@ -683,8 +711,8 @@ class QrDistanceValidationTest extends TestCase
             'token' => $this->session->token,
             'latitude' => 14.500495,
             'longitude' => $this->classroomLng,
-            'accuracy' => 20,
             'location_timestamp_ms' => (int) round(microtime(true) * 1000),
+            'accuracy' => 20,
             'credential' => ['id' => 'fake', 'response' => []],
         ]);
 
@@ -706,6 +734,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 14.500612,
             'longitude' => 121.000000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 5,
         ]);
 
@@ -715,15 +744,17 @@ class QrDistanceValidationTest extends TestCase
 
     public function test_indoor_gps_accuracy_does_not_expand_boundary()
     {
-        // Student is 85m away. A 50m accuracy reading does not make that inside.
+        // Student is 85m away. With ±50m uncertainty, request a clearer fix;
+        // never widen the geofence and accept it.
         $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
             'token'     => $this->session->token,
             'latitude'  => 14.500765,
             'longitude' => 121.000000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 50,
         ]);
 
-        $response->assertStatus(422)->assertJsonPath('error_type', 'outside_classroom');
+        $response->assertStatus(422)->assertJsonPath('error_type', 'location_uncertain');
     }
 
     public function test_presence_verification_uses_raw_distance()
@@ -733,6 +764,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 10.0,
         ]);
 
@@ -741,13 +773,14 @@ class QrDistanceValidationTest extends TestCase
             'session_id' => $this->session->id,
             'latitude'   => 14.500580,
             'longitude'  => 121.000000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'   => 25,
         ]);
 
         $response->assertStatus(200);
         $this->assertTrue($response->json('success'));
         $this->assertEquals('Present', $response->json('status'));
-        $this->assertEquals('warning', $response->json('monitoring_status'));
+        $this->assertEquals('unreliable_gps', $response->json('monitoring_status'));
     }
 
     public function test_geofence_can_be_disabled_with_zero_radius()
@@ -761,6 +794,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 14.950000,
             'longitude' => 121.450000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 10,
         ]);
 
@@ -781,6 +815,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 14.509600,
             'longitude' => 121.009000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 12,
         ]);
 
@@ -792,11 +827,21 @@ class QrDistanceValidationTest extends TestCase
 
     public function test_teacher_can_update_active_session_location_via_endpoint()
     {
+        $stale = $this->actingAs($this->teacher)->postJson(route('teacher.qr.update-location'), [
+            'session_id' => $this->session->id,
+            'classroom_lat' => 14.509612,
+            'classroom_lng' => 121.009045,
+            'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000) - 30000,
+        ]);
+        $stale->assertStatus(422)->assertSeeText('GPS reading is stale');
+
         $response = $this->actingAs($this->teacher)->postJson(route('teacher.qr.update-location'), [
             'session_id'    => $this->session->id,
             'classroom_lat' => 14.509612,
             'classroom_lng' => 121.009045,
             'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'radius_meters' => 100,
         ]);
 
@@ -824,14 +869,25 @@ class QrDistanceValidationTest extends TestCase
             'classroom_lat' => 12.371250,
             'classroom_lng' => 123.619437,
             'teacher_accuracy' => 250,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
         ]);
         $poor->assertStatus(422);
+
+        $stale = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $this->subject->code,
+            'classroom_lat' => 12.371250,
+            'classroom_lng' => 123.619437,
+            'teacher_accuracy' => 12,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000) - 30000,
+        ]);
+        $stale->assertStatus(422)->assertSeeText('expired before the session started');
 
         $good = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $this->subject->code,
             'classroom_lat' => 12.371250,
             'classroom_lng' => 123.619437,
             'teacher_accuracy' => 12,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
         ]);
         $good->assertOk()->assertJsonPath('radius_meters', 50);
         $this->assertDatabaseHas('attendance_sessions', [
@@ -858,6 +914,7 @@ class QrDistanceValidationTest extends TestCase
             'classroom_lat' => 0,
             'classroom_lng' => 0,
             'teacher_accuracy' => 5,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
         ]);
         $invalid->assertStatus(422);
         $this->session->refresh();
@@ -867,10 +924,19 @@ class QrDistanceValidationTest extends TestCase
 
     public function test_geofenced_scan_requires_student_accuracy_and_coordinates()
     {
+        $missingTimestamp = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $this->session->token,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+        ]);
+        $missingTimestamp->assertStatus(422)->assertJsonPath('error_type', 'stale_location');
+
         $missingAccuracy = $this->actingAs($this->student)->postJson('/qr/scan-process', [
             'token' => $this->session->token,
             'latitude' => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
         ]);
         $missingAccuracy->assertStatus(422)->assertJsonPath('error_type', 'unreliable_gps');
 
@@ -894,6 +960,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 12.371300,
             'longitude' => 123.619437,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 10,
         ]);
 
@@ -914,6 +981,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 123.619440,
             'longitude' => 12.371260,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 8,
         ]);
 
@@ -933,6 +1001,7 @@ class QrDistanceValidationTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 12.371250,
             'longitude' => 123.619437,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 180,
         ]);
 

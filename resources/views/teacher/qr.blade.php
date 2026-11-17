@@ -1011,6 +1011,7 @@ startBtn.addEventListener('click', async () => {
             classroom_lat: lat,
             classroom_lng: lng,
             teacher_accuracy: selectedRadius > 0 && !usingCampusAnchor ? teacherLocation.accuracy : null,
+            teacher_location_timestamp_ms: selectedRadius > 0 && !usingCampusAnchor ? teacherLocation.timestamp : null,
             location_source: usingCampusAnchor ? 'campus_anchor' : 'device',
             radius_meters: selectedRadius
         };
@@ -2164,6 +2165,7 @@ async function recalibrateLocation() {
             classroom_lat: freshLocation.latitude,
             classroom_lng: freshLocation.longitude,
             teacher_accuracy: freshLocation.accuracy,
+            teacher_location_timestamp_ms: freshLocation.timestamp,
             location_source: 'device'
         });
         if (updated) showTeacherToast('Session center updated to this device’s current location.', 'success');
@@ -2206,7 +2208,7 @@ function toggleGeofenceDisable() {
 }
 
 function captureTeacherLocation() {
-    if (!navigator.geolocation) {
+    if (!navigator.geolocation || !window.GpsSampler) {
         teacherLocationIssue = 'Location services are unavailable in this browser. Use HTTPS and enable device location.';
         renderLocationHUD();
         return Promise.resolve(null);
@@ -2217,52 +2219,34 @@ function captureTeacherLocation() {
     teacherLocationIssue = '';
     renderLocationHUD('acquiring');
 
-    return new Promise((resolve) => {
-        let watchId = null;
-        let finished = false;
-        let bestAccuracy = Infinity;
-        const readings = [];
-        const finish = (location) => {
-            if (finished) return;
-            finished = true;
-            clearTimeout(timer);
-            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-            if (requestSerial !== locationRequestSerial) return resolve(null);
-            teacherLocation = location;
-            if (!location) {
-                teacherLocationIssue = Number.isFinite(bestAccuracy)
-                    ? `Device location is weak or unstable (best accuracy ±${Math.round(bestAccuracy)}m). Keep Wi-Fi enabled, move near a window, and retry.`
-                    : 'Could not get a fresh device location. Check browser permission and device location, then retry.';
-            }
-            renderLocationHUD();
-            resolve(location);
-        };
-        const timer = setTimeout(() => finish(null), 15000);
-        watchId = navigator.geolocation.watchPosition((pos) => {
-            const { latitude, longitude, accuracy } = pos.coords;
-            const age = Date.now() - pos.timestamp;
-            if (!Number.isFinite(latitude) || Math.abs(latitude) > 90 ||
-                !Number.isFinite(longitude) || Math.abs(longitude) > 180 ||
-                !Number.isFinite(accuracy) || accuracy <= 0 || age < 0 || age > 10000) return;
-            bestAccuracy = Math.min(bestAccuracy, accuracy);
-            if (accuracy > 50) return;
-            if (readings.some(previous => previous.timestamp === pos.timestamp)) return;
-            const current = { latitude, longitude, accuracy, timestamp: pos.timestamp };
-            readings.push(current);
-            for (let i = 0; i < readings.length; i++) {
-                for (let j = i + 1; j < readings.length; j++) {
-                    const a = readings[i], b = readings[j];
-                    const latMeters = (a.latitude - b.latitude) * 111195;
-                    const lngMeters = (a.longitude - b.longitude) * 111195 * Math.cos(a.latitude * Math.PI / 180);
-                    if (Math.hypot(latMeters, lngMeters) <= Math.max(12, a.accuracy, b.accuracy)) {
-                        finish(a.accuracy <= b.accuracy ? a : b);
-                        return;
-                    }
-                }
-            }
-        }, (error) => {
-            if (error.code === 1) finish(null);
-        }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+    return window.GpsSampler.capturePosition({
+        timeoutMs: 15000,
+        settleMs: 3500,
+        targetAccuracy: 15,
+        maxAcceptableAccuracy: 50,
+        minClusterSamples: 2,
+        allowSingleFallback: false,
+        requireClusterIfDisagreeing: true,
+        maxSamples: 5,
+    }).then((result) => {
+        if (requestSerial !== locationRequestSerial) return null;
+        if (result.ok && result.fix) {
+            teacherLocation = {
+                latitude: result.fix.lat,
+                longitude: result.fix.lng,
+                accuracy: result.fix.acc,
+                timestamp: result.fix.timestamp,
+            };
+        } else {
+            teacherLocation = null;
+            teacherLocationIssue = result.reason === 'permission_denied'
+                ? 'Location permission denied. Allow location access in your browser and retry.'
+                : (Number.isFinite(result.bestRawAccuracy)
+                    ? `Device location is weak or unstable (best accuracy ±${Math.round(result.bestRawAccuracy)}m). Keep Wi-Fi enabled, move near a window, and retry.`
+                    : 'Could not get a fresh device location. Check browser permission and device location, then retry.');
+        }
+        renderLocationHUD();
+        return teacherLocation;
     });
 }
 

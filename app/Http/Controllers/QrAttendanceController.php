@@ -76,12 +76,16 @@ class QrAttendanceController extends Controller
             return false;
         }
 
-        return $this->distance(
-            (float) $session->classroom_lat,
-            (float) $session->classroom_lng,
-            $anchor['latitude'],
-            $anchor['longitude']
-        ) <= 2;
+        try {
+            return $this->distance(
+                (float) $session->classroom_lat,
+                (float) $session->classroom_lng,
+                $anchor['latitude'],
+                $anchor['longitude']
+            ) <= 2;
+        } catch (\InvalidArgumentException) {
+            return false;
+        }
     }
 
     /**
@@ -94,27 +98,7 @@ class QrAttendanceController extends Controller
      */
     public static function normalizeCoordinates(float $lat, float $lng): array
     {
-        // 1. Definite swap: Latitude cannot exceed 90 or be less than -90 degrees
-        if (abs($lat) > 90.0 && abs($lng) <= 90.0) {
-            $temp = $lat;
-            $lat = $lng;
-            $lng = $temp;
-        }
-
-        // 2. Regional swap detection for Philippines / Southeast Asia:
-        // Longitudes in the Philippines are ~115° to ~128°E, while latitudes are ~4° to ~22°N.
-        // If someone passes lat=123.619 and lng=12.371, lat > 50 and lng < 30 means they are inverted.
-        if ($lat > 50.0 && $lat <= 180.0 && $lng >= -90.0 && $lng <= 50.0) {
-            $temp = $lat;
-            $lat = $lng;
-            $lng = $temp;
-        }
-
-        // 3. Clamp within valid mathematical boundaries
-        $lat = min(90.0, max(-90.0, $lat));
-        $lng = min(180.0, max(-180.0, $lng));
-
-        return [$lat, $lng];
+        return LocationIntegrityService::normalizeCoordinates($lat, $lng);
     }
 
     /**
@@ -145,7 +129,16 @@ class QrAttendanceController extends Controller
 
         // The teacher's laptop is the only central device for the geofence
         if ($session->classroom_lat !== null && $session->classroom_lng !== null) {
-            [$cLat, $cLng] = self::normalizeCoordinates((float) $session->classroom_lat, (float) $session->classroom_lng);
+            try {
+                [$cLat, $cLng] = self::normalizeCoordinates((float) $session->classroom_lat, (float) $session->classroom_lng);
+            } catch (\InvalidArgumentException) {
+                return [
+                    'schoolLat' => null,
+                    'schoolLng' => null,
+                    'isExplicit' => false,
+                    'disabled' => false,
+                ];
+            }
             return [
                 'schoolLat'  => $cLat,
                 'schoolLng'  => $cLng,
@@ -356,6 +349,7 @@ class QrAttendanceController extends Controller
             'classroom_lat'        => 'nullable|numeric|between:-90,90',
             'classroom_lng'        => 'nullable|numeric|between:-180,180',
             'teacher_accuracy'     => 'nullable|numeric|gt:0|max:10000',
+            'teacher_location_timestamp_ms' => 'nullable|integer',
             'location_source'      => 'nullable|in:device,campus_anchor',
             'radius_meters'        => 'nullable|integer|min:0|max:1000',
             'grace_period_minutes' => 'nullable|integer|min:1|max:60',
@@ -388,6 +382,11 @@ class QrAttendanceController extends Controller
             }
             if ($radius > 0 && (float) $request->teacher_accuracy > 50) {
                 return response()->json(['success' => false, 'message' => 'Device GPS accuracy is too poor. Please retry location capture or use the configured campus anchor.'], 422);
+            }
+            if ($radius > 0 && app(LocationIntegrityService::class)->isStaleClientFix(
+                $request->filled('teacher_location_timestamp_ms') ? (int) $request->teacher_location_timestamp_ms : null
+            )) {
+                return response()->json(['success' => false, 'message' => 'The teacher GPS reading expired before the session started. Refresh the location and retry.'], 422);
             }
             $lat = $request->classroom_lat;
             $lng = $request->classroom_lng;
@@ -473,6 +472,7 @@ class QrAttendanceController extends Controller
             'classroom_lat' => 'nullable|numeric|between:-90,90',
             'classroom_lng' => 'nullable|numeric|between:-180,180',
             'teacher_accuracy' => 'nullable|numeric|gt:0|max:10000',
+            'teacher_location_timestamp_ms' => 'nullable|integer',
             'location_source' => 'nullable|in:device,campus_anchor',
             'radius_meters' => 'nullable|integer|min:0|max:1000',
         ]);
@@ -509,6 +509,11 @@ class QrAttendanceController extends Controller
                 }
                 if ((float) $request->teacher_accuracy > 50) {
                     return response()->json(['success' => false, 'message' => 'Device GPS accuracy is too poor. Please retry or use the configured campus anchor.'], 422);
+                }
+                if (app(LocationIntegrityService::class)->isStaleClientFix(
+                    $request->filled('teacher_location_timestamp_ms') ? (int) $request->teacher_location_timestamp_ms : null
+                )) {
+                    return response()->json(['success' => false, 'message' => 'The teacher GPS reading is stale. Refresh the location and retry.'], 422);
                 }
                 [$lat, $lng] = self::normalizeCoordinates((float) $request->classroom_lat, (float) $request->classroom_lng);
             }
@@ -1077,12 +1082,13 @@ class QrAttendanceController extends Controller
     {
         $gpsVerificationEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification');
         $request->validate([
-            'session_id'    => 'required|integer',
-            'latitude'      => [$gpsVerificationEnabled ? 'required_without:error_code' : 'nullable', ValidCoordinate::latitude()],
-            'longitude'     => [$gpsVerificationEnabled ? 'required_without:error_code' : 'nullable', ValidCoordinate::longitude()],
-            'accuracy'      => 'nullable|numeric',
-            'error_code'    => 'nullable|string|max:50',
-            'error_message' => 'nullable|string|max:255',
+            'session_id'            => 'required|integer',
+            'latitude'              => [$gpsVerificationEnabled ? 'required_without:error_code' : 'nullable', ValidCoordinate::latitude()],
+            'longitude'             => [$gpsVerificationEnabled ? 'required_without:error_code' : 'nullable', ValidCoordinate::longitude()],
+            'accuracy'              => 'nullable|numeric',
+            'location_timestamp_ms' => 'nullable|integer',
+            'error_code'            => 'nullable|string|max:50',
+            'error_message'         => 'nullable|string|max:255',
         ]);
 
         $user = $request->user();
@@ -1236,9 +1242,24 @@ class QrAttendanceController extends Controller
             ]);
         }
 
-        $studentLat = (float) $request->latitude;
-        $studentLng = (float) $request->longitude;
+        [$studentLat, $studentLng] = self::normalizeCoordinates((float) $request->latitude, (float) $request->longitude);
         $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
+
+        if ($gpsVerificationEnabled && app(LocationIntegrityService::class)->isStaleClientFix(
+            $request->filled('location_timestamp_ms') ? (int) $request->input('location_timestamp_ms') : null
+        )) {
+            $attendance->update([
+                'last_location_check_at' => $now,
+                'monitoring_status'      => ($attendance->monitoring_status === 'warning') ? 'warning' : 'unreliable_gps',
+            ]);
+
+            return response()->json([
+                'success'           => true,
+                'status'            => $attendance->status,
+                'monitoring_status' => 'unreliable_gps',
+                'message'           => 'Stale GPS fix ignored. Retaining current presence status while acquiring fresh location.'
+            ]);
+        }
 
         // Do not turn an unknown or imprecise fix into an outside-classroom penalty.
         if ($accuracy === null || $accuracy <= 0) {
@@ -1289,7 +1310,23 @@ class QrAttendanceController extends Controller
 
         $now = now();
 
-        if ($distance <= $radius) {
+        if (app(LocationIntegrityService::class)->isUncertainBoundary($distance, $radius, $accuracy)) {
+            $attendance->update([
+                'last_location_check_at' => $now,
+                'monitoring_status' => ($attendance->monitoring_status === 'warning') ? 'warning' : 'unreliable_gps',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'status' => $attendance->status,
+                'monitoring_status' => 'unreliable_gps',
+                'distance' => round($distance),
+                'radius' => $radius,
+                'message' => 'GPS uncertainty overlaps the classroom boundary. Current attendance status is retained while a clearer fix is requested.',
+            ]);
+        }
+
+        if ($distance + $accuracy <= $radius) {
             // Check for impossible velocity / teleportation leap INTO classroom
             if ($attendance->last_latitude !== null && $attendance->last_longitude !== null && $attendance->last_location_check_at !== null) {
                 $prevLat = (float) $attendance->last_latitude;
@@ -2039,16 +2076,16 @@ class QrAttendanceController extends Controller
                     ]);
                 }
 
+                if (app(LocationIntegrityService::class)->isUncertainBoundary($distance, $radiusMeters, $studentAccuracy)) {
+                    return response()->json([
+                        'success' => false,
+                        'error_type' => 'location_uncertain',
+                        'distance' => round($distance),
+                        'radius' => $radiusMeters,
+                        'message' => 'GPS uncertainty overlaps the classroom boundary. Retry for a clearer location reading or ask your instructor for help.',
+                    ], 422);
+                }
                 if ($distance > $radiusMeters) {
-                    if (app(LocationIntegrityService::class)->isUncertainBoundary($distance, $radiusMeters, $studentAccuracy)) {
-                        return response()->json([
-                            'success' => false,
-                            'error_type' => 'location_uncertain',
-                            'distance' => round($distance),
-                            'radius' => $radiusMeters,
-                            'message' => 'Your GPS fix is close to the classroom boundary. Please retry for a clearer reading or ask your instructor for help.',
-                        ], 422);
-                    }
                     Log::warning('QR distance validation failed: student outside classroom', [
                         'session_id'                    => $session->id,
                         'student_id'                    => $user->id,
@@ -2361,6 +2398,7 @@ class QrAttendanceController extends Controller
 
     public function processScan(Request $request)
     {
+        $gpsVerificationEnabled = app(FeatureFlagService::class)->enabled('feature.gps_verification');
         $request->validate([
             'token'     => 'required_without:code|nullable|string',
             'code'      => 'required_without:token|nullable|string',
@@ -2781,12 +2819,19 @@ class QrAttendanceController extends Controller
         }
 
         // 3. Geofence Distance Check
-        $radiusMeters = app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification')
+        $radiusMeters = $gpsVerificationEnabled
             ? (int) $session->getAllowedRadius()
             : 0;
         $hasCoordinates = $request->filled('latitude') && $request->filled('longitude');
 
         if ($radiusMeters > 0) {
+            if (!$hasCoordinates) {
+                return response()->json([
+                    'success' => false,
+                    'error_type' => 'location_required',
+                    'message' => 'A fresh student device GPS location is required. Enable location and retry.'
+                ], 422);
+            }
             if (app(LocationIntegrityService::class)->isStaleClientFix($request->filled('location_timestamp_ms') ? (int) $request->location_timestamp_ms : null)) {
                 return response()->json([
                     'success' => false,
@@ -2799,13 +2844,6 @@ class QrAttendanceController extends Controller
                     'success' => false,
                     'error_type' => 'teacher_location_unavailable',
                     'message' => 'The session location center is not set. Please ask your instructor to update the device location or select the configured campus anchor.'
-                ], 422);
-            }
-            if (!$hasCoordinates) {
-                return response()->json([
-                    'success' => false,
-                    'error_type' => 'location_required',
-                    'message' => 'A fresh student device GPS location is required. Enable location and retry.'
                 ], 422);
             }
             [$studentLat, $studentLng] = self::normalizeCoordinates((float) $request->latitude, (float) $request->longitude);
@@ -2858,16 +2896,16 @@ class QrAttendanceController extends Controller
                             'allowed_radius_meters' => $radiusMeters,
                         ]);
                     }
+                    if (app(LocationIntegrityService::class)->isUncertainBoundary($distance, $radiusMeters, $accuracy)) {
+                        return response()->json([
+                            'success' => false,
+                            'error_type' => 'location_uncertain',
+                            'distance' => round($distance),
+                            'radius' => $radiusMeters,
+                            'message' => 'GPS uncertainty overlaps the classroom boundary. Retry for a clearer location reading or ask your instructor for help.',
+                        ], 422);
+                    }
                     if ($distance > $radiusMeters) {
-                        if (app(LocationIntegrityService::class)->isUncertainBoundary($distance, $radiusMeters, $accuracy)) {
-                            return response()->json([
-                                'success' => false,
-                                'error_type' => 'location_uncertain',
-                                'distance' => round($distance),
-                                'radius' => $radiusMeters,
-                                'message' => 'Your GPS fix is close to the classroom boundary. Please retry for a clearer reading or ask your instructor for help.',
-                            ], 422);
-                        }
                         return response()->json([
                             'success'            => false,
                             'error_type'         => 'outside_classroom',
@@ -3053,27 +3091,6 @@ class QrAttendanceController extends Controller
      */
     public function distance(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
-        [$lat1, $lon1] = self::normalizeCoordinates($lat1, $lon1);
-        [$lat2, $lon2] = self::normalizeCoordinates($lat2, $lon2);
-
-        $earthRadius = 6371000.0; // Mean Earth radius in meters (WGS84 spherical approximation)
-
-        $lat1Rad = deg2rad($lat1);
-        $lat2Rad = deg2rad($lat2);
-        $dLatRad = deg2rad($lat2 - $lat1);
-        $dLonRad = deg2rad($lon2 - $lon1);
-
-        $sinHalfLat = sin($dLatRad / 2.0);
-        $sinHalfLon = sin($dLonRad / 2.0);
-
-        $a = ($sinHalfLat * $sinHalfLat) +
-             cos($lat1Rad) * cos($lat2Rad) * ($sinHalfLon * $sinHalfLon);
-
-        // Clamp $a between 0.0 and 1.0 to prevent floating-point precision domain errors in sqrt/asin
-        $a = min(1.0, max(0.0, $a));
-
-        $c = 2.0 * atan2(sqrt($a), sqrt(1.0 - $a));
-
-        return $earthRadius * $c;
+        return app(LocationIntegrityService::class)->distanceMeters($lat1, $lon1, $lat2, $lon2);
     }
 }

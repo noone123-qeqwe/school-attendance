@@ -593,28 +593,24 @@ var faceAttempt = null;
 var faceSubmitting = false;
 
 function normalizeCoordinates(lat, lng) {
+    if (window.GpsSampler) return window.GpsSampler.normalizeCoordinates(lat, lng);
     let latitude = Number(lat);
     let longitude = Number(lng);
-    if (isNaN(latitude) || isNaN(longitude)) return [0, 0];
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
 
-    // Definite swap: lat cannot exceed 90 or be less than -90
-    if (Math.abs(latitude) > 90 && Math.abs(longitude) <= 90) {
+    if (Math.abs(latitude) > 90 && Math.abs(latitude) <= 180 && Math.abs(longitude) <= 90) {
         const t = latitude;
         latitude = longitude;
         longitude = t;
     }
-    // Regional swap detection (e.g. Philippines lat ~12, lng ~123)
-    if (latitude > 50 && latitude <= 180 && longitude >= -90 && longitude <= 50) {
-        const t = latitude;
-        latitude = longitude;
-        longitude = t;
-    }
-    return [latitude, longitude];
+    return Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180 ? [latitude, longitude] : null;
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
+    if (window.GpsSampler) return window.GpsSampler.distanceMeters(lat1, lon1, lat2, lon2);
     var c1 = normalizeCoordinates(lat1, lon1);
     var c2 = normalizeCoordinates(lat2, lon2);
+    if (!c1 || !c2) return Infinity;
     lat1 = c1[0]; lon1 = c1[1];
     lat2 = c2[0]; lon2 = c2[1];
 
@@ -683,16 +679,19 @@ let bestAccuracy = Infinity;
 let firstLocationReceived = false;
 
 const GPS_TIMEOUT_MS = 15000;            // Time to obtain a fresh, reliable device fix
-const GPS_FAST_FALLBACK_MS = 3000;       // Accept a good enough location quickly
-const GPS_QUICK_ACCEPT = 30;
+const GPS_FAST_FALLBACK_MS = 3000;       // Wait briefly for a confirming multi-fix lock
+const GPS_QUICK_ACCEPT = 12;
 const GPS_MAX_FAST_ACCEPT = 50;
 const GPS_MAX_ACCEPTABLE_ACCURACY = 50;
 
 function isNearBoundary(distance, accuracy) {
-    return distance > RADIUS_METERS && distance <= RADIUS_METERS + Math.min(10, accuracy / 2);
+    return distance + accuracy > RADIUS_METERS && distance - accuracy <= RADIUS_METERS;
 }
 
 function validFreshPosition(pos) {
+    if (window.GpsSampler) {
+        return window.GpsSampler.isValidSample(pos, { maxAgeMs: 10000, maxFutureMs: 5000 });
+    }
     if (!pos || !pos.coords) return false;
     var c = pos.coords;
     var age = Date.now() - pos.timestamp;
@@ -701,58 +700,21 @@ function validFreshPosition(pos) {
         Math.abs(c.longitude) <= 180 && Number.isFinite(c.accuracy) && c.accuracy > 0;
 }
 
-// Wait briefly for a second independent fix. Widely separated fixes indicate indoor drift.
-function getFreshStablePosition() {
-    return new Promise(function(resolve) {
-        if (!navigator.geolocation) { resolve(null); return; }
-        var readings = [];
-        var watchId = null;
-        var finished = false;
-        var timer = null;
-        var finish = function(result) {
-            if (finished) return;
-            finished = true;
-            clearTimeout(timer);
-            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-            resolve(result);
-        };
-        timer = setTimeout(function() {
-            if (!readings.length) { finish(null); return; }
-            if (readings.length > 1) {
-                // Do not send a single favorable outlier when fresh fixes disagree.
-                var stable = readings.some(function(a, i) {
-                    return readings.some(function(b, j) {
-                        return i !== j && calculateDistance(a.coords.latitude, a.coords.longitude,
-                            b.coords.latitude, b.coords.longitude) <= Math.max(12, a.coords.accuracy, b.coords.accuracy);
-                    });
-                });
-                if (!stable) { finish(null); return; }
-            }
-            readings.sort(function(a, b) { return a.coords.accuracy - b.coords.accuracy; });
-            finish(readings[0]);
-        }, 12000);
-        try {
-            watchId = navigator.geolocation.watchPosition(function(pos) {
-                if (!validFreshPosition(pos) || pos.coords.accuracy > GPS_MAX_ACCEPTABLE_ACCURACY) return;
-                if (readings.some(function(previous) { return previous.timestamp === pos.timestamp; })) return;
-                readings.push(pos);
-                if (readings.length > 5) readings.shift();
-                for (var i = 0; i < readings.length; i++) {
-                    for (var j = i + 1; j < readings.length; j++) {
-                        var a = readings[i], b = readings[j];
-                        var separation = calculateDistance(a.coords.latitude, a.coords.longitude,
-                            b.coords.latitude, b.coords.longitude);
-                        if (separation <= Math.max(12, a.coords.accuracy, b.coords.accuracy)) {
-                            finish(a.coords.accuracy <= b.coords.accuracy ? a : b);
-                            return;
-                        }
-                    }
-                }
-            }, function(err) {
-                if (err.code === 1) finish(null);
-            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 });
-        } catch (error) { finish(null); }
+// Wait briefly for confirming independent fixes and fuse via inverse-variance centroid.
+async function getFreshStablePosition() {
+    if (!navigator.geolocation || !window.GpsSampler) return null;
+    var result = await window.GpsSampler.capturePosition({
+        timeoutMs: 12000,
+        settleMs: 2800,
+        targetAccuracy: GPS_QUICK_ACCEPT,
+        maxAcceptableAccuracy: GPS_MAX_ACCEPTABLE_ACCURACY,
+        minClusterSamples: 2,
+        allowSingleFallback: false,
+        maxSamples: 5,
+        requireClusterIfDisagreeing: true,
+        maxSpreadMeters: 60,
     });
+    return result.ok && result.fix ? result.fix.toGeolocationPosition() : null;
 }
 
 var PAGE_STATUS = '{{ $status ?? "ready" }}';
@@ -807,23 +769,7 @@ function startGPS() {
 }
 
 function requestLocation(options) {
-    if (locationWatcher !== null) {
-        navigator.geolocation.clearWatch(locationWatcher);
-        locationWatcher = null;
-    }
-    if (locationTimeoutId) {
-        clearTimeout(locationTimeoutId);
-        locationTimeoutId = null;
-    }
-    if (fastFallbackTimer) {
-        clearTimeout(fastFallbackTimer);
-        fastFallbackTimer = null;
-    }
-
-    bestLocation = null;
-    bestAccuracy = Infinity;
-
-    var acceptBestLocation = function(pos, accuracyLabel) {
+    var clearGpsTimers = function() {
         if (locationWatcher !== null) {
             navigator.geolocation.clearWatch(locationWatcher);
             locationWatcher = null;
@@ -832,6 +778,23 @@ function requestLocation(options) {
             clearTimeout(locationTimeoutId);
             locationTimeoutId = null;
         }
+        if (fastFallbackTimer) {
+            clearTimeout(fastFallbackTimer);
+            fastFallbackTimer = null;
+        }
+    };
+
+    clearGpsTimers();
+    bestLocation = null;
+    bestAccuracy = Infinity;
+    var locationReadings = [];
+    var bestEstimate = null;
+    var locationAccepted = false;
+
+    var acceptBestLocation = function(pos, accuracyLabel) {
+        if (locationAccepted) return;
+        locationAccepted = true;
+        clearGpsTimers();
 
         var lat = pos.coords.latitude;
         var lng = pos.coords.longitude;
@@ -858,8 +821,8 @@ function requestLocation(options) {
             var dist = calculateDistance(lat, lng, CLASSROOM_LAT, CLASSROOM_LNG);
             console.debug('Teacher laptop proximity check:', { rawDistanceMeters: dist, finalDistanceMeters: dist, allowedRadiusMeters: RADIUS_METERS });
 
-            if (dist > RADIUS_METERS) {
-                if (isNearBoundary(dist, accuracy)) showLocationUncertainError(dist, accuracy);
+            if (dist + accuracy > RADIUS_METERS) {
+                if (isNearBoundary(dist, accuracy) || dist <= RADIUS_METERS) showLocationUncertainError(dist, accuracy);
                 else showOutsideClassroomError(dist, RADIUS_METERS);
                 return;
             }
@@ -874,6 +837,7 @@ function requestLocation(options) {
     };
 
     var onSuccess = function(pos) {
+        if (locationAccepted) return;
         console.log('GPS Success:', pos.coords.latitude, pos.coords.longitude, 'Accuracy:', pos.coords.accuracy + 'm');
 
         if (!validFreshPosition(pos)) return;
@@ -882,31 +846,47 @@ function requestLocation(options) {
             bestLocation = pos;
         }
 
+        var candidatePos = pos;
+        var evalAcc = pos.coords.accuracy;
+        var clustered = false;
+        var sampleCount = 1;
+
+        if (pos.coords.accuracy <= GPS_MAX_ACCEPTABLE_ACCURACY) {
+            var normalized = window.GpsSampler
+                ? window.GpsSampler.normalizeSample(pos)
+                : { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy, timestamp: pos.timestamp };
+            if (normalized && !locationReadings.some(function(r) {
+                return r.timestamp === normalized.timestamp && r.lat === normalized.lat && r.lng === normalized.lng;
+            })) {
+                locationReadings.push(normalized);
+                locationReadings.sort(function(a, b) { return a.acc - b.acc; });
+                if (locationReadings.length > 5) locationReadings.pop();
+            }
+            if (window.GpsSampler && locationReadings.length) {
+                bestEstimate = window.GpsSampler.fuseCluster(locationReadings, { maxSpreadMeters: 60 });
+                candidatePos = bestEstimate.toGeolocationPosition();
+                evalAcc = bestEstimate.acc;
+                clustered = bestEstimate.clustered;
+                sampleCount = bestEstimate.sampleCount;
+            }
+        }
+
         var isWithinBounds = false;
         if (RADIUS_METERS > 0 && CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
-            var rawDist = calculateDistance(pos.coords.latitude, pos.coords.longitude, CLASSROOM_LAT, CLASSROOM_LNG);
-            isWithinBounds = (rawDist <= RADIUS_METERS);
+            var rawDist = calculateDistance(candidatePos.coords.latitude, candidatePos.coords.longitude, CLASSROOM_LAT, CLASSROOM_LNG);
+            isWithinBounds = (rawDist + evalAcc <= RADIUS_METERS);
         } else {
             isWithinBounds = true;
         }
 
-        if (pos.coords.accuracy <= GPS_QUICK_ACCEPT && isWithinBounds) {
-            acceptBestLocation(pos, 'Location confirmed');
-            return;
-        }
-
-        if (pos.coords.accuracy <= 20 && isWithinBounds) {
-            acceptBestLocation(pos, 'Location confirmed');
+        if (isWithinBounds && clustered && sampleCount >= 2 && evalAcc <= GPS_MAX_ACCEPTABLE_ACCURACY) {
+            var label = clustered ? 'Location confirmed (' + sampleCount + '-fix average)' : 'Location confirmed';
+            acceptBestLocation(candidatePos, label);
             return;
         }
 
         if (pos.coords.accuracy <= GPS_MAX_FAST_ACCEPT) {
-            showMsg('info', '<i class="bi bi-info-circle"></i> Good location detected. Refining coordinates...');
-            return;
-        }
-
-        if (pos.coords.accuracy <= GPS_MAX_ACCEPTABLE_ACCURACY) {
-            showMsg('info', '<i class="bi bi-info-circle"></i> Acquiring satellite fix (±' + Math.round(pos.coords.accuracy) + 'm)...');
+            showMsg('info', '<i class="bi bi-info-circle"></i> Refining GPS fix (±' + Math.round(evalAcc) + 'm)...');
             return;
         }
 
@@ -914,14 +894,8 @@ function requestLocation(options) {
     };
 
     var onError = function(err) {
-        if (locationWatcher !== null) {
-            navigator.geolocation.clearWatch(locationWatcher);
-            locationWatcher = null;
-        }
-        if (locationTimeoutId) {
-            clearTimeout(locationTimeoutId);
-            locationTimeoutId = null;
-        }
+        if (locationAccepted) return;
+        clearGpsTimers();
 
         if (!geoRetryDowngraded && (err.code === 3 || err.code === 2)) {
             geoRetryDowngraded = true;
@@ -957,35 +931,48 @@ function requestLocation(options) {
 
     locationWatcher = navigator.geolocation.watchPosition(onSuccess, onError, options);
     fastFallbackTimer = setTimeout(function() {
-        if (bestLocation && bestAccuracy <= GPS_MAX_FAST_ACCEPT) {
+        if (locationAccepted) return;
+        var fastCandidate = (bestEstimate && bestEstimate.clustered && bestEstimate.sampleCount >= 2 && bestEstimate.acc <= GPS_MAX_FAST_ACCEPT)
+            ? bestEstimate.toGeolocationPosition()
+            : null;
+        if (fastCandidate) {
             if (RADIUS_METERS > 0 && CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
-                var earlyDist = calculateDistance(bestLocation.coords.latitude, bestLocation.coords.longitude, CLASSROOM_LAT, CLASSROOM_LNG);
-                if (earlyDist <= RADIUS_METERS) {
-                    console.log('Fast fallback: inside boundary with accuracy ' + bestAccuracy + 'm, accepting');
-                    acceptBestLocation(bestLocation, 'Location confirmed');
+                var earlyDist = calculateDistance(fastCandidate.coords.latitude, fastCandidate.coords.longitude, CLASSROOM_LAT, CLASSROOM_LNG);
+                if (earlyDist + fastCandidate.coords.accuracy <= RADIUS_METERS) {
+                    var fastLabel = (bestEstimate && bestEstimate.clustered)
+                        ? 'Location confirmed (' + bestEstimate.sampleCount + '-fix average)'
+                        : 'Location confirmed';
+                    acceptBestLocation(fastCandidate, fastLabel);
                     return;
                 }
-                console.log('Fast fallback: location appears outside at 3s (' + Math.round(earlyDist) + 'm, ±' + Math.round(bestAccuracy) + 'm); continuing to watch for refined fix...');
+                console.log('Fast fallback: location appears outside at 3s (' + Math.round(earlyDist) + 'm); continuing to watch for refined fix...');
             } else {
-                acceptBestLocation(bestLocation, 'Using best available location');
+                acceptBestLocation(fastCandidate, 'Using best available location');
             }
         }
     }, GPS_FAST_FALLBACK_MS);
 
     locationTimeoutId = setTimeout(function() {
-        if (locationWatcher !== null) {
-            navigator.geolocation.clearWatch(locationWatcher);
-            locationWatcher = null;
+        if (locationAccepted) return;
+        clearGpsTimers();
+
+        if (bestEstimate && bestEstimate.clustered && bestEstimate.sampleCount >= 2 && bestEstimate.acc <= GPS_MAX_ACCEPTABLE_ACCURACY) {
+            var timeoutLabel = bestEstimate.clustered
+                ? 'Using ' + bestEstimate.sampleCount + '-fix average'
+                : 'Using best available location';
+            acceptBestLocation(bestEstimate.toGeolocationPosition(), timeoutLabel);
+            return;
         }
 
-        if (bestLocation) {
-            if (bestAccuracy > 50) {
-                console.warn('GPS timeout: best accuracy is too weak (±' + bestAccuracy + 'm)');
-                showWeakGpsError(bestAccuracy);
-                return;
-            }
-            console.log('GPS timeout: accepting best available location (±' + bestAccuracy + 'm)');
-            acceptBestLocation(bestLocation, 'Using best available location');
+        if (bestLocation || bestEstimate) {
+            setIcon('#fef3c7', 'bi bi-geo-alt-fill', '#d97706');
+            document.getElementById('vTitle').textContent = 'Location Not Stable Yet';
+            document.getElementById('vSub').textContent = 'GPS readings did not agree closely enough to confirm your position.';
+            showMsg('err', 'Move near a window, keep location enabled, and retry. You can also use the teacher’s approved alternative attendance method.');
+            var retryBtn = document.getElementById('retryFpBtn');
+            retryBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Retry Location Check';
+            retryBtn.onclick = function() { startGPS(); };
+            retryBtn.style.display = 'flex';
             return;
         }
 
@@ -1096,9 +1083,9 @@ async function submitAttendance(payload, signal) {
             return;
         }
         var currentDistance = calculateDistance(latitude, longitude, CLASSROOM_LAT, CLASSROOM_LNG);
-        if (currentDistance > RADIUS_METERS) {
+        if (currentDistance + accuracy > RADIUS_METERS) {
             if (isFace) resetFaceSubmission();
-            if (isNearBoundary(currentDistance, accuracy)) showLocationUncertainError(currentDistance, accuracy);
+            if (isNearBoundary(currentDistance, accuracy) || currentDistance <= RADIUS_METERS) showLocationUncertainError(currentDistance, accuracy);
             else showOutsideClassroomError(currentDistance, RADIUS_METERS);
             return;
         }

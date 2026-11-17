@@ -1533,6 +1533,7 @@ let currentFacingMode = "environment";
 let torchEnabled = false;
 let studentGeoCoords = null;
 let studentGeoTimestamp = 0;
+let studentGeoSamples = [];
 let studentGeoPromise = null;
 let studentGeoRequestSerial = 0;
 let studentLocationWatchId = null;
@@ -1560,25 +1561,45 @@ function startContinuousLocationWatch() {
     updateScannerGpsStatus('searching', 'Acquiring GPS location…');
     studentLocationWatchId = navigator.geolocation.watchPosition(
         pos => {
-            if (pos && pos.coords) {
-                const acc = pos.coords.accuracy || 0;
-                const fixTs = pos.timestamp || Date.now();
-                // Reject coarse/invalid fixes when a better fix exists
-                if (!Number.isFinite(acc) || acc <= 0) return;
-                if (!studentGeoCoords || acc <= (studentGeoCoords.acc || Infinity) || (Date.now() - studentGeoTimestamp > 5000)) {
+            if (!pos || !pos.coords) return;
+            const acc = pos.coords.accuracy || 0;
+            const fixTs = Number(pos.timestamp);
+            if (!Number.isFinite(acc) || acc <= 0 || !Number.isFinite(fixTs)) return;
+
+            if (window.GpsSampler) {
+                const merged = window.GpsSampler.mergeContinuousSamples(studentGeoSamples, pos, {
+                    windowMs: 15000,
+                    maxAcceptableAccuracy: 50,
+                    maxBufferSize: 5,
+                });
+                studentGeoSamples = merged.buffer;
+                const candidate = merged.estimate;
+                if (candidate && window.GpsSampler.shouldReplaceContinuousFix(studentGeoCoords, candidate, {
+                    staleAfterMs: 15000,
+                    maxAcceptableAccuracy: 50,
+                })) {
                     studentGeoCoords = {
-                        lat: pos.coords.latitude,
-                        lng: pos.coords.longitude,
-                        acc: acc,
-                        timestamp: fixTs
+                        lat: candidate.lat,
+                        lng: candidate.lng,
+                        acc: candidate.acc,
+                        timestamp: candidate.timestamp,
                     };
-                    studentGeoTimestamp = fixTs;
-                    if (acc <= 50) {
-                        updateScannerGpsStatus('ready', `Location ready (±${Math.round(acc)}m)`);
-                    } else {
-                        updateScannerGpsStatus('searching', `Refining GPS (±${Math.round(acc)}m)…`);
-                    }
+                    studentGeoTimestamp = candidate.timestamp;
                 }
+            } else if (!studentGeoCoords || acc <= (studentGeoCoords.acc || Infinity) || (Date.now() - studentGeoTimestamp > 15000 && acc <= 50)) {
+                studentGeoCoords = {
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    acc: acc,
+                    timestamp: fixTs,
+                };
+                studentGeoTimestamp = fixTs;
+            }
+
+            if (studentGeoCoords && studentGeoCoords.acc <= 50) {
+                updateScannerGpsStatus('ready', `Location ready (±${Math.round(studentGeoCoords.acc)}m)`);
+            } else {
+                updateScannerGpsStatus('searching', `Refining GPS (±${Math.round(acc)}m)…`);
             }
         },
         err => {
@@ -1587,7 +1608,7 @@ function startContinuousLocationWatch() {
                 updateScannerGpsStatus('error', 'Enable location permission to clock in');
             }
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
 }
 
@@ -1599,36 +1620,20 @@ function stopContinuousLocationWatch() {
 }
 
 function normalizeCoordinates(lat, lng) {
-    let latitude = Number(lat);
-    let longitude = Number(lng);
-    if (isNaN(latitude) || isNaN(longitude)) return [0, 0];
-
-    // Definite swap: lat cannot exceed 90 or be less than -90
-    if (Math.abs(latitude) > 90 && Math.abs(longitude) <= 90) {
-        const t = latitude;
-        latitude = longitude;
-        longitude = t;
+    if (window.GpsSampler) {
+        return window.GpsSampler.normalizeCoordinates(lat, lng);
     }
-    // Regional swap detection (e.g. Philippines lat ~12, lng ~123)
-    if (latitude > 50 && latitude <= 180 && longitude >= -90 && longitude <= 30) {
-        const t = latitude;
-        latitude = longitude;
-        longitude = t;
+    const latitude = Number(lat);
+    const longitude = Number(lng);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)
+        || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+        return null;
     }
     return [latitude, longitude];
 }
 
-function distanceBetweenFixes(lat1, lng1, lat2, lng2) {
-    const toRadians = degrees => degrees * Math.PI / 180;
-    const deltaLat = toRadians(lat2 - lat1);
-    const deltaLng = toRadians(lng2 - lng1);
-    const haversine = Math.sin(deltaLat / 2) ** 2 +
-        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(deltaLng / 2) ** 2;
-    return 6371000 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(Math.max(0, 1 - haversine)));
-}
-
 function refreshStudentLocation(force = false) {
-    if (!navigator.geolocation) return Promise.resolve(null);
+    if (!navigator.geolocation || !window.GpsSampler) return Promise.resolve(null);
     const now = Date.now();
     if (!force && studentGeoCoords && (now - studentGeoTimestamp < 5000) && (studentGeoCoords.acc <= 50)) {
         return Promise.resolve(studentGeoCoords);
@@ -1638,60 +1643,46 @@ function refreshStudentLocation(force = false) {
     }
 
     const requestSerial = ++studentGeoRequestSerial;
-    studentGeoPromise = new Promise((resolve) => {
-        let hasResolved = false;
-        let watchId = null;
-        let firstFixTimer = null;
-        const readings = [];
-        const finish = (coords) => {
-            if (hasResolved) return;
-            hasResolved = true;
-            clearTimeout(safetyTimer);
-            clearTimeout(firstFixTimer);
-            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-            if (requestSerial === studentGeoRequestSerial) {
-                studentGeoPromise = null;
-                studentGeoCoords = coords;
-                studentGeoTimestamp = coords ? coords.timestamp : 0;
-                if (coords && coords.acc <= 50) {
-                    updateScannerGpsStatus('ready', `Location ready (±${Math.round(coords.acc)}m)`);
-                } else if (!coords) {
-                    updateScannerGpsStatus('error', 'GPS signal unavailable — move near window');
-                }
+    studentGeoPromise = window.GpsSampler.capturePosition({
+        timeoutMs: 14000,
+        settleMs: 3200,
+        targetAccuracy: 15,
+        maxAcceptableAccuracy: 50,
+        minClusterSamples: 2,
+        allowSingleFallback: false,
+        requireClusterIfDisagreeing: true,
+        maxSamples: 5,
+        onSample: ({ estimate, bestRawAccuracy, sampleCount }) => {
+            if (requestSerial !== studentGeoRequestSerial) return;
+            if (estimate) {
+                updateScannerGpsStatus('searching', `Locking GPS (±${Math.round(estimate.acc)}m${sampleCount > 1 ? `, ${sampleCount} fixes` : ''})…`);
+            } else if (Number.isFinite(bestRawAccuracy)) {
+                updateScannerGpsStatus('searching', `Refining GPS (±${Math.round(bestRawAccuracy)}m)…`);
             }
-            resolve(requestSerial === studentGeoRequestSerial ? coords : null);
-        };
-
-        const safetyTimer = setTimeout(() => finish(readings.length === 1 ? readings[0] : null), 15000);
-        watchId = navigator.geolocation.watchPosition(pos => {
-            if (!pos || !pos.coords) return;
-            const { latitude, longitude, accuracy } = pos.coords;
-            const age = Date.now() - pos.timestamp;
-            if (!Number.isFinite(latitude) || Math.abs(latitude) > 90 ||
-                !Number.isFinite(longitude) || Math.abs(longitude) > 180 ||
-                !Number.isFinite(accuracy) || accuracy <= 0 || accuracy > 50 || age < 0 || age > 10000) return;
-            if (readings.some(previous => previous.timestamp === pos.timestamp)) return;
-            const current = { lat: latitude, lng: longitude, acc: accuracy, timestamp: pos.timestamp };
-            readings.push(current);
-            if (readings.length === 1) {
-                // Give indoor Wi-Fi/GNSS a short window to correct an initial drifted fix.
-                firstFixTimer = setTimeout(() => {
-                    if (readings.length === 1) finish(readings[0]);
-                }, 4000);
-            }
-            for (let i = 0; i < readings.length; i++) {
-                for (let j = i + 1; j < readings.length; j++) {
-                    const a = readings[i], b = readings[j];
-                    const separation = distanceBetweenFixes(a.lat, a.lng, b.lat, b.lng);
-                    if (separation <= Math.max(12, a.acc, b.acc)) {
-                        finish(a.acc <= b.acc ? a : b);
-                        return;
-                    }
-                }
-            }
-        }, err => {
-            if (err.code === 1) finish(null);
-        }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+        },
+    }).then((result) => {
+        if (requestSerial !== studentGeoRequestSerial) return null;
+        studentGeoPromise = null;
+        if (result.ok && result.fix) {
+            const coords = {
+                lat: result.fix.lat,
+                lng: result.fix.lng,
+                acc: result.fix.acc,
+                timestamp: result.fix.timestamp,
+            };
+            studentGeoCoords = coords;
+            studentGeoTimestamp = coords.timestamp;
+            studentGeoSamples = [coords];
+            updateScannerGpsStatus('ready', `Location ready (±${Math.round(coords.acc)}m)`);
+            return coords;
+        }
+        studentGeoCoords = null;
+        studentGeoTimestamp = 0;
+        const accMsg = Number.isFinite(result.bestRawAccuracy)
+            ? `GPS signal weak (±${Math.round(result.bestRawAccuracy)}m) — move near window`
+            : 'GPS signal unavailable — move near window';
+        updateScannerGpsStatus('error', accMsg);
+        return null;
     });
 
     return studentGeoPromise;

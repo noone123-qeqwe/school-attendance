@@ -22,9 +22,9 @@ class LocationIntegrityServiceTest extends TestCase
         $this->assertFalse($this->service->isUncertainBoundary(40.0, 50, 10.0));
     }
 
-    public function test_exactly_on_radius_is_not_uncertain(): void
+    public function test_exactly_on_radius_is_uncertain_with_nonzero_sensor_error(): void
     {
-        $this->assertFalse($this->service->isUncertainBoundary(50.0, 50, 10.0));
+        $this->assertTrue($this->service->isUncertainBoundary(50.0, 50, 10.0));
     }
 
     public function test_just_outside_radius_is_uncertain(): void
@@ -37,26 +37,24 @@ class LocationIntegrityServiceTest extends TestCase
         $this->assertFalse($this->service->isUncertainBoundary(100.0, 50, 10.0));
     }
 
-    public function test_boundary_respects_accuracy_cap(): void
+    public function test_boundary_uncertainty_uses_reported_accuracy(): void
     {
-        // Accuracy cap is min(10, accuracy/2). With accuracy=100, cap=10.
-        // Distance must be <= 50+10=60 to be uncertain.
-        $this->assertTrue($this->service->isUncertainBoundary(55.0, 50, 100.0));
-        $this->assertFalse($this->service->isUncertainBoundary(61.0, 50, 100.0));
+        $this->assertTrue($this->service->isUncertainBoundary(55.0, 50, 10.0));
+        $this->assertFalse($this->service->isUncertainBoundary(61.0, 50, 10.0));
     }
 
     public function test_boundary_with_small_accuracy(): void
     {
-        // With accuracy=4, cap=min(10, 2)=2. Distance must be <= 50+2=52 to be uncertain.
+        // The plausible interval overlaps the 50m boundary.
         $this->assertTrue($this->service->isUncertainBoundary(51.0, 50, 4.0));
-        $this->assertFalse($this->service->isUncertainBoundary(53.0, 50, 4.0));
+        $this->assertFalse($this->service->isUncertainBoundary(55.0, 50, 4.0));
     }
 
     // --- isStaleClientFix ---
 
-    public function test_null_timestamp_is_not_stale(): void
+    public function test_missing_timestamp_is_not_accepted_as_a_fresh_fix(): void
     {
-        $this->assertFalse($this->service->isStaleClientFix(null));
+        $this->assertTrue($this->service->isStaleClientFix(null));
     }
 
     public function test_current_timestamp_is_not_stale(): void
@@ -82,5 +80,41 @@ class LocationIntegrityServiceTest extends TestCase
         // Within 5 seconds in the future is allowed
         $slightlyFutureMs = (int) round(microtime(true) * 1000) + 3000;
         $this->assertFalse($this->service->isStaleClientFix($slightlyFutureMs));
+    }
+
+    // --- normalizeCoordinates & distanceMeters ---
+
+    public function test_normalize_coordinates_swaps_inverted_coordinates(): void
+    {
+        [$lat, $lng] = LocationIntegrityService::normalizeCoordinates(123.619, 12.371);
+        $this->assertEqualsWithDelta(12.371, $lat, 0.0001);
+        $this->assertEqualsWithDelta(123.619, $lng, 0.0001);
+    }
+
+    public function test_normalize_coordinates_does_not_guess_from_valid_regional_coordinates(): void
+    {
+        [$lat, $lng] = LocationIntegrityService::normalizeCoordinates(55.7558, 37.6173);
+        $this->assertEqualsWithDelta(55.7558, $lat, 0.0001);
+        $this->assertEqualsWithDelta(37.6173, $lng, 0.0001);
+    }
+
+    public function test_invalid_coordinates_are_rejected_instead_of_clamped(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        LocationIntegrityService::normalizeCoordinates(91.0, 181.0);
+    }
+
+    public function test_distance_meters_handles_inverted_pair_consistently(): void
+    {
+        $distance = $this->service->distanceMeters(121.0000, 14.5003, 14.5000, 121.0000);
+        $this->assertEqualsWithDelta(33.36, $distance, 1.0);
+    }
+
+    public function test_distance_meters_reports_realistic_seventeen_kilometer_separation(): void
+    {
+        $distance = $this->service->distanceMeters(14.5000, 121.0000, 14.6530, 121.0000);
+
+        $this->assertGreaterThan(16_900, $distance);
+        $this->assertLessThan(17_100, $distance);
     }
 }

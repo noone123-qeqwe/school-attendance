@@ -132,6 +132,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         $teacherResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $this->subject->code,
             'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000,
         ]);
@@ -170,6 +171,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
             'token' => $qrToken,
             'latitude' => 14.5001,
             'longitude' => 121.0001,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
             'method' => 'qr',
         ]);
@@ -214,6 +216,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
             'code' => $codeWithSpace,
             'latitude' => 14.5002,
             'longitude' => 121.0001,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 12,
             'method' => 'code',
         ]);
@@ -363,6 +366,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         $teacherResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $this->subject->code,
             'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000,
         ]);
@@ -411,6 +415,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
             'token' => $validToken,
             'latitude' => 14.5000,
             'longitude' => 121.0000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
         $clockIn1->assertOk();
@@ -422,6 +427,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
             'token' => $validToken,
             'latitude' => 14.5000,
             'longitude' => 121.0000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
         $duplicateQr->assertOk();
@@ -434,6 +440,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
             'code' => $validCode,
             'latitude' => 14.5000,
             'longitude' => 121.0000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
         $duplicateCode->assertOk();
@@ -445,6 +452,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
             'code' => $validCode,
             'latitude' => 14.5000,
             'longitude' => 121.0000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
         $mismatchResponse->assertStatus(422);
@@ -458,6 +466,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
             'token' => $validToken,
             'latitude' => 14.5200, // ~2.2 km away
             'longitude' => 121.0200,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
         $outsideResponse->assertStatus(422);

@@ -28,6 +28,7 @@
         @endif
     @endauth
     @include('partials.pwa-tags')
+    <script @cspNonce src="{{ asset('js/gps-sampler.js') }}?v={{ filemtime(public_path('js/gps-sampler.js')) }}"></script>
     @vite(['resources/css/app.css'])
     @auth
         @vite(['resources/js/app.js'])

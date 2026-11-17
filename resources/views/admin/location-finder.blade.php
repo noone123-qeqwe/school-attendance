@@ -44,51 +44,63 @@
 <script @cspNonce>
 let currentLat, currentLng;
 
-document.getElementById('getLocationBtn').addEventListener('click', function() {
+document.getElementById('getLocationBtn').addEventListener('click', async function() {
     const btn = this;
+    const errEl = document.getElementById('error');
+    if (errEl) errEl.style.display = 'none';
     btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Getting location...';
-    
-    if (!navigator.geolocation) {
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Stabilizing GPS location...';
+
+    if (!navigator.geolocation || !window.GpsSampler) {
         showError('GPS not supported on this device');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-geo-alt"></i> Get My Current Location';
         return;
     }
-    
-    navigator.geolocation.getCurrentPosition(
-        function(position) {
-            currentLat = position.coords.latitude;
-            currentLng = position.coords.longitude;
-            
-            document.getElementById('coordinates').innerHTML = `
-                <strong>Latitude:</strong> ${currentLat}<br>
-                <strong>Longitude:</strong> ${currentLng}<br>
-                <strong>Accuracy:</strong> ±${Math.round(position.coords.accuracy)}m
-            `;
-            
-            document.getElementById('mapsLink').href = `https://www.google.com/maps?q=${currentLat},${currentLng}`;
-            document.getElementById('locationResult').style.display = 'block';
-            
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-geo-alt"></i> Get My Current Location';
-        },
-        function(error) {
-            let message = 'GPS Error: ';
-            switch(error.code) {
-                case 1: message += 'Permission denied'; break;
-                case 2: message += 'Position unavailable'; break;
-                case 3: message += 'Timeout'; break;
-                default: message += 'Unknown error';
+
+    const result = await window.GpsSampler.capturePosition({
+        timeoutMs: 15000,
+        settleMs: 4000,
+        targetAccuracy: 12,
+        maxAcceptableAccuracy: 50,
+        minClusterSamples: 3,
+        maxSamples: 6,
+        allowSingleFallback: true,
+        onSample: ({ estimate, bestRawAccuracy, sampleCount }) => {
+            if (estimate) {
+                btn.innerHTML = `<i class="bi bi-hourglass-split"></i> Averaging fixes (±${Math.round(estimate.acc)}m, ${sampleCount})...`;
+            } else if (Number.isFinite(bestRawAccuracy)) {
+                btn.innerHTML = `<i class="bi bi-hourglass-split"></i> Refining signal (±${Math.round(bestRawAccuracy)}m)...`;
             }
-            showError(message);
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-geo-alt"></i> Get My Current Location';
         },
-        {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0
-        }
-    );
+    });
+
+    if (!result.ok || !result.fix || result.fix.acc > 50) {
+        const message = result.reason === 'permission_denied'
+            ? 'GPS Error: Permission denied'
+            : (Number.isFinite(result.bestRawAccuracy)
+                ? `GPS accuracy is too low (±${Math.round(result.bestRawAccuracy)}m). Move near a window or use a device with GPS.`
+                : 'GPS Error: Unable to acquire a reliable position');
+        showError(message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-geo-alt"></i> Get My Current Location';
+        return;
+    }
+
+    currentLat = result.fix.lat;
+    currentLng = result.fix.lng;
+
+    document.getElementById('coordinates').innerHTML = `
+        <strong>Latitude:</strong> ${currentLat.toFixed(6)}<br>
+        <strong>Longitude:</strong> ${currentLng.toFixed(6)}<br>
+        <strong>Accuracy:</strong> ±${Math.round(result.fix.acc)}m (${result.fix.sampleCount} ${result.fix.sampleCount === 1 ? 'sample' : 'samples averaged'})
+    `;
+
+    document.getElementById('mapsLink').href = `https://www.google.com/maps?q=${currentLat},${currentLng}`;
+    document.getElementById('locationResult').style.display = 'block';
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-geo-alt"></i> Get My Current Location';
 });
 
 function updateCoordinates() {

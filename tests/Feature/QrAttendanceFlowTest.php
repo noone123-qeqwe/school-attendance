@@ -59,6 +59,7 @@ class QrAttendanceFlowTest extends TestCase
         $response = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
             'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'classroom_lat' => 14.5,
             'classroom_lng' => 121.0
         ]);
@@ -95,6 +96,7 @@ class QrAttendanceFlowTest extends TestCase
             'token' => $token,
             'latitude' => 14.5001, // Within radius
             'longitude' => 121.0001,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
             'credential' => '{"id":"fake","rawId":"fake","response":{},"type":"public-key"}'
         ]);
@@ -160,6 +162,7 @@ class QrAttendanceFlowTest extends TestCase
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
             'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -179,6 +182,7 @@ class QrAttendanceFlowTest extends TestCase
             'token' => $token,
             'latitude' => 14.6000,
             'longitude' => 121.1000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
             'credential' => '{"id":"fake","rawId":"fake","response":{},"type":"public-key"}'
         ]);
@@ -228,6 +232,7 @@ class QrAttendanceFlowTest extends TestCase
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
             'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -240,6 +245,7 @@ class QrAttendanceFlowTest extends TestCase
             'token' => $token,
             'latitude' => 14.5001,
             'longitude' => 121.0001,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 15
         ]);
 
@@ -284,6 +290,7 @@ class QrAttendanceFlowTest extends TestCase
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
             'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -295,6 +302,7 @@ class QrAttendanceFlowTest extends TestCase
             'token' => $token,
             'latitude' => 14.5001,
             'longitude' => 121.0001,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
 
@@ -303,6 +311,7 @@ class QrAttendanceFlowTest extends TestCase
             'token' => $token,
             'latitude' => 14.5001,
             'longitude' => 121.0001,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
 
@@ -381,6 +390,7 @@ class QrAttendanceFlowTest extends TestCase
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
             'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -396,6 +406,7 @@ class QrAttendanceFlowTest extends TestCase
             'code' => $formattedInput,
             'latitude' => 14.5001,
             'longitude' => 121.0001,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
 
@@ -567,6 +578,7 @@ class QrAttendanceFlowTest extends TestCase
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
             'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -577,6 +589,7 @@ class QrAttendanceFlowTest extends TestCase
             'token' => $token,
             'latitude' => 14.5150,
             'longitude' => 121.0150,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10
         ]);
 
@@ -756,6 +769,7 @@ class QrAttendanceFlowTest extends TestCase
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
             'teacher_accuracy' => 10,
+            'teacher_location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -767,6 +781,7 @@ class QrAttendanceFlowTest extends TestCase
             'code' => $copiedText,
             'latitude' => 14.5001,
             'longitude' => 121.0001,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
         $response->assertOk();
@@ -782,6 +797,7 @@ class QrAttendanceFlowTest extends TestCase
             'code' => "  " . $spacedCode . "  ",
             'latitude' => 14.5001,
             'longitude' => 121.0001,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
         $response2->assertOk();
@@ -795,6 +811,7 @@ class QrAttendanceFlowTest extends TestCase
             'code' => $chatMsg,
             'latitude' => 14.5001,
             'longitude' => 121.0001,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
         $response3->assertOk();
@@ -809,6 +826,7 @@ class QrAttendanceFlowTest extends TestCase
             'code' => $copiedUrl,
             'latitude' => 14.5001,
             'longitude' => 121.0001,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy' => 10,
         ]);
         $response4->assertOk();

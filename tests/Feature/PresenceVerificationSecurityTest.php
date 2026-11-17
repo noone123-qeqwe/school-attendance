@@ -76,6 +76,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 8.5,
         ]);
 
@@ -110,6 +111,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 10.0,
         ]);
 
@@ -121,6 +123,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'session_id' => $this->session->id,
             'latitude'   => $insideLat,
             'longitude'  => $insideLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'   => 12.0,
         ]);
 
@@ -146,6 +149,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
         ]);
 
@@ -154,6 +158,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'session_id' => $this->session->id,
             'latitude'   => $this->classroomLat + 0.005, // GPS spike
             'longitude'  => $this->classroomLng + 0.005,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'   => 250.0,
         ]);
 
@@ -176,6 +181,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
         ]);
 
@@ -187,6 +193,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'session_id' => $this->session->id,
             'latitude'   => $outsideLat,
             'longitude'  => $outsideLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'   => 10.0,
         ]);
 
@@ -212,6 +219,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
         ]);
 
@@ -220,6 +228,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'session_id' => $this->session->id,
             'latitude'   => $this->classroomLat + 0.003,
             'longitude'  => $this->classroomLng + 0.003,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'   => 10.0,
         ]);
 
@@ -228,6 +237,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'session_id' => $this->session->id,
             'latitude'   => $this->classroomLat,
             'longitude'  => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'   => 8.0,
         ]);
 
@@ -251,6 +261,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
         ]);
 
@@ -270,6 +281,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'session_id' => $this->session->id,
             'latitude'   => $outsideLat,
             'longitude'  => $outsideLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'   => 10.0,
         ]);
 
@@ -290,6 +302,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'session_id' => $this->session->id,
             'latitude'   => $this->classroomLat,
             'longitude'  => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'   => 5.0,
         ]);
 
@@ -356,6 +369,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
         ]);
 
@@ -367,6 +381,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'session_id' => $this->session->id,
             'latitude'   => $this->classroomLat,
             'longitude'  => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
         ]);
 
         $response->assertStatus(200)
@@ -388,6 +403,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
         ]);
 
@@ -421,6 +437,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
         ]);
 
@@ -459,6 +476,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 14.9000,
             'longitude' => 121.5000,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
         ]);
 
@@ -490,6 +508,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'session_id' => $this->session->id,
             'latitude'   => $this->classroomLat,
             'longitude'  => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'   => 15.0,
         ]);
 
@@ -534,6 +553,7 @@ class PresenceVerificationSecurityTest extends TestCase
                 'token'              => $this->session->token,
                 'latitude'           => $this->classroomLat,
                 'longitude'          => $this->classroomLng,
+                'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
                 'device_fingerprint' => $rawKey,
             ]);
@@ -546,6 +566,7 @@ class PresenceVerificationSecurityTest extends TestCase
                 'token'              => $this->session->token,
                 'latitude'           => $this->classroomLat,
                 'longitude'          => $this->classroomLng,
+                'location_timestamp_ms' => (int) round(microtime(true) * 1000),
                 'accuracy' => 10,
                 'device_fingerprint' => $rawKey,
             ]);
@@ -563,6 +584,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
             'accuracy'  => 0.0, // Mock/injected GPS sensor reading
         ]);
 
@@ -571,5 +593,35 @@ class PresenceVerificationSecurityTest extends TestCase
                 'success'    => false,
                 'error_type' => 'unreliable_gps',
             ]);
+    }
+
+    public function test_stale_location_timestamp_in_presence_ping_does_not_penalize_student()
+    {
+        $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
+            'accuracy'  => 10,
+        ])->assertStatus(200);
+
+        $staleResponse = $this->actingAs($this->student)->postJson('/student/presence-verify', [
+            'session_id'            => $this->session->id,
+            'latitude'              => $this->classroomLat + 0.005, // Would be outside if trusted
+            'longitude'             => $this->classroomLng + 0.005,
+            'accuracy'              => 12.0,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000) - 30000,
+        ]);
+
+        $staleResponse->assertStatus(200)
+            ->assertJson([
+                'success'           => true,
+                'status'            => 'Present',
+                'monitoring_status' => 'unreliable_gps',
+            ]);
+
+        $att = Attendance::where('user_id', $this->student->id)->first();
+        $this->assertEquals('Present', $att->status);
+        $this->assertEquals(0, $att->consecutive_outside_count);
     }
 }
