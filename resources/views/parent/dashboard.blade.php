@@ -13,11 +13,6 @@
         from { opacity: 0; transform: translateY(8px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    @keyframes badgePulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.1); opacity: 0.85; }
-    }
-
     /* ── PARENT HERO BANNER ── */
     .parent-hero-banner {
         background: linear-gradient(135deg, rgba(38, 22, 16, 0.95) 0%, rgba(20, 11, 7, 0.98) 100%);
@@ -82,7 +77,7 @@
         margin-bottom: 10px;
     }
 
-    /* ── STUDENT SWITCHER TABS ── */
+    /* ── SIMPLE CHILD PICKER ── */
     .student-switcher-wrap {
         background: rgba(22, 13, 9, 0.75);
         border: 1px solid rgba(207, 164, 111, 0.18);
@@ -92,60 +87,10 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
         backdrop-filter: blur(12px);
     }
-    .student-tabs-scroller {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
-        padding-bottom: 4px;
-        scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
-    }
-    .student-tabs-scroller::-webkit-scrollbar { display: none; }
-
-    .student-tab-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(207, 164, 111, 0.15);
-        border-radius: 999px;
-        padding: 8px 18px;
-        color: #b39b82;
-        font-weight: 600;
-        font-size: 0.88rem;
-        cursor: pointer;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        white-space: nowrap;
-        text-decoration: none;
-        user-select: none;
-    }
-    .student-tab-pill:hover:not(.active) {
-        background: rgba(207, 164, 111, 0.08);
-        color: #f3e7cd;
-        transform: translateY(-1px);
-    }
-    .student-tab-pill.active {
-        background: linear-gradient(135deg, rgba(207, 164, 111, 0.25) 0%, rgba(143, 110, 74, 0.25) 100%);
-        border-color: rgba(207, 164, 111, 0.55);
-        color: #ffffff;
-        box-shadow: 0 4px 16px rgba(207, 164, 111, 0.2);
-    }
-    .student-pill-avatar {
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 1.5px solid rgba(207, 164, 111, 0.4);
-    }
-    .student-pill-rate {
-        font-size: 0.72rem;
-        font-weight: 700;
-        padding: 2px 7px;
-        border-radius: 999px;
-    }
-    .rate-pill-high { background: rgba(52, 211, 153, 0.18); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.35); }
-    .rate-pill-med  { background: rgba(251, 191, 36, 0.18); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); }
-    .rate-pill-low  { background: rgba(248, 113, 113, 0.18); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.35); }
+    .parent-child-picker { display: grid; gap: 8px; max-width: 560px; }
+    .parent-child-picker label { color: #f3e7cd; font-size: 0.95rem; font-weight: 700; }
+    .parent-child-picker select { min-height: 52px; font-size: 1rem; }
+    .parent-child-picker-help { color: #b39b82; font-size: 0.82rem; line-height: 1.45; margin: 0; }
 
     /* ── STUDENT PROFILE HERO CARD ── */
     .student-profile-showcase {
@@ -229,6 +174,7 @@
     .parent-btn-action:hover {
         transform: translateY(-2px);
     }
+    .parent-btn-action:focus-visible { outline: 3px solid #f3e7cd; outline-offset: 3px; }
     .btn-action-primary {
         background: linear-gradient(135deg, #cfa46f 0%, #a67f4c 100%);
         color: #140d07 !important;
@@ -496,63 +442,38 @@
             <span class="parent-hero-badge">
                 <i class="bi bi-people-fill"></i> Parent &amp; guardian portal
             </span>
-            <h1 class="parent-hero-title">
-                <span>Your children, in one place</span>
-            </h1>
+            <h1 class="parent-hero-title"><span>Parent dashboard</span></h1>
             <p class="parent-hero-sub">
-                Choose a child to check attendance, class schedules, school messages, and support tasks.
+                See attendance, school notices, and important actions for your child.
             </p>
         </div>
         <div>
             <a href="{{ route('parent.link.form') }}" class="btn-modern-gold" style="white-space: nowrap;">
-                <i class="bi bi-person-plus-fill"></i> Link a student
+                <i class="bi bi-person-plus-fill"></i> Link a child
             </a>
         </div>
     </div>
 </div>
 
 @if(count($childrenData) > 1)
-<!-- ── MULTI-STUDENT SWITCHER TABS ── -->
+<!-- ── CHILD PICKER ── -->
 <div class="student-switcher-wrap">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-        <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-people-fill text-gold" style="font-size: 1.1rem;"></i>
-            <span style="font-size: 0.85rem; font-weight: 700; color: #f3e7cd; text-transform: uppercase; letter-spacing: 0.5px;">
-                Choose a child ({{ count($childrenData) }})
-            </span>
-        </div>
-        <span style="font-size: 0.75rem; color: #8f826f;">Everything below changes for the student you choose.</span>
-    </div>
-    <div class="student-tabs-scroller" role="tablist" aria-label="Select a linked student">
-        @foreach($childrenData as $index => $data)
-            @php
-                $rRate = $data->rate;
-                $rClass = $rRate >= 90 ? 'rate-pill-high' : ($rRate >= 75 ? 'rate-pill-med' : 'rate-pill-low');
-                $cImg = $data->child->profile_image
-                    ? (str_starts_with($data->child->profile_image, 'http') ? $data->child->profile_image : public_storage_url($data->child->profile_image))
-                    : 'https://ui-avatars.com/api/?name='.urlencode($data->child->name).'&background=800000&color=fff&size=52';
-            @endphp
-            @php
-                $isSelectedChild = $selectedChild && $selectedChild->id === $data->child->id;
-            @endphp
-            <button type="button" class="student-tab-pill {{ $isSelectedChild ? 'active' : '' }}" id="tabBtn_{{ $data->child->id }}" role="tab" data-parent-child-tab="{{ $data->child->id }}" aria-controls="childView_{{ $data->child->id }}" aria-selected="{{ $isSelectedChild ? 'true' : 'false' }}" tabindex="{{ $isSelectedChild ? 0 : -1 }}">
-                <img src="{{ $cImg }}" alt="{{ $data->child->name }}" class="student-pill-avatar">
-                <span>{{ $data->child->name }}</span>
-                <span class="student-pill-rate {{ $rClass }}">{{ $rRate }}%</span>
-                @if($data->warnings->count() > 0)
-                    <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block; animation: badgePulse 2s infinite;"></span>
-                @endif
-            </button>
-        @endforeach
-    </div>
-    <div class="parent-child-picker"><label for="parentChildPicker">Viewing student</label><select id="parentChildPicker" class="ent-input" data-parent-child-picker>
-        @foreach($childrenData as $data)<option value="{{ $data->child->id }}" {{ $selectedChild && $selectedChild->id === $data->child->id ? 'selected' : '' }}>{{ $data->child->name }} — {{ $data->child->student_number }}</option>@endforeach
-    </select></div>
+    <form method="GET" action="{{ route('parent.dashboard') }}" class="parent-child-picker">
+        <label for="parentChildPicker">Choose which child to view</label>
+        <select id="parentChildPicker" name="child_id" class="ent-input" data-parent-child-picker onchange="if (!window.switchDashboardChild) this.form.submit()">
+            @foreach($childrenData as $data)
+                <option value="{{ $data->child->id }}" {{ $selectedChild && $selectedChild->id === $data->child->id ? 'selected' : '' }}>
+                    {{ $data->child->name }}@if($data->child->student_number) — ID {{ $data->child->student_number }}@endif
+                </option>
+            @endforeach
+        </select>
+        <p class="parent-child-picker-help">Attendance and notices below update for the child you select.</p>
+    </form>
 </div>
 @endif
 
 @forelse($childrenData as $index => $data)
-<div class="child-view-content" id="childView_{{ $data->child->id }}" data-parent-child-panel="{{ $data->child->id }}" data-parent-selected-child="{{ $selectedChild?->id }}" role="tabpanel" @if(count($childrenData) > 1) aria-labelledby="tabBtn_{{ $data->child->id }}" @else aria-label="Student overview: {{ $data->child->name }}" @endif @if(!$selectedChild || $selectedChild->id !== $data->child->id) hidden inert @endif>
+<div class="child-view-content" id="childView_{{ $data->child->id }}" data-parent-child-panel="{{ $data->child->id }}" data-parent-selected-child="{{ $selectedChild?->id }}" role="region" aria-label="Overview for {{ $data->child->name }}" @if(!$selectedChild || $selectedChild->id !== $data->child->id) hidden inert @endif>
     @php
         $child = $data->child;
         $cImg = $child->profile_image
@@ -596,30 +517,17 @@
                 <div class="parent-actions-row" role="group" aria-label="Common tasks for {{ $child->name }}">
                 <a href="{{ route('parent.calendar', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-primary" title="View attendance and school calendar">
                     <i class="bi bi-calendar-check"></i>
-                    <span>Calendar &amp; records</span>
+                    <span>Attendance &amp; calendar</span>
                 </a>
 
                 <a href="{{ route('parent.schedule', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-ghost" title="View weekly schedule">
                     <i class="bi bi-clock"></i>
-                    <span>Class schedule</span>
+                    <span>Weekly schedule</span>
                 </a>
 
-                <a href="{{ route('parent.child.warnings', $child) }}" class="parent-btn-action {{ $data->warnings->count() > 0 ? 'btn-action-danger' : 'btn-action-ghost' }}" title="Academic Warnings">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    <span>Notices &amp; warnings</span>
-                    @if($data->warnings->count() > 0)
-                        <span class="badge rounded-pill bg-danger" style="font-size: 0.68rem; padding: 2px 6px;">{{ $data->warnings->count() }}</span>
-                    @endif
-                </a>
-
-                <a href="{{ route('parent.excuses.create_general', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-ghost" title="Submit Excuse Letter">
+                <a href="{{ route('parent.excuses.create_general', ['child_id' => $child->id]) }}" class="parent-btn-action btn-action-ghost" title="Send an excuse for an absence">
                     <i class="bi bi-file-earmark-plus"></i>
-                    <span>Submit an excuse</span>
-                </a>
-
-                <a href="{{ route('parent.child.report', $child) }}" class="parent-btn-action btn-action-primary" title="Download Official PDF Report">
-                    <i class="bi bi-file-earmark-pdf-fill"></i>
-                    <span>Download report</span>
+                    <span>Send absence excuse</span>
                 </a>
                 </div>
             </section>
@@ -686,23 +594,13 @@
                 </div>
             </div>
             <div class="kpi-stat-val" style="color: #f87171;">{{ $data->absent }}</div>
-            <div class="kpi-stat-hint">Unexcused missed classes</div>
-        </div>
-
-        <!-- Excused Card -->
-        <div class="kpi-stat-card">
-            <div class="kpi-stat-label">
-                <span>Excused</span>
-                <div class="kpi-icon-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
-                    <i class="bi bi-shield-fill-check"></i>
-                </div>
-            </div>
-            <div class="kpi-stat-val" style="color: #38bdf8;">{{ $data->excused }}</div>
-            <div class="kpi-stat-hint">
+            <div class="kpi-stat-hint">Missed class sessions</div>
+            <div class="kpi-stat-hint" aria-label="Excuse requests">
+                Excuse requests: {{ $data->excused }} approved
                 @if($data->pendingExcuses > 0)
-                    <span style="color: #fbbf24; font-weight: 600;">{{ $data->pendingExcuses }} pending review</span>
+                    <span style="color: #fbbf24; font-weight: 600;"> · {{ $data->pendingExcuses }} awaiting review</span>
                 @else
-                    Official approved leaves
+                    <span> · none awaiting review</span>
                 @endif
             </div>
         </div>
@@ -716,7 +614,7 @@
                 <div class="parent-section-head">
                     <h3 class="parent-section-title">
                         <i class="bi bi-exclamation-triangle-fill text-warning"></i>
-                        <span>Academic Notices</span>
+                        <span>School notices</span>
                     </h3>
                     @if($data->warnings->count() > 0)
                         <a href="{{ route('parent.child.warnings', $child) }}" class="ent-btn ent-btn-sm ent-btn-ghost text-gold" style="font-size: 0.78rem;">
@@ -756,9 +654,9 @@
                         <div style="width: 54px; height: 54px; border-radius: 50%; background: rgba(52, 211, 153, 0.12); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; border: 1px solid rgba(52, 211, 153, 0.25);">
                             <i class="bi bi-shield-check" style="font-size: 1.8rem; color: #34d399;"></i>
                         </div>
-                        <h4 style="color: #34d399; font-weight: 700; font-size: 1.05rem; margin-bottom: 4px;">Good Standing</h4>
+                        <h4 style="color: #34d399; font-weight: 700; font-size: 1.05rem; margin-bottom: 4px;">No current notices</h4>
                         <p style="color: #b39b82; font-size: 0.85rem; margin: 0; max-width: 280px; margin: 0 auto;">
-                            No attendance warnings or notices on record for {{ $child->name }}.
+                            There are no school notices for {{ $child->name }} right now.
                         </p>
                     </div>
                 @endif
@@ -773,9 +671,14 @@
                         <i class="bi bi-clock-history text-gold"></i>
                         <span>Recent Attendance</span>
                     </h3>
-                    <a href="{{ route('parent.calendar', ['child_id' => $child->id]) }}#attendance-records" class="ent-btn ent-btn-sm ent-btn-ghost text-gold" style="font-size: 0.78rem;">
-                        Full History &rarr;
-                    </a>
+                    <div class="parent-record-actions" aria-label="Attendance actions">
+                        <a href="{{ route('parent.calendar', ['child_id' => $child->id]) }}#attendance-records" class="ent-btn ent-btn-sm ent-btn-ghost text-gold">
+                            See all attendance
+                        </a>
+                        <a href="{{ route('parent.child.report', $child) }}" class="ent-btn ent-btn-sm ent-btn-ghost text-gold">
+                            Download report
+                        </a>
+                    </div>
                 </div>
 
                 @if($child->attendances->count() > 0)
@@ -899,12 +802,12 @@
     <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: rgba(207,164,111,0.12); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(207,164,111,0.3);">
         <i class="bi bi-link-45deg" style="font-size: 2.5rem; color: var(--gold);"></i>
     </div>
-    <h3 style="color: #ffffff; font-weight: 800; font-size: 1.5rem; margin-bottom: 10px;">No Linked Students Yet</h3>
+    <h3 style="color: #ffffff; font-weight: 800; font-size: 1.5rem; margin-bottom: 10px;">No children linked yet</h3>
     <p style="color: #b39b82; font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px;">
-        Link your student's account using their official Student ID. Once linked, you will receive real-time attendance alerts, academic warning notices, and excuse filing capabilities.
+        Link your child's account using their official Student ID to see attendance, school notices, and excuse request updates here.
     </p>
     <a href="{{ route('parent.link.form') }}" class="btn-modern-gold" style="display: inline-flex; padding: 12px 28px; font-size: 1rem;">
-        <i class="bi bi-link-45deg"></i> Link Your Student Now
+        <i class="bi bi-link-45deg"></i> Link a child
     </a>
 </div>
 @endforelse

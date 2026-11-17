@@ -372,3 +372,33 @@
 @media (max-width: 390px) {
     body.parent-portal .parent-child-context-links a { font-size: .76rem; }
 }
+
+/* Dashboard: one clear child selector and a shorter set of common actions. */
+@media screen {
+    body.parent-portal .student-tabs-scroller { display: none !important; }
+    body.parent-portal .parent-child-picker {
+        display: grid !important;
+        gap: 8px;
+        width: 100%;
+        max-width: 620px;
+    }
+    body.parent-portal .parent-child-picker label { color: #f3e7cd; font-size: .95rem; font-weight: 700; }
+    body.parent-portal .parent-child-picker select { min-height: 52px; padding: 12px 14px; font-size: 1rem; }
+    body.parent-portal .parent-child-picker-help { color: #b39b82; font-size: .84rem; line-height: 1.5; margin: 0; }
+    body.parent-portal .parent-kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    body.parent-portal .parent-kpi-grid > .kpi-rate-card { grid-column: auto; }
+    body.parent-portal .parent-record-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    body.parent-portal .parent-record-actions .ent-btn { min-height: 44px; padding: 9px 12px; white-space: normal; }
+}
+
+@media screen and (max-width: 1199.98px) {
+    body.parent-portal .parent-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    body.parent-portal .parent-kpi-grid > .kpi-rate-card { grid-column: 1 / -1; }
+}
+
+@media screen and (max-width: 767.98px) {
+    body.parent-portal .parent-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.parent-portal .parent-kpi-grid > .kpi-rate-card { grid-column: 1 / -1; }
+    body.parent-portal .parent-record-actions { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; }
+    body.parent-portal .parent-record-actions .ent-btn { width: 100%; justify-content: center; }
+}
