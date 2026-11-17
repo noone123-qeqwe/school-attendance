@@ -7,7 +7,7 @@ import os
 import sys
 
 try:
-    import cv2
+    import cv2  # type: ignore  # Installed in the container runtime; script fails closed when absent.
 except ImportError:
     print(json.dumps({"match": False, "code": "MATCHER_UNAVAILABLE"}))
     sys.exit(2)
