@@ -260,7 +260,7 @@ class ProfileFacePhotoService
         imagedestroy($image);
 
         ob_start();
-        imagejpeg($normalized, null, 85);
+        imagejpeg($normalized, null, 90);
         $jpeg = ob_get_clean();
         imagedestroy($normalized);
 

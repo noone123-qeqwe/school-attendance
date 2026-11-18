@@ -1245,7 +1245,7 @@ class QrAttendanceController extends Controller
         [$studentLat, $studentLng] = self::normalizeCoordinates((float) $request->latitude, (float) $request->longitude);
         $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
 
-        if ($gpsVerificationEnabled && app(LocationIntegrityService::class)->isStaleClientFix(
+        if (app(LocationIntegrityService::class)->isStaleClientFix(
             $request->filled('location_timestamp_ms') ? (int) $request->input('location_timestamp_ms') : null
         )) {
             $attendance->update([

@@ -114,16 +114,75 @@ def best_reference_score(references, feature, recognizer):
 def normalize_face_lighting(aligned):
     """Normalize local luminance after landmark alignment for steadier embeddings.
 
-    Running the same restrained CLAHE transform on enrolled and live crops reduces
-    sensitivity to shadows and uneven room lighting without relaxing the cosine
+    Gentle exposure centering plus restrained CLAHE on LAB lightness reduces
+    sensitivity to shadows and backlit classrooms without relaxing the cosine
     match threshold. Chroma is left untouched to avoid shifting skin colors.
     """
     lab = cv2.cvtColor(aligned, cv2.COLOR_BGR2LAB)
     lightness, a_channel, b_channel = cv2.split(lab)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(4, 4))
-    normalized_lightness = clahe.apply(lightness)
+    mean_l = float(lightness.mean())
+    beta = max(-28.0, min(28.0, (128.0 - mean_l) * 0.35))
+    balanced_l = cv2.convertScaleAbs(lightness, alpha=1.0, beta=beta) if abs(beta) >= 4.0 else lightness
+    clahe = cv2.createCLAHE(clipLimit=1.9, tileGridSize=(4, 4))
+    normalized_lightness = clahe.apply(balanced_l)
     normalized = cv2.merge((normalized_lightness, a_channel, b_channel))
     return cv2.cvtColor(normalized, cv2.COLOR_LAB2BGR)
+
+
+def detect_primary_face(image, detector, kind):
+    """Detect a single face using YuNet's optimal resolution window, then map boxes back."""
+    height, width = image.shape[:2]
+    max_side = max(width, height)
+    if max_side > 720:
+        det_scale = 640.0 / max_side
+    elif max_side < 220:
+        det_scale = min(1.8, 240.0 / max_side)
+    else:
+        det_scale = 1.0
+
+    if abs(det_scale - 1.0) > 1e-6:
+        det_w = max(100, int(round(width * det_scale)))
+        det_h = max(100, int(round(height * det_scale)))
+        interp = cv2.INTER_AREA if det_scale < 1.0 else cv2.INTER_LINEAR
+        det_image = cv2.resize(image, (det_w, det_h), interpolation=interp)
+    else:
+        det_w, det_h = width, height
+        det_image = image
+
+    detector.setInputSize((det_w, det_h))
+    _, faces = detector.detect(det_image)
+    if faces is None or len(faces) == 0:
+        raise ValueError(f"{kind}_FACE_NOT_FOUND")
+    if len(faces) != 1:
+        raise ValueError(f"{kind}_MULTIPLE_FACES")
+
+    face = faces[0]
+    if abs(det_scale - 1.0) > 1e-6:
+        if hasattr(face, "copy"):
+            face = face.copy()
+            face[:14] = face[:14] / det_scale
+        else:
+            face = [float(v) / det_scale if i < 14 else v for i, v in enumerate(face)]
+
+    if len(face) >= 15 and float(face[14]) < 0.9:
+        raise ValueError(f"{kind}_FACE_NOT_FOUND")
+    return face, width, height
+
+
+def scale_invariant_blur_variance(gray_crop):
+    """Measure focus variance at a bounded canonical face scale so high-res portraits pass cleanly."""
+    ch, cw = gray_crop.shape[:2]
+    max_dim = max(cw, ch)
+    if max_dim > 220:
+        scale = 160.0 / max_dim
+        sample = cv2.resize(
+            gray_crop,
+            (max(40, int(round(cw * scale))), max(40, int(round(ch * scale)))),
+            interpolation=cv2.INTER_AREA,
+        )
+    else:
+        sample = gray_crop
+    return float(cv2.Laplacian(sample, cv2.CV_64F).var())
 
 
 def face_feature(image_path, detector, recognizer, kind, include_pose=False):
@@ -134,20 +193,24 @@ def face_feature(image_path, detector, recognizer, kind, include_pose=False):
     if min(width, height) < 100 or max(width, height) > 2000:
         raise ValueError(f"{kind}_IMAGE_QUALITY")
 
-    detector.setInputSize((width, height))
-    _, faces = detector.detect(image)
-    if faces is None or len(faces) == 0:
-        raise ValueError(f"{kind}_FACE_NOT_FOUND")
-    if len(faces) != 1:
-        raise ValueError(f"{kind}_MULTIPLE_FACES")
-
-    face = faces[0]
-    if face[2] < 60 or face[3] < 60:
+    face, width, height = detect_primary_face(image, detector, kind)
+    x, y, w, h = map(float, face[:4])
+    if w < 60 or h < 60:
         raise ValueError(f"{kind}_FACE_TOO_SMALL")
 
+    x0, y0 = max(0, int(x)), max(0, int(y))
+    x1, y1 = min(width, math.ceil(x + w)), min(height, math.ceil(y + h))
+    if x1 - x0 >= 32 and y1 - y0 >= 32:
+        native_gray = cv2.cvtColor(image[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY)
+        mean, contrast = float(native_gray.mean()), float(native_gray.std())
+        if mean < 32 or mean > 235 or contrast < 11:
+            raise ValueError("LIVE_IMAGE_LIGHTING" if kind == "LIVE" else f"{kind}_IMAGE_QUALITY")
+        if scale_invariant_blur_variance(native_gray) < 20.0:
+            raise ValueError(f"{kind}_IMAGE_BLURRY")
+
     aligned = recognizer.alignCrop(image, face)
-    gray = cv2.cvtColor(aligned, cv2.COLOR_BGR2GRAY)
-    if cv2.Laplacian(gray, cv2.CV_64F).var() < 20:
+    aligned_gray = cv2.cvtColor(aligned, cv2.COLOR_BGR2GRAY)
+    if float(cv2.Laplacian(aligned_gray, cv2.CV_64F).var()) < 18.0:
         raise ValueError(f"{kind}_IMAGE_BLURRY")
 
     # Apply identical luminance normalization to enrollment and live crops. This
@@ -169,14 +232,9 @@ def attendance_sample(path, detector, recognizer, pad):
     if image is None:
         raise ValueError("LIVE_IMAGE_UNREADABLE")
     height, width = image.shape[:2]
-    detector.setInputSize((width, height))
-    _, faces = detector.detect(image)
-    if faces is None or len(faces) == 0:
-        raise ValueError("LIVE_FACE_NOT_FOUND")
-    if len(faces) != 1:
-        raise ValueError("LIVE_MULTIPLE_FACES")
-
-    face = faces[0]
+    if min(width, height) < 100 or max(width, height) > 2000:
+        raise ValueError("LIVE_IMAGE_QUALITY")
+    face, width, height = detect_primary_face(image, detector, "LIVE")
     x, y, w, h = map(float, face[:4])
     if min(w, h) < 65 or w < width * 0.23 or h < height * 0.27:
         raise ValueError("LIVE_FACE_TOO_SMALL")
@@ -191,7 +249,7 @@ def attendance_sample(path, detector, recognizer, pad):
     mean, contrast = float(gray.mean()), float(gray.std())
     if mean < 45 or mean > 225 or contrast < 13:
         raise ValueError("LIVE_IMAGE_LIGHTING")
-    if cv2.Laplacian(gray, cv2.CV_64F).var() < 20:
+    if scale_invariant_blur_variance(gray) < 20.0:
         raise ValueError("LIVE_IMAGE_BLURRY")
 
     # Raw RGB face crop, normalized exactly as specified by the ONNX model.
@@ -271,10 +329,46 @@ def verify_attendance(samples, poses, references, recognizer, threshold, pad_thr
         result(False, code, frame_count=count)
         return
 
+    expected = ["front", "front"]
+    for pose in poses[1:]:
+        expected.extend(["front", pose, pose])
+
     features = [sample[3] for sample in samples]
-    scores = [best_reference_score(references, feature, recognizer) for feature in features]
-    consistency = min(best_reference_score([features[0]], feature, recognizer) for feature in features[1:])
-    score = min(min(scores), consistency)
+    ref_scores = [best_reference_score(references, feature, recognizer) for feature in features]
+
+    front_scores = [ref_scores[index] for index, role in enumerate(expected) if role == "front"]
+    front_anchors = [
+        best_reference_score([features[0]], features[index], recognizer)
+        for index, role in enumerate(expected)
+        if index > 0 and role == "front"
+    ]
+    side_scores = [ref_scores[index] for index, role in enumerate(expected) if role in ("left", "right")]
+
+    # Adjacent checks: held same-pose frames (e.g. front->front or left->left) must match strictly,
+    # while cross-pose transitions (front<->side/pitch) avoid penalizing natural head turns when
+    # enrolled references and front anchors already confirm identity.
+    adjacent_scores = []
+    cross_pose_margin = 0.04
+    for index in range(1, count):
+        adj_s = best_reference_score([features[index - 1]], features[index], recognizer)
+        same_pose = expected[index] == expected[index - 1]
+        adjacent_scores.append(adj_s if same_pose else min(1.0, adj_s + cross_pose_margin))
+
+    # Enrollment captures front/left/right views but not up/down pitches; combine enrolled
+    # similarity with continuous adjacent-frame transition while keeping a hard floor.
+    pitch_floor = max(0.0, threshold - 0.05)
+    pitch_scores = []
+    for index, role in enumerate(expected):
+        if role not in ("up", "down"):
+            continue
+        ref_s = ref_scores[index]
+        adj_s = best_reference_score([features[index - 1]], features[index], recognizer)
+        if ref_s < pitch_floor:
+            pitch_scores.append(ref_s)
+        else:
+            pitch_scores.append(min(adj_s, 0.55 * ref_s + 0.45 * adj_s))
+
+    score = min([*front_scores, *front_anchors, *side_scores, *adjacent_scores, *pitch_scores])
     # Leave a small rejection band above the ordinary matching threshold.
     matched = score >= min(1.0, threshold + 0.025)
     code = "MATCH" if matched else ("IDENTITY_UNCERTAIN" if score >= threshold else "BIOMETRIC_MISMATCH")

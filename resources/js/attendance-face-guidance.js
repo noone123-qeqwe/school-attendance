@@ -99,7 +99,7 @@ function drawPreview(video, canvas, ctx) {
     const viewportAspect = video.clientWidth / video.clientHeight || 1;
     const width = Math.min(video.videoWidth, video.videoHeight * viewportAspect);
     const height = Math.min(video.videoHeight, video.videoWidth / viewportAspect);
-    const scale = Math.min(1, 480 / Math.max(width, height));
+    const scale = Math.min(1, 640 / Math.max(width, height));
     const targetWidth = Math.round(width * scale);
     const targetHeight = Math.round(height * scale);
     if (Math.min(targetWidth, targetHeight) < 100) throw new Error('The camera resolution is too low. Use another verification method.');
@@ -154,7 +154,10 @@ export async function captureSequence({ video, canvas, detector, poses, signal, 
             last = sample;
             onGuide('Face detected. Hold steady.', 'detected', instruction);
             if (now - stableSince < 430 || now - lastCapture < 190) continue;
-            const frame = canvas.toDataURL('image/jpeg', 0.81);
+            let frame = canvas.toDataURL('image/jpeg', 0.86);
+            if (frame.length > 210000) {
+                frame = canvas.toDataURL('image/jpeg', 0.78);
+            }
             if (!frame.startsWith('data:image/jpeg;base64,') || frame.length > 240000) {
                 throw new Error('The camera frame could not be captured. Try again or use device verification.');
             }
