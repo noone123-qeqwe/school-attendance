@@ -1464,13 +1464,13 @@
     }
 
     .scanner-page-screen .scanner-viewfinder-wrapper {
-        width: min(100%, clamp(216px, calc(100dvh - 232px), 456px));
+        width: min(100%, clamp(210px, calc(100dvh - 280px), 390px));
         margin: 0 auto 12px;
     }
 
     .scanner-page-screen .scanner-viewfinder-wrapper.camera-unavailable {
-        width: min(100%, 456px);
-        min-height: 224px;
+        width: min(100%, 390px);
+        min-height: 210px;
         aspect-ratio: auto;
     }
 

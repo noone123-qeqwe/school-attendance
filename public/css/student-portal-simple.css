@@ -68,9 +68,10 @@ body.student-portal[data-student-layout] #realStats { gap: 12px !important; marg
 body.student-portal[data-student-layout] #realStats .ent-kpi-card { padding: 18px !important; min-height: 100px !important; border-radius: 12px !important; box-shadow: none !important; }
 body.student-portal[data-student-layout] #realStats .ent-kpi-value { font-size: 1.6rem !important; }
 .student-quick-links { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 22px 0; }
-.student-quick-links a { display: flex; align-items: center; gap: 12px; min-height: 62px; padding: 14px 18px; border: 1px solid var(--student-border); border-radius: 12px; color: #f3e7cd; background: var(--student-surface); text-decoration: none; font-size: .87rem; font-weight: 600; }
-.student-quick-links a > i:first-child { color: #cfa46f; font-size: 1.15rem; }
-.student-quick-links a > i:last-child { margin-left: auto; color: #b39b82; font-size: .8rem; }
+.student-quick-links :is(a, button) { display: flex; align-items: center; gap: 12px; min-height: 62px; padding: 14px 18px; border: 1px solid var(--student-border); border-radius: 12px; color: #f3e7cd; background: var(--student-surface); text-decoration: none; font: inherit; font-size: .87rem; font-weight: 600; text-align: left; cursor: pointer; }
+.student-quick-links :is(a, button) > i:first-child { color: #cfa46f; font-size: 1.15rem; flex-shrink: 0; }
+.student-quick-links :is(a, button) > i:last-child { margin-left: auto; color: #b39b82; font-size: .8rem; flex-shrink: 0; }
+.student-quick-links .student-quick-scan-link { border-color: rgba(212, 175, 55, 0.36); background: linear-gradient(135deg, rgba(212, 175, 55, 0.14), rgba(24, 18, 14, 0.94)); }
 body.student-portal[data-student-layout] .schedule-modern-card { padding: 16px !important; border-radius: 10px; box-shadow: none; }
 body.student-portal[data-student-layout] .schedule-meta-row { flex-wrap: wrap; gap: 8px; }
 /* Classes: one search and one day filter, with legible subject cards. */
@@ -157,10 +158,10 @@ body.student-portal[data-student-layout] .student-excuse-page [data-excuse-panel
 body.student-portal[data-student-layout] :is(.notif-hero, .notif-card, .notif-stats-card) { box-shadow: none !important; border-radius: 14px !important; }
 body.student-portal[data-student-layout] :is(.notif-status-tabs, .notif-tabs-row) { flex-wrap: wrap; }
 /* Dedicated mobile routes retain their controls and share the quieter surfaces. */
-body.student-mobile-portal[data-student-layout] :is(.welcome-card, .status-card, .history-top-bar, .history-card, .mobile-profile-hero, .mobile-card, .scan-hero, .scan-info-card) { border-radius: 14px !important; box-shadow: none !important; }
-body.student-mobile-portal[data-student-layout] .mobile-home .quick-actions-grid { gap: 12px; }
-body.student-mobile-portal[data-student-layout] .mobile-home .quick-action-btn { min-height: 82px; border-radius: 10px; box-shadow: none; }
-body.student-mobile-portal[data-student-layout] .mobile-home .section-title { font-size: .9rem; letter-spacing: 0; }
+body.student-mobile-portal[data-student-layout] :is(.welcome-card, .status-card, .history-top-bar, .history-card, .mobile-profile-hero, .mobile-card, .scan-hero, .scan-info-card) { border-radius: 16px !important; box-shadow: none !important; }
+body.student-mobile-portal[data-student-layout] .mobile-home .quick-actions-grid { gap: 10px; }
+body.student-mobile-portal[data-student-layout] .mobile-home .quick-action-btn { min-height: 82px; border-radius: 14px; box-shadow: none; }
+body.student-mobile-portal[data-student-layout] .mobile-home .section-title { font-size: .8rem; letter-spacing: 0.06em; }
 @media (max-width: 991.98px) {
     body.student-portal[data-student-layout] .cor-mobile-cards-view { grid-template-columns: minmax(0,1fr); }
     body.student-portal[data-student-layout] .scal-outer { grid-template-columns: minmax(0,1fr); }
@@ -171,20 +172,32 @@ body.student-mobile-portal[data-student-layout] .mobile-home .section-title { fo
     body.student-portal[data-student-layout] .main-content > .page-enter { padding: 16px 16px calc(104px + env(safe-area-inset-bottom)) !important; }
     .student-page-header { align-items: flex-start; gap: 10px; margin-bottom: 22px; }
     .student-page-header h1 { font-size: 1.45rem !important; }
-    body.student-portal[data-student-layout] .student-hero-inner { padding: 20px 16px !important; }
-    body.student-portal[data-student-layout] .student-meta-chip { padding: 0 6px 0 0 !important; min-height: 22px; }
+    body.student-portal[data-student-layout] .student-hero-inner { padding: 18px 16px !important; gap: 14px !important; }
+    body.student-portal[data-student-layout] .student-meta-chip { padding: 0 8px 0 0 !important; min-height: 22px; }
     body.student-portal[data-student-layout] .student-meta-chip:nth-child(n + 4) { display: inline-flex; }
-    body.student-portal[data-student-layout] .student-hero-deck { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
-    body.student-portal[data-student-layout] .hero-deck-card { padding: 4px 8px !important; gap: 6px !important; }
-    body.student-portal[data-student-layout] .hero-deck-icon { display: none; }
-    body.student-portal[data-student-layout] .hero-deck-value { font-size: .97rem !important; }
-    body.student-portal[data-student-layout] .hero-deck-body { overflow: visible; }
+    body.student-portal[data-student-layout] .student-hero-deck { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; padding-top: 14px !important; }
+    body.student-portal[data-student-layout] .student-hero-deck > .hero-deck-card {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        text-align: left !important;
+        padding: 12px !important;
+        gap: 10px !important;
+        min-height: 70px !important;
+        border: 1px solid var(--student-border) !important;
+        border-radius: 12px !important;
+        background: rgba(255, 255, 255, 0.035) !important;
+    }
+    body.student-portal[data-student-layout] .student-hero-deck > .hero-deck-card:first-child { grid-column: 1 / -1 !important; min-height: 60px !important; padding: 11px 14px !important; }
+    body.student-portal[data-student-layout] .hero-deck-icon { display: flex !important; width: 36px !important; height: 36px !important; min-width: 36px !important; font-size: 0.95rem !important; border-radius: 10px !important; }
+    body.student-portal[data-student-layout] .hero-deck-value { font-size: 1rem !important; }
+    body.student-portal[data-student-layout] .hero-deck-body { min-width: 0; overflow: visible; text-align: left !important; }
     body.student-portal[data-student-layout] :is(.hero-deck-value, .hero-deck-label) { white-space: normal; overflow: visible; text-overflow: clip; }
-    body.student-portal[data-student-layout] #studentClock { font-size: .88rem !important; white-space: nowrap; }
-    body.student-portal[data-student-layout] .hero-deck-label { font-size: .68rem; line-height: 1.5; }
-    .student-quick-links { grid-template-columns: minmax(0,1fr); gap: 10px; margin: 16px 0; }
-    body.student-portal[data-student-layout] .student-quick-links [data-bottom-nav-duplicate] { display: none; }
-    .student-quick-links a { min-height: 54px; padding: 13px 16px; }
+    body.student-portal[data-student-layout] #studentClock { font-size: .95rem !important; white-space: nowrap; }
+    body.student-portal[data-student-layout] .hero-deck-label { font-size: .7rem; line-height: 1.35; }
+    .student-quick-links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+    .student-quick-links :is(a, button) { min-height: 56px; padding: 12px 13px; border-radius: 13px; gap: 9px; font-size: .82rem; }
+    .student-quick-links :is(a, button) > i:last-child { display: none; }
     body.student-portal[data-student-layout] #realStats { grid-template-columns: repeat(2,minmax(0,1fr)); margin: 16px 0 !important; }
     body.student-portal[data-student-layout] #realStats .ent-kpi-card { min-height: 90px !important; padding: 16px !important; }
     body.student-portal[data-student-layout] :is(.ent-section-header, .ent-section-head, .adm-card-head, .info-card-header, .table-card-header) { padding: 16px !important; }

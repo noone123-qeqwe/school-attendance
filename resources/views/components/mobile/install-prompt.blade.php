@@ -1,68 +1,48 @@
 {{-- Install PWA Prompt - Only shows when NOT in standalone mode --}}
-<div id="installPrompt" class="install-prompt" style="display: none;">
-    <div class="install-prompt-content">
-        <button class="install-prompt-close" onclick="dismissInstallPrompt()">
-            <i class="bi bi-x"></i>
-        </button>
-        
-        <div class="install-prompt-icon">
-            <i class="bi bi-phone"></i>
+<div id="installPrompt" class="install-prompt" style="display: none;" role="region" aria-label="Install application">
+    <div class="install-prompt-row">
+        <div class="install-prompt-badge" aria-hidden="true">
+            <i class="bi bi-phone-fill"></i>
         </div>
-        
-        <h3>Install App for Better Experience</h3>
-        <p>Add to your home screen to hide browser bars and get a native app experience.</p>
-        
-        <div class="install-instructions">
-            <div class="install-android">
-                <p><strong>Android Chrome:</strong></p>
-                <ol>
-                    <li>Tap menu <i class="bi bi-three-dots-vertical"></i></li>
-                    <li>Tap "Install app" or "Add to Home screen"</li>
-                    <li>Tap "Install"</li>
-                </ol>
-            </div>
-            
-            <div class="install-ios">
-                <p><strong>iPhone Safari:</strong></p>
-                <ol>
-                    <li>Tap share button <i class="bi bi-box-arrow-up"></i></li>
-                    <li>Scroll down and tap "Add to Home Screen"</li>
-                    <li>Tap "Add"</li>
-                </ol>
-            </div>
+        <div class="install-prompt-copy">
+            <strong>Install Student App</strong>
+            <span>1-tap access from your home screen &amp; fullscreen QR scanner.</span>
         </div>
-        
-        <button class="install-prompt-btn" onclick="installPWA()">
-            <i class="bi bi-download"></i>
-            Install Now
-        </button>
-        
-        <button class="install-prompt-later" onclick="dismissInstallPrompt()">
-            Maybe Later
-        </button>
+        <div class="install-prompt-actions">
+            <button type="button" class="install-prompt-btn" id="installPromptTrigger">Install</button>
+            <button type="button" class="install-prompt-close" id="installPromptClose" aria-label="Dismiss install prompt">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
+    <div id="installGuideBox" class="install-guide-box" hidden>
+        <p id="installGuidePlatform" class="install-guide-title"></p>
+        <ol id="installGuideSteps" class="install-guide-steps"></ol>
     </div>
 </div>
 
 <style>
     .install-prompt {
         position: fixed;
-        bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 16px);
-        left: 16px;
-        right: 16px;
-        background: linear-gradient(135deg, rgba(207, 164, 111, 0.15), rgba(207, 164, 111, 0.05));
+        bottom: calc(var(--bottom-nav-height, 76px) + var(--safe-bottom, 0px) + 22px);
+        left: 12px;
+        right: 12px;
+        max-width: 440px;
+        margin-inline: auto;
+        background: rgba(24, 15, 13, 0.94);
         border: 1px solid rgba(207, 164, 111, 0.3);
-        border-radius: 16px;
-        padding: 24px;
+        border-radius: 18px;
+        padding: 12px 14px;
         z-index: 998;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        animation: slideUp 0.3s ease;
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        animation: slideUpPrompt 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    @keyframes slideUp {
+    @keyframes slideUpPrompt {
         from {
-            transform: translateY(100%);
+            transform: translateY(20px);
             opacity: 0;
         }
         to {
@@ -71,197 +51,206 @@
         }
     }
 
-    .install-prompt-close {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 32px;
-        height: 32px;
-        border: none;
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--text-primary);
-        border-radius: 50%;
+    .install-prompt-row {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+
+    .install-prompt-badge {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(212, 175, 55, 0.24), rgba(122, 26, 26, 0.35));
+        border: 1px solid rgba(212, 175, 55, 0.35);
+        color: var(--gold-primary, #D4AF37);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
-        cursor: pointer;
+        font-size: 1.1rem;
     }
 
-    .install-prompt-icon {
-        font-size: 48px;
-        color: var(--gold-primary);
-        text-align: center;
-        margin-bottom: 16px;
+    .install-prompt-copy {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
     }
 
-    .install-prompt h3 {
-        font-size: 18px;
+    .install-prompt-copy strong {
+        font-size: 0.88rem;
         font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 8px;
-        text-align: center;
+        color: var(--text-primary, #FCF8F2);
+        line-height: 1.2;
     }
 
-    .install-prompt p {
-        font-size: 14px;
-        color: var(--text-secondary);
-        text-align: center;
-        margin-bottom: 20px;
+    .install-prompt-copy span {
+        font-size: 0.75rem;
+        color: var(--text-secondary, #D1C5B4);
+        line-height: 1.3;
     }
 
-    .install-instructions {
-        margin-bottom: 20px;
-    }
-
-    .install-android,
-    .install-ios {
-        margin-bottom: 16px;
-    }
-
-    .install-instructions p {
-        text-align: left;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--gold-primary);
-        margin-bottom: 8px;
-    }
-
-    .install-instructions ol {
-        margin: 0;
-        padding-left: 20px;
-        color: var(--text-secondary);
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    .install-instructions li {
-        margin-bottom: 4px;
+    .install-prompt-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
     }
 
     .install-prompt-btn {
-        width: 100%;
-        padding: 14px;
-        background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
-        color: var(--bg-dark);
+        min-height: 36px;
+        padding: 0 13px;
+        background: linear-gradient(135deg, var(--gold-primary, #D4AF37), var(--gold-dark, #A68822));
+        color: #140907;
         border: none;
-        border-radius: 12px;
-        font-size: 15px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
+        border-radius: 10px;
+        font-size: 0.78rem;
+        font-weight: 700;
         cursor: pointer;
-        margin-bottom: 12px;
     }
 
     .install-prompt-btn:active {
-        transform: scale(0.98);
+        transform: scale(0.95);
     }
 
-    .install-prompt-later {
-        width: 100%;
-        padding: 12px;
-        background: transparent;
-        color: var(--text-secondary);
-        border: none;
-        font-size: 14px;
+    .install-prompt-close {
+        width: 36px;
+        height: 36px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-secondary, #D1C5B4);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
         cursor: pointer;
     }
 
-    /* Hide on desktop */
+    .install-guide-box {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .install-guide-title {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--gold-primary, #D4AF37);
+        margin: 0 0 6px;
+        text-align: left;
+    }
+
+    .install-guide-steps {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--text-secondary, #D1C5B4);
+        font-size: 0.76rem;
+        line-height: 1.5;
+    }
+
+    /* Hide on desktop & when modal/keyboard/scanner overlays are active */
     @media (min-width: 768px) {
         .install-prompt {
             display: none !important;
         }
     }
 
-    /* Already installed */
-    .standalone-mode .install-prompt {
+    .standalone-mode .install-prompt,
+    body.keyboard-open .install-prompt,
+    body.modal-open .install-prompt,
+    body.scanner-active .install-prompt {
         display: none !important;
     }
 </style>
 
 <script @cspNonce>
-    // Reuse global deferredPrompt if already registered by pwa-tags
     if (typeof window.deferredPrompt === 'undefined') {
         window.deferredPrompt = null;
     }
 
-    // Check if should show install prompt
     window.addEventListener('load', function() {
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                            window.navigator.standalone || 
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                            window.navigator.standalone ||
                             document.referrer.includes('android-app://');
-        
+
         const dismissed = localStorage.getItem('installPromptDismissed');
         const dismissTime = localStorage.getItem('installPromptDismissTime');
-        
-        // Show prompt if not standalone and not recently dismissed (wait 7 days)
+
         if (!isStandalone && (!dismissed || (Date.now() - dismissTime) > 7 * 24 * 60 * 60 * 1000)) {
             setTimeout(() => {
                 const promptEl = document.getElementById('installPrompt');
                 if (promptEl) promptEl.style.display = 'block';
-            }, 3000); // Show after 3 seconds
+            }, 3000);
         }
     });
 
-    // Capture the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         window.deferredPrompt = e;
-        console.log('Install prompt available');
     });
 
-    // Install PWA
     async function installPWA() {
+        const promptEl = document.getElementById('installPrompt');
         if (window.deferredPrompt) {
             window.deferredPrompt.prompt();
             const { outcome } = await window.deferredPrompt.userChoice;
-            console.log('Install outcome:', outcome);
-            
-            if (outcome === 'accepted') {
-                const promptEl = document.getElementById('installPrompt');
-                if (promptEl) promptEl.style.display = 'none';
+            if (outcome === 'accepted' && promptEl) {
+                promptEl.style.display = 'none';
                 localStorage.removeItem('installPromptDismissed');
             }
-            
             window.deferredPrompt = null;
-        } else {
-            // Show instructions if no prompt available
-            alert('To install:\n\n' +
-                  'Android: Tap menu → "Install app"\n' +
-                  'iPhone: Tap Share → "Add to Home Screen"');
+            return;
         }
+
+        const guideBox = document.getElementById('installGuideBox');
+        const guidePlatform = document.getElementById('installGuidePlatform');
+        const guideSteps = document.getElementById('installGuideSteps');
+        if (!guideBox || !guidePlatform || !guideSteps) return;
+
+        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        guidePlatform.textContent = isIos ? 'iPhone / iPad Safari:' : 'Android Chrome / Edge:';
+        guideSteps.replaceChildren();
+
+        const steps = isIos
+            ? ['Tap the Share icon in the browser bar', 'Choose "Add to Home Screen"', 'Tap "Add" to launch in full screen']
+            : ['Tap the browser menu (3 dots) at the top right', 'Tap "Install app" or "Add to Home screen"', 'Confirm "Install"'];
+
+        steps.forEach((step) => {
+            const li = document.createElement('li');
+            li.textContent = step;
+            guideSteps.appendChild(li);
+        });
+        guideBox.hidden = !guideBox.hidden;
     }
 
-    // Dismiss install prompt
     function dismissInstallPrompt() {
-        document.getElementById('installPrompt').style.display = 'none';
+        const promptEl = document.getElementById('installPrompt');
+        if (promptEl) promptEl.style.display = 'none';
         localStorage.setItem('installPromptDismissed', 'true');
         localStorage.setItem('installPromptDismissTime', Date.now());
     }
 
-    // Detect when PWA is installed
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('installPromptTrigger')?.addEventListener('click', installPWA);
+        document.getElementById('installPromptClose')?.addEventListener('click', dismissInstallPrompt);
+    });
+
     window.addEventListener('appinstalled', () => {
-        console.log('PWA installed successfully');
-        document.getElementById('installPrompt').style.display = 'none';
+        const promptEl = document.getElementById('installPrompt');
+        if (promptEl) promptEl.style.display = 'none';
         localStorage.removeItem('installPromptDismissed');
         localStorage.removeItem('installPromptDismissTime');
         localStorage.setItem('pwa_app_installed', 'true');
     });
 
-    // Detect when user returns to browser after uninstalling
-    // If user had dismissed but is now in browser mode, clear the dismissal
-    if (!window.matchMedia('(display-mode: standalone)').matches && 
-        !window.navigator.standalone && 
+    if (!window.matchMedia('(display-mode: standalone)').matches &&
+        !window.navigator.standalone &&
         !document.referrer.includes('android-app://')) {
-        // User is in browser mode
-        // If they previously dismissed but it's been more than 1 day, reset
         const dismissTime = localStorage.getItem('installPromptDismissTime');
         if (dismissTime && (Date.now() - dismissTime) > 24 * 60 * 60 * 1000) {
-            // Been 1 day since dismissal, and they're back in browser (likely uninstalled)
             localStorage.removeItem('installPromptDismissed');
             localStorage.removeItem('installPromptDismissTime');
         }

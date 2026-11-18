@@ -31,8 +31,11 @@
             --gold-light: #F3E7CD;
             --gold-dark: var(--ds-gold-dark, #A68822);
             --bg-dark: var(--ds-bg, #110A0A);
+            --bg-surface: rgba(28, 19, 19, 0.92);
             --bg-card: rgba(207, 164, 111, 0.08);
-            --bg-card-hover: rgba(207, 164, 111, 0.12);
+            --bg-card-hover: rgba(207, 164, 111, 0.14);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-gold: rgba(207, 164, 111, 0.24);
             --text-primary: var(--ds-text-primary, #FCF8F2);
             --text-secondary: var(--ds-text-secondary, #D1C5B4);
             --text-muted: var(--ds-text-muted, #A39683);
@@ -60,8 +63,8 @@
             --app-height: 100dvh;
 
             /* Sizes */
-            --header-height: 56px;
-            --bottom-nav-height: 64px;
+            --header-height: 60px;
+            --bottom-nav-height: 76px;
         }
 
         * {
@@ -96,6 +99,21 @@
             -webkit-overflow-scrolling: touch;
         }
 
+        body.student-mobile-portal {
+            background-image:
+                radial-gradient(circle at top right, rgba(122, 26, 26, 0.24), transparent 52%),
+                radial-gradient(circle at 0% 82%, rgba(212, 175, 55, 0.10), transparent 48%);
+        }
+
+        /* Hide floating bottom dock cleanly when virtual keyboard or modal opens */
+        body.keyboard-open .mobile-bottom-nav,
+        body.modal-open .mobile-bottom-nav,
+        body.scanner-active .mobile-bottom-nav {
+            transform: translateY(150%) !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
         /* Hide body overflow when in browser (not standalone PWA) */
         @media (display-mode: browser) {
             body {
@@ -122,8 +140,8 @@
             min-height: 100dvh;
             min-height: var(--app-height, 100dvh);
             box-sizing: border-box;
-            padding-top: calc(var(--header-height) + var(--safe-top));
-            padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 16px);
+            padding-top: calc(var(--header-height) + var(--safe-top) + 10px);
+            padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 30px);
             padding-left: max(16px, var(--safe-left));
             padding-right: max(16px, var(--safe-right));
         }

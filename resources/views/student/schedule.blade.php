@@ -2,9 +2,9 @@
 @section('page-title', 'My Schedule')
 
 @section('content')
-<div class="mb-4">
-    <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: 2rem;">Weekly Schedule</h1>
-    <div style="color: #b39b82; font-size: 0.95rem;">
+<div class="mb-3 mb-md-4">
+    <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.35rem, 3.5vw, 1.9rem); letter-spacing: -0.02em;">Weekly Schedule</h1>
+    <div style="color: #b39b82; font-size: 0.9rem;">
         Your classes for Year {{ Auth::user()->year_level }}, Semester {{ Auth::user()->semester }}
     </div>
 </div>
@@ -70,6 +70,24 @@
             background: #cfa46f;
             color: #120804;
         }
+        .schedule-day-today-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.7);
+            flex-shrink: 0;
+        }
+        .sched-mobile-card {
+            border-left: 3px solid var(--gold, #CFA46F);
+            background: rgba(255, 255, 255, 0.03);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
     }
 </style>
 
@@ -82,6 +100,9 @@
                     class="schedule-day-pill {{ $day === $defaultDay ? 'active' : '' }}" 
                     onclick="selectScheduleDay('{{ $day }}')"
                     id="sched-pill-{{ $day }}">
+                @if($day === $currentDay)
+                    <span class="schedule-day-today-dot" aria-label="Today"></span>
+                @endif
                 <span>{{ substr($day, 0, 3) }}</span>
                 @if($count > 0)
                     <span class="schedule-day-pill-badge">{{ $count }}</span>
@@ -139,22 +160,22 @@
 
                     <!-- Mobile Cards -->
                     <div class="d-block d-md-none">
-                        <div class="d-flex flex-column pt-2">
+                        <div class="d-flex flex-column pt-1">
                             @foreach($weeklySchedule[$day] as $sched)
-                                <div style="border-left: 3px solid var(--gold); background: rgba(255,255,255,0.02); border-radius: 0 12px 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 12px 10px 12px 14px; margin-bottom: 8px;">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div>
-                                            <div style="font-weight: 700; color: #f3e7cd; font-size: 1.05rem; line-height: 1.2;">{{ $sched->subject->name }}</div>
-                                            <div style="font-size: 0.75rem; color: #b39b82; margin-top: 2px;">{{ $sched->subject->code }}</div>
+                                <div class="sched-mobile-card">
+                                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                        <div style="min-width: 0;">
+                                            <div style="font-weight: 700; color: #f3e7cd; font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere;">{{ $sched->subject->name }}</div>
+                                            <div style="font-size: 0.76rem; color: #cfa46f; font-weight: 600; margin-top: 2px;">{{ $sched->subject->code }}</div>
                                         </div>
-                                        <span style="background: rgba(14,165,233,0.15); color: #38bdf8; border: 1px solid rgba(14,165,233,0.3); padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; flex-shrink: 0;">{{ $sched->room ?? 'TBA' }}</span>
+                                        <span style="background: rgba(14,165,233,0.15); color: #38bdf8; border: 1px solid rgba(14,165,233,0.3); padding: 4px 9px; border-radius: 8px; font-size: 0.72rem; font-weight: 700; flex-shrink: 0;">{{ $sched->room ?? 'TBA' }}</span>
                                     </div>
                                     <div class="d-flex flex-column gap-1" style="margin-top: 8px;">
-                                        <div style="color: #d6b67b; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
-                                            <i class="bi bi-clock" style="opacity: 0.7;"></i> {{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }} - {{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}
+                                        <div style="color: #e6c89a; font-size: 0.84rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                                            <i class="bi bi-clock" aria-hidden="true"></i> {{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }} - {{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}
                                         </div>
-                                        <div style="color: #a3a3a3; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
-                                            <i class="bi bi-person" style="opacity: 0.7;"></i> {{ $sched->subject->instructorUser->name ?? $sched->subject->instructor ?? 'TBA' }}
+                                        <div style="color: #d1c5b4; font-size: 0.83rem; display: flex; align-items: center; gap: 6px; overflow-wrap: anywhere;">
+                                            <i class="bi bi-person" aria-hidden="true"></i> {{ $sched->subject->instructorUser->name ?? $sched->subject->instructor ?? 'TBA' }}
                                         </div>
                                     </div>
                                 </div>

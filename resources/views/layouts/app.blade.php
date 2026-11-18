@@ -134,6 +134,13 @@
                                 @if(request()->routeIs('home') || request()->routeIs('teacher.dashboard') || request()->routeIs('parent.dashboard'))
                                     Dashboard
                                 @elseif(request()->routeIs('student.classes')) My Classes
+                                @elseif(request()->routeIs('student.schedule')) Weekly Schedule
+                                @elseif(request()->routeIs('student.calendar')) Calendar & Records
+                                @elseif(request()->routeIs('student.attendance.calendar')) Attendance Calendar
+                                @elseif(request()->routeIs('excuses*')) Excuses
+                                @elseif(request()->routeIs('notifications*')) Notifications
+                                @elseif(request()->routeIs('profile*')) My Profile
+                                @elseif(request()->routeIs('settings.biometrics.*')) Biometrics
                                 @elseif(request()->routeIs('settings')) Settings
                                 @else
                                     Portal
@@ -915,6 +922,14 @@
                 @elseif(Auth::user()->isParent())
                     @include('partials.parent-navigation', ['mobile' => true])
                 @else
+                    <a href="{{ route('student.schedule') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-clock-history"></i></div>
+                        <span class="more-sheet-item-label">Schedule</span>
+                    </a>
+                    <a href="{{ route('student.calendar') }}#attendance-records" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-clipboard-check-fill"></i></div>
+                        <span class="more-sheet-item-label">Attendance Log</span>
+                    </a>
                     <a href="{{ route('excuses') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-file-text-fill"></i></div>
                         <span class="more-sheet-item-label">Excuses</span>
@@ -923,6 +938,14 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-pie-chart-fill"></i></div>
                         <span class="more-sheet-item-label">Breakdown</span>
                     </button>
+                    <a href="{{ route('profile') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-person-badge-fill"></i></div>
+                        <span class="more-sheet-item-label">My Profile</span>
+                    </a>
+                    <a href="{{ route('settings') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-gear-fill"></i></div>
+                        <span class="more-sheet-item-label">Settings</span>
+                    </a>
                 @endif
             </div>
         </div>

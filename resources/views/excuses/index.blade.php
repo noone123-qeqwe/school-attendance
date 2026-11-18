@@ -5,8 +5,8 @@
 <div class="ent-section ent-fade-up student-excuse-page">
     <header class="student-page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
         <div>
-            <h1 style="font-size: 2rem; font-weight: 800; color: #f3e7cd; margin-bottom:4px; letter-spacing: -0.02em;">Excuse Submissions</h1>
-            <p style="color: #b39b82; font-size: 0.95rem; margin:0;">Manage and track your absence excuses</p>
+            <h1 style="font-size: clamp(1.4rem, 3.5vw, 1.9rem); font-weight: 800; color: #f3e7cd; margin-bottom:4px; letter-spacing: -0.02em;">Excuse Submissions</h1>
+            <p style="color: #b39b82; font-size: 0.92rem; margin:0;">Manage and track your absence excuses</p>
         </div>
         <a href="{{ route('excuses.create_general') }}" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #1a1a2e; border: none; font-weight: 700;">
             <i class="bi bi-plus-circle-fill" style="margin-right: 6px;"></i> Submit Excuse Letter
@@ -106,8 +106,8 @@
                             @if($excuse->attachments)
                                 <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
                                     @foreach($excuse->attachments ?? [] as $index => $attachment)
-                                        <a href="{{ route('excuse-attachments.show', [$excuse->id, $index]) }}" target="_blank" rel="noopener noreferrer" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-                                            <i class="bi bi-paperclip"></i> View Attachment
+                                        <a href="{{ route('excuse-attachments.show', [$excuse->id, $index]) }}" target="_blank" rel="noopener noreferrer" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #f3e7cd; min-height: 40px; padding: 8px 14px; border-radius: 10px; font-size: 0.78rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                                            <i class="bi bi-paperclip" aria-hidden="true"></i> View Attachment
                                         </a>
                                     @endforeach
                                 </div>

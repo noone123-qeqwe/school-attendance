@@ -1193,9 +1193,19 @@
 </div>
 
 <nav class="student-quick-links" aria-label="Student shortcuts">
-    <a href="{{ route('student.classes') }}" data-bottom-nav-duplicate><i class="bi bi-journal-bookmark" aria-hidden="true"></i>My classes<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-    <a href="{{ route('student.calendar') }}#attendance-records" data-bottom-nav-duplicate><i class="bi bi-clipboard-check" aria-hidden="true"></i>Attendance records<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-    <a href="{{ route('excuses.create_general') }}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>Submit an excuse<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    <button type="button" class="d-md-none student-quick-scan-link" data-action="open-scanner">
+        <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
+        <span>Scan QR</span>
+        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    </button>
+    <a href="{{ route('student.schedule') }}" class="d-md-none">
+        <i class="bi bi-clock-history" aria-hidden="true"></i>
+        <span>Schedule</span>
+        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    </a>
+    <a href="{{ route('student.classes') }}" class="d-none d-md-flex" data-bottom-nav-duplicate><i class="bi bi-journal-bookmark" aria-hidden="true"></i>My classes<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    <a href="{{ route('student.calendar') }}#attendance-records"><i class="bi bi-clipboard-check" aria-hidden="true"></i><span>Attendance Log</span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    <a href="{{ route('excuses.create_general') }}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i><span>Submit Excuse</span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
 </nav>
 
 <!-- Quick Stats -->

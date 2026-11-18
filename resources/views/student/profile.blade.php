@@ -210,7 +210,7 @@
         <div class="col-lg-7">
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-header-icon" style="background:#fff5f5;color:#800000;">
+                    <div class="info-card-header-icon" style="background:rgba(207,164,111,0.14);color:#cfa46f;border:1px solid rgba(207,164,111,0.28);">
                         <i class="bi bi-mortarboard-fill"></i>
                     </div>
                     <div class="info-card-title">Academic Information</div>
@@ -284,7 +284,7 @@
             <!-- Attendance Stats -->
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-header-icon" style="background:#f0fdf4;color:#16a34a;">
+                    <div class="info-card-header-icon" style="background:rgba(74,222,128,0.14);color:#4ade80;border:1px solid rgba(74,222,128,0.28);">
                         <i class="bi bi-bar-chart-fill"></i>
                     </div>
                     <div class="info-card-title">Attendance Summary</div>
@@ -321,11 +321,11 @@
                     @php $rate = round((($totalPresent + $totalLate) / $totalAll) * 100); @endphp
                     <div style="margin-top:4px;">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span style="font-size:0.75rem;font-weight:600;color:#64748b;">Attendance Rate</span>
-                            <span style="font-size:0.8rem;font-weight:700;color:{{ $rate >= 75 ? '#16a34a' : '#dc2626' }};">{{ $rate }}%</span>
+                            <span style="font-size:0.78rem;font-weight:600;color:#b39b82;">Attendance Rate</span>
+                            <span style="font-size:0.84rem;font-weight:700;color:{{ $rate >= 75 ? '#4ade80' : '#f87171' }};">{{ $rate }}%</span>
                         </div>
-                        <div style="height:8px;background:#f1f5f9;border-radius:99px;overflow:hidden;">
-                            <div style="height:100%;width:{{ $rate }}%;background:{{ $rate >= 75 ? 'linear-gradient(90deg,#16a34a,#22c55e)' : 'linear-gradient(90deg,#dc2626,#ef4444)' }};border-radius:99px;transition:width 1s ease;"></div>
+                        <div style="height:8px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;">
+                            <div style="height:100%;width:{{ $rate }}%;background:{{ $rate >= 75 ? 'linear-gradient(90deg,#16a34a,#4ade80)' : 'linear-gradient(90deg,#dc2626,#f87171)' }};border-radius:99px;transition:width 1s ease;"></div>
                         </div>
                     </div>
                     @endif
@@ -361,12 +361,12 @@
                             </span>
                         </div>
 
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.78rem;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
-                            <div>
+                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:0.78rem;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+                            <div style="min-width:0;overflow-wrap:anywhere;">
                                 <span style="color:#b39b82;">Last Active:</span>
                                 <span style="color:#f3e7cd;font-weight:600;margin-left:4px;">{{ $binding->last_seen_at?->diffForHumans() ?? 'Just now' }}</span>
                             </div>
-                            <div>
+                            <div style="min-width:0;overflow-wrap:anywhere;">
                                 <span style="color:#b39b82;">IP Address:</span>
                                 <span style="color:#f3e7cd;font-weight:600;margin-left:4px;">{{ $binding->ip_address ?: 'Protected' }}</span>
                             </div>
@@ -429,14 +429,14 @@
             <!-- Quick Actions -->
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-header-icon" style="background:#eff6ff;color:#2563eb;">
+                    <div class="info-card-header-icon" style="background:rgba(96,165,250,0.14);color:#60a5fa;border:1px solid rgba(96,165,250,0.28);">
                         <i class="bi bi-lightning-fill"></i>
                     </div>
                     <div class="info-card-title">Quick Actions</div>
                 </div>
                 <div class="info-card-body" style="padding-top:14px;padding-bottom:14px;">
-                    <a href="{{ route('home') }}" class="quick-action-btn" style="text-decoration:none;">
-                        <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;margin-bottom:8px;" onmouseover="this.style.background='rgba(255,255,255,0.06)';" onmouseout="this.style.background='rgba(255,255,255,0.03)';">
+                    <a href="{{ route('home') }}" class="quick-action-btn" style="text-decoration:none;display:block;margin-bottom:8px;">
+                        <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
                             <div style="width:32px;height:32px;border-radius:8px;background:rgba(207,164,111,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold,#CFA46F);font-size:0.9rem;">
                                 <i class="bi bi-grid-fill"></i>
                             </div>
@@ -444,8 +444,8 @@
                             <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
                         </div>
                     </a>
-                    <a href="{{ route('student.schedule') }}" style="text-decoration:none;">
-                        <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;margin-bottom:8px;" onmouseover="this.style.background='rgba(255,255,255,0.06)';" onmouseout="this.style.background='rgba(255,255,255,0.03)';">
+                    <a href="{{ route('student.schedule') }}" style="text-decoration:none;display:block;margin-bottom:8px;">
+                        <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
                             <div style="width:32px;height:32px;border-radius:8px;background:rgba(207,164,111,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold,#CFA46F);font-size:0.9rem;">
                                 <i class="bi bi-calendar2-week-fill"></i>
                             </div>
@@ -453,8 +453,8 @@
                             <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
                         </div>
                     </a>
-                    <a href="{{ route('settings') }}" style="text-decoration:none;">
-                        <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)';" onmouseout="this.style.background='rgba(255,255,255,0.03)';">
+                    <a href="{{ route('settings') }}" style="text-decoration:none;display:block;">
+                        <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
                             <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;color:#b39b82;font-size:0.9rem;">
                                 <i class="bi bi-gear-fill"></i>
                             </div>

@@ -48,6 +48,7 @@
             $activeAliases = $isStudent ? match($item['route']) {
                 'home' => ['home', 'mobile.home'],
                 'student.classes' => ['student.classes', 'student.schedule', 'classes.index'],
+                'student.calendar' => ['student.calendar', 'student.attendance.calendar', 'mobile.attendance', 'mobile.history', 'attendance.index'],
                 'profile' => ['profile', 'mobile.profile'],
                 default => [$item['route']],
             } : [$item['route']];
@@ -60,7 +61,18 @@
                     @if($isActive) aria-current="page" @endif
                     id="mobileNavScanBtn"
                     aria-label="Scan QR Code">
-                <i class="bi bi-{{ $item['icon'] }}"></i>
+                <span class="nav-scan-jewel" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3.5 8.5V5.5C3.5 4.4 4.4 3.5 5.5 3.5H8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15.5 3.5H18.5C19.6 3.5 20.5 4.4 20.5 5.5V8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M3.5 15.5V18.5C3.5 19.6 4.4 20.5 5.5 20.5H8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15.5 20.5H18.5C19.6 20.5 20.5 19.6 20.5 18.5V15.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <rect x="7" y="7" width="3.5" height="3.5" rx="1" fill="currentColor"/>
+                        <rect x="13.5" y="7" width="3.5" height="3.5" rx="1" fill="currentColor"/>
+                        <rect x="7" y="13.5" width="3.5" height="3.5" rx="1" fill="currentColor"/>
+                        <circle cx="15.25" cy="15.25" r="1.75" fill="currentColor"/>
+                    </svg>
+                </span>
                 <span>{{ $item['label'] }}</span>
             </a>
         @else
@@ -68,7 +80,11 @@
                class="nav-item {{ $item['primary'] ? 'nav-item-primary' : '' }} {{ $isActive ? 'active' : '' }}"
                @if($isActive) aria-current="page" @endif
                data-route="{{ $item['route'] }}">
-                <i class="bi bi-{{ $item['icon'] }}"></i>
+                @if($item['primary'])
+                    <span class="nav-scan-jewel" aria-hidden="true"><i class="bi bi-{{ $item['icon'] }}"></i></span>
+                @else
+                    <i class="bi bi-{{ $item['icon'] }}" aria-hidden="true"></i>
+                @endif
                 <span>{{ $item['label'] }}</span>
             </a>
         @endif
@@ -78,20 +94,26 @@
 <style>
     .mobile-bottom-nav {
         position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: calc(var(--bottom-nav-height) + var(--safe-bottom));
-        padding-bottom: var(--safe-bottom);
-        background: var(--bg-dark);
-        border-top: 1px solid rgba(207, 164, 111, 0.1);
+        bottom: calc(10px + var(--safe-bottom));
+        left: calc(10px + var(--safe-left));
+        right: calc(10px + var(--safe-right));
+        height: 68px;
+        border-radius: 24px;
+        background: rgba(18, 12, 10, 0.92);
+        backdrop-filter: blur(36px) saturate(200%);
+        -webkit-backdrop-filter: blur(36px) saturate(200%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-top: 1px solid rgba(207, 164, 111, 0.32);
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-around;
-        padding-left: max(8px, var(--safe-left));
-        padding-right: max(8px, var(--safe-right));
+        padding: 0 6px;
         z-index: 1000;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+        box-shadow:
+            0 16px 40px -6px rgba(0, 0, 0, 0.75),
+            0 4px 12px rgba(0, 0, 0, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
     }
 
     .nav-item {
@@ -101,14 +123,17 @@
         align-items: center;
         justify-content: center;
         gap: 4px;
-        padding: 12px 8px;
+        height: 100%;
+        min-height: 44px;
+        padding: 6px 4px;
         text-decoration: none;
-        color: var(--text-muted);
-        font-size: 10px;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        border-radius: 12px;
-        margin: 4px 2px;
+        color: rgba(225, 215, 198, 0.58);
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.25px;
+        transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), color 0.18s ease;
+        border-radius: 16px;
+        margin: 0;
         position: relative;
         background: transparent;
         border: none;
@@ -119,80 +144,107 @@
     }
 
     .nav-item i {
-        font-size: 24px;
-        transition: all 0.2s ease;
+        font-size: 1.2rem;
+        line-height: 1;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
     }
 
     .nav-item span {
         white-space: nowrap;
-        transition: all 0.2s ease;
+        line-height: 1.2;
+        transition: color 0.2s ease;
     }
 
-    /* Primary Action Button (Scan) */
+    /* Primary Action Button (Center Gold Scan Jewel) */
     .nav-item-primary {
-        margin-top: -8px;
+        flex: 1.15;
+        justify-content: flex-end;
+        padding-bottom: 6px;
+        z-index: 5;
     }
 
-    .nav-item-primary i {
-        font-size: 28px;
-        background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
-        color: var(--bg-dark);
-        width: 56px;
-        height: 56px;
+    .nav-scan-jewel {
+        position: absolute;
+        top: -18px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #fff7db 0%, #e5c07b 40%, #b88638 80%, #87571e 100%);
+        color: #120704;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 50%;
-        box-shadow: 0 4px 12px rgba(207, 164, 111, 0.4);
+        border: 3.5px solid #140c0a;
+        box-shadow:
+            inset 0 2px 2px rgba(255, 255, 255, 0.9),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.35),
+            0 6px 18px rgba(207, 164, 111, 0.45),
+            0 2px 6px rgba(0, 0, 0, 0.6);
+        transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease;
     }
 
-    .nav-item-primary span {
-        color: var(--gold-primary);
-        font-weight: 600;
+    .nav-scan-jewel svg {
+        width: 24px;
+        height: 24px;
+        color: #140703;
+        display: block;
+    }
+
+    .nav-scan-jewel i {
+        font-size: 1.25rem;
+        color: #140703;
+    }
+
+    .nav-item-primary span:last-child {
+        color: #f3e7cd;
+        font-weight: 700;
+        font-size: 0.66rem;
     }
 
     /* Active State */
-    .nav-item.active {
-        color: var(--gold-primary);
-        background: var(--bg-card);
+    .nav-item.active:not(.nav-item-primary) {
+        color: #f5dfa8;
+        background: transparent;
     }
 
-    .nav-item.active i {
-        color: var(--gold-primary);
-        transform: scale(1.1);
+    .nav-item.active:not(.nav-item-primary) i {
+        color: #f5dfa8;
+        transform: translateY(-1px) scale(1.08);
+        filter: drop-shadow(0 2px 6px rgba(207, 164, 111, 0.5));
     }
 
-    .nav-item.active span {
-        color: var(--gold-primary);
-        font-weight: 600;
+    .nav-item.active:not(.nav-item-primary) span {
+        color: #f5dfa8;
+        font-weight: 700;
     }
 
-    /* Active indicator line */
-    .nav-item.active::before {
+    /* Top illuminated accent bar */
+    .nav-item.active:not(.nav-item-primary)::before {
         content: '';
         position: absolute;
         top: 0;
         left: 50%;
         transform: translateX(-50%);
-        width: 32px;
-        height: 3px;
-        background: var(--gold-primary);
-        border-radius: 0 0 3px 3px;
+        width: 20px;
+        height: 2.5px;
+        border-radius: 99px;
+        background: linear-gradient(90deg, #f5dfa8, #cfa46f);
+        box-shadow: 0 0 10px rgba(207, 164, 111, 0.85), 0 1px 3px rgba(207, 164, 111, 0.5);
     }
 
-    /* Remove indicator from primary button */
     .nav-item-primary.active::before {
         display: none;
     }
 
-    /* Hover/Touch feedback */
     .nav-item:active {
-        transform: scale(0.95);
-        background: var(--bg-card-hover);
+        transform: scale(0.92);
     }
 
-    .nav-item-primary:active i {
-        transform: scale(0.95);
+    .nav-item-primary:active .nav-scan-jewel {
+        transform: translateX(-50%) scale(0.88) translateY(2px);
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6), 0 3px 8px rgba(207, 164, 111, 0.25);
     }
 
     .nav-item * {

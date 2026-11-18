@@ -1,33 +1,65 @@
+@php
+    $headerUser = auth()->user();
+    $resolvedTitle = $title ?? match (true) {
+        request()->routeIs('mobile.home', 'home') => 'Home',
+        request()->routeIs('mobile.scan') => 'Scan Attendance QR',
+        request()->routeIs('mobile.history') => 'Attendance History',
+        request()->routeIs('mobile.profile', 'profile') => 'My Profile',
+        request()->routeIs('peer-snap.index') => 'Peer Check-in',
+        default => 'Smart Attendance',
+    };
+    $showStudentQuickShortcuts = empty($showBack)
+        && $headerUser?->isStudent()
+        && !isset($showNotifications)
+        && !isset($showSearch)
+        && !isset($showMore);
+@endphp
 <header class="mobile-header" id="mobileHeader">
     <button type="button" class="header-btn-left" id="headerBtnLeft" aria-label="{{ !empty($showBack) ? 'Go back' : 'Open navigation menu' }}" @if(empty($showBack)) aria-controls="mobileNavigationMenu" aria-expanded="false" @endif>
         @if(isset($showBack) && $showBack)
-            <i class="bi bi-arrow-left"></i>
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
         @else
-            <i class="bi bi-list"></i>
+            <i class="bi bi-list" aria-hidden="true"></i>
         @endif
     </button>
-    
-    <h1 class="header-title">{{ $title ?? 'Smart Attendance' }}</h1>
-    
+
+    <h1 class="header-title">{{ $resolvedTitle }}</h1>
+
     <div class="header-actions">
+        @if($showStudentQuickShortcuts)
+            <a href="{{ route('notifications') }}" class="header-btn-right header-action-link" aria-label="Notifications" title="Notifications">
+                <i class="bi bi-bell" aria-hidden="true"></i>
+                @if(isset($notificationCount) && $notificationCount > 0)
+                    <span class="notification-badge">{{ $notificationCount }}</span>
+                @endif
+            </a>
+            <a href="{{ route('profile') }}" class="header-btn-right header-action-link header-avatar-pill" aria-label="My Profile" title="My Profile">
+                @if($headerUser->avatarUrl())
+                    <img src="{{ $headerUser->avatarUrl() }}" alt="{{ $headerUser->name }}" class="header-avatar-img">
+                @else
+                    <span class="header-avatar-initials">{{ strtoupper(substr($headerUser->name ?? 'S', 0, 1)) }}</span>
+                @endif
+            </a>
+        @endif
+
         @if(isset($showNotifications) && $showNotifications)
             <button type="button" class="header-btn-right" id="notificationBtn" aria-label="Notifications">
-                <i class="bi bi-bell"></i>
+                <i class="bi bi-bell" aria-hidden="true"></i>
                 @if(isset($notificationCount) && $notificationCount > 0)
                     <span class="notification-badge">{{ $notificationCount }}</span>
                 @endif
             </button>
         @endif
-        
+
         @if(isset($showSearch) && $showSearch)
             <button type="button" class="header-btn-right" id="searchBtn" aria-label="Search">
-                <i class="bi bi-search"></i>
+                <i class="bi bi-search" aria-hidden="true"></i>
             </button>
         @endif
-        
+
         @if(isset($showMore) && $showMore)
             <button type="button" class="header-btn-right" id="moreBtn" aria-label="More options">
-                <i class="bi bi-three-dots-vertical"></i>
+                <i class="bi bi-three-dots-vertical" aria-hidden="true"></i>
             </button>
         @endif
     </div>
@@ -37,9 +69,31 @@
 <div class="mobile-menu-backdrop" id="mobileMenuBackdrop" hidden></div>
 <nav class="mobile-navigation-menu" id="mobileNavigationMenu" aria-label="Mobile navigation" hidden>
     <div class="mobile-menu-heading">
-        <span>Navigate</span>
+        <div class="mobile-menu-brand">
+            <span class="mobile-menu-brand-dot" aria-hidden="true"></span>
+            <span>Smart Attendance</span>
+        </div>
         <button type="button" class="mobile-menu-close" id="mobileMenuClose" aria-label="Close navigation menu"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
     </div>
+    @if($headerUser?->isStudent())
+        <a href="{{ route('profile') }}" class="mobile-menu-student-card">
+            <div class="mobile-menu-avatar">
+                @if($headerUser->avatarUrl())
+                    <img src="{{ $headerUser->avatarUrl() }}" alt="{{ $headerUser->name }}">
+                @else
+                    <span>{{ strtoupper(substr($headerUser->name ?? 'S', 0, 2)) }}</span>
+                @endif
+            </div>
+            <div class="mobile-menu-identity">
+                <span class="mobile-menu-name">{{ $headerUser->name }}</span>
+                <span class="mobile-menu-meta">
+                    {{ $headerUser->student_id ? $headerUser->student_id : 'Student Portal' }}
+                    @if($headerUser->course) · {{ $headerUser->course }} @endif
+                </span>
+            </div>
+            <i class="bi bi-chevron-right mobile-menu-chevron" aria-hidden="true"></i>
+        </a>
+    @endif
     <div id="mobileMenuLinks" class="mobile-menu-links"></div>
 </nav>
 @endif
@@ -52,15 +106,19 @@
         right: 0;
         height: calc(var(--header-height) + var(--safe-top));
         padding-top: var(--safe-top);
-        background: var(--bg-dark);
-        border-bottom: 1px solid rgba(207, 164, 111, 0.1);
+        background: rgba(17, 10, 10, 0.86);
+        backdrop-filter: blur(22px) saturate(160%);
+        -webkit-backdrop-filter: blur(22px) saturate(160%);
+        border-bottom: 1px solid rgba(207, 164, 111, 0.16);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding-left: max(12px, var(--safe-left));
         padding-right: max(12px, var(--safe-right));
+        gap: 8px;
         z-index: 999;
-        transition: transform 0.3s ease;
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .mobile-header.hidden {
@@ -69,48 +127,78 @@
 
     .header-btn-left,
     .header-btn-right {
-        width: 40px;
-        height: 40px;
-        border: none;
-        background: transparent;
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        min-height: 42px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
         color: var(--text-primary);
-        font-size: 20px;
-        display: flex;
+        font-size: 19px;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         border-radius: 50%;
         cursor: pointer;
         position: relative;
-        transition: background 0.2s ease;
+        text-decoration: none;
+        transition: transform 0.16s ease, background 0.18s ease, border-color 0.18s ease;
     }
 
     .header-btn-left:active,
     .header-btn-right:active {
-        background: var(--bg-card);
+        transform: scale(0.92);
+        background: var(--bg-card-hover, rgba(207, 164, 111, 0.16));
+        border-color: rgba(207, 164, 111, 0.3);
+    }
+
+    .header-avatar-pill {
+        padding: 2px;
+        border-color: rgba(212, 175, 55, 0.32);
+        background: rgba(212, 175, 55, 0.10);
+        overflow: hidden;
+    }
+
+    .header-avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        display: block;
+    }
+
+    .header-avatar-initials {
+        font-size: 0.84rem;
+        font-weight: 800;
+        color: var(--gold-light, #F3E7CD);
     }
 
     .header-title {
         flex: 1;
+        min-width: 0;
         text-align: center;
-        font-size: 18px;
-        font-weight: 600;
+        font-size: 1.02rem;
+        font-weight: 700;
+        letter-spacing: -0.015em;
         color: var(--text-primary);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        padding: 0 8px;
+        padding: 0 4px;
+        margin: 0;
     }
 
     .header-actions {
         display: flex;
-        gap: 4px;
+        gap: 6px;
         align-items: center;
+        flex-shrink: 0;
     }
 
     .notification-badge {
         position: absolute;
-        top: 8px;
-        right: 8px;
+        top: 5px;
+        right: 5px;
         background: var(--error);
         color: white;
         font-size: 10px;
@@ -122,6 +210,106 @@
         align-items: center;
         justify-content: center;
         padding: 0 4px;
+        border: 1.5px solid var(--bg-dark);
+    }
+
+    .mobile-menu-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .mobile-menu-brand-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--gold-primary, #D4AF37);
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.7);
+    }
+
+    .mobile-menu-student-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        margin-bottom: 14px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(122, 26, 26, 0.28), rgba(212, 175, 55, 0.1));
+        border: 1px solid rgba(207, 164, 111, 0.24);
+        text-decoration: none;
+        color: var(--text-primary);
+    }
+
+    .mobile-menu-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
+        background: rgba(212, 175, 55, 0.16);
+        border: 1px solid rgba(212, 175, 55, 0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 0.92rem;
+        color: var(--gold-light, #F3E7CD);
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .mobile-menu-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .mobile-menu-identity {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .mobile-menu-name {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .mobile-menu-meta {
+        font-size: 0.76rem;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .mobile-menu-chevron {
+        color: var(--gold-primary, #D4AF37);
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    .mobile-navigation-menu .mobile-menu-link .nav-scan-jewel {
+        width: 24px;
+        height: 24px;
+        position: static;
+        transform: none;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+        color: var(--gold-primary, #cfa46f);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .mobile-navigation-menu .mobile-menu-link .nav-scan-jewel svg {
+        width: 20px;
+        height: 20px;
     }
 </style>
 
@@ -183,9 +371,11 @@
             });
             @if(auth()->user()?->isStudent())
             [
+                ['Weekly Schedule', @json(route('student.schedule')), 'clock-history'],
+                ['Attendance Records', @json(route('student.calendar') . '#attendance-records'), 'clipboard-check'],
                 ['Excuses', @json(route('excuses')), 'file-text'],
                 ['Notifications', @json(route('notifications')), 'bell'],
-                ['Settings', @json(route('settings')), 'gear'],
+                ['Settings & Biometrics', @json(route('settings')), 'gear'],
             ].forEach(([label, url, icon]) => {
                 const link = document.createElement('a');
                 link.href = url;

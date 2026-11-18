@@ -787,13 +787,13 @@
     }
 
     @media (max-width: 768px) {
-        .att-cal-cell { font-size: 0.75rem; border-radius: 8px; }
+        .att-cal-cell { font-size: 0.78rem; border-radius: 9px; min-height: 44px; }
         .att-cal-dot { width: 4px; height: 4px; }
-        .att-cal-nav { padding: 16px 16px 12px; }
-        .att-cal-grid { padding: 0 10px 12px; gap: 3px; }
+        .att-cal-nav { padding: 16px 14px 12px; }
+        .att-cal-grid { padding: 0 10px 12px; gap: 4px; }
         .att-cal-header { padding: 0 10px; }
-        .att-cal-stats { padding: 10px 12px; gap: 4px; }
-        .att-cal-stat { padding: 4px 10px; font-size: 0.7rem; }
+        .att-cal-stats { padding: 10px 12px; gap: 6px; flex-wrap: wrap; }
+        .att-cal-stat { padding: 5px 10px; font-size: 0.72rem; }
 
         /* Responsive Mobile Bottom Sheet for Day Summary Modal */
         #daySummaryModal .modal-dialog {

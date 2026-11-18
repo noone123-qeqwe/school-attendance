@@ -652,7 +652,7 @@
     /* ── Mobile Responsive Overrides ── */
     @media (max-width: 768px) {
         .notif-wrapper {
-            padding: 8px 12px 70px;
+            padding: 8px 4px calc(100px + env(safe-area-inset-bottom, 0px));
         }
         .notif-hero {
             padding: 20px 18px;
@@ -670,7 +670,7 @@
         .notif-btn-mark-all {
             width: 100%;
             justify-content: center;
-            min-height: 42px;
+            min-height: 44px;
         }
         .notif-stats-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -699,6 +699,7 @@
         .notif-tab {
             flex: 1;
             justify-content: center;
+            min-height: 42px;
             padding: 8px 6px;
         }
         .notif-search-box {
@@ -724,17 +725,17 @@
             gap: 6px;
         }
         .notif-actions-row {
-            gap: 6px;
+            gap: 8px;
         }
         .btn-notif-action {
             flex: 1;
             justify-content: center;
-            min-height: 38px;
+            min-height: 44px;
         }
         .btn-notif-delete {
             flex: 0 0 auto;
-            min-height: 38px;
-            width: 38px;
+            min-height: 44px;
+            width: 44px;
             justify-content: center;
             padding: 0;
         }

@@ -15,8 +15,8 @@
                 <p class="page-subtitle">{{ $stats['total'] }} total recorded classes</p>
             </div>
         </div>
-        <button type="button" class="scan-shortcut-btn" onclick="if(typeof openStudentScanner==='function'){openStudentScanner('scan');}" aria-label="Scan QR Code">
-            <i class="bi bi-qr-code-scan"></i>
+        <button type="button" class="scan-shortcut-btn" data-action="open-scanner" aria-label="Scan QR Code">
+            <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
         </button>
     </div>
 
@@ -38,6 +38,16 @@
             <span class="stat-num">{{ $stats['absent'] }}</span>
             <span class="stat-lbl">Absent</span>
         </div>
+    </div>
+
+    {{-- Search Bar --}}
+    <div class="history-search-wrap">
+        <i class="bi bi-search history-search-icon" aria-hidden="true"></i>
+        <input type="search"
+               id="historySearchInput"
+               class="history-search-input"
+               placeholder="Search subject, code, or instructor..."
+               aria-label="Search attendance history">
     </div>
 
     {{-- Filter Tabs --}}
@@ -105,7 +115,7 @@
                         };
                     @endphp
 
-                    <div class="history-card" data-status="{{ $record->status }}">
+                    <div class="history-card" data-status="{{ $record->status }}" data-search="{{ strtolower(($record->subject->name ?? '') . ' ' . ($record->subject_code ?? '') . ' ' . (is_string($record->subject?->instructor) ? $record->subject->instructor : ($record->subject?->instructor?->name ?? '')) . ' ' . ($record->class ?? '')) }}">
                         <div class="card-status-indicator indicator-{{ $statusClass }}"></div>
                         
                         <div class="card-inner">
@@ -139,9 +149,9 @@
                                     <span class="detail-lbl">Time In</span>
                                     <span class="detail-val">
                                         @if($record->time_in)
-                                            <i class="bi bi-clock text-gold me-1"></i>{{ \Carbon\Carbon::parse($record->time_in)->format('g:i A') }}
+                                            <i class="bi bi-clock text-gold me-1" aria-hidden="true"></i>{{ \Carbon\Carbon::parse($record->time_in)->format('g:i A') }}
                                         @else
-                                            <span class="text-muted">—</span>
+                                            <span class="detail-placeholder">—</span>
                                         @endif
                                     </span>
                                 </div>
@@ -149,7 +159,7 @@
                                 <div class="detail-col">
                                     <span class="detail-lbl">Method</span>
                                     <span class="detail-val">
-                                        <i class="bi bi-shield-check text-muted me-1"></i>{{ $methodLabel }}
+                                        <i class="bi bi-shield-check detail-method-icon me-1" aria-hidden="true"></i>{{ $methodLabel }}
                                     </span>
                                 </div>
 
@@ -311,6 +321,44 @@
     .stat-present .stat-num { color: #34d399; }
     .stat-late .stat-num    { color: #fbbf24; }
     .stat-absent .stat-num  { color: #f87171; }
+
+    /* Search Bar */
+    .history-search-wrap {
+        position: relative;
+        margin-bottom: 12px;
+    }
+
+    .history-search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        pointer-events: none;
+    }
+
+    .history-search-input {
+        width: 100%;
+        min-height: 46px;
+        padding: 10px 14px 10px 38px;
+        border-radius: 13px;
+        border: 1px solid rgba(207, 164, 111, 0.22);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text-primary);
+        font-size: 16px;
+        outline: none;
+        transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .history-search-input::placeholder {
+        color: var(--text-muted);
+    }
+
+    .history-search-input:focus {
+        border-color: var(--gold-primary);
+        background: rgba(255, 255, 255, 0.07);
+    }
 
     /* Filter Tabs */
     .filter-scroll-wrapper {
@@ -489,16 +537,18 @@
 
     /* Details Grid */
     .card-details {
-        display: flex;
-        gap: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+        gap: 10px 14px;
         padding-top: 12px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
 
     .detail-col {
         display: flex;
         flex-direction: column;
         gap: 2px;
+        min-width: 0;
     }
 
     .detail-lbl {
@@ -515,6 +565,12 @@
         color: var(--text-primary);
         display: flex;
         align-items: center;
+        overflow-wrap: anywhere;
+    }
+
+    .detail-placeholder,
+    .detail-method-icon {
+        color: var(--text-muted);
     }
 
     .text-gold {
@@ -527,15 +583,17 @@
         gap: 8px;
         margin-top: 12px;
         padding-top: 10px;
-        border-top: 1px dashed rgba(255, 255, 255, 0.05);
+        border-top: 1px dashed rgba(255, 255, 255, 0.06);
         flex-wrap: wrap;
     }
 
     .action-btn {
         display: inline-flex;
         align-items: center;
-        padding: 6px 12px;
-        border-radius: 8px;
+        justify-content: center;
+        min-height: 40px;
+        padding: 8px 14px;
+        border-radius: 10px;
         font-size: 12px;
         font-weight: 600;
         text-decoration: none;
@@ -623,30 +681,35 @@
 
 @push('scripts')
 <script @cspNonce>
-    function filterHistory(status, btn) {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+    let currentHistoryStatus = 'all';
 
+    function applyHistoryFilters() {
+        const query = (document.getElementById('historySearchInput')?.value || '').trim().toLowerCase();
         const cards = document.querySelectorAll('.history-card');
         const groups = document.querySelectorAll('.history-date-group');
 
         cards.forEach(card => {
-            if (status === 'all' || card.dataset.status === status) {
-                card.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-            }
+            const matchesStatus = currentHistoryStatus === 'all' || card.dataset.status === currentHistoryStatus;
+            const haystack = card.dataset.search || '';
+            const matchesQuery = !query || haystack.includes(query);
+            card.style.display = (matchesStatus && matchesQuery) ? 'block' : 'none';
         });
 
-        // Hide empty groups
         groups.forEach(group => {
             const visibleCards = group.querySelectorAll('.history-card:not([style*="display: none"])');
-            if (visibleCards.length === 0) {
-                group.style.display = 'none';
-            } else {
-                group.style.display = 'block';
-            }
+            group.style.display = visibleCards.length === 0 ? 'none' : 'block';
         });
     }
+
+    function filterHistory(status, btn) {
+        currentHistoryStatus = status || 'all';
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        applyHistoryFilters();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('historySearchInput')?.addEventListener('input', applyHistoryFilters);
+    });
 </script>
 @endpush

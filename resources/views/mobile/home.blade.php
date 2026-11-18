@@ -3,19 +3,43 @@
 @section('title', 'Home - Smart Attendance')
 
 @section('content')
+@php
+    $studentUser = auth()->user();
+    $academicBits = array_filter([
+        $studentUser?->course,
+        $studentUser?->year_level ? 'Year ' . $studentUser->year_level : null,
+        $studentUser?->section ? 'Sec. ' . $studentUser->section : null,
+    ]);
+@endphp
 <div class="mobile-home">
     {{-- Welcome Card --}}
     <div class="welcome-card">
+        <div class="welcome-top-row">
+            <span class="welcome-kicker">
+                <i class="bi bi-sun-fill" aria-hidden="true"></i>
+                Good {{ $greeting }}
+            </span>
+            <span class="welcome-date">{{ now()->format('D, M j') }}</span>
+        </div>
         <div class="welcome-greeting">
-            <h2>Good {{ $greeting }}, {{ auth()->user()->name }}! 👋</h2>
-            <p class="welcome-date">{{ now()->format('l, F j, Y') }}</p>
+            <h2>{{ $studentUser?->name }}</h2>
+            @if(!empty($academicBits))
+                <div class="welcome-chips">
+                    @foreach($academicBits as $bit)
+                        <span class="welcome-chip">{{ $bit }}</span>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 
-    @if(blank(auth()->user()->section))
-    <div role="status" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:14px;border-radius:12px;border:1px solid rgba(207,164,111,.35);background:rgba(207,164,111,.08);color:#f3e7cd;">
-        <i class="bi bi-info-circle-fill" style="color:#dfb784;margin-top:2px;"></i>
-        <div><strong>Class section not assigned</strong><br><span style="color:#b39b82;">Contact the registrar or school administrator to add your section and timetable.</span></div>
+    @if(blank($studentUser?->section))
+    <div role="status" class="section-warning-banner">
+        <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+        <div>
+            <strong>Class section not assigned</strong>
+            <span>Contact the registrar or school administrator to add your section and timetable.</span>
+        </div>
     </div>
     @endif
 
@@ -25,15 +49,15 @@
             <h3>TODAY'S ATTENDANCE</h3>
             <span class="status-date">{{ now()->format('M j, Y') }}</span>
         </div>
-        
+
         <div class="status-body">
             <div class="status-icon">
                 @if($todayStatus === 'present')
-                    <i class="bi bi-check-circle-fill"></i>
+                    <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
                 @elseif($todayStatus === 'absent')
-                    <i class="bi bi-x-circle-fill"></i>
+                    <i class="bi bi-x-circle-fill" aria-hidden="true"></i>
                 @else
-                    <i class="bi bi-clock-fill"></i>
+                    <i class="bi bi-clock-fill" aria-hidden="true"></i>
                 @endif
             </div>
             <div class="status-text">{{ strtoupper($todayStatusText) }}</div>
@@ -43,14 +67,14 @@
                 <div class="status-time">{{ $todayStatusSubtext }}</div>
             @endif
         </div>
-        
+
         <div class="status-footer">
             <div class="status-progress">
                 <div class="progress-bar" style="width: {{ $attendanceRate }}%"></div>
             </div>
             <p class="status-summary">
                 @if($weekTotal > 0)
-                    This week: {{ $weekPresent }}/{{ $weekTotal }} attendance records marked present ({{ $attendanceRate }}%)
+                    This week: {{ $weekPresent }}/{{ $weekTotal }} marked present ({{ $attendanceRate }}%)
                 @else
                     No attendance records yet this week
                 @endif
@@ -64,38 +88,38 @@
         <div class="quick-actions-grid">
             <button type="button" id="quickActionScanBtn" data-action="open-scanner" class="quick-action-btn quick-action-primary" aria-label="Scan QR Code">
                 <div class="quick-action-icon">
-                    <i class="bi bi-qr-code-scan"></i>
+                    <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
                 </div>
                 <span class="quick-action-label">Scan QR</span>
             </button>
-            
+
+            <a href="{{ route('student.schedule') }}" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i class="bi bi-calendar2-week" aria-hidden="true"></i>
+                </div>
+                <span class="quick-action-label">Schedule</span>
+            </a>
+
             <a href="{{ route('mobile.history') }}" class="quick-action-btn">
                 <div class="quick-action-icon">
-                    <i class="bi bi-clock-history"></i>
+                    <i class="bi bi-clock-history" aria-hidden="true"></i>
                 </div>
                 <span class="quick-action-label">History</span>
             </a>
 
+            <a href="{{ route('excuses.create_general') }}" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i class="bi bi-file-earmark-medical" aria-hidden="true"></i>
+                </div>
+                <span class="quick-action-label">Submit Excuse</span>
+            </a>
+
             @if(app(\App\Services\PeerBiometricAttendanceService::class)->isAvailable())
             <a href="{{ route('peer-snap.index') }}" class="quick-action-btn quick-action-peer" aria-label="Check in for a Classmate">
-                <div class="quick-action-icon"><i class="bi bi-person-bounding-box"></i></div>
+                <div class="quick-action-icon"><i class="bi bi-person-bounding-box" aria-hidden="true"></i></div>
                 <span class="quick-action-label">Check in for a Classmate</span>
             </a>
             @endif
-            
-            <a href="{{ route('mobile.attendance') }}" class="quick-action-btn">
-                <div class="quick-action-icon">
-                    <i class="bi bi-clipboard-check"></i>
-                </div>
-                <span class="quick-action-label">Attendance</span>
-            </a>
-            
-            <a href="{{ route('mobile.profile') }}" class="quick-action-btn">
-                <div class="quick-action-icon">
-                    <i class="bi bi-person-circle"></i>
-                </div>
-                <span class="quick-action-label">Profile</span>
-            </a>
         </div>
     </section>
 
@@ -161,19 +185,97 @@
 
     /* Welcome Card */
     .welcome-card {
-        margin-bottom: 20px;
+        margin-bottom: 16px;
+        padding: 18px 16px;
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(122, 26, 26, 0.22), rgba(24, 16, 14, 0.92));
+        border: 1px solid rgba(207, 164, 111, 0.22);
+    }
+
+    .welcome-top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .welcome-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #f3d18e;
+        background: rgba(212, 175, 55, 0.14);
+        border: 1px solid rgba(212, 175, 55, 0.24);
+        padding: 3px 9px;
+        border-radius: 99px;
     }
 
     .welcome-greeting h2 {
-        font-size: 24px;
-        font-weight: 700;
+        font-size: 1.3rem;
+        font-weight: 800;
         color: var(--text-primary);
-        margin-bottom: 4px;
+        margin-bottom: 8px;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
     }
 
     .welcome-date {
-        font-size: 14px;
+        font-size: 0.78rem;
+        font-weight: 600;
         color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .welcome-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .welcome-chip {
+        font-size: 0.73rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 3px 9px;
+        border-radius: 8px;
+    }
+
+    .section-warning-banner {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(207, 164, 111, 0.35);
+        background: rgba(207, 164, 111, 0.1);
+        color: #f3e7cd;
+        font-size: 0.84rem;
+    }
+
+    .section-warning-banner i {
+        color: #dfb784;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    .section-warning-banner strong {
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .section-warning-banner span {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 0.78rem;
+        line-height: 1.45;
     }
 
     /* Status Card */
@@ -400,6 +502,7 @@
 
     .class-details {
         flex: 1;
+        min-width: 0;
     }
 
     .class-details h4 {
@@ -407,11 +510,14 @@
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 4px;
+        overflow-wrap: anywhere;
     }
 
     .class-details p {
         font-size: 12px;
         color: var(--text-secondary);
+        margin: 0;
+        overflow-wrap: anywhere;
     }
 
     .class-action {

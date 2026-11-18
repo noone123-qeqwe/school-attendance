@@ -14,21 +14,23 @@
 
     <div class="scan-action-area">
         <button type="button" class="scan-open-btn touchable" data-action="open-scanner" id="openScannerBtn">
-            <i class="bi bi-camera-fill"></i>
+            <i class="bi bi-camera-fill" aria-hidden="true"></i>
             <span>Open QR Scanner</span>
         </button>
 
-        <p class="scan-divider-text">or</p>
+        <p class="scan-divider-text">or verify manually</p>
 
-        <button type="button" class="scan-code-btn touchable" id="openCodeBtn" data-action="open-code">
-            <i class="bi bi-key-fill"></i>
-            <span>Enter 6-Digit Code Instead</span>
-        </button>
+        <div class="scan-alt-grid">
+            <button type="button" class="scan-code-btn touchable" id="openCodeBtn" data-action="open-code">
+                <i class="bi bi-key-fill" aria-hidden="true"></i>
+                <span>6-Digit Code</span>
+            </button>
 
-        <button type="button" class="scan-paste-btn touchable" id="openPasteBtn" data-action="paste-copied-code">
-            <i class="bi bi-clipboard-check"></i>
-            <span>Paste Copied Code</span>
-        </button>
+            <button type="button" class="scan-paste-btn touchable" id="openPasteBtn" data-action="paste-copied-code">
+                <i class="bi bi-clipboard-check" aria-hidden="true"></i>
+                <span>Paste Code</span>
+            </button>
+        </div>
     </div>
 
     <p id="scanUnavailable" class="scan-unavailable" role="alert" hidden>
@@ -58,77 +60,86 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 20px 0 32px;
-        min-height: calc(100vh - var(--header-height) - var(--bottom-nav-height) - 40px);
+        max-width: 440px;
+        margin: 0 auto;
+        padding: 12px 0 24px;
+        min-height: calc(100dvh - var(--header-height) - var(--bottom-nav-height) - 48px);
     }
 
     .scan-hero {
+        width: 100%;
         text-align: center;
-        margin-bottom: 40px;
+        padding: 22px 16px;
+        margin-bottom: 18px;
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(122, 26, 26, 0.2), rgba(24, 16, 14, 0.92));
+        border: 1px solid rgba(207, 164, 111, 0.2);
     }
 
     .scan-hero-icon {
-        width: 96px;
-        height: 96px;
+        width: 72px;
+        height: 72px;
         background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
-        border-radius: 50%;
+        border-radius: 22px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 44px;
+        font-size: 34px;
         color: var(--bg-dark);
-        margin: 0 auto 20px;
-        box-shadow: 0 8px 32px rgba(207, 164, 111, 0.4);
+        margin: 0 auto 14px;
+        box-shadow: 0 8px 26px rgba(207, 164, 111, 0.35);
         animation: scanPulse 2.5s ease-in-out infinite;
     }
 
     @keyframes scanPulse {
-        0%, 100% { box-shadow: 0 8px 32px rgba(207, 164, 111, 0.4); }
-        50% { box-shadow: 0 8px 48px rgba(207, 164, 111, 0.65), 0 0 0 16px rgba(207, 164, 111, 0.08); }
+        0%, 100% { box-shadow: 0 8px 26px rgba(207, 164, 111, 0.35); }
+        50% { box-shadow: 0 8px 36px rgba(207, 164, 111, 0.58), 0 0 0 10px rgba(207, 164, 111, 0.08); }
     }
 
     .scan-hero-title {
-        font-size: 22px;
+        font-size: 1.25rem;
         font-weight: 800;
         color: var(--text-primary);
-        margin-bottom: 10px;
+        margin-bottom: 6px;
     }
 
     .scan-hero-subtitle {
-        font-size: 14px;
+        font-size: 0.84rem;
         color: var(--text-secondary);
-        line-height: 1.6;
+        line-height: 1.5;
+        margin: 0;
     }
 
     .scan-action-area {
         width: 100%;
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: stretch;
         gap: 0;
-        margin-bottom: 32px;
+        margin-bottom: 18px;
     }
 
     .scan-open-btn {
         width: 100%;
-        padding: 18px 24px;
+        min-height: 54px;
+        padding: 15px 22px;
         background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
         color: var(--bg-dark);
         border: none;
-        border-radius: 18px;
-        font-size: 17px;
+        border-radius: 16px;
+        font-size: 1rem;
         font-weight: 800;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 12px;
+        gap: 10px;
         cursor: pointer;
-        box-shadow: 0 6px 24px rgba(207, 164, 111, 0.35);
+        box-shadow: 0 6px 22px rgba(207, 164, 111, 0.32);
         transition: all 0.2s ease;
     }
 
     .scan-open-btn i {
-        font-size: 22px;
+        font-size: 1.25rem;
     }
 
     .scan-open-btn:active {
@@ -137,56 +148,57 @@
     }
 
     .scan-divider-text {
-        font-size: 13px;
+        font-size: 0.72rem;
+        font-weight: 700;
         color: var(--text-muted);
-        margin: 14px 0;
+        margin: 12px 0;
+        text-align: center;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.08em;
     }
 
-    .scan-code-btn {
+    .scan-alt-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    @media (max-width: 340px) {
+        .scan-alt-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    .scan-code-btn,
+    .scan-paste-btn {
         width: 100%;
-        padding: 14px 24px;
-        background: var(--bg-card);
-        color: var(--gold-primary);
-        border: 1px solid rgba(207, 164, 111, 0.3);
-        border-radius: 16px;
-        font-size: 15px;
+        min-height: 48px;
+        padding: 12px 14px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--gold-light, #F3E7CD);
+        border: 1px solid rgba(207, 164, 111, 0.28);
+        border-radius: 14px;
+        font-size: 0.84rem;
         font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
         cursor: pointer;
         transition: all 0.2s ease;
-    }
-
-    .scan-code-btn:active {
-        transform: scale(0.96);
-        background: var(--bg-card-hover);
+        margin-top: 0;
     }
 
     .scan-paste-btn {
-        width: 100%;
-        padding: 14px 24px;
-        background: linear-gradient(135deg, rgba(207, 164, 111, 0.22), rgba(140, 109, 70, 0.32));
-        color: #dfb784;
-        border: 1px solid rgba(207, 164, 111, 0.5);
-        border-radius: 16px;
-        font-size: 15px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        margin-top: 10px;
+        background: rgba(207, 164, 111, 0.14);
+        color: #f5dfa8;
+        border-color: rgba(207, 164, 111, 0.4);
     }
 
+    .scan-code-btn:active,
     .scan-paste-btn:active {
         transform: scale(0.96);
-        background: linear-gradient(135deg, rgba(207, 164, 111, 0.35), rgba(140, 109, 70, 0.45));
+        background: var(--bg-card-hover);
     }
 
     .scan-info-card {

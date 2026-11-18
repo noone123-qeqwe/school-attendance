@@ -11,18 +11,26 @@
         </div>
 
         <h2 class="mobile-user-name fw-bold mb-1">{{ $user->name }}</h2>
-        <div class="mobile-user-sub text-muted small mb-2">
+        <div class="mobile-user-sub small mb-2">
             @if($user->isStudent())
-                <span class="d-inline-flex align-items-center gap-1">
-                    <i class="bi bi-person-badge text-warning"></i>
-                    <span>Student ID: <strong class="text-light">{{ $user->student_number ?? 'Not Assigned' }}</strong></span>
+                <span class="d-inline-flex align-items-center gap-2 flex-wrap justify-content-center">
+                    <span class="d-inline-flex align-items-center gap-1">
+                        <i class="bi bi-person-badge text-warning" aria-hidden="true"></i>
+                        <span>Student ID: <strong class="mobile-id-strong">{{ $user->student_number ?? 'Not Assigned' }}</strong></span>
+                    </span>
+                    @if($user->student_number)
+                        <button type="button" id="copyMobileStudentId" class="mobile-copy-id-btn" data-copy-id="{{ $user->student_number }}" aria-label="Copy student ID">
+                            <i class="bi bi-copy" aria-hidden="true"></i>
+                            <span>Copy</span>
+                        </button>
+                    @endif
                 </span>
             @else
                 {{ $user->employee_id ?? $user->email }}
             @endif
         </div>
 
-        <div class="d-flex justify-content-center gap-2 mb-2">
+        <div class="d-flex justify-content-center flex-wrap gap-2 mb-1">
             <span class="badge ppm-role-pill">
                 @if($user->isAdmin())
                     <i class="bi bi-shield-fill text-danger me-1"></i> Admin
@@ -42,6 +50,10 @@
             @if($user->year_level)
                 <span class="badge ppm-year-pill">Year {{ $user->year_level }}</span>
             @endif
+
+            @if($user->section)
+                <span class="badge ppm-year-pill">Section {{ $user->section }}</span>
+            @endif
         </div>
     </div>
 
@@ -50,16 +62,16 @@
         <h3 class="mobile-section-title">ACCOUNT DETAILS</h3>
         <div class="mobile-card">
             <div class="mobile-info-row">
-                <div class="mobile-info-icon"><i class="bi bi-person-fill"></i></div>
-                <div class="flex-grow-1">
+                <div class="mobile-info-icon"><i class="bi bi-person-fill" aria-hidden="true"></i></div>
+                <div class="flex-grow-1 min-w-0">
                     <div class="mobile-info-label">Full Name</div>
                     <div class="mobile-info-val">{{ $user->name }}</div>
                 </div>
             </div>
 
             <div class="mobile-info-row">
-                <div class="mobile-info-icon"><i class="bi bi-envelope-fill"></i></div>
-                <div class="flex-grow-1">
+                <div class="mobile-info-icon"><i class="bi bi-envelope-fill" aria-hidden="true"></i></div>
+                <div class="flex-grow-1 min-w-0">
                     <div class="mobile-info-label">Email Address</div>
                     <div class="mobile-info-val">{{ $user->email }}</div>
                 </div>
@@ -67,18 +79,30 @@
 
             @if($user->isStudent() || $user->student_number)
             <div class="mobile-info-row">
-                <div class="mobile-info-icon"><i class="bi bi-card-text"></i></div>
-                <div class="flex-grow-1">
+                <div class="mobile-info-icon"><i class="bi bi-card-text" aria-hidden="true"></i></div>
+                <div class="flex-grow-1 min-w-0">
                     <div class="mobile-info-label">Student ID</div>
                     <div class="mobile-info-val text-warning fw-bold font-monospace">{{ $user->student_number ?? 'Not Assigned' }}</div>
                 </div>
             </div>
             @endif
 
+            @if($user->course || $user->year_level || $user->section)
+            <div class="mobile-info-row">
+                <div class="mobile-info-icon"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="mobile-info-label">Academic Program</div>
+                    <div class="mobile-info-val">
+                        {{ collect([$user->course, $user->year_level ? 'Year ' . $user->year_level : null, $user->section ? 'Sec. ' . $user->section : null])->filter()->implode(' · ') }}
+                    </div>
+                </div>
+            </div>
+            @endif
+
             @if($user->department)
             <div class="mobile-info-row">
-                <div class="mobile-info-icon"><i class="bi bi-building"></i></div>
-                <div class="flex-grow-1">
+                <div class="mobile-info-icon"><i class="bi bi-building" aria-hidden="true"></i></div>
+                <div class="flex-grow-1 min-w-0">
                     <div class="mobile-info-label">Department</div>
                     <div class="mobile-info-val">{{ $user->department }}</div>
                 </div>
@@ -93,38 +117,70 @@
         <div class="mobile-card p-2">
             <a href="{{ route('mobile.home') }}" class="mobile-menu-item">
                 <div class="mobile-menu-icon" style="background: rgba(207,164,111,0.15); color: #cfa46f;">
-                    <i class="bi bi-house-door-fill"></i>
+                    <i class="bi bi-house-door-fill" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">Home Dashboard</span>
-                <i class="bi bi-chevron-right text-muted"></i>
+                <i class="bi bi-chevron-right mobile-link-chevron" aria-hidden="true"></i>
             </a>
 
             @if($user->isStudent())
             <a href="{{ route('mobile.scan') }}" class="mobile-menu-item">
-                <div class="mobile-menu-icon" style="background: rgba(34,197,94,0.15); color: #22c55e;">
-                    <i class="bi bi-qr-code-scan"></i>
+                <div class="mobile-menu-icon" style="background: rgba(34,197,94,0.15); color: #4ade80;">
+                    <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">Scan QR Code</span>
-                <i class="bi bi-chevron-right text-muted"></i>
+                <i class="bi bi-chevron-right mobile-link-chevron" aria-hidden="true"></i>
+            </a>
+
+            <a href="{{ route('student.classes') }}" class="mobile-menu-item">
+                <div class="mobile-menu-icon" style="background: rgba(207,164,111,0.15); color: #f5dfa8;">
+                    <i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i>
+                </div>
+                <span class="flex-grow-1 fw-semibold">My Classes &amp; COR</span>
+                <i class="bi bi-chevron-right mobile-link-chevron" aria-hidden="true"></i>
+            </a>
+
+            <a href="{{ route('student.schedule') }}" class="mobile-menu-item">
+                <div class="mobile-menu-icon" style="background: rgba(245,158,11,0.15); color: #fbbf24;">
+                    <i class="bi bi-calendar2-week-fill" aria-hidden="true"></i>
+                </div>
+                <span class="flex-grow-1 fw-semibold">Weekly Schedule</span>
+                <i class="bi bi-chevron-right mobile-link-chevron" aria-hidden="true"></i>
             </a>
 
             <a href="{{ route('mobile.history') }}" class="mobile-menu-item">
-                <div class="mobile-menu-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">
-                    <i class="bi bi-clock-history"></i>
+                <div class="mobile-menu-icon" style="background: rgba(59,130,246,0.15); color: #60a5fa;">
+                    <i class="bi bi-clock-history" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">Attendance History</span>
-                <i class="bi bi-chevron-right text-muted"></i>
+                <i class="bi bi-chevron-right mobile-link-chevron" aria-hidden="true"></i>
+            </a>
+
+            <a href="{{ route('excuses') }}" class="mobile-menu-item">
+                <div class="mobile-menu-icon" style="background: rgba(239,68,68,0.15); color: #f87171;">
+                    <i class="bi bi-file-earmark-text-fill" aria-hidden="true"></i>
+                </div>
+                <span class="flex-grow-1 fw-semibold">Excuses</span>
+                <i class="bi bi-chevron-right mobile-link-chevron" aria-hidden="true"></i>
+            </a>
+
+            <a href="{{ route('settings') }}" class="mobile-menu-item">
+                <div class="mobile-menu-icon" style="background: rgba(167,139,250,0.15); color: #a78bfa;">
+                    <i class="bi bi-gear-fill" aria-hidden="true"></i>
+                </div>
+                <span class="flex-grow-1 fw-semibold">Settings &amp; Biometrics</span>
+                <i class="bi bi-chevron-right mobile-link-chevron" aria-hidden="true"></i>
             </a>
             @endif
 
             <form action="{{ route('logout') }}" method="POST" class="m-0">
                 @csrf
                 <button type="submit" class="mobile-menu-item text-danger w-100 border-0 bg-transparent text-start">
-                    <div class="mobile-menu-icon" style="background: rgba(239,68,68,0.15); color: #ef4444;">
-                        <i class="bi bi-box-arrow-right"></i>
+                    <div class="mobile-menu-icon" style="background: rgba(239,68,68,0.15); color: #f87171;">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
                     </div>
                     <span class="flex-grow-1 fw-semibold">Sign Out</span>
-                    <i class="bi bi-chevron-right text-muted"></i>
+                    <i class="bi bi-chevron-right mobile-link-chevron" aria-hidden="true"></i>
                 </button>
             </form>
         </div>
@@ -143,7 +199,33 @@
 }
 .mobile-user-name {
     font-size: 1.3rem;
-    color: #f3e7cd;
+    color: #FCF8F2;
+}
+.mobile-user-sub {
+    color: #D1C5B4;
+}
+.mobile-id-strong {
+    color: #F3E7CD;
+}
+.mobile-copy-id-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    background: rgba(212, 175, 55, 0.14);
+    color: #F5DFA8;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.mobile-copy-id-btn:active {
+    transform: scale(0.95);
+}
+.mobile-link-chevron {
+    color: #A39683;
+    font-size: 0.9rem;
 }
 .ppm-role-pill {
     background: rgba(207, 164, 111, 0.15);
@@ -209,11 +291,13 @@
     font-size: 0.92rem;
     font-weight: 600;
     color: #f3e7cd;
+    overflow-wrap: anywhere;
 }
 .mobile-menu-item {
     display: flex;
     align-items: center;
     gap: 12px;
+    min-height: 52px;
     padding: 12px 14px;
     border-radius: 12px;
     color: #f3e7cd;
@@ -231,6 +315,27 @@
     align-items: center;
     justify-content: center;
     font-size: 1rem;
+    flex-shrink: 0;
 }
 </style>
+@push('scripts')
+<script @cspNonce>
+document.addEventListener('DOMContentLoaded', function() {
+    const copyBtn = document.getElementById('copyMobileStudentId');
+    if (!copyBtn) return;
+    copyBtn.addEventListener('click', async function() {
+        const val = copyBtn.getAttribute('data-copy-id');
+        if (!val) return;
+        try {
+            await navigator.clipboard.writeText(val);
+            const label = copyBtn.querySelector('span');
+            if (label) {
+                label.textContent = 'Copied';
+                setTimeout(() => { label.textContent = 'Copy'; }, 1600);
+            }
+        } catch (e) {}
+    });
+});
+</script>
+@endpush
 @endsection

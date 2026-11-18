@@ -283,13 +283,13 @@
 
 /* Mobile tweaks */
 @media (max-width: 640px) {
-    .scal-card { padding: 20px 16px; border-radius: 20px; }
+    .scal-card { padding: 18px 12px; border-radius: 20px; }
     .scal-tile { height: 50px; min-height: 50px; border-radius: 11px; }
     .scal-num  { font-size: 0.9rem; }
     .scal-grid { gap: 7px; }
     .scal-weekdays { gap: 7px; padding: 10px 0; }
     .scal-nav-title { font-size: 1.15rem; }
-    .scal-nav-btn   { width: 40px; height: 40px; font-size: 1rem; border-radius: 11px; }
+    .scal-nav-btn   { width: 44px; height: 44px; font-size: 1rem; border-radius: 11px; }
 }
 
 /* ─── Modal styles ───────────────────────────────────────── */

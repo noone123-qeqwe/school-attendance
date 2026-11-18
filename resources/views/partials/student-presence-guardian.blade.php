@@ -1,8 +1,8 @@
 {{-- Student Presence Guardian: Continuous In-Classroom Presence Verification --}}
 @auth
 @if(auth()->user()->isStudent() || auth()->user()->hasRole('student'))
-<div id="studentPresenceGuardian" style="display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); z-index: 1040; width: calc(100% - 32px); max-width: 440px; font-family: inherit; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
-    <div id="presenceCard" style="background: rgba(18, 14, 11, 0.94); border: 1px solid rgba(207, 164, 111, 0.35); border-radius: 18px; padding: 12px 16px; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55); backdrop-filter: blur(16px); color: #f3e7cd;">
+<div id="studentPresenceGuardian" class="presence-guardian-float" style="display: none; position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 1040; width: calc(100% - 32px); max-width: 440px; font-family: inherit; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+    <div id="presenceCard" style="background: rgba(18, 14, 11, 0.94); border: 1px solid rgba(207, 164, 111, 0.35); border-radius: 18px; padding: 12px 14px; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55); backdrop-filter: blur(16px); color: #f3e7cd;">
         <div class="d-flex align-items-center justify-content-between gap-2">
             <div class="d-flex align-items-center gap-2" style="min-width: 0;">
                 <span id="presencePulseDot" style="width: 10px; height: 10px; border-radius: 50%; background: #4ade80; display: inline-block; box-shadow: 0 0 10px #4ade80; flex-shrink: 0; animation: presencePulse 2s infinite;"></span>
@@ -14,12 +14,12 @@
                     <div id="presenceSubtitle" style="font-size: 0.72rem; color: #b39b82; margin-top: 1px;">Verifying physical attendance...</div>
                 </div>
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <button type="button" id="presencePingBtn" onclick="window.studentPresenceGuardian && window.studentPresenceGuardian.pingNow(true)" class="btn btn-sm" style="background: rgba(207,164,111,0.15); color: #f3e7cd; border: 1px solid rgba(207,164,111,0.3); border-radius: 10px; padding: 4px 8px; font-size: 0.72rem; font-weight: 700;" title="Refresh Presence Fix">
-                    <i class="bi bi-geo-alt-fill"></i>
+            <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <button type="button" id="presencePingBtn" onclick="window.studentPresenceGuardian && window.studentPresenceGuardian.pingNow(true)" class="btn btn-sm presence-action-btn" style="background: rgba(207,164,111,0.15); color: #f3e7cd; border: 1px solid rgba(207,164,111,0.3); border-radius: 12px; min-width: 40px; min-height: 40px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700;" title="Refresh Presence Fix" aria-label="Refresh presence location">
+                    <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
                 </button>
-                <button type="button" onclick="window.studentPresenceGuardian && window.studentPresenceGuardian.toggleCollapse()" class="btn btn-sm" style="background: transparent; color: #b39b82; border: none; padding: 4px 6px; font-size: 0.8rem;" aria-label="Toggle Details">
-                    <i id="presenceToggleIcon" class="bi bi-chevron-down"></i>
+                <button type="button" onclick="window.studentPresenceGuardian && window.studentPresenceGuardian.toggleCollapse()" class="btn btn-sm presence-action-btn" style="background: rgba(255,255,255,0.04); color: #d1c5b4; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; min-width: 40px; min-height: 40px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem;" aria-label="Toggle presence details">
+                    <i id="presenceToggleIcon" class="bi bi-chevron-down" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -61,6 +61,19 @@
 </div>
 
 <style @cspNonce>
+@media (max-width: 767.98px) {
+    #studentPresenceGuardian.presence-guardian-float {
+        bottom: calc(106px + env(safe-area-inset-bottom, 0px)) !important;
+        width: calc(100% - 24px) !important;
+    }
+    body.modal-open #studentPresenceGuardian.presence-guardian-float,
+    body.keyboard-open #studentPresenceGuardian.presence-guardian-float,
+    body.scanner-active #studentPresenceGuardian.presence-guardian-float {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translate(-50%, 16px) !important;
+    }
+}
 @keyframes presencePulse {
     0% { transform: scale(0.95); opacity: 0.7; }
     50% { transform: scale(1.25); opacity: 1; box-shadow: 0 0 14px #4ade80; }

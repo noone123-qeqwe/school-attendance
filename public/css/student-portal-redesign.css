@@ -463,7 +463,6 @@ body.student-mobile-portal .mobile-scan-page .scan-paste-btn {
 
 /* On narrow phones, avoid forcing important information into tiny columns. */
 @media (max-width: 480px) {
-    body.student-portal .student-hero-deck,
     body.student-portal .stat-chips,
     body.student-portal .cor-card-sched-matrix {
         grid-template-columns: minmax(0, 1fr);
