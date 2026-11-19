@@ -307,8 +307,6 @@ class WebauthnService
         if ($challenge === null || $challenge === '') {
             Log::error('WebAuthn challenge missing from session', [
                 'type' => $type,
-                'session_id' => session()->getId(),
-                'all_session_keys' => array_keys(session()->all()),
             ]);
             throw new RuntimeException('WebAuthn session expired. Challenge not found. Please try again.');
         }
@@ -332,72 +330,86 @@ class WebauthnService
             throw new RuntimeException('Invalid WebAuthn challenge - challenge values do not match.');
         }
 
-        $origin = $clientData['origin'] ?? '';
-        $originHost = strtolower((string) (parse_url($origin, PHP_URL_HOST) ?: ''));
-        $requestHost = strtolower(app()->bound('request') ? (string) request()->getHost() : '');
-        $rpId = strtolower((string) $this->rpId());
+        $origin = $clientData['origin'] ?? null;
+        $normalizedOrigin = is_string($origin) ? $this->normalizeWebOrigin($origin) : null;
+        $allowedOrigins = array_map(
+            fn (mixed $allowed): ?string => is_string($allowed) ? $this->normalizeWebOrigin($allowed) : null,
+            (array) config('webauthn.allowed_origins', [])
+        );
+        $allowedAndroidOrigins = array_values(array_filter(
+            (array) config('webauthn.allowed_android_origins', []),
+            'is_string'
+        ));
+        $isAllowedWebOrigin = $normalizedOrigin !== null
+            && in_array($normalizedOrigin, array_filter($allowedOrigins), true);
+        $originHost = $normalizedOrigin !== null ? strtolower((string) parse_url($normalizedOrigin, PHP_URL_HOST)) : '';
+        $rpId = $this->rpId();
+        $localAliases = ['localhost', '127.0.0.1', '[::1]', '::1'];
+        $isLocalOriginForLocalRp = in_array($originHost, $localAliases, true) && in_array($rpId, $localAliases, true);
+        $originBelongsToRp = $originHost === $rpId
+            || str_ends_with($originHost, '.' . $rpId)
+            || $isLocalOriginForLocalRp;
+        $isAllowedWebOrigin = $isAllowedWebOrigin && $originBelongsToRp;
+        $isAllowedAndroidOrigin = is_string($origin)
+            && in_array($origin, $allowedAndroidOrigins, true);
+        $isCrossOrigin = array_key_exists('crossOrigin', $clientData)
+            && $clientData['crossOrigin'] !== false;
 
-        // Check if origin matches rpId, request host, loopback alias, or is an allowed subdomain
-        $isLoopback = in_array($originHost, ['localhost', '127.0.0.1', '::1']) && in_array($rpId, ['localhost', '127.0.0.1', '::1']);
-        $matchesHost = ($originHost !== '' && ($originHost === $rpId || $originHost === $requestHost || str_ends_with($originHost, '.' . $rpId)));
-        $isAndroidApp = str_starts_with($origin, 'android-app://') || str_starts_with($origin, 'android:apk-key-hash:');
-
-        if (!$matchesHost && !$isLoopback && !$isAndroidApp) {
+        if ($isCrossOrigin || (!$isAllowedWebOrigin && !$isAllowedAndroidOrigin)) {
             Log::warning('WebAuthn origin mismatch', [
-                'origin_host' => $originHost,
-                'request_host' => $requestHost,
+                'origin' => is_string($origin) ? substr($origin, 0, 200) : null,
                 'rp_id' => $rpId,
+                'cross_origin' => $isCrossOrigin,
             ]);
-            throw new RuntimeException('Invalid WebAuthn origin - host mismatch.');
+            throw new RuntimeException('The sign-in origin is not trusted.');
         }
     }
 
     public function rpId(): string
     {
-        $host = '';
-
-        if (app()->bound('request')) {
-            // Try x-forwarded-host first (set by proxies like Render / ngrok / Cloudflare)
-            $host = trim((string) request()->header('x-forwarded-host'));
-            
-            // Fallback to x-forwarded-server
-            if (!$host) {
-                $host = trim((string) request()->header('x-forwarded-server'));
-            }
-            
-            // Fallback to request host
-            if (!$host) {
-                $host = trim((string) request()->getHost());
-            }
+        $cleanHost = strtolower(trim((string) config('webauthn.rp_id', '')));
+        if ($cleanHost === '') {
+            $cleanHost = strtolower((string) (parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'localhost'));
         }
 
-        // Handle multi-hop proxy headers (take first hostname if comma-separated)
-        if (str_contains($host, ',')) {
-            $host = trim(explode(',', $host)[0]);
-        }
-
-        // Remove scheme if present
-        if (str_contains($host, '://')) {
-            $host = parse_url($host, PHP_URL_HOST) ?: $host;
-        }
-
-        // Remove port numbers
-        $host = preg_replace('/:\d+$/', '', $host);
-
-        // Fallback to config if still empty
-        if (!$host) {
-            $configHost = parse_url(config('app.url'), PHP_URL_HOST);
-            if ($configHost) {
-                $host = $configHost;
-            }
-        }
-
-        $cleanHost = strtolower(trim($host));
+        $cleanHost = trim($cleanHost, '.');
         if ($cleanHost === '127.0.0.1' || $cleanHost === '::1' || $cleanHost === '') {
             return 'localhost';
         }
 
         return $cleanHost;
+    }
+
+    private function normalizeWebOrigin(string $origin): ?string
+    {
+        $parts = parse_url(trim($origin));
+        if (!is_array($parts)
+            || !isset($parts['scheme'], $parts['host'])
+            || isset($parts['user'])
+            || isset($parts['pass'])
+            || isset($parts['query'])
+            || isset($parts['fragment'])
+            || !in_array(($parts['path'] ?? ''), ['', '/'], true)) {
+            return null;
+        }
+
+        $scheme = strtolower((string) $parts['scheme']);
+        $host = strtolower(rtrim((string) $parts['host'], '.'));
+        if ($host === '' || !in_array($scheme, ['https', 'http'], true)) {
+            return null;
+        }
+
+        // HTTP is permitted only for local development origins.
+        if ($scheme === 'http' && !in_array($host, ['localhost', '127.0.0.1', '[::1]', '::1'], true)) {
+            return null;
+        }
+
+        $port = isset($parts['port']) ? (int) $parts['port'] : null;
+        if ($port !== null && (($scheme === 'https' && $port === 443) || ($scheme === 'http' && $port === 80))) {
+            $port = null;
+        }
+
+        return $scheme . '://' . $host . ($port === null ? '' : ':' . $port);
     }
 
     private function parseAuthenticatorData(string $authData, bool $requireAttestedCredential): array

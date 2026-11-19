@@ -1555,8 +1555,6 @@ async function startBiometricRegistration(identifier, password) {
                         clientDataJSON: clientDataJSON
                     }
                 },
-                identifier: identifier,
-                password: password,
                 device_name: navigator.userAgent.includes('Mobile') ? 'Mobile Device' : 'Desktop Browser'
             })
         });
@@ -1893,61 +1891,19 @@ async function handleBiometricLogin() {
 
         if (!optRes.ok || !opts.success) {
             resetBiometricButton();
-            // Account has not registered biometrics
-            if (opts.code === 'NOT_REGISTERED' || (optRes.status === 404 && opts.user_exists)) {
-                showFpMessage('warning', '<i class="bi bi-shield-lock-fill me-2"></i>Biometric login is not registered for this account. Please use your password or set up biometrics.');
-                openBiometricModal({
-                    title: 'BIOMETRIC NOT REGISTERED',
-                    identifier: identifier,
-                    message: 'Biometric sign-in is not registered for this account.<br><br>Would you like to verify your password and set up biometrics on this device now?',
-                    badgeType: 'warning',
-                    primaryBtnText: '<i class="bi bi-shield-plus me-2"></i>SET UP BIOMETRICS',
-                    secondaryBtnText: 'SIGN IN WITH PASSWORD',
-                    onPrimaryClick: function() { openBiometricSetupModal(identifier); },
-                    onSecondaryClick: closeBiometricModalAndFocusPassword
-                });
-                return;
-            } else if (opts.code === 'ACCOUNT_NOT_FOUND' || optRes.status === 404) {
-                showFpMessage('error', '<i class="bi bi-x-circle me-2"></i>No account found matching "' + identifier + '".');
-                openBiometricModal({
-                    title: 'ACCOUNT NOT FOUND',
-                    identifier: identifier,
-                    message: 'No account was found matching "<strong>' + identifier + '</strong>". Please double check your Student ID, Email, or Mobile Number.',
-                    badgeType: 'danger',
-                    primaryBtnText: '<i class="bi bi-pencil-fill me-2"></i>CHECK IDENTIFIER',
-                    secondaryBtnText: 'USE PASSWORD',
-                    onPrimaryClick: closeBiometricModalAndFocusIdentifier,
-                    onSecondaryClick: closeBiometricModalAndFocusPassword
-                });
-                return;
-            } else if (opts.code === 'ACCOUNT_DEACTIVATED' || optRes.status === 403) {
-                var deactMsg = opts.message || 'Your account has been deactivated. Please contact the school administrator.';
-                showFpMessage('error', '<i class="bi bi-slash-circle me-2"></i>' + deactMsg);
-                openBiometricModal({
-                    title: 'ACCOUNT DEACTIVATED',
-                    identifier: identifier,
-                    message: deactMsg,
-                    badgeType: 'danger',
-                    primaryBtnText: 'USE PASSWORD',
-                    secondaryBtnText: false,
-                    onPrimaryClick: closeBiometricModalAndFocusPassword
-                });
-                return;
-            } else {
-                var genMsg = opts.message || 'Biometric login is not registered for this account. Please use your password or register your biometrics first.';
-                showFpMessage('warning', '<i class="bi bi-shield-lock-fill me-2"></i>' + genMsg);
-                openBiometricModal({
-                    title: 'BIOMETRIC LOGIN',
-                    identifier: identifier,
-                    message: genMsg,
-                    badgeType: 'warning',
-                    primaryBtnText: '<i class="bi bi-shield-lock-fill me-2"></i>SET UP BIOMETRICS',
-                    secondaryBtnText: 'USE PASSWORD',
-                    onPrimaryClick: function() { openBiometricSetupModal(identifier); },
-                    onSecondaryClick: closeBiometricModalAndFocusPassword
-                });
-                return;
-            }
+            var genericBioMessage = 'Biometric sign-in could not be started. Check your sign-in details, use your password, or set up device sign-in after signing in.';
+            showFpMessage('warning', '<i class="bi bi-shield-lock-fill me-2"></i>' + genericBioMessage);
+            openBiometricModal({
+                title: 'BIOMETRIC SIGN-IN UNAVAILABLE',
+                identifier: identifier,
+                message: genericBioMessage,
+                badgeType: 'warning',
+                primaryBtnText: 'USE PASSWORD',
+                secondaryBtnText: 'CHECK SIGN-IN DETAILS',
+                onPrimaryClick: closeBiometricModalAndFocusPassword,
+                onSecondaryClick: closeBiometricModalAndFocusIdentifier
+            });
+            return;
         }
 
         // Detect device biometric capabilities dynamically and filter available methods
@@ -2299,92 +2255,11 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
         } else {
             resetBiometricButton();
 
-            // 1-Tap Account Switch when scanned biometric belongs to another user on this device
-            if (result.can_switch_user && result.detected_user) {
-                var detUser = result.detected_user;
-                var detName = detUser.name || detUser.identifier;
-                
-                openBiometricModal({
-                    title: 'BIOMETRIC RECOGNIZED',
-                    identifier: detUser.identifier,
-                    message: 'This biometric matches <strong>' + detName + '</strong> (' + detUser.identifier + ').<br><br>Would you like to sign in as <strong>' + detName + '</strong>?',
-                    badgeType: 'success',
-                    primaryBtnText: '<i class="bi bi-box-arrow-in-right me-2"></i>SIGN IN AS ' + detName.toUpperCase(),
-                    secondaryBtnText: 'CANCEL',
-                    onPrimaryClick: async function() {
-                        openBiometricModal({
-                            title: 'SIGNING IN...',
-                            identifier: detUser.identifier,
-                            message: 'Authenticating as <strong>' + detName + '</strong>...',
-                            badgeType: 'info',
-                            primaryBtnText: '<i class="bi bi-hourglass-split me-2"></i>Signing in...',
-                            primaryDisabled: true,
-                            secondaryBtnText: false
-                        });
-                        
-                        try {
-                            var swRes = await fetch('{{ route("webauthn.login") }}', {
-                                method: 'POST',
-                                credentials: 'same-origin',
-                                headers: { 
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}', 
-                                    'Content-Type': 'application/json', 
-                                    'Accept': 'application/json',
-                                    'X-Device-Key': devKey,
-                                    'X-Device-Fingerprint': devKey
-                                },
-                                body: JSON.stringify({ 
-                                    credential_id: credentialId, 
-                                    assertion: assertionData,
-                                    student_number: detUser.identifier,
-                                    identifier: detUser.identifier,
-                                    switch_user: true,
-                                    device_key: devKey,
-                                    device_fingerprint: devKey
-                                })
-                            });
-                            var swData = await swRes.json();
-                            if (swData.success) {
-                                try {
-                                    saveAccount({
-                                        identifier: detUser.identifier,
-                                        name: detUser.name,
-                                        role: detUser.role
-                                    });
-                                    if (idInput) {
-                                        idInput.value = detUser.identifier;
-                                        if (typeof updateAccountBanner === 'function') updateAccountBanner();
-                                    }
-                                } catch(e) {}
-                                window.location.href = swData.redirect || '{{ route("home") }}';
-                            } else {
-                                throw new Error(swData.message || 'Login failed.');
-                            }
-                        } catch(swErr) {
-                            openBiometricModal({
-                                title: 'SIGN IN FAILED',
-                                identifier: detUser.identifier,
-                                message: swErr.message || 'Failed to switch user.',
-                                badgeType: 'danger',
-                                primaryBtnText: '<i class="bi bi-shield-plus me-2"></i>RE-ENROLL ON THIS DEVICE',
-                                secondaryBtnText: 'USE PASSWORD',
-                                onPrimaryClick: function() { openBiometricSetupModal(detUser.identifier); },
-                                onSecondaryClick: closeBiometricModalAndFocusPassword
-                            });
-                        }
-                    },
-                    onSecondaryClick: closeBiometricModal
-                });
-                return;
-            }
-
-            var failMsg = result.message || 'Biometric authentication was not recognized.';
+            var failMsg = 'Biometric sign-in could not be completed. Try again or use your password.';
             showFpMessage('error', '<i class="bi bi-x-circle me-2"></i>' + failMsg);
             
-            var modalTitle = result.code === 'CREDENTIAL_MISMATCH' ? 'ACCOUNT MISMATCH' : 'AUTHENTICATION FAILED';
-            
             openBiometricModal({
-                title: modalTitle,
+                title: 'AUTHENTICATION FAILED',
                 message: failMsg + '<br><br>Please try again, choose another method, or sign in using your password.',
                 badgeType: 'danger',
                 primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
