@@ -1,8 +1,10 @@
 <?php
 
 $appUrl = trim((string) env('APP_URL', ''));
-if ($appUrl === '') {
-    $appUrl = (string) env('RENDER_EXTERNAL_URL', 'http://localhost');
+$renderUrl = trim((string) env('RENDER_EXTERNAL_URL', ''));
+$configuredAppHost = strtolower((string) (parse_url($appUrl, PHP_URL_HOST) ?: ''));
+if ($appUrl === '' || ($renderUrl !== '' && in_array($configuredAppHost, ['localhost', '127.0.0.1', '::1'], true))) {
+    $appUrl = $renderUrl !== '' ? $renderUrl : 'http://localhost';
 }
 $appParts = parse_url($appUrl);
 $defaultOrigin = is_array($appParts) && isset($appParts['scheme'], $appParts['host'])
