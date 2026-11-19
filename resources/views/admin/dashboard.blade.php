@@ -6,8 +6,6 @@
 
 @php
     $presentDiff = $totalPresent - $yesterdayPresent;
-    $lateDiff = $totalLate - $yesterdayLate;
-    $absentDiff = $totalAbsent - $yesterdayAbsent;
     $rateDiff = $attendanceRate - $yesterdayRate;
 @endphp
 
@@ -20,23 +18,21 @@
     <a href="{{ route('admin.reports') }}" class="saas-btn saas-btn-secondary"><i class="bi bi-bar-chart" aria-hidden="true"></i> View reports</a>
 </header>
 
-<section aria-labelledby="adminTasksTitle" class="admin-home-section">
-    <h2 id="adminTasksTitle">What would you like to do?</h2>
-    <div class="admin-task-grid">
-        @foreach([
-            ['Students', 'Find a student, review registrations or update a record.', 'admin.students', 'bi-people'],
-            ['Class schedules', 'Assign sections and teachers, then publish the timetable.', 'admin.class-schedules.index', 'bi-calendar3'],
-            ['Attendance records', 'Look up attendance by class, date or student.', 'admin.attendance', 'bi-clipboard-check'],
-            ['School calendar', 'Review holidays and upcoming school dates.', 'admin.calendar', 'bi-calendar-event'],
-        ] as [$label, $description, $destination, $icon])
-            <a href="{{ route($destination) }}" class="admin-task-card">
-                <span class="admin-task-icon"><i class="bi {{ $icon }}" aria-hidden="true"></i></span>
-                <span><strong>{{ $label }}</strong><small>{{ $description }}</small></span>
-                <i class="bi bi-arrow-right" aria-hidden="true"></i>
-            </a>
-        @endforeach
+
+{{-- Important system messages stay near the top so they are not lost below dashboard cards. --}}
+@if($systemAlerts->count() > 0)
+<div class="admin-dashboard-alerts" aria-live="polite">
+    @foreach($systemAlerts as $alert)
+    <div class="alert-card {{ $alert->severity }}">
+        <div class="alert-icon"><i class="bi {{ $alert->icon }}" aria-hidden="true"></i></div>
+        <div class="alert-message">{{ $alert->message }}</div>
+        @if($alert->action)
+            <a href="{{ $alert->action }}" class="alert-action">View <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        @endif
     </div>
-</section>
+    @endforeach
+</div>
+@endif
 
 <section aria-labelledby="adminTodayTitle" class="admin-home-section">
     <div class="admin-section-title-row">
@@ -55,8 +51,26 @@
     </div>
 </section>
 
+<section aria-labelledby="adminTasksTitle" class="admin-home-section">
+    <h2 id="adminTasksTitle">Quick actions</h2>
+    <div class="admin-task-grid">
+        @foreach([
+            ['Students', 'Find students and review registrations.', 'admin.students', 'bi-people'],
+            ['Schedules', 'Manage sections, teachers and timetables.', 'admin.class-schedules.index', 'bi-calendar3'],
+            ['Attendance', 'Find and review attendance.', 'admin.attendance', 'bi-clipboard-check'],
+            ['School calendar', 'See holidays and school dates.', 'admin.calendar', 'bi-calendar-event'],
+        ] as [$label, $description, $destination, $icon])
+            <a href="{{ route($destination) }}" class="admin-task-card">
+                <span class="admin-task-icon"><i class="bi {{ $icon }}" aria-hidden="true"></i></span>
+                <span><strong>{{ $label }}</strong><small>{{ $description }}</small></span>
+                <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            </a>
+        @endforeach
+    </div>
+</section>
+
 <section aria-labelledby="adminReviewTitle" class="admin-home-section">
-    <h2 id="adminReviewTitle">{{ Auth::user()->admin_sub_role === 'auditor' ? 'Review attendance' : 'Review requests' }}</h2>
+    <h2 id="adminReviewTitle">{{ Auth::user()->admin_sub_role === 'auditor' ? 'Attendance review' : 'Needs attention' }}</h2>
     <div class="admin-review-links">
         @unless(Auth::user()->admin_sub_role === 'auditor')
             <a href="{{ route('admin.students', ['status' => 'pending']) }}"><i class="bi bi-person-check" aria-hidden="true"></i> Student registrations <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
@@ -65,25 +79,6 @@
         <a href="{{ route('admin.corrections') }}"><i class="bi bi-pencil-square" aria-hidden="true"></i> Attendance corrections <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
     </div>
 </section>
-
-{{-- ─── SYSTEM ALERTS ─── --}}
-@if($systemAlerts->count() > 0)
-<div class="dash-animate" style="margin-bottom: 24px;" aria-live="polite">
-    @foreach($systemAlerts as $alert)
-    <div class="alert-card {{ $alert->severity }}">
-        <div class="alert-icon">
-            <i class="bi {{ $alert->icon }}"></i>
-        </div>
-        <div class="alert-message">{{ $alert->message }}</div>
-        @if($alert->action)
-            <a href="{{ $alert->action }}" class="alert-action">View <i class="bi bi-arrow-right"></i></a>
-        @endif
-    </div>
-    @endforeach
-</div>
-@endif
-
-
 
 {{-- ─── LIVE ATTENDANCE QR SESSIONS ─── --}}
 <div class="admin-dashboard-panels">

@@ -10,12 +10,12 @@
     body.admin-portal .admin-workspace-role { margin-bottom: 16px; }
     body.admin-portal .admin-nav-search { margin: 0 0 16px; position: relative; }
     body.admin-portal .admin-nav-search input { padding: 10px 0; }
-    body.admin-portal .admin-nav-group { padding: 4px 0; border-bottom: 0; }
-    body.admin-portal .admin-nav-group > summary { min-height: 60px; padding: 10px; gap: 10px; }
+    body.admin-portal .admin-nav-group { padding: 2px 0; border-bottom: 0; }
+    body.admin-portal .admin-nav-group > summary { min-height: 46px; padding: 8px 10px; gap: 10px; }
     body.admin-portal .admin-nav-group > summary > i:first-child { flex: none; width: 20px; font-size: 1.05rem; }
-    body.admin-portal .admin-nav-group-name { display: grid; gap: 3px; min-width: 0; }
+    body.admin-portal .admin-nav-group-name { display: grid; min-width: 0; }
     body.admin-portal .admin-nav-group-name strong { color: var(--text-primary); font-size: .88rem; font-weight: 600; }
-    body.admin-portal .admin-nav-group-name small { font-size: .68rem; line-height: 1.45; font-weight: 400; }
+    body.admin-portal .admin-nav-group-name small { display: none; }
     body.admin-portal .admin-nav-group[open] > summary { background: var(--surface-soft); }
     body.admin-portal .admin-nav-links { margin: 6px 0 8px 18px; border-left: 1px solid var(--surface-border); padding: 0 0 0 6px; }
     body.admin-portal .admin-workspace-nav .nav-link { font-size: .82rem; margin: 2px 0; min-height: 42px; }
@@ -42,21 +42,22 @@
     body.admin-portal .admin-section-switcher nav a { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px; color: var(--text-secondary); font-size: .85rem; text-decoration: none; border-radius: 7px; }
     body.admin-portal .admin-section-switcher nav a:is(:hover, [aria-current]) { background: var(--surface-hover); color: var(--gold); }
 
-    body.admin-portal .admin-home-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin: 0 0 30px; }
+    body.admin-portal .admin-home-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin: 0 0 24px; }
     body.admin-portal .admin-home-heading h1 { margin: 0 0 8px; }
     body.admin-portal .admin-home-heading p { margin: 0; color: var(--text-secondary); font-size: .9rem; }
     body.admin-portal .admin-home-heading .admin-eyebrow { margin-bottom: 10px; font-size: .78rem; color: var(--gold); }
-    body.admin-portal .admin-home-section { margin-bottom: 30px; }
+    body.admin-portal .admin-home-section { margin-bottom: 24px; }
     body.admin-portal .admin-home-section h2 { font-size: 1rem; font-weight: 600; line-height: 1.5; margin: 0 0 14px; }
     body.admin-portal .admin-section-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     body.admin-portal .admin-secondary-text { color: var(--text-secondary); font-size: .78rem; }
-    body.admin-portal .admin-task-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-    body.admin-portal .admin-task-card { display: flex; align-items: center; gap: 16px; padding: 20px; min-height: 110px; color: var(--text-primary); background: var(--admin-card-bg); border: 1px solid var(--surface-border); border-radius: 12px; text-decoration: none; }
+    body.admin-portal .admin-dashboard-alerts { display: grid; gap: 10px; margin-bottom: 22px; }
+    body.admin-portal .admin-task-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    body.admin-portal .admin-task-card { display: flex; align-items: center; gap: 12px; padding: 14px; min-height: 84px; color: var(--text-primary); background: var(--admin-card-bg); border: 1px solid var(--surface-border); border-radius: 10px; text-decoration: none; }
     body.admin-portal .admin-task-card:hover { border-color: var(--gold); background: var(--surface-hover); }
     body.admin-portal .admin-task-card > span:nth-child(2) { flex: 1; min-width: 0; }
-    body.admin-portal .admin-task-card strong { display: block; font-size: .95rem; font-weight: 600; margin-bottom: 5px; }
-    body.admin-portal .admin-task-card small { display: block; font-size: .8rem; line-height: 1.6; color: var(--text-secondary); }
-    body.admin-portal .admin-task-icon { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 10px; background: var(--surface-soft); color: var(--gold); font-size: 1.2rem; }
+    body.admin-portal .admin-task-card strong { display: block; font-size: .86rem; font-weight: 600; line-height: 1.4; }
+    body.admin-portal .admin-task-card small { display: block; margin-top: 4px; font-size: .73rem; line-height: 1.45; color: var(--text-secondary); }
+    body.admin-portal .admin-task-icon { display: grid; place-items: center; width: 38px; height: 38px; flex: none; border-radius: 9px; background: var(--surface-soft); color: var(--gold); font-size: 1.05rem; }
     body.admin-portal .admin-task-card > .bi { color: var(--gold); font-size: .85rem; }
     body.admin-portal .admin-dashboard-kpis { margin-bottom: 0; }
     body.admin-portal .admin-review-links { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -126,6 +127,9 @@
     body.admin-portal .telemetry-value-lg { font-size: 1.5rem; }
     body.admin-portal .telemetry-value-md { font-size: 1.1rem; }
 }
+@media screen and (min-width: 1200px) and (max-width: 1599.98px) {
+    body.admin-portal .admin-dashboard-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+}
 @media screen and (max-width: 1100px) {
     body.admin-portal .admin-settings-layout { grid-template-columns: minmax(0, 1fr); }
     body.admin-portal .admin-settings-aside { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -149,11 +153,11 @@
     body.admin-portal .admin-home-heading p { font-size: .84rem; }
     body.admin-portal .admin-home-heading > .saas-btn { width: auto; }
     body.admin-portal .admin-home-section { margin-bottom: 24px; }
-    body.admin-portal .admin-task-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-    body.admin-portal .admin-task-card { min-height: 96px; padding: 16px; gap: 12px; }
+    body.admin-portal .admin-task-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    body.admin-portal .admin-task-card { min-height: 76px; padding: 12px; gap: 9px; }
     body.admin-portal .admin-task-card strong { font-size: .88rem; }
-    body.admin-portal .admin-task-card small { font-size: .77rem; }
-    body.admin-portal .admin-task-icon { width: 38px; height: 38px; font-size: 1.05rem; }
+    body.admin-portal .admin-task-card small { display: none; }
+    body.admin-portal .admin-task-icon { width: 34px; height: 34px; font-size: .95rem; }
     body.admin-portal .admin-secondary-text { font-size: .73rem; margin: -6px 0 12px; }
     body.admin-portal .admin-dashboard-kpis { gap: 10px; }
     body.admin-portal .ent-kpi-summary-card { padding: 14px !important; }
@@ -184,5 +188,8 @@
     body.admin-portal .hero-actions { flex-wrap: wrap; width: 100%; gap: 10px; }
     body.admin-portal .hero-actions > * { flex: 1 1 130px; white-space: normal; }
     body.admin-portal .admin-maintenance-details { padding: 0 16px; }
-    body.admin-portal .admin-navigation-sheet .admin-nav-group > summary { min-height: 62px; }
+    body.admin-portal .admin-navigation-sheet .admin-nav-group > summary { min-height: 48px; }
+}
+@media screen and (max-width: 359.98px) {
+    body.admin-portal .admin-task-grid { grid-template-columns: minmax(0, 1fr); }
 }
