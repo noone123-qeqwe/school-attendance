@@ -240,16 +240,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [PTController::class, 'login'])->middleware('throttle:login')->name('login.submit');
     Route::get('/csrf-token', function () { return response()->json(['token' => csrf_token()]); })->name('csrf.token');
 
-    Route::get('/register', function () {
-        $sections = \App\Models\Section::query()
-            ->with('course')
-            ->whereHas('course', fn ($query) => $query->where('code', 'BSCS'))
-            ->orderBy('year_level')
-            ->orderBy('name')
-            ->get();
-
-        return view('auth.register', compact('sections'));
-    })->name('register');
+    Route::get('/register', fn () => view('auth.register'))->name('register');
     Route::post('/register', [PTController::class, 'register'])->middleware('throttle:login')->name('register.submit');
 
     // Forgot Password (OTP flow)

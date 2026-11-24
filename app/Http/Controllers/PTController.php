@@ -79,9 +79,8 @@ class PTController extends Controller
             $userData['course'] = 'BSCS';
             $userData['year_level'] = $request->year_level;
             $userData['semester'] = $request->semester;
-            $userData['section'] = \App\Models\Section::findOrFail($request->integer('section_id'))->name;
             // Email verification proves mailbox control, not school enrollment.
-            // A registrar must confirm the student ID and class before access.
+            // A registrar must review the student details before access.
             $userData['student_registration_pending'] = true;
         }
 

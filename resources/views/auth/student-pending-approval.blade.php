@@ -11,7 +11,7 @@
         <p class="text-uppercase mb-2" style="color:#cfa46f;font-size:.78rem;font-weight:800;letter-spacing:.14em;">Registration received</p>
         <h1 class="h2 mb-3" style="color:#f3e7cd;font-weight:800;">Your school is reviewing your details</h1>
         <p class="mx-auto mb-4" style="max-width:560px;color:#cbbba7;line-height:1.7;">
-            A registrar must confirm your Student ID and class section before student records and attendance features become available. You can sign out and check again later.
+            A registrar must verify your Student ID before you can access student records and attendance. Your class schedule will appear after the school assigns your section. You can sign out and check again later.
         </p>
         <div class="d-flex justify-content-center flex-wrap gap-2">
             <form method="POST" action="{{ route('logout') }}">

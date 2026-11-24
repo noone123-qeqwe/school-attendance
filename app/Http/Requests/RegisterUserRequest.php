@@ -92,7 +92,7 @@ class RegisterUserRequest extends FormRequest
             $rules['year_level']     = 'required|integer|between:1,4';
             $rules['semester']       = 'required|in:1,2,Summer';
 
-            if ($this->routeIs('register.submit') || $this->routeIs('admin.student.store')) {
+            if ($this->routeIs('admin.student.store')) {
                 $rules['section_id'] = 'required|integer|exists:sections,id';
             }
 
@@ -117,7 +117,7 @@ class RegisterUserRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            if ($this->role === 'student' && $this->filled('section_id') && $this->filled('year_level')) {
+            if ($this->routeIs('admin.student.store') && $this->role === 'student' && $this->filled('section_id') && $this->filled('year_level')) {
                 $section = Section::with('course')->find($this->input('section_id'));
                 $courseCode = trim((string) ($this->input('course') ?: 'BSCS'));
 

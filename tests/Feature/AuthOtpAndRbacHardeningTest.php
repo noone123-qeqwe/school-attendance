@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 class AuthOtpAndRbacHardeningTest extends TestCase
@@ -26,6 +27,42 @@ class AuthOtpAndRbacHardeningTest extends TestCase
             'role' => 'student',
             'is_active' => true,
         ], $overrides));
+    }
+
+    #[TestWith([[]], 'without a section')]
+    #[TestWith([['section_id' => 1]], 'with an earlier form')]
+    public function test_student_registration_leaves_section_assignment_to_the_school(array $formFields): void
+    {
+        $email = 'new.student@gmail.com';
+        $otp = Otp::generateForEmail($email, 'register');
+
+        $this->get(route('register'))
+            ->assertOk()
+            ->assertDontSee('name="section_id"', false);
+
+        $this->postJson(route('otp.register.verify'), ['email' => $email, 'otp' => $otp->code])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->post(route('register.submit'), $formFields + [
+            'first_name' => 'New',
+            'surname' => 'Student',
+            'role' => 'student',
+            'email' => $email,
+            'password' => 'StrongPass#2026',
+            'password_confirmation' => 'StrongPass#2026',
+            'student_number' => '2600251',
+            'year_level' => '1',
+            'semester' => '1',
+            'terms' => '1',
+        ])->assertRedirect(route('student.pending-approval'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => $email,
+            'student_number' => '2600251',
+            'section' => null,
+            'student_registration_pending' => true,
+        ]);
     }
 
     public function test_admin_web_2fa_does_not_penalize_valid_otp_before_matching_and_invalidates_after_limit(): void
