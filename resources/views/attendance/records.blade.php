@@ -533,7 +533,7 @@
         <div class="table-card-header">
             <div class="table-card-title">
                 <div class="table-title-icon">
-                    <i class="bi bi-shield-check-fill"></i>
+                    <i class="bi bi-journal-check" aria-hidden="true"></i>
                 </div>
                 All Records
             </div>

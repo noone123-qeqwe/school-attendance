@@ -908,7 +908,7 @@
     <div id="tab-profile" class="spanel active">
 
         <!-- Avatar / Profile Photo Card -->
-        <div class="sc">
+        <div class="sc student-profile-summary">
             <div class="sc-head">
                 <div class="sc-icon" style="background:rgba(207,164,111,0.14);color:#cfa46f;"><i class="bi bi-person-bounding-box"></i></div>
                 <div>
@@ -999,7 +999,7 @@
         @endif
 
         <!-- Academic Info -->
-        <div class="sc">
+        <div class="sc student-academic-details">
             <div class="sc-head">
                 <div class="sc-icon" style="background:rgba(34,197,94,0.14);color:#4ade80;border:1px solid rgba(34,197,94,0.25);"><i class="bi bi-mortarboard-fill"></i></div>
                 <div>

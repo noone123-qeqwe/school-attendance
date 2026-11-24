@@ -625,9 +625,8 @@
                                     <div class="col-6">
                                         <div class="form-floating-custom mb-0" id="wrap-year_level">
                                             <select name="year_level" id="year_level">
-                                                <option value="" disabled {{ old('year_level') ? '' : 'selected' }}></option>
                                                 @foreach([1,2,3,4] as $y)
-                                                <option value="{{ $y }}" {{ old('year_level')==$y?'selected':'' }}>{{ $y }}{{ $y==1?'st':($y==2?'nd':($y==3?'rd':'th')) }}</option>
+                                                <option value="{{ $y }}" {{ old('year_level', '1')==$y?'selected':'' }}>{{ $y }}{{ $y==1?'st':($y==2?'nd':($y==3?'rd':'th')) }}</option>
                                                 @endforeach
                                             </select>
                                             <label for="year_level">Year Level</label>
@@ -638,7 +637,6 @@
                                     <div class="col-6">
                                         <div class="form-floating-custom mb-0" id="wrap-semester">
                                             <select name="semester" id="semester">
-                                                <option value="" disabled {{ old('semester') ? '' : 'selected' }}></option>
                                                 <option value="1" {{ old('semester', '1')=='1'?'selected':'' }}>1st Semester</option>
                                                 <option value="2" {{ old('semester')=='2'?'selected':'' }}>2nd Semester</option>
                                                 <option value="Summer" {{ old('semester')=='Summer'?'selected':'' }}>Summer</option>

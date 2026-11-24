@@ -2,7 +2,7 @@
 @section('page-title', 'My Schedule')
 
 @section('content')
-<div class="mb-3 mb-md-4">
+<div class="mb-3 mb-md-4 student-weekly-heading">
     <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.35rem, 3.5vw, 1.9rem); letter-spacing: -0.02em;">Weekly Schedule</h1>
     <div style="color: #b39b82; font-size: 0.9rem;">
         Your classes for Year {{ Auth::user()->year_level }}, Semester {{ Auth::user()->semester }}
@@ -112,7 +112,7 @@
     </div>
 </div>
 
-<div class="row g-4">
+<div class="row g-4 student-weekly-grid">
     @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day)
         <div class="col-lg-12 schedule-day-col {{ $day === $defaultDay ? '' : 'mobile-sched-hidden' }}" id="sched-day-card-{{ $day }}">
             <x-card title="{{ $day }}" icon="bi bi-calendar-event">

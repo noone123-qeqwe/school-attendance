@@ -1085,6 +1085,7 @@
 </style>
 
 <!-- Hero Banner -->
+<div class="student-desktop-dashboard">
 <div class="student-hero-banner premium-hero-card mb-4">
     <div class="student-hero-inner">
         <!-- Top Bar: Greeting & Status -->
@@ -1103,6 +1104,9 @@
                 <span class="student-status-dot"></span>
                 <span>Active Student</span>
             </div>
+            <a class="student-desktop-check-in" href="{{ route('mobile.scan', ['open_scanner' => 1]) }}">
+                <i class="bi bi-qr-code-scan" aria-hidden="true"></i> Scan attendance
+            </a>
         </div>
 
         <!-- Middle Profile: Avatar & Details -->
@@ -1296,6 +1300,8 @@
     </div>
 </div>
 @endif
+
+</div>
 
 <style>
     /* ─── Squircle Attendance Calendar ─────────────────────────── */
