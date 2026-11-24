@@ -1,20 +1,33 @@
-<ul class="list-unstyled d-grid gap-2 mb-0">
+<ul class="assistant-report-list list-unstyled d-grid gap-2 mb-0">
     @foreach($attendanceReports as $report)
-        <li class="border rounded-3 px-3 py-2">
-            <div class="d-flex flex-wrap align-items-baseline gap-2 justify-content-between">
+        @php
+            [$reviewState, $reviewLabel, $reviewIcon] = match ($report->review_status) {
+                'approved' => ['approved', 'Approved', 'bi-check-circle'],
+                'dismissed' => ['dismissed', 'Dismissed', 'bi-dash-circle'],
+                default => ['pending', 'Awaiting review', 'bi-clock'],
+            };
+        @endphp
+        <li class="assistant-report-entry">
+            <div class="assistant-report-entry-top d-flex flex-wrap gap-2 justify-content-between align-items-center">
                 <strong class="text-break">{{ $report->student?->name ?? 'Classmate' }}</strong>
-                <span class="status-pill status-{{ $report->review_status === 'approved' ? 'completed' : 'upcoming' }}">
-                    {{ match ($report->review_status) {'approved' => 'Approved', 'dismissed' => 'Dismissed', default => 'Awaiting review'} }}
+                <span class="assistant-status assistant-status--{{ $reviewState }}">
+                    <i class="bi {{ $reviewIcon }}" aria-hidden="true"></i> {{ $reviewLabel }}
                 </span>
             </div>
-            <div class="text-break" style="color:#b39b82;">
+            <div class="assistant-report-meta assistant-muted text-break">
                 @if($showReportSession)
                     {{ $report->session?->subject?->name ?? 'Class' }} ·
                 @endif
-                {{ ucfirst($report->suggested_status) }} · {{ $report->created_at?->format($showReportSession ? 'M j, g:i A' : 'g:i A') }}
+                Reported {{ strtolower($report->suggested_status) }}
+                @if($report->created_at)
+                    <span aria-hidden="true"> · </span>
+                    <time datetime="{{ $report->created_at->toAtomString() }}">
+                        {{ $report->created_at->copy()->timezone('Asia/Manila')->format($showReportSession ? 'M j, g:i A' : 'g:i A') }}
+                    </time>
+                @endif
             </div>
             @if($report->reason)
-                <p class="mb-0 mt-1 text-break">{{ $report->reason }}</p>
+                <p class="assistant-report-note mb-0 text-break">{{ $report->reason }}</p>
             @endif
         </li>
     @endforeach

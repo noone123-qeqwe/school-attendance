@@ -35,9 +35,9 @@ class StudentAssistantAttendanceService
             ->values();
     }
 
-    public function submit(AttendanceSession $session, User $assistant, array $data): void
+    public function submit(AttendanceSession $session, User $assistant, array $data): StudentAssistantAttendanceReport
     {
-        DB::transaction(function () use ($session, $assistant, $data): void {
+        return DB::transaction(function () use ($session, $assistant, $data): StudentAssistantAttendanceReport {
             $subject = Subject::where('code', $session->subject_code)->lockForUpdate()->firstOrFail();
             $session = AttendanceSession::whereKey($session->id)
                 ->where('subject_code', $subject->code)->lockForUpdate()->firstOrFail();
@@ -66,6 +66,8 @@ class StudentAssistantAttendanceService
 
             activity('student-assistants')->causedBy($assistant)->performedOn($report)
                 ->log('assistant_attendance_submitted');
+
+            return $report;
         }, 3);
     }
 

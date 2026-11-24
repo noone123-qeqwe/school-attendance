@@ -48,9 +48,10 @@ class StudentAssistantSessionController extends Controller
             ->where('attendance_session_id', $session->id)
             ->where('submitted_by', $assistant->id)
             ->latest()->get();
+        $showSubmissionFeedback = $attendanceReports->contains('id', $request->integer('submitted'));
 
         return view('student-assistant.session', compact(
-            'session', 'canSubmitAttendance', 'attendanceReportStudents', 'attendanceReports'
+            'session', 'canSubmitAttendance', 'attendanceReportStudents', 'attendanceReports', 'showSubmissionFeedback'
         ));
     }
 
@@ -63,9 +64,10 @@ class StudentAssistantSessionController extends Controller
             'suggested_status' => ['required', Rule::in(StudentAssistantAttendanceReport::SUGGESTED_STATUSES)],
             'reason' => ['nullable', 'string', 'max:250'],
         ]);
-        $reports->submit($session, $request->user(), $data);
+        $report = $reports->submit($session, $request->user(), $data);
 
-        return redirect()->to(route('student-assistant.sessions.show', $session) . '#attendance-reports')
-            ->with('success', 'Attendance submitted for teacher review.');
+        return redirect()->to(route('student-assistant.sessions.show', [
+            'session' => $session, 'submitted' => $report->id,
+        ]) . '#assistant-submission-feedback');
     }
 }
