@@ -1,4 +1,4 @@
-// ── WebAuthn Device Biometrics (Fingerprint & Face ID / Windows Hello) ──
+// ── WebAuthn Device Biometrics (Fingerprint & Facial identification) ──
 let selectedBioMethod = 'fingerprint'; // 'fingerprint' | 'face'
 let bioAbortController = null;
 let bioScanProgressTimer = null;
@@ -62,7 +62,7 @@ function selectBiometricMethod(method) {
             displaySpan.textContent = 'Fingerprint';
             displaySpan.style.color = '#4ade80';
         } else {
-            displaySpan.textContent = 'Face ID / Windows Hello';
+            displaySpan.textContent = 'Facial identification';
             displaySpan.style.color = '#38bdf8';
         }
     }
@@ -300,7 +300,7 @@ async function loadDevices() {
             const hasUsableCredential = hasFp || hasFace;
             const enrolledMethods = [
                 ...(hasFp ? ['Fingerprint'] : []),
-                ...(hasFace ? ['Face ID / Windows Hello'] : [])
+                ...(hasFace ? ['Facial identification'] : [])
             ];
             activeSummary.style.cssText = hasUsableCredential
                 ? 'padding:14px 18px;color:#4ade80;font-size:.875rem;background:rgba(22,163,74,0.12);border-radius:12px;border:1px solid rgba(22,163,74,0.25);margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;'
@@ -784,7 +784,7 @@ async function beginFingerprintRegistration() {
                     ? [...new Set(registeredDeviceSnapshot
                         .filter(device => (device.biometric_type || 'fingerprint') === 'fingerprint' ||
                             (device.biometric_type === 'face' && device.is_secure_face_credential))
-                        .map(device => (device.biometric_type || 'fingerprint') === 'fingerprint' ? 'Fingerprint' : 'Face ID / Windows Hello'))]
+                        .map(device => (device.biometric_type || 'fingerprint') === 'fingerprint' ? 'Fingerprint' : 'Facial identification'))]
                     : [];
                 if (errorTitle) errorTitle.textContent = 'Device prompt ended';
                 if (errorDesc) errorDesc.textContent = existingMethods.length
