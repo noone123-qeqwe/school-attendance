@@ -61,6 +61,13 @@
     @if(Auth::user()?->isStudent() && request()->routeIs('settings'))
         <link rel="stylesheet" href="{{ asset('css/student-settings.css') }}?v={{ filemtime(public_path('css/student-settings.css')) }}">
     @endif
+    @if(Auth::user()?->isStudent())
+        <link rel="stylesheet" href="{{ asset('css/student-desktop.css') }}?v={{ filemtime(public_path('css/student-desktop.css')) }}">
+        <link rel="stylesheet" href="{{ asset('css/student-desktop-pages.css') }}?v={{ filemtime(public_path('css/student-desktop-pages.css')) }}">
+        @if(request()->routeIs('settings'))
+            <link rel="stylesheet" href="{{ asset('css/student-desktop-settings.css') }}?v={{ filemtime(public_path('css/student-desktop-settings.css')) }}">
+        @endif
+    @endif
 </head>
 
 <body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher(), 'admin-portal' => Auth::user()?->isAdmin(), 'parent-portal' => Auth::user()?->isParent(), 'attendance-verification-page' => View::hasSection('focused-attendance-verification')]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
@@ -314,7 +321,7 @@
                         @php
                             $profileImageUrl = Auth::user()->profile_photo_url_with_version;
                         @endphp
-                        <a href="#" data-bs-toggle="dropdown" class="text-decoration-none d-flex align-items-center gap-2" aria-label="Open account menu for {{ Auth::user()->name }}" aria-expanded="false">
+                        <a href="#" data-bs-toggle="dropdown" class="header-account-trigger text-decoration-none d-flex align-items-center gap-2" aria-label="Open account menu for {{ Auth::user()->name }}" aria-expanded="false">
                             <img src="{{ $profileImageUrl }}" class="header-profile-img user-avatar-img" alt="">
                             <div class="d-none d-md-block text-start" style="line-height:1.2;">
                                 <div style="font-size:0.8rem;font-weight:600;color:#ffffff;">{{ Auth::user()->name }}</div>
