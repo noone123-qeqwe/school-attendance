@@ -788,7 +788,7 @@
         <a href="{{ route('notifications') }}?status=unread" 
            class="notif-stat-card {{ request('status') === 'unread' ? 'active' : '' }}">
             <div class="notif-stat-info">
-                <span class="notif-stat-num" id="statUnreadCount" style="color:{{ ($counts['unread'] ?? 0) > 0 ? 'var(--cs-absent, #f87171)' : 'var(--cs-ink, #ffffff)' }};">{{ $counts['unread'] ?? 0 }}</span>
+                <span class="notif-stat-num" id="statUnreadCount" style="color:{{ ($counts['unread'] ?? 0) > 0 ? '#f87171' : '#ffffff' }};">{{ $counts['unread'] ?? 0 }}</span>
                 <span class="notif-stat-label">Unread</span>
             </div>
             <div class="notif-stat-icon" style="background:rgba(239,68,68,0.14); color:#ef4444;">
@@ -1117,7 +1117,7 @@
             if (markAllBtn) markAllBtn.disabled = true;
             if (statUnread) {
                 statUnread.textContent = '0';
-                statUnread.style.color = 'var(--cs-ink, #ffffff)';
+                statUnread.style.color = '#ffffff';
             }
         } else {
             if (heroPill) {

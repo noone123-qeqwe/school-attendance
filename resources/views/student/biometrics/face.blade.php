@@ -42,9 +42,9 @@
         @include('partials.camera-light-controls', ['cameraLightId' => 'cameraFaceLight'])
         <p id="cameraFaceStatus" class="biometric-flow-status" role="status">{{ $hasCameraFaceEnrollment ? 'A face profile is enrolled for attendance matching. Saving new captures will replace it.' : '' }}</p>
         <p class="bio-privacy-note"><i class="bi bi-lock" aria-hidden="true"></i><span><strong>Private attendance profile</strong><span>Captures stay on this device until you register. They are then encrypted and used for attendance matching, not as your profile photo.</span></span></p>
-        <label for="cameraFaceConsentCheckbox" class="bio-consent-check" style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:12px;background:rgba(207,164,111,0.08);border:1px solid rgba(207,164,111,0.22);margin-bottom:14px;cursor:pointer;font-size:0.86rem;line-height:1.45;color:var(--text-primary, #f3e7cd);">
-            <input type="checkbox" id="cameraFaceConsentCheckbox" value="1" {{ !empty($hasFaceConsent) ? 'checked' : '' }} style="margin-top:3px;width:16px;height:16px;accent-color:var(--gold-primary, #cfa46f);flex-shrink:0;">
-            <span>I voluntarily consent to the encrypted storage and liveness matching of my camera face captures for classroom attendance verification under the <a href="{{ route('privacy') }}" target="_blank" rel="noopener" class="bio-consent-link" style="color:var(--gold-primary, #ffd166);text-decoration:underline;">Privacy Notice</a>.</span>
+        <label for="cameraFaceConsentCheckbox" class="bio-consent-check" style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:12px;background:rgba(207,164,111,0.08);border:1px solid rgba(207,164,111,0.22);margin-bottom:14px;cursor:pointer;font-size:0.86rem;line-height:1.45;color:#f3e7cd;">
+            <input type="checkbox" id="cameraFaceConsentCheckbox" value="1" {{ !empty($hasFaceConsent) ? 'checked' : '' }} style="margin-top:3px;width:16px;height:16px;accent-color:#cfa46f;flex-shrink:0;">
+            <span>I voluntarily consent to the encrypted storage and liveness matching of my camera face captures for classroom attendance verification under the <a href="{{ route('privacy') }}" target="_blank" rel="noopener" style="color:#ffd166;text-decoration:underline;">Privacy Notice</a>.</span>
         </label>
         <div class="biometric-flow-actions">
             <button type="button" id="cameraFaceRetakeBtn" hidden class="flow-button">Retake</button>
@@ -53,10 +53,10 @@
             <a id="cameraFaceDone" class="flow-button" href="{{ route('settings') }}#tab-biometrics" hidden>Done</a>
         </div>
         @if(!empty($hasCameraFaceEnrollment) || !empty($hasFaceConsent))
-            <form method="POST" action="{{ route('student.face-attendance-consent.withdraw') }}" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--gold-border, rgba(255,255,255,0.08));">
+            <form method="POST" action="{{ route('student.face-attendance-consent.withdraw') }}" style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="flow-button bio-withdraw-btn" style="width:100%;justify-content:center;color:#fca5a5;border-color:rgba(248,113,113,0.32);">
+                <button type="submit" class="flow-button" style="width:100%;justify-content:center;color:#fca5a5;border-color:rgba(248,113,113,0.32);">
                     <i class="bi bi-trash3 me-1" aria-hidden="true"></i> Withdraw consent &amp; delete face profile
                 </button>
             </form>

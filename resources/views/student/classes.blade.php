@@ -1264,7 +1264,7 @@
                     <i class="bi bi-award"></i> {{ number_format($totalUnits, 1) }} Total Units
                 </span>
                 @if($todayClassesCount > 0)
-                    <span class="cor-summary-chip is-today-pill" style="background: rgba(16,185,129,0.14); border-color: rgba(16,185,129,0.35); color: var(--cs-present, #34d399);">
+                    <span class="cor-summary-chip" style="background: rgba(16,185,129,0.14); border-color: rgba(16,185,129,0.35); color: #34d399;">
                         <i class="bi bi-clock-history"></i> {{ $todayClassesCount }} Meeting Today
                     </span>
                 @endif
@@ -1419,11 +1419,11 @@
                                 <td>
                                     <div class="d-flex flex-column gap-1">
                                         <span class="cor-code-badge">{{ $sched->code }}</span>
-                                        <span class="cor-table-submeta" style="font-size:0.72rem; color:var(--cs-muted, #b39b82);">Sec {{ $sched->section }} &bull; #{{ $sched->class_number }}</span>
+                                        <span style="font-size:0.72rem; color:#b39b82;">Sec {{ $sched->section }} &bull; #{{ $sched->class_number }}</span>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="cor-table-title" style="font-weight:700; color:var(--cs-ink, #fcfbf9);">{{ $sched->name }}</div>
+                                    <div style="font-weight:700; color:#fcfbf9;">{{ $sched->name }}</div>
                                     @if($sched->is_today)
                                         <span class="cor-today-indicator mt-1 d-inline-flex"><i class="bi bi-dot"></i> Today</span>
                                     @endif
@@ -1444,7 +1444,7 @@
                                         <span class="text-muted">TBA</span>
                                     @endif
                                 </td>
-                                <td class="cor-table-inst" style="color:var(--cs-ink-2, #dfd0bc);">{{ $sched->teacher }}</td>
+                                <td style="color:#dfd0bc;">{{ $sched->teacher }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -1470,14 +1470,13 @@
                             @if($wDay === $todayNameCor)
                                 <span class="cor-today-indicator"><i class="bi bi-dot"></i> Today</span>
                             @else
-                                <span class="sd-week-day-count" style="font-size:0.74rem; color:var(--cs-muted, #b39b82); font-weight:600;">{{ $dayClasses->count() }} {{ Str::plural('class', $dayClasses->count()) }}</span>
+                                <span style="font-size:0.74rem; color:#b39b82; font-weight:600;">{{ $dayClasses->count() }} {{ Str::plural('class', $dayClasses->count()) }}</span>
                             @endif
                         </div>
                         @forelse($dayClasses as $dc)
-                            @php($slotTint = ['is-emerald', 'is-cobalt', 'is-amber', 'is-rose'][$loop->index % 4])
-                            <div class="sd-sched-grid-card cor-week-item {{ $slotTint }}" data-days="{{ implode(',', $dc->raw_days) }}" data-is-today="{{ $dc->is_today ? '1' : '0' }}">
+                            <div class="sd-sched-grid-card cor-week-item" data-days="{{ implode(',', $dc->raw_days) }}" data-is-today="{{ $dc->is_today ? '1' : '0' }}">
                                 <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
-                                    <span class="sd-week-time" style="font-size: 0.77rem; font-weight: 800; color: var(--cs-accent, #f5dfa8); font-variant-numeric: tabular-nums;">
+                                    <span style="font-size: 0.77rem; font-weight: 800; color: #f5dfa8; font-variant-numeric: tabular-nums;">
                                         @if($dc->start_time && $dc->end_time)
                                             {{ \Carbon\Carbon::parse($dc->start_time)->format('g:i A') }} – {{ \Carbon\Carbon::parse($dc->end_time)->format('g:i A') }}
                                         @else
@@ -1488,14 +1487,14 @@
                                         <span class="cor-room-badge" style="padding:2px 8px; font-size:0.7rem;">{{ $dc->room }}</span>
                                     @endif
                                 </div>
-                                <div class="sd-week-subject" style="font-weight: 700; color: var(--cs-ink, #fcfbf9); font-size: 0.9rem; line-height: 1.3;">{{ $dc->name }}</div>
-                                <div class="d-flex align-items-center justify-content-between gap-2 mt-1 sd-week-meta" style="font-size: 0.76rem; color: var(--cs-muted, #b39b82);">
-                                    <span class="sd-week-code" style="color: var(--cs-accent, #cfa46f); font-weight: 700;">{{ $dc->code }}</span>
+                                <div style="font-weight: 700; color: #fcfbf9; font-size: 0.9rem; line-height: 1.3;">{{ $dc->name }}</div>
+                                <div class="d-flex align-items-center justify-content-between gap-2 mt-1" style="font-size: 0.76rem; color: #b39b82;">
+                                    <span style="color: #cfa46f; font-weight: 700;">{{ $dc->code }}</span>
                                     <span class="text-truncate" title="{{ $dc->teacher }}">{{ $dc->teacher }}</span>
                                 </div>
                             </div>
                         @empty
-                            <div class="sd-week-empty" style="color:var(--cs-muted, #7d6e5d); font-size:0.82rem; padding:14px 4px; text-align:center;">No scheduled classes</div>
+                            <div style="color:#7d6e5d; font-size:0.82rem; padding:14px 4px; text-align:center;">No scheduled classes</div>
                         @endforelse
                     </div>
                 @endforeach
@@ -1542,8 +1541,6 @@ document.addEventListener('DOMContentLoaded', function() {
             setCorView(urlView);
         } else if (saved === 'table' || saved === 'cards' || saved === 'weekly') {
             setCorView(saved);
-        } else if (window.innerWidth >= 1024) {
-            setCorView('weekly');
         }
     } catch (e) {}
     window.addEventListener('resize', function() {

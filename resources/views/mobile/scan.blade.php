@@ -81,7 +81,6 @@
 @endsection
 
 @push('styles')
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ asset('css/student-desktop-ux.css') }}?v={{ filemtime(public_path('css/student-desktop-ux.css')) }}">
 <style>
     .mobile-scan-page {

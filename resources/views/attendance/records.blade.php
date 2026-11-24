@@ -516,23 +516,23 @@
     @endphp
     <div class="summary-chips">
         <a href="{{ route('student.calendar', $baseRecordParams) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === '' ? 'is-active-chip' : '' }}">
-            <div class="summary-chip-value" style="color: var(--cs-ink, #f8e7d3);">{{ $totals['all'] }}</div>
+            <div class="summary-chip-value" style="color: #f8e7d3;">{{ $totals['all'] }}</div>
             <div class="summary-chip-label">Total Records</div>
         </a>
         <a href="{{ route('student.calendar', $activeStatusFilter === 'Present' ? $baseRecordParams : array_merge($baseRecordParams, ['status' => 'Present'])) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === 'Present' ? 'is-active-chip' : '' }}">
-            <div class="summary-chip-value" style="color: var(--cs-present, #4ade80);">{{ $totals['Present'] ?? 0 }}</div>
+            <div class="summary-chip-value" style="color: #4ade80;">{{ $totals['Present'] ?? 0 }}</div>
             <div class="summary-chip-label">Present</div>
         </a>
         <a href="{{ route('student.calendar', $activeStatusFilter === 'Late' ? $baseRecordParams : array_merge($baseRecordParams, ['status' => 'Late'])) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === 'Late' ? 'is-active-chip' : '' }}">
-            <div class="summary-chip-value" style="color: var(--cs-late, #fbbf24);">{{ $totals['Late'] ?? 0 }}</div>
+            <div class="summary-chip-value" style="color: #fbbf24;">{{ $totals['Late'] ?? 0 }}</div>
             <div class="summary-chip-label">Late</div>
         </a>
         <a href="{{ route('student.calendar', $activeStatusFilter === 'Absent' ? $baseRecordParams : array_merge($baseRecordParams, ['status' => 'Absent'])) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === 'Absent' ? 'is-active-chip' : '' }}">
-            <div class="summary-chip-value" style="color: var(--cs-absent, #f87171);">{{ $totals['Absent'] ?? 0 }}</div>
+            <div class="summary-chip-value" style="color: #f87171;">{{ $totals['Absent'] ?? 0 }}</div>
             <div class="summary-chip-label">Absent</div>
         </a>
         <a href="{{ route('student.calendar', $activeStatusFilter === 'Excused' ? $baseRecordParams : array_merge($baseRecordParams, ['status' => 'Excused'])) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === 'Excused' ? 'is-active-chip' : '' }}">
-            <div class="summary-chip-value" style="color: var(--cs-excused, #fde68a);">{{ $totals['Excused'] ?? 0 }}</div>
+            <div class="summary-chip-value" style="color: #fde68a;">{{ $totals['Excused'] ?? 0 }}</div>
             <div class="summary-chip-label">Excused</div>
         </a>
     </div>
@@ -611,8 +611,8 @@
                             @endif
                             <span class="record-date">{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}</span>
                             <span class="record-day">{{ $dayName }}</span>
-                            <span class="record-meta-dot" style="color:var(--cs-muted, rgba(245,234,215,0.4));">•</span>
-                            <span class="record-instructor" style="font-size:0.75rem; color:var(--cs-accent, #ffd166);"><i class="bi bi-person me-1"></i>{{ $instName }}</span>
+                            <span style="color:rgba(245,234,215,0.4);">•</span>
+                            <span style="font-size:0.75rem; color:#ffd166;"><i class="bi bi-person me-1"></i>{{ $instName }}</span>
                         </div>
                     </div>
                     <div class="record-status">
@@ -638,7 +638,7 @@
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Actual Clock-in</span>
-                            <span class="detail-value" style="{{ $record->status === 'Absent' ? 'color:var(--cs-absent,#f87171);' : ($record->status === 'Present' ? 'color:var(--cs-present,#4ade80);' : ($record->status === 'Late' ? 'color:var(--cs-late,#fbbf24);' : '')) }}">
+                            <span class="detail-value" style="{{ $record->status === 'Absent' ? 'color:#f87171;' : ($record->status === 'Present' ? 'color:#4ade80;' : ($record->status === 'Late' ? 'color:#fbbf24;' : '')) }}">
                                 {{ $clockInText }}
                             </span>
                         </div>
@@ -677,11 +677,11 @@
                         @endif
 
                         @if($record->correction)
-                            <span class="excuse-status excuse-{{ $record->correction->status }} record-appeal-pill" style="background:rgba(207,164,111,0.15); color:var(--cs-accent, #fde68a); border:1px solid rgba(207,164,111,0.3);">
+                            <span class="excuse-status excuse-{{ $record->correction->status }}" style="background:rgba(207,164,111,0.15); color:#fde68a; border:1px solid rgba(207,164,111,0.3);">
                                 <i class="bi bi-patch-question"></i> Appeal: {{ ucfirst($record->correction->status) }}
                             </span>
                         @elseif(in_array($record->status, ['Late', 'Absent']))
-                            <button type="button" class="excuse-btn record-appeal-btn" style="background:rgba(255,255,255,0.06) !important; color:#e2e8f0 !important; border-color:rgba(255,255,255,0.15) !important;" onclick="openCorrectionModal({{ $record->id }}, {{ Illuminate\Support\Js::from($record->subject->name ?? $record->subject_code) }}, '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}', '{{ $record->status }}')">
+                            <button type="button" class="excuse-btn" style="background:rgba(255,255,255,0.06) !important; color:#e2e8f0 !important; border-color:rgba(255,255,255,0.15) !important;" onclick="openCorrectionModal({{ $record->id }}, {{ Illuminate\Support\Js::from($record->subject->name ?? $record->subject_code) }}, '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}', '{{ $record->status }}')">
                                 <i class="bi bi-pencil-square"></i> Appeal Record
                             </button>
                         @endif

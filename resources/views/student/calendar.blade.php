@@ -407,13 +407,13 @@
                 <span class="badge rounded-pill" id="sdInspectorStatusBadge" style="display:none; font-size:0.72rem; font-weight:700; padding:4px 10px;"></span>
             </div>
             <div class="sd-day-inspector-list" id="sdInspectorContent">
-                <p style="color:var(--cs-muted, #b39b82); font-size:0.84rem; margin:0;">Loading calendar activity…</p>
+                <p style="color:#b39b82; font-size:0.84rem; margin:0;">Loading calendar activity…</p>
             </div>
-            <div class="d-flex align-items-center justify-content-between gap-2 mt-3 pt-2" style="border-top: 1px solid var(--cs-border, rgba(207, 164, 111, 0.14));">
-                <a href="{{ route('student.calendar') }}#attendance-records" id="sdInspectorRecordsLink" class="d-none sd-inspector-link" style="color:var(--cs-accent, #f5dfa8); font-size:0.8rem; font-weight:700; text-decoration:none;">
+            <div class="d-flex align-items-center justify-content-between gap-2 mt-3 pt-2" style="border-top: 1px solid rgba(207, 164, 111, 0.14);">
+                <a href="{{ route('student.calendar') }}#attendance-records" id="sdInspectorRecordsLink" class="d-none" style="color:#f5dfa8; font-size:0.8rem; font-weight:700; text-decoration:none;">
                     <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filter records
                 </a>
-                <button type="button" id="sdInspectorModalBtn" class="btn btn-sm ms-auto sd-inspector-btn" style="background: rgba(207,164,111,0.12); border: 1px solid rgba(207,164,111,0.28); color:var(--cs-accent, #f5dfa8); font-size:0.76rem; font-weight:700; border-radius:9px; padding:5px 10px;">
+                <button type="button" id="sdInspectorModalBtn" class="btn btn-sm ms-auto" style="background: rgba(207,164,111,0.12); border: 1px solid rgba(207,164,111,0.28); color:#f5dfa8; font-size:0.76rem; font-weight:700; border-radius:9px; padding:5px 10px;">
                     <i class="bi bi-arrows-angle-expand me-1" aria-hidden="true"></i>Details
                 </button>
             </div>
@@ -468,7 +468,7 @@
 {{-- ── Event Detail Modal ──────────────────────────────────────────────── --}}
 <div class="modal fade" id="eventDetailModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content ent-modal-content sd-modal-shell w-100">
+        <div class="modal-content ent-modal-content w-100">
             <div class="ent-modal-header position-relative">
                 <h5 class="ent-modal-title" id="eventTitle" style="padding-right: 24px;">Event</h5>
                 <button type="button" class="btn-close btn-close-white" aria-label="Close details" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
@@ -483,14 +483,14 @@
                 <div class="ent-modal-row">
                     <div class="ent-modal-label">Date &amp; Time</div>
                     <div class="ent-modal-value">
-                        <i class="bi bi-clock" style="color:var(--cs-accent, #cfa46f);"></i>
+                        <i class="bi bi-clock" style="color:#cfa46f;"></i>
                         <span id="eventTime">Date</span>
                     </div>
                 </div>
                 <div class="ent-modal-row" id="eventLocationContainer">
                     <div class="ent-modal-label">Location</div>
                     <div class="ent-modal-value">
-                        <i class="bi bi-geo-alt" style="color:var(--cs-accent, #cfa46f);"></i>
+                        <i class="bi bi-geo-alt" style="color:#cfa46f;"></i>
                         <span id="eventLocation">Location</span>
                     </div>
                 </div>
@@ -502,12 +502,12 @@
 {{-- ── Day Summary Modal ───────────────────────────────────────────────── --}}
 <div class="modal fade" id="daySummaryModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-bottom modal-dialog-scrollable">
-        <div class="modal-content bottom-sheet-content sd-modal-shell">
+        <div class="modal-content bottom-sheet-content">
             <div class="bottom-sheet-handle"></div>
-            <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:var(--cs-border, rgba(255,255,255,0.06))!important;">
+            <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(255,255,255,0.06)!important;">
                 <div>
-                    <h3 style="font-weight:700;font-size:1.2rem;color:var(--cs-ink, #f3ede4);margin:0;padding-right:24px;" id="daySummaryTitle">Date</h3>
-                    <div style="font-size:0.85rem;color:var(--cs-muted, #8b7d70);display:flex;align-items:center;gap:6px;margin-top:4px;" id="daySummarySubtitle">
+                    <h3 style="font-weight:700;font-size:1.2rem;color:#f3ede4;margin:0;padding-right:24px;" id="daySummaryTitle">Date</h3>
+                    <div style="font-size:0.85rem;color:#8b7d70;display:flex;align-items:center;gap:6px;margin-top:4px;" id="daySummarySubtitle">
                         <span id="daySummaryStatusDot" style="width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
                         <span id="daySummaryStatusText">Status</span>
                     </div>
@@ -668,32 +668,29 @@ function scalRenderDesktopInspector(dateStr, evts, summaryText, summaryBg, summa
 
     listEl.replaceChildren();
     if (scalDataState === 'loading') {
-        listEl.innerHTML = '<p style="color:var(--cs-muted, #b39b82);font-size:0.83rem;margin:0;">Loading day activity…</p>';
+        listEl.innerHTML = '<p style="color:#b39b82;font-size:0.83rem;margin:0;">Loading day activity…</p>';
         return;
     }
     if (scalDataState === 'error') {
-        listEl.innerHTML = '<p style="color:var(--cs-absent, #fca5a5);font-size:0.83rem;margin:0;">Unable to load activities.</p>';
+        listEl.innerHTML = '<p style="color:#fca5a5;font-size:0.83rem;margin:0;">Unable to load activities.</p>';
         return;
     }
     if (!evts.length) {
-        listEl.innerHTML = '<p style="color:var(--cs-muted, #b39b82);font-size:0.83rem;margin:0;">No attendance or school events recorded on this date.</p>';
+        listEl.innerHTML = '<p style="color:#b39b82;font-size:0.83rem;margin:0;">No attendance or school events recorded on this date.</p>';
         return;
     }
     evts.forEach(ev => {
         const isAtt = (ev.type || '').toLowerCase() === 'attendance';
         const status = (ev.status || '').toLowerCase();
-        const isDesktopView = window.innerWidth >= 1024;
-        const badgeColor = isDesktopView
-            ? (status === 'present' ? '#047857' : (status === 'late' ? '#B45309' : (status === 'absent' ? '#B91C1C' : '#1D4ED8')))
-            : (status === 'present' ? '#34d399' : (status === 'late' ? '#fbbf24' : (status === 'absent' ? '#f87171' : '#c084fc')));
+        const badgeColor = status === 'present' ? '#34d399' : (status === 'late' ? '#fbbf24' : (status === 'absent' ? '#f87171' : '#c084fc'));
         const item = document.createElement('div');
         item.className = 'sd-day-inspector-item';
         item.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-                <strong style="color:var(--cs-ink, #fcfbf9);font-size:0.85rem;">${recordText(isAtt ? (ev.subject_name || ev.title) : ev.title)}</strong>
+                <strong style="color:#fcfbf9;font-size:0.85rem;">${recordText(isAtt ? (ev.subject_name || ev.title) : ev.title)}</strong>
                 <span style="color:${badgeColor};font-size:0.72rem;font-weight:800;text-transform:uppercase;flex-shrink:0;">${recordText(isAtt ? ev.status : (ev.type || 'event').replace('_', ' '))}</span>
             </div>
-            <div style="color:var(--cs-muted, #b39b82);font-size:0.76rem;margin-top:4px;">${recordText(ev.time_string || (isAtt ? 'Time not set' : 'All Day'))}${ev.instructor_name ? ' · ' + recordText(ev.instructor_name) : ''}</div>
+            <div style="color:#b39b82;font-size:0.76rem;margin-top:4px;">${recordText(ev.time_string || (isAtt ? 'Time not set' : 'All Day'))}${ev.instructor_name ? ' · ' + recordText(ev.instructor_name) : ''}</div>
         `;
         listEl.appendChild(item);
     });
@@ -852,13 +849,8 @@ function scalRenderDay(dateStr) {
     }
 
     const summaryLabel = hasAbsent ? 'Absent' : (hasLate ? 'Late' : (hasPresent ? 'Present' : (hasEvent ? 'Event' : '')));
-    const isDeskBadge = window.innerWidth >= 1024;
-    const summaryBg = isDeskBadge
-        ? (hasAbsent ? '#FEF2F2' : (hasLate ? '#FFFBEB' : (hasPresent ? '#ECFDF5' : '#EFF6FF')))
-        : (hasAbsent ? 'rgba(239,68,68,0.16)' : (hasLate ? 'rgba(245,158,11,0.16)' : (hasPresent ? 'rgba(16,185,129,0.16)' : 'rgba(139,92,246,0.16)')));
-    const summaryColor = isDeskBadge
-        ? (hasAbsent ? '#B91C1C' : (hasLate ? '#B45309' : (hasPresent ? '#047857' : '#1D4ED8')))
-        : (hasAbsent ? '#fca5a5' : (hasLate ? '#fcd34d' : (hasPresent ? '#6ee7b7' : '#d8b4fe')));
+    const summaryBg = hasAbsent ? 'rgba(239,68,68,0.16)' : (hasLate ? 'rgba(245,158,11,0.16)' : (hasPresent ? 'rgba(16,185,129,0.16)' : 'rgba(139,92,246,0.16)'));
+    const summaryColor = hasAbsent ? '#fca5a5' : (hasLate ? '#fcd34d' : (hasPresent ? '#6ee7b7' : '#d8b4fe'));
     scalRenderDesktopInspector(dateStr, evts, summaryLabel, summaryBg, summaryColor);
 }
 
