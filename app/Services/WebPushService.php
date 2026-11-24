@@ -46,7 +46,7 @@ class WebPushService
 
         $auth = [
             'VAPID' => [
-                'subject' => $subject ?: config('app.url', 'mailto:admin@osmena.edu'),
+                'subject' => $subject ?: config('app.url', 'https://localhost'),
                 'publicKey' => $publicKey,
                 'privateKey' => $privateKey,
             ],

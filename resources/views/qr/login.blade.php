@@ -162,7 +162,7 @@
                 <div class="input-group-custom">
                     <span class="input-icon"><i class="bi bi-person-fill"></i></span>
                     <input type="text" class="custom-input" id="identifier" name="identifier" 
-                           required autocomplete="username" placeholder="e.g. 2310843, user@osmena.edu, or 09248901234" value="{{ old('identifier') }}">
+                           required autocomplete="username" placeholder="e.g. 2310843, user@school.edu.ph, or 09248901234" value="{{ old('identifier') }}">
                 </div>
             </div>
 

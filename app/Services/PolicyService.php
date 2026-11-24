@@ -351,7 +351,6 @@ class PolicyService
     <p>To exercise any of your statutory privacy rights, request data corrections, or raise questions regarding this Privacy Notice, please contact our institutional Data Protection Office:</p>
     <div class="contact-box">
         <p><strong>Osmeña Colleges — Data Protection Office</strong></p>
-        <p>Email: <a href="mailto:admin@osmena.edu">admin@osmena.edu</a></p>
         <p>Address: Osmeña Colleges, Masbate City, Philippines</p>
         <p>Office Hours: Monday – Friday, 8:00 AM – 5:00 PM (PST)</p>
     </div>
@@ -405,7 +404,7 @@ HTML;
     <ul>
         <li><strong>Confidentiality:</strong> You must keep your login credentials, passwords, and verification passcodes (OTPs) strictly confidential. You must never share, disclose, or transfer your login credentials to any other individual.</li>
         <li><strong>Device Safeguards:</strong> You are responsible for safeguarding devices registered to your account. You must ensure that biometric credentials (fingerprints or facial recognition) registered on your device belong exclusively to you.</li>
-        <li><strong>Notification of Breach:</strong> You must immediately report any lost device, unauthorized account access, or suspected credential compromise to the school administration at <a href="mailto:admin@osmena.edu">admin@osmena.edu</a>.</li>
+        <li><strong>Notification of Breach:</strong> You must immediately report any lost device, unauthorized account access, or suspected credential compromise to the school administration office.</li>
         <li><strong>Accountability:</strong> You are fully responsible for all attendance scans, excuse submissions, and activities conducted through your authenticated account.</li>
     </ul>
 </div>
@@ -507,7 +506,6 @@ HTML;
     <p>For questions or clarifications regarding these Terms & Conditions, please contact the administration office:</p>
     <div class="contact-box">
         <p><strong>Osmeña Colleges — Academic Affairs & IT Administration</strong></p>
-        <p>Email: <a href="mailto:admin@osmena.edu">admin@osmena.edu</a></p>
         <p>Address: Osmeña Colleges, Masbate City, Philippines</p>
         <p>Office Hours: Monday – Friday, 8:00 AM – 5:00 PM (PST)</p>
     </div>

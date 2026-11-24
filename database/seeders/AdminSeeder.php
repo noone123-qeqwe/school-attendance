@@ -11,7 +11,7 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::withTrashed()->where('email', 'admin@osmena.edu')->first();
+        $admin = User::withTrashed()->where('email', 'admin@school.edu.ph')->first();
 
         if ($admin) {
             $this->command?->info('Administrator account already exists; credentials and status preserved.');
@@ -27,7 +27,7 @@ class AdminSeeder extends Seeder
 
         $attributes = [
             'name'              => 'System Administrator',
-            'email'             => 'admin@osmena.edu',
+            'email'             => 'admin@school.edu.ph',
             'role'              => 'admin',
             'admin_sub_role'    => 'super_admin',
             'department'        => 'College of Computer Studies',
@@ -39,7 +39,7 @@ class AdminSeeder extends Seeder
         ];
 
         User::create($attributes);
-        $this->command?->info('Initial administrator created: admin@osmena.edu');
+        $this->command?->info('Initial administrator created: admin@school.edu.ph');
         if (!$configuredPassword) {
             $this->command?->warn('One-time local administrator password: '.$password);
         }

@@ -403,7 +403,7 @@ class OtpService
      * - Cannot begin or end with a period
      * - Cannot contain consecutive periods (..)
      *
-     * In unit/feature testing environments, test domains (@example.com, @example.org, @school.edu, @school.test, @osmena.edu)
+     * In unit/feature testing environments, test domains (@example.com, @example.org, @school.edu, @school.test, @school.edu.ph)
      * are also permitted unless $strict is set to true.
      */
     public static function isValidGmailFormat(string $email, bool $strict = false): bool
@@ -423,7 +423,7 @@ class OtpService
 
         // Allow recognized test domains in automated testing unless strict mode is requested
         if (!$strict && (app()->runningUnitTests() || app()->environment('testing'))) {
-            $testDomains = ['example.com', 'example.org', 'example.net', 'school.edu', 'school.test', 'osmena.edu'];
+            $testDomains = ['example.com', 'example.org', 'example.net', 'school.edu', 'school.test', 'school.edu.ph'];
             if (in_array($domain, $testDomains, true)) {
                 return true;
             }
