@@ -230,11 +230,11 @@
                         <div class="flex-grow-1">
                             <div class="info-row-label">Student ID Number</div>
                             <div class="info-row-value d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <span style="font-family: monospace; font-size: 1.05rem; letter-spacing: 0.5px; color: var(--gold, #CFA46F); font-weight: 700;">
+                                <span class="student-profile-id-val" style="font-family: monospace; font-size: 1.05rem; letter-spacing: 0.5px; color: var(--cs-accent, #CFA46F); font-weight: 700;">
                                     {{ Auth::user()->student_number ?: 'Not Assigned' }}
                                 </span>
                                 @if(Auth::user()->student_number)
-                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 copy-student-id-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}'); this.innerHTML='<i class=\'bi bi-check2 me-1\'></i>Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-clipboard me-1\'></i>Copy'; }, 1500);" style="font-size:0.75rem; border-color:rgba(255,255,255,0.15); color:#d6c7b2;">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 copy-student-id-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}'); this.innerHTML='<i class=\'bi bi-check2 me-1\'></i>Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-clipboard me-1\'></i>Copy'; }, 1500);" style="font-size:0.75rem; border-color:var(--cs-border-strong, rgba(255,255,255,0.15)); color:var(--cs-ink-2, #d6c7b2);">
                                         <i class="bi bi-clipboard me-1"></i>Copy
                                     </button>
                                 @endif
@@ -289,45 +289,45 @@
                     <div class="row g-2">
                         <div class="col-md-6">
                             <a href="{{ route('home') }}" class="quick-action-btn" style="text-decoration:none;display:block;">
-                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
-                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(207,164,111,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold,#CFA46F);font-size:0.9rem;">
+                                <div class="profile-qa-tile" style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid var(--cs-border, rgba(255,255,255,0.08));background:var(--cs-surface-2, rgba(255,255,255,0.03));transition:all 0.2s;">
+                                    <div style="width:32px;height:32px;border-radius:8px;background:var(--cs-accent-soft, rgba(207,164,111,0.15));display:flex;align-items:center;justify-content:center;color:var(--cs-accent, #CFA46F);font-size:0.9rem;">
                                         <i class="bi bi-grid-fill"></i>
                                     </div>
-                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Go to Dashboard</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
+                                    <span style="font-size:0.875rem;font-weight:600;color:var(--cs-ink, #f3e7cd);">Go to Dashboard</span>
+                                    <i class="bi bi-chevron-right ms-auto" style="color:var(--cs-muted, #b39b82);font-size:0.75rem;"></i>
                                 </div>
                             </a>
                         </div>
                         <div class="col-md-6">
                             <a href="{{ route('student.schedule') }}" style="text-decoration:none;display:block;">
-                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
-                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(207,164,111,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold,#CFA46F);font-size:0.9rem;">
+                                <div class="profile-qa-tile" style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid var(--cs-border, rgba(255,255,255,0.08));background:var(--cs-surface-2, rgba(255,255,255,0.03));transition:all 0.2s;">
+                                    <div style="width:32px;height:32px;border-radius:8px;background:var(--cs-accent-soft, rgba(207,164,111,0.15));display:flex;align-items:center;justify-content:center;color:var(--cs-accent, #CFA46F);font-size:0.9rem;">
                                         <i class="bi bi-calendar2-week-fill"></i>
                                     </div>
-                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">My Schedule</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
+                                    <span style="font-size:0.875rem;font-weight:600;color:var(--cs-ink, #f3e7cd);">My Schedule</span>
+                                    <i class="bi bi-chevron-right ms-auto" style="color:var(--cs-muted, #b39b82);font-size:0.75rem;"></i>
                                 </div>
                             </a>
                         </div>
                         <div class="col-md-6">
                             <a href="{{ route('student.calendar') }}#attendance-records" style="text-decoration:none;display:block;">
-                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
-                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(74,222,128,0.12);display:flex;align-items:center;justify-content:center;color:#4ade80;font-size:0.9rem;">
+                                <div class="profile-qa-tile" style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid var(--cs-border, rgba(255,255,255,0.08));background:var(--cs-surface-2, rgba(255,255,255,0.03));transition:all 0.2s;">
+                                    <div style="width:32px;height:32px;border-radius:8px;background:var(--cs-present-soft, rgba(74,222,128,0.12));display:flex;align-items:center;justify-content:center;color:var(--cs-present, #4ade80);font-size:0.9rem;">
                                         <i class="bi bi-journal-check"></i>
                                     </div>
-                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Attendance Log</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
+                                    <span style="font-size:0.875rem;font-weight:600;color:var(--cs-ink, #f3e7cd);">Attendance Log</span>
+                                    <i class="bi bi-chevron-right ms-auto" style="color:var(--cs-muted, #b39b82);font-size:0.75rem;"></i>
                                 </div>
                             </a>
                         </div>
                         <div class="col-md-6">
                             <a href="{{ route('settings') }}" style="text-decoration:none;display:block;">
-                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
-                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;color:#b39b82;font-size:0.9rem;">
+                                <div class="profile-qa-tile" style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid var(--cs-border, rgba(255,255,255,0.08));background:var(--cs-surface-2, rgba(255,255,255,0.03));transition:all 0.2s;">
+                                    <div style="width:32px;height:32px;border-radius:8px;background:var(--cs-surface-3, rgba(255,255,255,0.06));display:flex;align-items:center;justify-content:center;color:var(--cs-muted, #b39b82);font-size:0.9rem;">
                                         <i class="bi bi-gear-fill"></i>
                                     </div>
-                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Account Settings</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
+                                    <span style="font-size:0.875rem;font-weight:600;color:var(--cs-ink, #f3e7cd);">Account Settings</span>
+                                    <i class="bi bi-chevron-right ms-auto" style="color:var(--cs-muted, #b39b82);font-size:0.75rem;"></i>
                                 </div>
                             </a>
                         </div>
@@ -407,44 +407,44 @@
                         $binding = $user->deviceBinding;
                     @endphp
                     @if($binding)
-                    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(207,164,111,0.2);border-radius:12px;padding:16px;margin-bottom:14px;">
+                    <div class="profile-device-box" style="background:var(--cs-surface-2, rgba(255,255,255,0.02));border:1px solid var(--cs-border, rgba(207,164,111,0.2));border-radius:12px;padding:16px;margin-bottom:14px;">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
                             <div style="display:flex;align-items:center;gap:10px;">
-                                <div style="width:40px;height:40px;border-radius:10px;background:rgba(74,222,128,0.12);color:#4ade80;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
+                                <div style="width:40px;height:40px;border-radius:10px;background:var(--cs-present-soft, rgba(74,222,128,0.12));color:var(--cs-present, #4ade80);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
                                     <i class="bi {{ $binding->getDeviceIcon() }}"></i>
                                 </div>
                                 <div>
-                                    <div style="font-weight:700;font-size:0.95rem;color:#f3e7cd;">{{ $binding->device_name ?: 'Registered Mobile Device' }}</div>
-                                    <div style="font-size:0.75rem;color:#b39b82;">Bound on {{ $binding->created_at?->format('M d, Y') ?? 'N/A' }}</div>
+                                    <div style="font-weight:700;font-size:0.95rem;color:var(--cs-ink, #f3e7cd);">{{ $binding->device_name ?: 'Registered Mobile Device' }}</div>
+                                    <div style="font-size:0.75rem;color:var(--cs-muted, #b39b82);">Bound on {{ $binding->created_at?->format('M d, Y') ?? 'N/A' }}</div>
                                 </div>
                             </div>
-                            <span class="badge" style="background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);font-size:0.72rem;padding:5px 9px;border-radius:8px;">
+                            <span class="badge" style="background:var(--cs-present-soft, rgba(74,222,128,0.15));color:var(--cs-present, #4ade80);border:1px solid var(--cs-present-border, rgba(74,222,128,0.3));font-size:0.72rem;padding:5px 9px;border-radius:8px;">
                                 <i class="bi bi-shield-check me-1"></i>Verified
                             </span>
                         </div>
 
-                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:0.78rem;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:0.78rem;padding-top:10px;border-top:1px solid var(--cs-border, rgba(255,255,255,0.06));">
                             <div style="min-width:0;overflow-wrap:anywhere;">
-                                <span style="color:#b39b82;">Last Active:</span>
-                                <span style="color:#f3e7cd;font-weight:600;margin-left:4px;">{{ $binding->last_seen_at?->diffForHumans() ?? 'Just now' }}</span>
+                                <span style="color:var(--cs-muted, #b39b82);">Last Active:</span>
+                                <span style="color:var(--cs-ink, #f3e7cd);font-weight:600;margin-left:4px;">{{ $binding->last_seen_at?->diffForHumans() ?? 'Just now' }}</span>
                             </div>
                             <div style="min-width:0;overflow-wrap:anywhere;">
-                                <span style="color:#b39b82;">IP Address:</span>
-                                <span style="color:#f3e7cd;font-weight:600;margin-left:4px;">{{ $binding->ip_address ?: 'Protected' }}</span>
+                                <span style="color:var(--cs-muted, #b39b82);">IP Address:</span>
+                                <span style="color:var(--cs-ink, #f3e7cd);font-weight:600;margin-left:4px;">{{ $binding->ip_address ?: 'Protected' }}</span>
                             </div>
                         </div>
                     </div>
 
-                    <div style="display:flex;align-items:flex-start;gap:8px;background:rgba(207,164,111,0.06);border:1px solid rgba(207,164,111,0.18);border-radius:10px;padding:10px 14px;font-size:0.78rem;color:#b39b82;line-height:1.4;">
-                        <i class="bi bi-info-circle-fill" style="color:var(--gold,#CFA46F);margin-top:2px;flex-shrink:0;"></i>
+                    <div class="profile-anti-proxy-note" style="display:flex;align-items:flex-start;gap:8px;background:var(--cs-accent-soft, rgba(207,164,111,0.06));border:1px solid var(--cs-accent-border, rgba(207,164,111,0.18));border-radius:10px;padding:10px 14px;font-size:0.78rem;color:var(--cs-ink-2, #b39b82);line-height:1.4;">
+                        <i class="bi bi-info-circle-fill" style="color:var(--cs-accent, #CFA46F);margin-top:2px;flex-shrink:0;"></i>
                         <div>
                             Anti-proxy protection active. Your student account is strictly bound to this personal device for attendance clock-ins.
                         </div>
                     </div>
                     @else
-                    <div style="text-align:center;padding:18px 14px;background:rgba(255,255,255,0.02);border:1px dashed rgba(207,164,111,0.2);border-radius:12px;color:#b39b82;font-size:0.85rem;">
-                        <i class="bi bi-phone" style="font-size:2rem;opacity:0.4;display:block;margin-bottom:8px;color:var(--gold,#CFA46F);"></i>
-                        <div style="font-weight:600;color:#f3e7cd;margin-bottom:4px;">No Device Bound Yet</div>
+                    <div class="profile-device-empty" style="text-align:center;padding:18px 14px;background:var(--cs-surface-2, rgba(255,255,255,0.02));border:1px dashed var(--cs-border-strong, rgba(207,164,111,0.2));border-radius:12px;color:var(--cs-muted, #b39b82);font-size:0.85rem;">
+                        <i class="bi bi-phone" style="font-size:2rem;opacity:0.4;display:block;margin-bottom:8px;color:var(--cs-accent, #CFA46F);"></i>
+                        <div style="font-weight:600;color:var(--cs-ink, #f3e7cd);margin-bottom:4px;">No Device Bound Yet</div>
                         <div style="font-size:0.78rem;line-height:1.4;">Your personal device will be automatically and securely bound to your student account when you sign in or record attendance.</div>
                     </div>
                     @endif
@@ -470,24 +470,24 @@
                     </div>
 
                     <div style="margin-bottom:16px;">
-                        <div style="font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Registered devices</div>
+                        <div style="font-size:.72rem;font-weight:700;color:var(--cs-muted, #b39b82);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Registered devices</div>
                         <div id="deviceList">
-                            <div style="text-align:center;padding:16px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:10px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
-                                <i class="bi bi-shield-lock" style="font-size:1.8rem;display:block;margin-bottom:6px;opacity:.4;color:var(--gold,#CFA46F);"></i>
+                            <div style="text-align:center;padding:16px;color:var(--cs-muted, #b39b82);font-size:.85rem;background:var(--cs-surface-2, rgba(255,255,255,0.02));border-radius:10px;border:1px dashed var(--cs-border-strong, rgba(207,164,111,0.2));" id="noDevices">
+                                <i class="bi bi-shield-lock" style="font-size:1.8rem;display:block;margin-bottom:6px;opacity:.4;color:var(--cs-accent, #CFA46F);"></i>
                                 No passkeys registered yet.
                             </div>
                         </div>
                     </div>
 
-                    <button type="button" onclick="registerDevicePasskey()" id="registerFpBtn" disabled class="btn w-100" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);color:white;font-weight:700;padding:11px 18px;border-radius:12px;border:none;">
+                    <button type="button" onclick="registerDevicePasskey()" id="registerFpBtn" disabled class="btn w-100 cs-btn-emerald" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);color:white;font-weight:700;padding:11px 18px;border-radius:12px;border:none;">
                         <i class="bi bi-shield-lock me-2"></i>Set up a passkey
                     </button>
                     <div id="fpMessage" style="margin-top:12px;font-size:.82rem;display:none;"></div>
-                    <div class="mt-3 pt-3 d-flex align-items-center justify-content-between gap-2 flex-wrap" style="border-top: 1px solid rgba(255,255,255,0.07);">
-                        <a href="{{ route('settings.biometrics.face') }}" style="color:#f5dfa8;font-size:0.8rem;font-weight:700;text-decoration:none;">
+                    <div class="mt-3 pt-3 d-flex align-items-center justify-content-between gap-2 flex-wrap" style="border-top: 1px solid var(--cs-border, rgba(255,255,255,0.07));">
+                        <a href="{{ route('settings.biometrics.face') }}" style="color:var(--cs-accent, #f5dfa8);font-size:0.8rem;font-weight:700;text-decoration:none;">
                             <i class="bi bi-camera-video me-1"></i>Face Recognition Setup
                         </a>
-                        <a href="{{ route('settings') }}#tab-biometrics" style="color:#b39b82;font-size:0.8rem;font-weight:600;text-decoration:none;">
+                        <a href="{{ route('settings') }}#tab-biometrics" style="color:var(--cs-muted, #b39b82);font-size:0.8rem;font-weight:600;text-decoration:none;">
                             Security Hub <i class="bi bi-arrow-right ms-1"></i>
                         </a>
                     </div>

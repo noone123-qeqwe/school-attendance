@@ -2,14 +2,14 @@
     <img src="{{ asset('images/logo.png') }}" class="sidebar-logo" alt="School logo">
     <div class="sidebar-text">
         <div class="sidebar-brand">{{ config('app.name') }}</div>
-        <div class="sidebar-subtitle">{{ config('app.subtitle') ?: 'Student Workspace' }}</div>
+        <div class="sidebar-subtitle">{{ config('app.subtitle') ?: 'Academic Portal' }}</div>
     </div>
 </div>
 
 <div class="sidebar-divider"></div>
 
 <nav class="sidebar-nav" aria-label="Student navigation">
-    <div class="sd-scan-dock student-desktop-only">
+    <div class="sd-scan-dock student-desktop-only" aria-label="Quick check-in actions">
         <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="student-desktop-scan" title="Scan attendance QR" data-title="Scan QR">
             <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
             <span class="nav-link-text">Scan QR</span>
@@ -19,49 +19,53 @@
             <span class="nav-link-text">PIN</span>
         </a>
     </div>
-    <div class="student-nav-label nav-section-label">My workspace</div>
+
+    <div class="student-nav-label nav-section-label">Workspace</div>
     <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" @if(request()->routeIs('home')) aria-current="page" @endif title="Dashboard" data-title="Dashboard">
-        <i class="bi bi-grid-fill" aria-hidden="true"></i>
+        <i class="bi bi-compass-fill" aria-hidden="true"></i>
         <span class="nav-link-text">Dashboard</span>
     </a>
-    <a href="{{ route('profile') }}" class="nav-link {{ request()->routeIs('profile') ? 'active' : '' }}" @if(request()->routeIs('profile')) aria-current="page" @endif title="My profile" data-title="My Profile">
-        <i class="bi bi-person-circle" aria-hidden="true"></i>
-        <span class="nav-link-text">My Profile</span>
-    </a>
     <a href="{{ route('student.classes') }}" class="nav-link {{ request()->routeIs('student.classes', 'student.schedule') ? 'active' : '' }}" @if(request()->routeIs('student.classes', 'student.schedule')) aria-current="page" @endif title="Classes & Schedule" data-title="Classes & Schedule">
-        <i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i>
+        <i class="bi bi-calendar2-week-fill" aria-hidden="true"></i>
         <span class="nav-link-text">Classes &amp; Schedule</span>
         <span class="d-none" aria-hidden="true">My Schedule My Classes</span>
+    </a>
+    <a href="{{ route('profile') }}" class="nav-link {{ request()->routeIs('profile') ? 'active' : '' }}" @if(request()->routeIs('profile')) aria-current="page" @endif title="My profile" data-title="My Profile">
+        <i class="bi bi-person-vcard-fill" aria-hidden="true"></i>
+        <span class="nav-link-text">Academic ID</span>
     </a>
     @if(!empty($hasActiveAssistantAssignment))
         <a href="{{ route('student-assistant.classes') }}" class="nav-link {{ request()->routeIs('student-assistant.*') ? 'active' : '' }}" @if(request()->routeIs('student-assistant.*')) aria-current="page" @endif title="Student Assistant" data-title="Student Assistant">
             <i class="bi bi-qr-code" aria-hidden="true"></i>
-            <span class="nav-link-text">Student Assistant</span>
+            <span class="nav-link-text">Assistant Desk</span>
         </a>
     @endif
-    <div class="student-nav-label nav-section-label">Attendance &amp; school</div>
+
+    <div class="student-nav-label nav-section-label">Attendance &amp; Care</div>
     <a href="{{ route('student.calendar') }}" class="nav-link {{ request()->routeIs('student.calendar', 'student.attendance.calendar', 'attendance.records', 'attendance.history') ? 'active' : '' }}" @if(request()->routeIs('student.calendar', 'student.attendance.calendar', 'attendance.records', 'attendance.history')) aria-current="page" @endif title="Attendance & Calendar" data-title="Attendance & Calendar">
-        <i class="bi bi-calendar-event-fill" aria-hidden="true"></i>
-        <span class="nav-link-text">Attendance &amp; Calendar</span>
+        <i class="bi bi-calendar3" aria-hidden="true"></i>
+        <span class="nav-link-text">Calendar &amp; Ledger</span>
     </a>
     <a href="{{ route('excuses') }}" class="nav-link {{ request()->routeIs('excuses*') ? 'active' : '' }}" @if(request()->routeIs('excuses*')) aria-current="page" @endif title="Excuse submissions" data-title="Excuse Submissions">
-        <i class="bi bi-file-text-fill" aria-hidden="true"></i>
-        <span class="nav-link-text">Excuse Submissions</span>
+        <i class="bi bi-file-earmark-medical-fill" aria-hidden="true"></i>
+        <span class="nav-link-text">Excuse Appeals</span>
     </a>
+
     <div class="student-desktop-only student-nav-account">
         <div class="student-nav-label nav-section-label">Account</div>
         <a href="{{ route('notifications') }}" class="nav-link {{ request()->routeIs('notifications*') ? 'active' : '' }}" @if(request()->routeIs('notifications*')) aria-current="page" @endif title="Notifications" data-title="Notifications">
-            <i class="bi bi-bell" aria-hidden="true"></i>
-            <span class="nav-link-text">Notifications</span>
+            <i class="bi bi-bell-fill" aria-hidden="true"></i>
+            <span class="nav-link-text">Inbox</span>
             <span class="student-nav-badge d-none" id="studentSidebarNotifBadge" aria-label="Unread notifications"></span>
         </a>
         <a href="{{ route('settings') }}" class="nav-link {{ request()->routeIs('settings', 'settings.biometrics.*') ? 'active' : '' }}" @if(request()->routeIs('settings', 'settings.biometrics.*')) aria-current="page" @endif title="Settings" data-title="Settings">
-            <i class="bi bi-gear" aria-hidden="true"></i>
+            <i class="bi bi-sliders2" aria-hidden="true"></i>
             <span class="nav-link-text">Settings</span>
         </a>
     </div>
 </nav>
-<a href="{{ route('profile') }}" class="student-desktop-only student-sidebar-account" title="Academic profile & ID" data-title="My Profile">
+
+<a href="{{ route('profile') }}" class="student-desktop-only student-sidebar-account" title="Academic profile & ID" data-title="Academic ID">
     <span class="sd-cohort-badge" aria-hidden="true">
         <i class="bi bi-mortarboard-fill"></i>
     </span>
@@ -69,8 +73,9 @@
         <strong>{{ Auth::user()->course ?: 'Student' }} &middot; Yr {{ Auth::user()->year_level ?: '1' }}{{ Auth::user()->section ? ' · Sec ' . Auth::user()->section : '' }}</strong>
         <small>ID {{ Auth::user()->student_number ?: 'Pending' }}</small>
     </span>
-    <i class="bi bi-chevron-right student-sidebar-account-arrow" aria-hidden="true"></i>
+    <i class="bi bi-arrow-up-right student-sidebar-account-arrow" aria-hidden="true"></i>
 </a>
+
 @push('scripts')
 <script @cspNonce>
 (function() {

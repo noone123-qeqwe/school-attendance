@@ -62,41 +62,41 @@
 <div class="ent-section ent-fade-up student-excuse-form" style="max-width:860px; margin: 0 auto;">
     <header class="student-page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
         <div>
-            <h1 style="font-size: 2rem; font-weight: 800; color: #f3e7cd; margin-bottom:4px; letter-spacing: -0.02em;">
-                <i class="bi bi-file-earmark-medical me-2" style="color: #cfa46f;"></i>Submit Excuse Letter
+            <h1 style="font-size: 2rem; font-weight: 800; color: var(--cs-ink, #f3e7cd); margin-bottom:4px; letter-spacing: -0.02em;">
+                <i class="bi bi-file-earmark-medical me-2" style="color: var(--cs-accent, #cfa46f);"></i>Submit Excuse Letter
             </h1>
-            <p style="color: #b39b82; font-size: 0.95rem; margin:0;">Provide details for your absence and choose which subject(s) this excuse letter covers.</p>
+            <p style="color: var(--cs-muted, #b39b82); font-size: 0.95rem; margin:0;">Provide details for your absence and choose which subject(s) this excuse letter covers.</p>
         </div>
-        <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
+        <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary cs-btn-ghost" style="border: 1px solid var(--cs-border-strong, rgba(255,255,255,0.1)); background: var(--cs-surface-2, rgba(0,0,0,0.2)); color: var(--cs-ink, #f3e7cd);">
             <i class="bi bi-arrow-left"></i> Back to Excuses
         </a>
     </header>
 
     @if($errors->any())
-    <div role="alert" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+    <div role="alert" class="cs-flash-error" style="background: var(--cs-absent-soft, rgba(239,68,68,0.1)); border: 1px solid var(--cs-absent-border, rgba(239,68,68,0.2)); color: var(--cs-absent, #f87171); border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
         <i class="bi bi-exclamation-triangle-fill" style="font-size:1.25rem;"></i>
         <span style="font-size:0.875rem; font-weight:500;">{{ $errors->first() }}</span>
     </div>
     @endif
 
-    <div style="background: rgba(30,21,21,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(212,175,55,0.15); border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);">
+    <div class="excuse-form-card" style="background: var(--cs-surface, rgba(30,21,21,0.6)); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--cs-border, rgba(212,175,55,0.15)); border-radius: 18px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.2);">
         
         {{-- Absent Record Context Header --}}
-        <div style="padding: 24px 32px; border-bottom: 1px solid rgba(212,175,55,0.1); background: rgba(0,0,0,0.25); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div class="excuse-form-head" style="padding: 24px 32px; border-bottom: 1px solid var(--cs-border, rgba(212,175,55,0.1)); background: var(--cs-surface-2, rgba(0,0,0,0.25)); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div>
-                <div style="font-size: 0.75rem; font-weight: 700; color: #cfa46f; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--cs-accent, #cfa46f); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
                     Absence Record Details
                 </div>
-                <h3 style="font-size: 1.2rem; font-weight: 700; color: #f3e7cd; margin-bottom: 2px;">
+                <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--cs-ink, #f3e7cd); margin-bottom: 2px;">
                     {{ $attendance->subject->name ?? $attendance->subject_code }} ({{ $attendance->subject_code }})
                 </h3>
-                <div style="font-size:0.85rem; color: #b39b82; font-weight: 500;">
+                <div style="font-size:0.85rem; color: var(--cs-muted, #b39b82); font-weight: 500;">
                     <i class="bi bi-calendar-event me-1"></i> {{ \Carbon\Carbon::parse($attendance->date)->format('F j, Y (l)') }}
                     <span style="margin:0 8px; opacity: 0.3;">|</span>
-                    <i class="bi bi-circle-fill" style="color: #f87171; font-size:0.45rem; vertical-align:middle; margin-right:4px;"></i> <span style="color: #fca5a5; font-weight: 600;">Unexcused Absent</span>
+                    <i class="bi bi-circle-fill" style="color: var(--cs-absent, #f87171); font-size:0.45rem; vertical-align:middle; margin-right:4px;"></i> <span style="color: var(--cs-absent, #fca5a5); font-weight: 600;">Unexcused Absent</span>
                 </div>
             </div>
-            <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; padding: 6px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 600;">
+            <div style="background: var(--cs-absent-soft, rgba(239,68,68,0.1)); border: 1px solid var(--cs-absent-border, rgba(239,68,68,0.25)); color: var(--cs-absent, #fca5a5); padding: 6px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 600;">
                 <i class="bi bi-clock-history me-1"></i> Awaiting Excuse
             </div>
         </div>
@@ -112,13 +112,13 @@
                 <div style="margin-bottom: 28px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                         <div>
-                            <label style="font-size: 0.8rem; font-weight: 700; color: #f3e7cd; text-transform: uppercase; letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 6px;">
-                                <i class="bi bi-journal-check" style="color: #cfa46f;"></i> Choose Subjects Covered By This Excuse <span style="color: #f87171;">*</span>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: var(--cs-ink, #f3e7cd); text-transform: uppercase; letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 6px;">
+                                <i class="bi bi-journal-check" style="color: var(--cs-accent, #cfa46f);"></i> Choose Subjects Covered By This Excuse <span style="color: #dc2626;">*</span>
                             </label>
-                            <span style="font-size: 0.78rem; color: #b39b82;">Select this subject or check additional classes you missed on {{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}</span>
+                            <span style="font-size: 0.78rem; color: var(--cs-muted, #b39b82);">Select this subject or check additional classes you missed on {{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}</span>
                         </div>
                         <div class="student-excuse-selection-actions">
-                            <span id="subjectCountBadge" style="background: rgba(207,164,111,0.15); border: 1px solid rgba(207,164,111,0.3); color: #cfa46f; padding: 3px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700;">
+                            <span id="subjectCountBadge" style="background: var(--cs-accent-soft, rgba(207,164,111,0.15)); border: 1px solid var(--cs-accent-border, rgba(207,164,111,0.3)); color: var(--cs-accent, #cfa46f); padding: 3px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700;">
                                 1 of {{ count($subjects) }} Selected
                             </span>
                             <button type="button" class="quick-sub-btn" onclick="selectAllSubjects(true)">Select All</button>
@@ -136,49 +136,49 @@
                         @endforeach
                     </div>
 
-                    <div id="subjectError" role="alert" style="display: none; color: #f87171; font-size: 0.78rem; margin-top: 8px; font-weight: 600;">
+                    <div id="subjectError" role="alert" style="display: none; color: #dc2626; font-size: 0.78rem; margin-top: 8px; font-weight: 600;">
                         <i class="bi bi-exclamation-circle me-1"></i> Please select at least one subject to submit your excuse letter.
                     </div>
                 </div>
 
                 {{-- STEP 2: REASON FOR ABSENCE --}}
                 <div style="margin-bottom: 24px;">
-                    <label for="excuseReason" style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                        Reason for Absence <span style="color: #f87171;">*</span>
+                    <label for="excuseReason" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--cs-muted, #b39b82); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                        Reason for Absence <span style="color: #dc2626;">*</span>
                     </label>
-                    <select name="reason" id="excuseReason" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,215,145,0.12); border-radius: 10px; color: #f3e7cd; font-size: 0.95rem; outline: none; transition: all 0.2s;" required>
-                        <option value="" style="background: #16100c;">Select a reason</option>
-                        <option value="Medical/Health Issues" {{ old('reason') == 'Medical/Health Issues' ? 'selected' : '' }} style="background: #16100c;">Medical / Health Issues</option>
-                        <option value="Family Emergency" {{ old('reason') == 'Family Emergency' ? 'selected' : '' }} style="background: #16100c;">Family Emergency</option>
-                        <option value="Personal Emergency" {{ old('reason') == 'Personal Emergency' ? 'selected' : '' }} style="background: #16100c;">Personal Emergency</option>
-                        <option value="Transportation Issues" {{ old('reason') == 'Transportation Issues' ? 'selected' : '' }} style="background: #16100c;">Transportation Issues</option>
-                        <option value="Weather Conditions" {{ old('reason') == 'Weather Conditions' ? 'selected' : '' }} style="background: #16100c;">Weather Conditions / Calamity</option>
-                        <option value="Official School Activity / Event" {{ old('reason') == 'Official School Activity / Event' ? 'selected' : '' }} style="background: #16100c;">Official School Activity / Event</option>
-                        <option value="Academic Activity" {{ old('reason') == 'Academic Activity' ? 'selected' : '' }} style="background: #16100c;">Academic Activity</option>
-                        <option value="Other" {{ old('reason') == 'Other' ? 'selected' : '' }} style="background: #16100c;">Other</option>
+                    <select name="reason" id="excuseReason" class="excuse-input" style="width: 100%; padding: 12px 16px; background: var(--cs-surface-2, rgba(0,0,0,0.3)); border: 1.5px solid var(--cs-border-strong, rgba(255,215,145,0.12)); border-radius: 10px; color: var(--cs-ink, #f3e7cd); font-size: 0.95rem; outline: none; transition: all 0.2s;" required>
+                        <option value="">Select a reason</option>
+                        <option value="Medical/Health Issues" {{ old('reason') == 'Medical/Health Issues' ? 'selected' : '' }}>Medical / Health Issues</option>
+                        <option value="Family Emergency" {{ old('reason') == 'Family Emergency' ? 'selected' : '' }}>Family Emergency</option>
+                        <option value="Personal Emergency" {{ old('reason') == 'Personal Emergency' ? 'selected' : '' }}>Personal Emergency</option>
+                        <option value="Transportation Issues" {{ old('reason') == 'Transportation Issues' ? 'selected' : '' }}>Transportation Issues</option>
+                        <option value="Weather Conditions" {{ old('reason') == 'Weather Conditions' ? 'selected' : '' }}>Weather Conditions / Calamity</option>
+                        <option value="Official School Activity / Event" {{ old('reason') == 'Official School Activity / Event' ? 'selected' : '' }}>Official School Activity / Event</option>
+                        <option value="Academic Activity" {{ old('reason') == 'Academic Activity' ? 'selected' : '' }}>Academic Activity</option>
+                        <option value="Other" {{ old('reason') == 'Other' ? 'selected' : '' }}>Other</option>
                     </select>
                     @error('reason')
-                        <div style="color: #f87171; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">{{ $message }}</div>
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">{{ $message }}</div>
                     @enderror
                 </div>
 
                 {{-- STEP 3: DETAILED DESCRIPTION --}}
                 <div style="margin-bottom: 24px;">
                     <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 8px;">
-                        <label for="descInput" style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin:0;">
-                            Detailed Explanation <span style="color: #f87171;">*</span>
+                        <label for="descInput" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--cs-muted, #b39b82); text-transform: uppercase; letter-spacing: 0.5px; margin:0;">
+                            Detailed Explanation <span style="color: #dc2626;">*</span>
                         </label>
-                        <span id="charCount" style="font-size:0.75rem; color: #888;">0 / 500</span>
+                        <span id="charCount" style="font-size:0.75rem; color: var(--cs-muted, #888);">0 / 500</span>
                     </div>
-                    <textarea name="description" id="descInput" rows="4" maxlength="500" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,215,145,0.12); border-radius: 10px; color: #f3e7cd; font-size: 0.95rem; resize: vertical; outline: none; transition: all 0.2s;" placeholder="Please provide a clear and respectful explanation for your absence..." required>{{ old('description') }}</textarea>
+                    <textarea name="description" id="descInput" rows="4" maxlength="500" class="excuse-input" style="width: 100%; padding: 12px 16px; background: var(--cs-surface-2, rgba(0,0,0,0.3)); border: 1.5px solid var(--cs-border-strong, rgba(255,215,145,0.12)); border-radius: 10px; color: var(--cs-ink, #f3e7cd); font-size: 0.95rem; resize: vertical; outline: none; transition: all 0.2s;" placeholder="Please provide a clear and respectful explanation for your absence..." required>{{ old('description') }}</textarea>
                     @error('description')
-                        <div style="color: #f87171; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">{{ $message }}</div>
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">{{ $message }}</div>
                     @enderror
                 </div>
 
                 {{-- STEP 4: SUPPORTING DOCUMENTS --}}
                 <div style="margin-bottom: 16px;">
-                    <label for="attachments" style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                    <label for="attachments" style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--cs-muted, #b39b82); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
                         Supporting Documents / Attachments (Optional)
                     </label>
                     
@@ -187,28 +187,28 @@
                                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onchange="handleFileSelect(this)"
                                class="visually-hidden">
                         
-                        <label for="attachments" id="dropZone" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px; border:1.5px dashed rgba(207,164,111,0.35); border-radius: 12px; background: rgba(0,0,0,0.2); cursor:pointer; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
-                            <i class="bi bi-cloud-arrow-up" style="font-size:2.2rem; color: #cfa46f; margin-bottom:8px;"></i>
-                            <span style="font-size: 0.95rem; font-weight: 600; color: #f3e7cd;">Click or drag & drop files here</span>
-                            <span style="font-size: 0.8rem; color: #b39b82; margin-top: 4px;">Medical certificates, letters, or receipts</span>
+                        <label for="attachments" id="dropZone" class="file-upload-zone" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px; border:1.5px dashed var(--cs-border-strong, rgba(207,164,111,0.35)); border-radius: 14px; background: var(--cs-surface-2, rgba(0,0,0,0.2)); cursor:pointer; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+                            <i class="bi bi-cloud-arrow-up" style="font-size:2.2rem; color: var(--cs-accent, #cfa46f); margin-bottom:8px;"></i>
+                            <span style="font-size: 0.95rem; font-weight: 600; color: var(--cs-ink, #f3e7cd);">Click or drag &amp; drop files here</span>
+                            <span style="font-size: 0.8rem; color: var(--cs-muted, #b39b82); margin-top: 4px;">Medical certificates, letters, or receipts</span>
                         </label>
                     </div>
                     
-                    <div style="font-size: 0.75rem; color: #b39b82; margin-top: 8px;">
+                    <div style="font-size: 0.75rem; color: var(--cs-muted, #b39b82); margin-top: 8px;">
                         Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max 5MB each)
                     </div>
                     
                     <div id="fileList" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;"></div>
                     
                     @error('attachments.*')
-                        <div style="color: #f87171; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">{{ $message }}</div>
+                        <div style="color: #dc2626; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">{{ $message }}</div>
                     @enderror
                 </div>
             </div>
             
-            <div style="padding: 20px 32px; border-top: 1px solid rgba(212,175,55,0.1); background: rgba(0,0,0,0.25); display: flex; justify-content: flex-end; gap: 16px;">
-                <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary" style="border: 1px solid rgba(255,255,255,0.1); background: transparent;">Cancel</a>
-                <button type="submit" id="submitBtn" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #16100c; font-weight: 700; border: none; padding: 10px 24px;">
+            <div class="excuse-form-foot" style="padding: 20px 32px; border-top: 1px solid var(--cs-border, rgba(212,175,55,0.1)); background: var(--cs-surface-2, rgba(0,0,0,0.25)); display: flex; justify-content: flex-end; gap: 16px;">
+                <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary cs-btn-ghost" style="border: 1px solid var(--cs-border-strong, rgba(255,255,255,0.1)); background: transparent; color: var(--cs-ink, #f3e7cd);">Cancel</a>
+                <button type="submit" id="submitBtn" class="ent-btn ent-btn-primary cs-btn-primary" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #16100c; font-weight: 700; border: none; padding: 10px 24px;">
                     <i class="bi bi-send-fill" style="margin-right: 6px;"></i> <span>Submit Excuse Letter</span>
                 </button>
             </div>

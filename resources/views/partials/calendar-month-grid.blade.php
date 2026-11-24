@@ -24,7 +24,7 @@
 <style>
     .scal-grid button[data-date] { min-width: 0; padding: 0; }
     .scal-load-feedback:has(#scalLoadStatus:empty) { display: none; }
-    .scal-load-feedback { margin-top: 12px; color: #e0d6cc; font-size: .875rem; }
+    .scal-load-feedback { margin-top: 12px; color: var(--cs-ink-2, #e0d6cc); font-size: .875rem; }
     .scal-load-feedback p { margin: 0; }
     .scal-load-feedback button { margin-top: 8px; }
     .scal-load-feedback button[hidden] { display: none !important; }

@@ -15,8 +15,8 @@
 @endphp
 
 @if(blank(auth()->user()->section))
-<div role="status" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:16px;border-radius:12px;border:1px solid rgba(207,164,111,.35);background:rgba(207,164,111,.08);color:#f3e7cd;">
-    <i class="bi bi-info-circle-fill" style="color:#dfb784;margin-top:2px;"></i>
+<div role="status" class="sd-unassigned-notice" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:16px;border-radius:12px;border:1px solid rgba(207,164,111,.35);background:rgba(207,164,111,.08);color:#f3e7cd;">
+    <i class="bi bi-info-circle-fill" style="color:var(--cs-accent,#dfb784);margin-top:2px;"></i>
     <div><strong>Class section not assigned</strong><br><span style="color:#b39b82;">Your section timetable will appear after the school assigns your section. Contact the registrar or school administrator to update your profile.</span></div>
 </div>
 @endif
@@ -1084,8 +1084,378 @@
     }
 </style>
 
-<!-- Hero Banner -->
-<div class="student-desktop-dashboard">
+@php
+    $todaySchedCollection = collect($todaySchedule ?? []);
+    $liveClassItem = $todaySchedCollection->firstWhere('status', 'ongoing');
+    $nextClassItem = $todaySchedCollection->firstWhere('status', 'upcoming');
+    $rateVal = $attendanceRate;
+    $rateTone = $rateVal === null ? 'rate-empty' : ($rateVal >= 85 ? 'rate-good' : ($rateVal >= 75 ? 'rate-warning' : 'rate-danger'));
+    $rateIcon = $rateVal === null ? 'bi-dash-circle' : ($rateVal >= 85 ? 'bi-shield-check' : ($rateVal >= 75 ? 'bi-shield-exclamation' : 'bi-exclamation-triangle-fill'));
+    $ringRadius = 46;
+    $ringCircumference = round(2 * M_PI * $ringRadius, 2);
+    $ringOffset = $rateVal === null ? $ringCircumference : round($ringCircumference * (1 - min(100, max(0, (float) $rateVal)) / 100), 2);
+    $ringStroke = $rateVal === null ? '#CBD5E1' : ($rateVal >= 85 ? '#0D6E5E' : ($rateVal >= 75 ? '#D97706' : '#DC2626'));
+    $enrolledSubjectCount = isset($subjects) ? count($subjects) : 0;
+@endphp
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHRONICLE STUDIO DESKTOP DASHBOARD (>= 1024px)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="sd-dashboard cs-desktop-only">
+    <!-- Top Editorial Command Hero -->
+    <section class="sd-command-hero" aria-label="Student studio overview">
+        <div class="sd-hero-copy">
+            <div>
+                <div class="sd-hero-kicker">
+                    <span class="sd-dot" aria-hidden="true"></span>
+                    <span>{{ $greeting }} &middot; Academic Chronicle</span>
+                    @if(isset($streakCount) && $streakCount > 0)
+                        <span class="sd-meta-tag" style="background:#FFFBEB;border-color:#FDE68A;color:#B45309;margin-left:6px;">
+                            <i class="bi bi-fire" aria-hidden="true"></i> {{ $streakCount }}-day streak
+                        </span>
+                    @endif
+                </div>
+                <h1 class="sd-hero-title">{{ Auth::user()->name }}</h1>
+                <div class="sd-hero-meta">
+                    @if(!empty(Auth::user()->student_number))
+                        <span class="sd-meta-tag mono"><i class="bi bi-person-badge" aria-hidden="true"></i> {{ Auth::user()->student_number }}</span>
+                    @endif
+                    <span class="sd-meta-tag"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i> {{ Auth::user()->course ?? 'Student' }}</span>
+                    <span class="sd-meta-tag"><i class="bi bi-layers" aria-hidden="true"></i> Year {{ Auth::user()->year_level ?? '1' }} &middot; Sem {{ Auth::user()->semester ?? '1' }}</span>
+                    @if(!empty(Auth::user()->section))
+                        <span class="sd-meta-tag"><i class="bi bi-people-fill" aria-hidden="true"></i> Sec {{ Auth::user()->section }}</span>
+                    @endif
+                </div>
+            </div>
+
+            <div class="sd-hero-clockbar">
+                <div class="sd-live-clock" title="Campus Local Time">
+                    <strong class="js-student-clock">{{ now()->format('g:i A') }}</strong>
+                    <span>{{ now()->format('l, M j, Y') }}</span>
+                </div>
+                <nav class="sd-quick-links" aria-label="Primary destinations">
+                    <a href="{{ route('student.classes') }}" class="cs-btn-ghost" style="padding:7px 13px;font-size:0.78rem;">
+                        <i class="bi bi-calendar2-week" aria-hidden="true"></i> Weekly Matrix
+                    </a>
+                    <a href="{{ route('student.calendar') }}#attendance-records" class="cs-btn-ghost" style="padding:7px 13px;font-size:0.78rem;">
+                        <i class="bi bi-journal-check" aria-hidden="true"></i> Attendance Log
+                    </a>
+                    <a href="{{ route('excuses.create_general') }}" class="cs-btn-ghost" style="padding:7px 13px;font-size:0.78rem;">
+                        <i class="bi bi-file-earmark-plus" aria-hidden="true"></i> File Excuse
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <div class="sd-session-deck {{ $liveClassItem ? 'is-live' : '' }}">
+            <div class="sd-session-top">
+                <div style="min-width:0;">
+                    @if($liveClassItem)
+                        <div class="sd-session-eyebrow">
+                            <span class="pulse" aria-hidden="true"></span>
+                            <span>Session Live Now</span>
+                        </div>
+                        <h2 class="sd-session-subject">{{ $liveClassItem->subject->name }}</h2>
+                        <div class="sd-session-details">
+                            {{ $liveClassItem->start_time->format('g:i A') }} – {{ $liveClassItem->end_time->format('g:i A') }}
+                            @if(!empty($liveClassItem->schedule?->room) && strtoupper(trim($liveClassItem->schedule->room)) !== 'TBA')
+                                &middot; Room {{ $liveClassItem->schedule->room }}
+                            @endif
+                            @if(!empty($liveClassItem->subject->instructorUser?->name ?? $liveClassItem->subject->instructor))
+                                &middot; {{ $liveClassItem->subject->instructorUser?->name ?? $liveClassItem->subject->instructor }}
+                            @endif
+                        </div>
+                    @elseif($nextClassItem)
+                        <div class="sd-session-eyebrow" style="color:var(--cs-cobalt);">
+                            <i class="bi bi-clock-fill" aria-hidden="true"></i>
+                            <span>Up Next at {{ $nextClassItem->start_time->format('g:i A') }}</span>
+                        </div>
+                        <h2 class="sd-session-subject">{{ $nextClassItem->subject->name }}</h2>
+                        <div class="sd-session-details">
+                            {{ $nextClassItem->start_time->format('g:i A') }} – {{ $nextClassItem->end_time->format('g:i A') }}
+                            @if(!empty($nextClassItem->schedule?->room) && strtoupper(trim($nextClassItem->schedule->room)) !== 'TBA')
+                                &middot; Room {{ $nextClassItem->schedule->room }}
+                            @endif
+                        </div>
+                    @elseif($todaySchedCollection->isNotEmpty())
+                        <div class="sd-session-eyebrow">
+                            <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                            <span>Today's Load Summary</span>
+                        </div>
+                        <h2 class="sd-session-subject">{{ $todaySchedCollection->count() }} {{ \Illuminate\Support\Str::plural('class', $todaySchedCollection->count()) }} today</h2>
+                        <div class="sd-session-details">All scheduled meetings for today have started or concluded.</div>
+                    @else
+                        <div class="sd-session-eyebrow" style="color:var(--cs-muted);">
+                            <i class="bi bi-calendar2" aria-hidden="true"></i>
+                            <span>Today's Status</span>
+                        </div>
+                        <h2 class="sd-session-subject">Open Study Schedule</h2>
+                        <div class="sd-session-details">No class sessions are scheduled on today's timetable.</div>
+                    @endif
+                </div>
+                @if($liveClassItem)
+                    <span class="sd-session-code-pill">{{ $liveClassItem->subject->code }}</span>
+                @elseif($nextClassItem)
+                    <span class="sd-session-code-pill">{{ $nextClassItem->subject->code }}</span>
+                @else
+                    <span class="sd-session-code-pill">{{ $enrolledSubjectCount }} Subjects</span>
+                @endif
+            </div>
+
+            <div class="sd-session-actions">
+                <a class="cs-btn-primary sd-checkin-qr" href="{{ route('mobile.scan', ['open_scanner' => 1]) }}">
+                    <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
+                    <span>Scan QR Code</span>
+                </a>
+                <a class="cs-btn-ghost sd-checkin-pin" href="{{ route('mobile.scan', ['open_code' => 1]) }}">
+                    <i class="bi bi-123" aria-hidden="true"></i>
+                    <span>6-Digit PIN</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Asymmetric Split Workspace -->
+    <div class="sd-stage-grid">
+        <!-- Left Primary Chronicle Column -->
+        <div class="sd-stage-col">
+            <!-- Standing Ring + Clickable Metric Cards -->
+            <section class="sd-card" aria-labelledby="sdStandingHeading">
+                <div class="sd-card-head">
+                    <div>
+                        <h2 class="sd-card-title" id="sdStandingHeading">Attendance Standing</h2>
+                        <div class="sd-card-sub">Click any metric to inspect verified records or subject details</div>
+                    </div>
+                    <button type="button" class="sd-card-link" onclick="openAttendanceRecordsModal()">
+                        <span>Full history</span>
+                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                    </button>
+                </div>
+
+                <div class="sd-standing-wrap">
+                    <div class="sd-ring-box">
+                        <div class="sd-ring-svg-wrap" role="img" aria-label="Overall attendance rate {{ $attendanceRate === null ? 'no records yet' : $attendanceRate.' percent' }}">
+                            <svg class="sd-ring-svg" viewBox="0 0 112 112" aria-hidden="true">
+                                <circle class="sd-ring-track" cx="56" cy="56" r="{{ $ringRadius }}"></circle>
+                                <circle class="sd-ring-fill" cx="56" cy="56" r="{{ $ringRadius }}"
+                                    style="stroke: {{ $ringStroke }}; stroke-dasharray: {{ $ringCircumference }}; stroke-dashoffset: {{ $ringOffset }};"></circle>
+                            </svg>
+                            <div class="sd-ring-value">
+                                <strong>{{ $attendanceRate === null ? '—' : $attendanceRate . '%' }}</strong>
+                                <span>{{ $attendanceRate === null ? 'Pending' : 'Standing' }}</span>
+                            </div>
+                        </div>
+                        <div class="sd-ring-caption">
+                            {{ $attendanceRate === null ? 'Awaiting first recorded session' : ($attendanceRate >= 85 ? 'Above 85% honors target' : ($attendanceRate >= 75 ? 'At threshold (75% min)' : 'Below 75% requirement')) }}
+                        </div>
+                    </div>
+
+                    <div class="sd-kpi-grid">
+                        <button type="button" class="sd-kpi-tile" onclick="openAttendanceRecordsWithStatus('present')">
+                            <div>
+                                <div class="sd-kpi-num">{{ $totalPresent ?? 0 }}</div>
+                                <div class="sd-kpi-label">Present Sessions</div>
+                            </div>
+                            <span class="sd-kpi-icon present" aria-hidden="true"><i class="bi bi-check-circle-fill"></i></span>
+                        </button>
+                        <button type="button" class="sd-kpi-tile" onclick="openAttendanceRecordsWithStatus('late')">
+                            <div>
+                                <div class="sd-kpi-num">{{ $totalLate ?? 0 }}</div>
+                                <div class="sd-kpi-label">Late Check-Ins</div>
+                            </div>
+                            <span class="sd-kpi-icon late" aria-hidden="true"><i class="bi bi-clock-fill"></i></span>
+                        </button>
+                        <button type="button" class="sd-kpi-tile" onclick="openAttendanceRecordsWithStatus('absent')">
+                            <div>
+                                <div class="sd-kpi-num">{{ $totalAbsent ?? 0 }}</div>
+                                <div class="sd-kpi-label">Absences Logged</div>
+                            </div>
+                            <span class="sd-kpi-icon absent" aria-hidden="true"><i class="bi bi-x-circle-fill"></i></span>
+                        </button>
+                        <button type="button" class="sd-kpi-tile" onclick="openSubjectBreakdownModal()">
+                            <div>
+                                <div class="sd-kpi-num">{{ $enrolledSubjectCount }}</div>
+                                <div class="sd-kpi-label">Enrolled Subjects</div>
+                            </div>
+                            <span class="sd-kpi-icon subjects" aria-hidden="true"><i class="bi bi-book-fill"></i></span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Today's Interactive Timetable Chronicle -->
+            <section class="sd-card" aria-labelledby="sdTodayTimelineHeading">
+                <div class="sd-card-head">
+                    <div>
+                        <h2 class="sd-card-title" id="sdTodayTimelineHeading">Today's Timetable</h2>
+                        <div class="sd-card-sub">{{ now()->format('l, F j, Y') }} &middot; {{ $todayClassCount }} scheduled {{ \Illuminate\Support\Str::plural('session', $todayClassCount) }}</div>
+                    </div>
+                    <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-card-link">
+                        <span>Weekly matrix</span>
+                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                    </a>
+                </div>
+
+                @if(isset($todaySchedule) && $todaySchedule->count() > 0)
+                    <div class="sd-timeline-list">
+                        @foreach($todaySchedule as $item)
+                            @php
+                                $roomName = $item->schedule?->room;
+                                $instructorName = $item->subject->instructorUser?->name ?? $item->subject->instructor;
+                                $timeInText = $item->attendance?->time_in ? \Carbon\Carbon::parse($item->attendance->time_in)->format('g:i A') : null;
+                                $excuseHref = $item->attendance?->id ? route('excuses.create', $item->attendance->id) : route('excuses.create_general');
+                            @endphp
+                            <div class="sd-class-row {{ $item->status === 'ongoing' ? 'is-now' : '' }}">
+                                <div class="sd-class-time">
+                                    {{ $item->start_time->format('g:i A') }}
+                                    <small>to {{ $item->end_time->format('g:i A') }}</small>
+                                </div>
+                                <div class="sd-class-info">
+                                    <div class="sd-class-head">
+                                        <span class="sd-class-code">{{ $item->subject->code }}</span>
+                                        <span class="sd-class-name">{{ $item->subject->name }}</span>
+                                    </div>
+                                    <div class="sd-class-meta">
+                                        @if(!empty($instructorName))
+                                            <span><i class="bi bi-person" aria-hidden="true"></i> {{ $instructorName }}</span>
+                                        @endif
+                                        @if(!empty($roomName) && strtoupper(trim($roomName)) !== 'TBA')
+                                            <span><i class="bi bi-geo-alt" aria-hidden="true"></i> {{ $roomName }}</span>
+                                        @endif
+                                        @if($timeInText)
+                                            <span style="color:var(--cs-present);font-weight:700;"><i class="bi bi-check2-circle" aria-hidden="true"></i> Checked in {{ $timeInText }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="sd-class-actions">
+                                    @if($item->status === 'completed')
+                                        @if(strtolower((string) ($item->attendance?->status ?? '')) === 'late')
+                                            <x-badge type="late">Late</x-badge>
+                                        @else
+                                            <x-badge type="present">Present</x-badge>
+                                        @endif
+                                    @elseif($item->status === 'ongoing')
+                                        <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="cs-btn-emerald" style="padding:6px 12px;font-size:0.75rem;border-radius:9px;">Check In</a>
+                                    @elseif($item->status === 'missed')
+                                        <a href="{{ $excuseHref }}" class="cs-btn-ghost" style="padding:5px 11px;font-size:0.75rem;border-radius:9px;color:#B91C1C !important;border-color:#FECACA !important;">File Excuse</a>
+                                    @elseif($item->status === 'past')
+                                        <x-badge type="neutral">Past</x-badge>
+                                    @else
+                                        <x-badge type="info">Upcoming</x-badge>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div style="text-align:center;padding:34px 20px;border-radius:16px;background:var(--cs-rail);border:1px dashed var(--cs-border-strong);">
+                        <i class="bi bi-calendar2-check" style="font-size:2rem;color:var(--cs-accent);"></i>
+                        <div style="font-family:var(--cs-font-display);font-size:1.05rem;font-weight:600;color:var(--cs-ink);margin-top:10px;">No classes scheduled today</div>
+                        <p style="font-size:0.82rem;color:var(--cs-muted);margin:4px 0 14px;">Review your weekly matrix or calendar for upcoming sessions.</p>
+                        <a href="{{ route('student.classes') }}" class="cs-btn-ghost" style="padding:7px 14px;font-size:0.78rem;">Open Classes &amp; Schedule</a>
+                    </div>
+                @endif
+            </section>
+        </div>
+
+        <!-- Right Secondary Inspector Column -->
+        <div class="sd-stage-col">
+            <!-- Course Health Matrix -->
+            <section class="sd-card" aria-labelledby="sdCourseHealthHeading">
+                <div class="sd-card-head">
+                    <div>
+                        <h2 class="sd-card-title" id="sdCourseHealthHeading">Course Health</h2>
+                        <div class="sd-card-sub">Subject-by-subject standing</div>
+                    </div>
+                    @if(!empty($subjectStats) && count($subjectStats) > 0)
+                        <button type="button" class="sd-card-link" data-bs-toggle="modal" data-bs-target="#subjectBreakdownModal">
+                            <span>All {{ count($subjectStats) }}</span>
+                            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                        </button>
+                    @else
+                        <a href="{{ route('student.classes') }}" class="sd-card-link">My Classes <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                    @endif
+                </div>
+
+                @if(!empty($subjectStats) && count($subjectStats) > 0)
+                    <div class="sd-subject-list">
+                        @foreach(collect($subjectStats)->take(5) as $sub)
+                            @php
+                                $fillClass = $sub->rate >= 85 ? '' : ($sub->rate >= 75 ? 'warn' : 'danger');
+                            @endphp
+                            <div class="sd-subject-row">
+                                <div class="sd-subject-top">
+                                    <div style="min-width:0;display:flex;align-items:center;gap:8px;">
+                                        <span class="sd-subject-code">{{ $sub->code }}</span>
+                                        <span class="sd-subject-name" title="{{ $sub->name }}">{{ $sub->name }}</span>
+                                    </div>
+                                    <span class="sd-subject-rate">{{ $sub->rate }}%</span>
+                                </div>
+                                <div class="sd-progress-track" aria-hidden="true">
+                                    <div class="sd-progress-fill {{ $fillClass }}" style="width:{{ min(100, max(0, $sub->rate)) }}%;"></div>
+                                </div>
+                                <div class="sd-subject-foot">
+                                    <span><strong style="color:var(--cs-present);">{{ $sub->present }}</strong> present &middot; <strong style="color:var(--cs-late);">{{ $sub->late }}</strong> late &middot; <strong style="color:var(--cs-absent);">{{ $sub->absent }}</strong> absent</span>
+                                    @if($sub->rate < 75)
+                                        <span style="color:var(--cs-absent);font-weight:700;">Below 75%</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div style="text-align:center;padding:24px 16px;border-radius:14px;background:var(--cs-rail);border:1px dashed var(--cs-border-strong);">
+                        <i class="bi bi-bar-chart" style="font-size:1.75rem;color:var(--cs-accent);"></i>
+                        <div style="font-size:0.84rem;font-weight:600;color:var(--cs-ink-2);margin-top:8px;">Metrics populate after your first recorded class.</div>
+                    </div>
+                @endif
+            </section>
+
+            <!-- Campus & Class Announcements -->
+            <section class="sd-card" aria-labelledby="sdNoticesHeading">
+                <div class="sd-card-head">
+                    <div>
+                        <h2 class="sd-card-title" id="sdNoticesHeading">Campus &amp; Class Notices</h2>
+                        <div class="sd-card-sub">Updates from instructors &amp; administration</div>
+                    </div>
+                    <a href="{{ route('notifications') }}" class="sd-card-link">
+                        <span>Inbox</span>
+                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                    </a>
+                </div>
+
+                @if(isset($announcements) && $announcements->isNotEmpty())
+                    <div class="sd-notice-list">
+                        @foreach($announcements as $announcement)
+                            <article class="sd-notice-item {{ !empty($announcement->is_pinned) ? 'is-urgent' : '' }}">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div class="sd-notice-title">{{ $announcement->title }}</div>
+                                    <span class="sd-meta-tag" style="font-size:0.66rem;padding:2px 8px;">{{ $announcement->target_audience ?? 'All' }}</span>
+                                </div>
+                                <p class="sd-notice-body">{{ $announcement->content }}</p>
+                                <div class="sd-notice-meta">
+                                    <i class="bi bi-person" aria-hidden="true"></i> {{ $announcement->author->name ?? 'Administration' }}
+                                    &middot;
+                                    {{ ($announcement->scheduled_for ?? $announcement->created_at)->diffForHumans() }}
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+                @else
+                    <div style="padding:18px 16px;border-radius:14px;background:var(--cs-rail);border:1px solid var(--cs-border);text-align:center;">
+                        <div style="font-size:0.84rem;font-weight:600;color:var(--cs-ink-2);">No new campus announcements</div>
+                        <div style="font-size:0.76rem;color:var(--cs-muted);margin-top:3px;">Check your inbox or school calendar for upcoming academic events.</div>
+                    </div>
+                @endif
+            </section>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MOBILE & COMPACT VIEWPORT DASHBOARD (< 1024px preserved intact)
+     ══════════════════════════════════════════════════════════════ -->
+<div class="student-desktop-dashboard cs-mobile-only">
 <div class="student-hero-banner premium-hero-card mb-4">
     <div class="student-hero-inner">
         <!-- Top Bar: Greeting & Status -->
@@ -1114,18 +1484,13 @@
             </div>
         </div>
 
-        @php
-            $todaySchedCollection = collect($todaySchedule ?? []);
-            $liveClassItem = $todaySchedCollection->firstWhere('status', 'ongoing');
-            $nextClassItem = $todaySchedCollection->firstWhere('status', 'upcoming');
-        @endphp
         <!-- Middle Profile: Avatar & Details -->
         <div class="student-hero-profile">
             <div class="student-avatar-box">
                 <img src="{{ Auth::user()->profile_photo_url_with_version }}" alt="{{ Auth::user()->name }}" class="student-avatar-img">
             </div>
             <div class="student-profile-info">
-                <h1 class="student-hero-name">{{ Auth::user()->name }}</h1>
+                <h2 class="student-hero-name">{{ Auth::user()->name }}</h2>
                 <div class="student-meta-strip">
                     @if(!empty(Auth::user()->student_number))
                         <span class="student-meta-chip chip-gold" title="Student Identification Number">
@@ -1148,51 +1513,21 @@
                         </span>
                     @endif
                 </div>
-                <div class="sd-hero-spotlight d-none d-lg-flex">
-                    @if($liveClassItem)
-                        <span class="sd-spotlight-dot is-live" aria-hidden="true"></span>
-                        <span class="sd-spotlight-label">Live now</span>
-                        <span class="sd-spotlight-text">{{ $liveClassItem->subject->code }} &middot; {{ $liveClassItem->subject->name }}@if(!empty($liveClassItem->schedule?->room) && strtoupper(trim($liveClassItem->schedule->room)) !== 'TBA') &middot; {{ $liveClassItem->schedule->room }}@endif</span>
-                        <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sd-spotlight-link">Check in <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                    @elseif($nextClassItem)
-                        <span class="sd-spotlight-dot is-next" aria-hidden="true"></span>
-                        <span class="sd-spotlight-label">Up next &middot; {{ $nextClassItem->start_time->format('g:i A') }}</span>
-                        <span class="sd-spotlight-text">{{ $nextClassItem->subject->code }} &middot; {{ $nextClassItem->subject->name }}@if(!empty($nextClassItem->schedule?->room) && strtoupper(trim($nextClassItem->schedule->room)) !== 'TBA') &middot; {{ $nextClassItem->schedule->room }}@endif</span>
-                        <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-spotlight-link">Timetable <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                    @elseif($todaySchedCollection->isNotEmpty())
-                        <span class="sd-spotlight-dot is-done" aria-hidden="true"></span>
-                        <span class="sd-spotlight-label">Today</span>
-                        <span class="sd-spotlight-text">{{ $todaySchedCollection->count() }} {{ \Illuminate\Support\Str::plural('class', $todaySchedCollection->count()) }} completed or past for today</span>
-                        <a href="{{ route('student.calendar') }}#attendance-records" class="sd-spotlight-link">View log <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                    @else
-                        <span class="sd-spotlight-dot" aria-hidden="true"></span>
-                        <span class="sd-spotlight-label">Today</span>
-                        <span class="sd-spotlight-text">No classes scheduled today</span>
-                        <a href="{{ route('student.classes') }}" class="sd-spotlight-link">My classes <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                    @endif
-                </div>
             </div>
         </div>
 
         <!-- Bottom: Symmetrical Metrics Deck -->
-        @php
-            $rateVal = $attendanceRate;
-            $rateTone = $rateVal === null ? 'rate-empty' : ($rateVal >= 85 ? 'rate-good' : ($rateVal >= 75 ? 'rate-warning' : 'rate-danger'));
-            $rateIcon = $rateVal === null ? 'bi-dash-circle' : ($rateVal >= 85 ? 'bi-shield-check' : ($rateVal >= 75 ? 'bi-shield-exclamation' : 'bi-exclamation-triangle-fill'));
-        @endphp
         <div class="student-hero-deck">
-            <!-- Metric 1: Campus Time -->
             <div class="hero-deck-card" title="Campus Local Time">
                 <div class="hero-deck-icon icon-time">
                     <i class="bi bi-clock-fill"></i>
                 </div>
                 <div class="hero-deck-body">
-                    <div class="hero-deck-value" id="studentClock">{{ now()->format('h:i A') }}</div>
+                    <div class="hero-deck-value js-student-clock" id="studentClock">{{ now()->format('h:i A') }}</div>
                     <div class="hero-deck-label">{{ now()->format('D, M j, Y') }}</div>
                 </div>
             </div>
 
-            <!-- Metric 2: Attendance Rate -->
             <div class="hero-deck-card" title="{{ $attendanceRate === null ? 'Attendance rate available after your first recorded class' : 'Overall Attendance Rate: '.$attendanceRate.'%' }}">
                 <div class="hero-deck-icon icon-{{ $rateTone }}">
                     <i class="bi {{ $rateIcon }}"></i>
@@ -1430,7 +1765,7 @@
 @if(isset($announcements) && $announcements->isNotEmpty())
 <div class="row g-4 mb-4" id="studentAnnouncementsSection">
     <div class="col-12">
-        <x-card title="Campus &amp; Class Announcements" icon="bi bi-megaphone-fill">
+        <x-card title="Campus & Class Announcements" icon="bi bi-megaphone-fill">
             <div class="schedule-items-grid">
                 @foreach($announcements as $announcement)
                     <div class="schedule-modern-card" style="border-left: 3.5px solid #cfa46f; flex-direction: column; align-items: stretch; gap: 8px;">
@@ -2104,7 +2439,7 @@
 {{-- ── Subject Attendance Breakdown Modal ─────────────────────────────── --}}
 <div class="modal fade" id="subjectBreakdownModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="background:#0f0a08; border:1px solid rgba(255,255,255,0.1); border-radius:24px; box-shadow:0 30px 80px rgba(0,0,0,0.85);">
+        <div class="modal-content sd-modal-shell" style="background:#0f0a08; border:1px solid rgba(255,255,255,0.1); border-radius:24px; box-shadow:0 30px 80px rgba(0,0,0,0.85);">
             {{-- Mobile sheet handle --}}
             <div class="scal-sheet-handle" style="display:none; width:42px; height:4.5px; background:rgba(255,255,255,0.22); border-radius:99px; margin:12px auto 4px auto;"></div>
             {{-- Header --}}
@@ -2198,7 +2533,7 @@
 {{-- ── Day Summary Inspector Modal (Subject-by-Subject Attendance Details) ───────────────── --}}
 <div class="modal fade" id="daySummaryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
+        <div class="modal-content sd-modal-shell">
             <div class="scal-sheet-handle day-modal-sheet-handle"></div>
             <!-- Action bar with Stepper & Close -->
             <div class="day-modal-action-bar">
@@ -2244,7 +2579,7 @@
 {{-- ── Attendance Records Modal (Triggered by "View Records" button) ─────────────────────── --}}
 <div class="modal fade" id="attendanceRecordsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="background:#0f0a08; border:1px solid rgba(255,255,255,0.1); border-radius:24px; box-shadow:0 30px 80px rgba(0,0,0,0.85);">
+        <div class="modal-content sd-modal-shell" style="background:#0f0a08; border:1px solid rgba(255,255,255,0.1); border-radius:24px; box-shadow:0 30px 80px rgba(0,0,0,0.85);">
             <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 border-bottom" style="border-color:rgba(255,255,255,0.06)!important;">
                 <div class="d-flex align-items-center gap-3">
                     <div style="width:40px; height:40px; border-radius:12px; background:rgba(207,164,111,0.15); border:1px solid rgba(207,164,111,0.3); display:flex; align-items:center; justify-content:center; color:#ffd166; font-size:1.2rem;">
@@ -2785,6 +3120,14 @@ async function loadAttendanceRecordsForModal() {
     return attendanceHistoryRequest;
 }
 
+function openAttendanceRecordsWithStatus(status) {
+    const selectEl = document.getElementById('recordsStatusFilter');
+    if (selectEl) {
+        selectEl.value = (status || 'all').toLowerCase();
+    }
+    openAttendanceRecordsModal();
+}
+
 function openAttendanceRecordsModal() {
     const modalEl = document.getElementById('attendanceRecordsModal');
     if (modalEl) {
@@ -2893,15 +3236,16 @@ function renderAttendanceRecordsList(items) {
     let html = '';
     items.forEach(r => {
         const st = (r.status_lower || 'absent');
+        const isDesktopView = window.innerWidth >= 1024;
         let iconClass = 'bi-x-circle-fill';
-        let clockInColor = '#f87171';
+        let clockInColor = isDesktopView ? '#B91C1C' : '#f87171';
 
         if (st === 'present') {
             iconClass = 'bi-check-circle-fill';
-            clockInColor = '#4ade80';
+            clockInColor = isDesktopView ? '#047857' : '#4ade80';
         } else if (st === 'late') {
             iconClass = 'bi-clock-fill';
-            clockInColor = '#fbbf24';
+            clockInColor = isDesktopView ? '#B45309' : '#fbbf24';
         }
 
         const clockInText = r.clock_in || (st === 'absent' ? 'No clock-in' : '—');
@@ -3029,7 +3373,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const short = h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
         const clockEl = document.getElementById('studentClock');
         if (clockEl) clockEl.textContent = short;
+        document.querySelectorAll('.js-student-clock').forEach(function(el) {
+            el.textContent = short;
+        });
     }
+    tick();
     setInterval(tick, 1000);
 })();
 </script>

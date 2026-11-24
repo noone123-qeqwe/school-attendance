@@ -64,7 +64,7 @@
     @if(Auth::user()?->isStudent())
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="{{ asset('css/student-desktop.css') }}?v={{ filemtime(public_path('css/student-desktop.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/student-desktop-pages.css') }}?v={{ filemtime(public_path('css/student-desktop-pages.css')) }}">
         @if(request()->routeIs('settings'))
@@ -194,9 +194,9 @@
                             </span>
                             @endif
                         </button>
-                        <div class="dropdown-menu dropdown-menu-end mt-2" style="width:340px;max-width:calc(100vw - 32px);border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(25,15,15,0.95);backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,0.5);padding:0;overflow:hidden;">
-                            <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
-                                <span style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Notifications</span>
+                        <div class="dropdown-menu dropdown-menu-end mt-2 header-notif-menu" style="width:340px;max-width:calc(100vw - 32px);border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(25,15,15,0.95);backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,0.5);padding:0;overflow:hidden;">
+                            <div class="header-notif-menu-head" style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
+                                <span class="header-notif-menu-title" style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Notifications</span>
                                 <div id="topNavNotifHeaderActions" style="display:flex;align-items:center;gap:10px;">
                                     @if($unreadCount > 0)
                                     <span id="topNavNotifCountBadge" style="background:#fef2f2;color:#dc2626;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;">{{ $unreadCount }} new</span>
@@ -328,9 +328,9 @@
                         <a href="#" data-bs-toggle="dropdown" class="header-account-trigger text-decoration-none d-flex align-items-center gap-2" aria-label="Open account menu for {{ Auth::user()->name }}" aria-expanded="false">
                             <img src="{{ $profileImageUrl }}" class="header-profile-img user-avatar-img" alt="">
                             <div class="d-none d-md-block text-start" style="line-height:1.2;">
-                                <div style="font-size:0.8rem;font-weight:600;color:#ffffff;">{{ Auth::user()->name }}</div>
+                                <div class="header-account-name" style="font-size:0.8rem;font-weight:600;color:#ffffff;">{{ Auth::user()->name }}</div>
                             </div>
-                            <i class="bi bi-chevron-down d-none d-md-block" style="font-size:0.7rem;color:rgba(255,255,255,0.75);"></i>
+                            <i class="bi bi-chevron-down d-none d-md-block header-account-caret" style="font-size:0.7rem;color:rgba(255,255,255,0.75);"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end fb-dropdown mt-2 shadow-lg">
                             <!-- Profile summary -->

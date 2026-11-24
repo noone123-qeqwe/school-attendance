@@ -555,6 +555,142 @@ html:has(.face-registration-page) body { width: 100%; height: 100%; overflow: hi
     .fingerprint-registration-page .bio-error-actions { justify-content: stretch; }
     .fingerprint-registration-page #retryBtn { width: 100%; }
 }
+@media screen and (min-width: 960px) {
+    body.biometric-flow-page {
+        background: #F5F3EC;
+        background-image:
+            radial-gradient(60rem 38rem at 12% -10%, rgba(13, 110, 94, 0.06), transparent 60%),
+            radial-gradient(48rem 32rem at 92% 4%, rgba(35, 71, 213, 0.04), transparent 58%);
+        color: #13161C;
+        font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+        --gold-primary: #0D6E5E;
+        --gold-border: rgba(19, 22, 28, 0.1);
+        --gold-subtle: #E8F4F1;
+        --surface-card: #FFFFFF;
+        --text-primary: #13161C;
+        --text-muted: #656E7F;
+    }
+
+    body.biometric-flow-page .biometric-flow-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    body.biometric-flow-page .biometric-flow-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: #E8F4F1;
+        border: 1px solid rgba(13, 110, 94, 0.24);
+        color: #0D6E5E;
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+    }
+
+    body.biometric-flow-page .biometric-flow-back {
+        margin-bottom: 0;
+        background: #FFFFFF;
+        border: 1px solid rgba(19, 22, 28, 0.14);
+        color: #13161C;
+        box-shadow: 0 1px 2px rgba(19, 22, 28, 0.05);
+    }
+
+    body.biometric-flow-page .biometric-flow-back:hover {
+        border-color: #0D6E5E;
+        color: #0D6E5E;
+    }
+
+    body.biometric-flow-page .biometric-flow-heading h1 {
+        font-family: 'Fraunces', Georgia, serif;
+        font-weight: 600;
+        letter-spacing: -0.025em;
+        color: #13161C;
+    }
+
+    body.biometric-flow-page .biometric-flow-card {
+        background: #FFFFFF;
+        border: 1px solid rgba(19, 22, 28, 0.1);
+        border-radius: 22px;
+        box-shadow: 0 1px 2px rgba(19, 22, 28, 0.04), 0 18px 40px -16px rgba(19, 22, 28, 0.1);
+    }
+
+    body.biometric-flow-page .flow-primary {
+        background: #13161C;
+        border-color: #13161C;
+        color: #FFFFFF;
+    }
+
+    body.biometric-flow-page .flow-primary:hover {
+        background: #0D6E5E;
+        border-color: #0D6E5E;
+    }
+
+    body.biometric-flow-page .face-pose-progress li {
+        background: #FAF8F3;
+        border-color: rgba(19, 22, 28, 0.1);
+        color: #384050;
+    }
+
+    body.biometric-flow-page .face-pose-progress li[aria-current="step"] {
+        background: #E8F4F1;
+        border-color: rgba(13, 110, 94, 0.35);
+        color: #0D6E5E;
+        font-weight: 700;
+    }
+
+    body.biometric-flow-page .face-pose-progress li[data-complete="true"] {
+        color: #047857;
+        background: #ECFDF5;
+        border-color: #A7F3D0;
+    }
+
+    body.biometric-flow-page .biometric-camera-preview {
+        background: #0B0F17;
+        border: 1px solid rgba(19, 22, 28, 0.18);
+        border-radius: 16px;
+    }
+
+    body.biometric-flow-page .bio-privacy-note {
+        background: #FAF8F3;
+        border-color: rgba(19, 22, 28, 0.1);
+        color: #4B5563;
+    }
+
+    body.biometric-flow-page .device-count {
+        background: #E8F4F1;
+        border-color: rgba(13, 110, 94, 0.24);
+        color: #0D6E5E;
+    }
+
+    body.biometric-flow-page .bio-consent-check {
+        background: #FAF8F3 !important;
+        border-color: rgba(19, 22, 28, 0.12) !important;
+        color: #13161C !important;
+    }
+
+    body.biometric-flow-page .bio-consent-link {
+        color: #0D6E5E !important;
+        font-weight: 700;
+    }
+
+    body.biometric-flow-page .bio-withdraw-btn {
+        background: #FEF2F2 !important;
+        border-color: #FECACA !important;
+        color: #B91C1C !important;
+    }
+
+    body.biometric-flow-page .bio-registration-steps li[aria-current="step"] > span:first-child {
+        background: #0D6E5E;
+        color: #FFFFFF;
+    }
+}
 @media (min-width: 960px) {
     .fingerprint-registration-page .biometric-flow {
         width: min(100%, 1120px);
@@ -573,11 +709,11 @@ html:has(.face-registration-page) body { width: 100%; height: 100%; overflow: hi
         justify-content: center;
         white-space: nowrap;
     }
-    .fingerprint-registration-page .biometric-flow-back {
+    .fingerprint-registration-page .biometric-flow-topbar {
         grid-column: 1;
         grid-row: 1;
-        align-self: start;
-        justify-self: start;
+        flex-wrap: wrap;
+        margin-bottom: 0;
     }
     .fingerprint-registration-page .biometric-flow-heading {
         grid-column: 1;
