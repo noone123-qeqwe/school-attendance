@@ -1287,13 +1287,13 @@
                                 <input type="hidden" name="otp" id="settingsOtpHidden">
                                 <label class="sl" for="spw1" style="font-size:0.82rem;margin-bottom:6px;">New password</label>
                                 <div class="pw-wrap" style="margin-bottom:10px;">
-                                    <input type="password" name="password" id="spw1" class="si" placeholder="Create a strong password" minlength="12" autocomplete="new-password" aria-describedby="passwordRequirements" style="padding:11px 13px;font-size:0.94rem;" required>
+                                    <input type="password" name="password" id="spw1" class="si" placeholder="Create a strong password" minlength="12" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="passwordRequirements" style="padding:11px 13px;font-size:0.94rem;" required>
                                     <button type="button" class="eye-btn" onclick="togglePw('spw1',this,event)" data-toggle-password="spw1" aria-controls="spw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
                                 <p class="account-edit-help sec-card-hint" id="passwordRequirements">Use at least 12 characters with uppercase and lowercase letters, a number, and a symbol.</p>
                                 <label class="sl" for="spw2" style="font-size:0.82rem;margin-bottom:6px;">Confirm new password</label>
                                 <div class="pw-wrap" style="margin-bottom:10px;">
-                                    <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Enter the new password again" minlength="12" autocomplete="new-password" style="padding:11px 13px;font-size:0.94rem;" required>
+                                    <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Enter the new password again" minlength="12" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" style="padding:11px 13px;font-size:0.94rem;" required>
                                     <button type="button" class="eye-btn" onclick="togglePw('spw2',this,event)" data-toggle-password="spw2" aria-controls="spw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
                                 <div class="account-form-actions">
