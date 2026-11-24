@@ -2,10 +2,25 @@
 @section('page-title', 'My Schedule')
 
 @section('content')
-<div class="mb-3 mb-md-4 student-weekly-heading">
-    <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.35rem, 3.5vw, 1.9rem); letter-spacing: -0.02em;">Weekly Schedule</h1>
-    <div style="color: #b39b82; font-size: 0.9rem;">
-        Your classes for Year {{ Auth::user()->year_level }}, Semester {{ Auth::user()->semester }}
+<div class="mb-3 mb-md-4 student-weekly-heading student-page-header">
+    <div>
+        <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.35rem, 3.5vw, 1.9rem); letter-spacing: -0.02em;">Weekly Schedule</h1>
+        <div style="color: #b39b82; font-size: 0.9rem;">
+            Your classes for Year {{ Auth::user()->year_level }}, Semester {{ Auth::user()->semester }}
+        </div>
+    </div>
+    <div class="d-none d-lg-flex align-items-center gap-2 flex-wrap">
+        <div class="sd-view-toggle" role="group" aria-label="Schedule layout">
+            <button type="button" class="sd-view-toggle-btn is-active" id="schedGridBtn" data-sched-view="grid">
+                <i class="bi bi-columns-gap" aria-hidden="true"></i> Grid
+            </button>
+            <button type="button" class="sd-view-toggle-btn" id="schedListBtn" data-sched-view="list">
+                <i class="bi bi-list-ul" aria-hidden="true"></i> Detailed List
+            </button>
+        </div>
+        <a href="{{ route('student.classes') }}" class="student-page-link">
+            <i class="bi bi-journal-bookmark" aria-hidden="true"></i> Classes &amp; PDF
+        </a>
     </div>
 </div>
 
@@ -112,13 +127,37 @@
     </div>
 </div>
 
-<div class="row g-4 student-weekly-grid">
+<div class="row g-4 student-weekly-grid sd-week-columns" id="studentWeeklyGrid">
     @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day)
-        <div class="col-lg-12 schedule-day-col {{ $day === $defaultDay ? '' : 'mobile-sched-hidden' }}" id="sched-day-card-{{ $day }}">
+        <div class="col-lg-12 schedule-day-col {{ $day === $defaultDay ? '' : 'mobile-sched-hidden' }} {{ $day === $currentDay ? 'is-today-day' : '' }}" id="sched-day-card-{{ $day }}">
             <x-card title="{{ $day }}" icon="bi bi-calendar-event">
+                @if($day === $currentDay)
+                    <x-slot name="headerActions">
+                        <span class="badge" style="background: rgba(74, 222, 128, 0.14); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.34); font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 999px;">Today</span>
+                    </x-slot>
+                @endif
                 @if($weeklySchedule[$day]->count() > 0)
-                    <!-- Desktop Table -->
-                    <div class="ent-scroll-x d-none d-md-block" style="margin: -20px;">
+                    <!-- Compact Grid View Cards (Desktop Grid mode) -->
+                    <div class="sd-sched-grid-items d-none d-lg-flex flex-column gap-2">
+                        @foreach($weeklySchedule[$day] as $sched)
+                            <div class="sd-sched-grid-card">
+                                <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                                    <span style="font-size: 0.78rem; font-weight: 800; color: #f5dfa8; font-variant-numeric: tabular-nums;">
+                                        {{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }} – {{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}
+                                    </span>
+                                    <span style="background: rgba(14,165,233,0.14); color: #38bdf8; border: 1px solid rgba(14,165,233,0.28); padding: 2px 8px; border-radius: 7px; font-size: 0.72rem; font-weight: 700;">{{ $sched->room ?? 'TBA' }}</span>
+                                </div>
+                                <div style="font-weight: 700; color: #fcfbf9; font-size: 0.92rem; line-height: 1.3;">{{ $sched->subject->name }}</div>
+                                <div class="d-flex align-items-center justify-content-between gap-2 mt-1" style="font-size: 0.78rem; color: #b39b82;">
+                                    <span style="color: #cfa46f; font-weight: 700;">{{ $sched->subject->code }}</span>
+                                    <span class="text-truncate" title="{{ $sched->subject->instructorUser->name ?? $sched->subject->instructor ?? 'TBA' }}">{{ $sched->subject->instructorUser->name ?? $sched->subject->instructor ?? 'TBA' }}</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <!-- Desktop Table (Detailed List mode & tablet) -->
+                    <div class="ent-scroll-x d-none d-md-block sd-sched-list-table" style="margin: -20px;">
                         <table class="ent-table" style="min-width: 600px; margin-bottom: 0; table-layout: fixed;">
                             <colgroup>
                                 <col style="width: 25%;">
@@ -208,5 +247,27 @@
             targetCol.classList.remove('mobile-sched-hidden');
         }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const gridEl = document.getElementById('studentWeeklyGrid');
+        const gridBtn = document.getElementById('schedGridBtn');
+        const listBtn = document.getElementById('schedListBtn');
+        if (!gridEl || !gridBtn || !listBtn) return;
+
+        function setScheduleView(mode) {
+            const isGrid = mode !== 'list';
+            gridEl.classList.toggle('sd-week-columns', isGrid);
+            gridBtn.classList.toggle('is-active', isGrid);
+            listBtn.classList.toggle('is-active', !isGrid);
+            try { localStorage.setItem('sdScheduleView', isGrid ? 'grid' : 'list'); } catch (e) {}
+        }
+
+        gridBtn.addEventListener('click', function() { setScheduleView('grid'); });
+        listBtn.addEventListener('click', function() { setScheduleView('list'); });
+        try {
+            const saved = localStorage.getItem('sdScheduleView');
+            if (saved === 'list' || saved === 'grid') setScheduleView(saved);
+        } catch (e) {}
+    });
 </script>
 @endsection

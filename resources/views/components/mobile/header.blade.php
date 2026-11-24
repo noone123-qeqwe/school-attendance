@@ -34,8 +34,8 @@
                 @endif
             </a>
             <a href="{{ route('profile') }}" class="header-btn-right header-action-link header-avatar-pill" aria-label="My Profile" title="My Profile">
-                @if($headerUser->avatarUrl())
-                    <img src="{{ $headerUser->avatarUrl() }}" alt="{{ $headerUser->name }}" class="header-avatar-img">
+                @if(!empty($headerUser->profile_image))
+                    <img src="{{ $headerUser->profile_photo_url_with_version }}" alt="{{ $headerUser->name }}" class="header-avatar-img">
                 @else
                     <span class="header-avatar-initials">{{ strtoupper(substr($headerUser->name ?? 'S', 0, 1)) }}</span>
                 @endif
@@ -78,8 +78,8 @@
     @if($headerUser?->isStudent())
         <a href="{{ route('profile') }}" class="mobile-menu-student-card">
             <div class="mobile-menu-avatar">
-                @if($headerUser->avatarUrl())
-                    <img src="{{ $headerUser->avatarUrl() }}" alt="{{ $headerUser->name }}">
+                @if(!empty($headerUser->profile_image))
+                    <img src="{{ $headerUser->profile_photo_url_with_version }}" alt="{{ $headerUser->name }}">
                 @else
                     <span>{{ strtoupper(substr($headerUser->name ?? 'S', 0, 2)) }}</span>
                 @endif

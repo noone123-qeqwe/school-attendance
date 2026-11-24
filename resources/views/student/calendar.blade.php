@@ -374,7 +374,12 @@
             <button class="scal-nav-btn" onclick="scalPrevMonth()" title="Previous month" aria-label="Previous month">
                 <i class="bi bi-chevron-left"></i>
             </button>
-            <span class="scal-nav-title" id="scalMonthLabel" aria-live="polite">{{ \Carbon\Carbon::create($year, $month, 1)->format('F Y') }}</span>
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-center">
+                <span class="scal-nav-title" id="scalMonthLabel" aria-live="polite">{{ \Carbon\Carbon::create($year, $month, 1)->format('F Y') }}</span>
+                <button type="button" class="scal-nav-today-btn d-none d-md-inline-flex" id="scalTodayBtn" onclick="scalJumpToday()" title="Jump to current month">
+                    <i class="bi bi-calendar2-check" aria-hidden="true"></i> Today
+                </button>
+            </div>
             <button class="scal-nav-btn" onclick="scalNextMonth()" title="Next month" aria-label="Next month">
                 <i class="bi bi-chevron-right"></i>
             </button>
@@ -392,6 +397,28 @@
 
     {{-- SIDE PANEL --}}
     <div class="scal-side">
+        {{-- Desktop Selected-Day Inspector --}}
+        <section class="sd-day-inspector d-none d-lg-block" id="sdDesktopDayInspector" aria-live="polite">
+            <div class="sd-day-inspector-head">
+                <div>
+                    <h2 class="sd-day-inspector-title" id="sdInspectorTitle">Select a day</h2>
+                    <div class="sd-day-inspector-sub" id="sdInspectorSubtitle">Click any date tile to inspect attendance &amp; events</div>
+                </div>
+                <span class="badge rounded-pill" id="sdInspectorStatusBadge" style="display:none; font-size:0.72rem; font-weight:700; padding:4px 10px;"></span>
+            </div>
+            <div class="sd-day-inspector-list" id="sdInspectorContent">
+                <p style="color:#b39b82; font-size:0.84rem; margin:0;">Loading calendar activity…</p>
+            </div>
+            <div class="d-flex align-items-center justify-content-between gap-2 mt-3 pt-2" style="border-top: 1px solid rgba(207, 164, 111, 0.14);">
+                <a href="{{ route('student.calendar') }}#attendance-records" id="sdInspectorRecordsLink" class="d-none" style="color:#f5dfa8; font-size:0.8rem; font-weight:700; text-decoration:none;">
+                    <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filter records
+                </a>
+                <button type="button" id="sdInspectorModalBtn" class="btn btn-sm ms-auto" style="background: rgba(207,164,111,0.12); border: 1px solid rgba(207,164,111,0.28); color:#f5dfa8; font-size:0.76rem; font-weight:700; border-radius:9px; padding:5px 10px;">
+                    <i class="bi bi-arrows-angle-expand me-1" aria-hidden="true"></i>Details
+                </button>
+            </div>
+        </section>
+
         {{-- Legend --}}
         <div class="scal-legend-card">
             <div class="scal-legend-title">Legend</div>
@@ -581,6 +608,93 @@ function scalNextMonth() {
     if (scalMonth > 12) { scalMonth = 1; scalYear++; }
     scalLoadAndRender();
 }
+function scalJumpToday() {
+    const now = new Date();
+    scalYear = now.getFullYear();
+    scalMonth = now.getMonth() + 1;
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    const dsm = document.getElementById('daySummaryModal');
+    if (dsm) dsm.dataset.date = todayStr;
+    scalLoadAndRender();
+}
+
+function scalHighlightTile(dateStr) {
+    if (!calendarGrid) return;
+    calendarGrid.querySelectorAll('button[data-date]').forEach(tile => {
+        tile.classList.toggle('is-selected-day', tile.dataset.date === dateStr);
+    });
+}
+
+function scalRenderDesktopInspector(dateStr, evts, summaryText, summaryBg, summaryColor) {
+    const titleEl = document.getElementById('sdInspectorTitle');
+    const subEl = document.getElementById('sdInspectorSubtitle');
+    const badgeEl = document.getElementById('sdInspectorStatusBadge');
+    const listEl = document.getElementById('sdInspectorContent');
+    const recLink = document.getElementById('sdInspectorRecordsLink');
+    const modalBtn = document.getElementById('sdInspectorModalBtn');
+    if (!listEl) return;
+
+    const dateObj = new Date(dateStr + 'T00:00:00');
+    if (titleEl) {
+        titleEl.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    if (subEl) {
+        subEl.textContent = evts.length > 0 ? `${evts.length} scheduled or recorded ${evts.length === 1 ? 'item' : 'items'}` : 'No items logged';
+    }
+    if (badgeEl) {
+        if (summaryText) {
+            badgeEl.textContent = summaryText;
+            badgeEl.style.background = summaryBg;
+            badgeEl.style.color = summaryColor;
+            badgeEl.style.display = 'inline-block';
+        } else {
+            badgeEl.style.display = 'none';
+        }
+    }
+    if (recLink) {
+        const hasAtt = evts.some(ev => (ev.type || '').toLowerCase() === 'attendance');
+        const recordsUrl = new URL(@json(route('student.calendar')), window.location?.origin || 'http://localhost');
+        recordsUrl.search = new URLSearchParams({ year: scalYear, month: scalMonth, record_date: dateStr });
+        recordsUrl.hash = 'attendance-records';
+        recLink.href = recordsUrl.href;
+        recLink.classList.toggle('d-none', !hasAtt);
+    }
+    if (modalBtn) {
+        modalBtn.dataset.date = dateStr;
+    }
+
+    listEl.replaceChildren();
+    if (scalDataState === 'loading') {
+        listEl.innerHTML = '<p style="color:#b39b82;font-size:0.83rem;margin:0;">Loading day activity…</p>';
+        return;
+    }
+    if (scalDataState === 'error') {
+        listEl.innerHTML = '<p style="color:#fca5a5;font-size:0.83rem;margin:0;">Unable to load activities.</p>';
+        return;
+    }
+    if (!evts.length) {
+        listEl.innerHTML = '<p style="color:#b39b82;font-size:0.83rem;margin:0;">No attendance or school events recorded on this date.</p>';
+        return;
+    }
+    evts.forEach(ev => {
+        const isAtt = (ev.type || '').toLowerCase() === 'attendance';
+        const status = (ev.status || '').toLowerCase();
+        const badgeColor = status === 'present' ? '#34d399' : (status === 'late' ? '#fbbf24' : (status === 'absent' ? '#f87171' : '#c084fc'));
+        const item = document.createElement('div');
+        item.className = 'sd-day-inspector-item';
+        item.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                <strong style="color:#fcfbf9;font-size:0.85rem;">${recordText(isAtt ? (ev.subject_name || ev.title) : ev.title)}</strong>
+                <span style="color:${badgeColor};font-size:0.72rem;font-weight:800;text-transform:uppercase;flex-shrink:0;">${recordText(isAtt ? ev.status : (ev.type || 'event').replace('_', ' '))}</span>
+            </div>
+            <div style="color:#b39b82;font-size:0.76rem;margin-top:4px;">${recordText(ev.time_string || (isAtt ? 'Time not set' : 'All Day'))}${ev.instructor_name ? ' · ' + recordText(ev.instructor_name) : ''}</div>
+        `;
+        listEl.appendChild(item);
+    });
+}
 
 function scalLoadAndRender(historyMode = 'push') {
     syncCalendarRecordsMonth(scalYear, scalMonth);
@@ -588,8 +702,19 @@ function scalLoadAndRender(historyMode = 'push') {
         scalDataState = state;
         scalEventMap = events;
         scalRender();
-        const selectedDate = document.getElementById('daySummaryModal').dataset.date;
-        if (selectedDate?.slice(0, 7) === calendarGrid.dataset.month) scalRenderDay(selectedDate);
+        const modalEl = document.getElementById('daySummaryModal');
+        const selectedDate = modalEl?.dataset.date;
+        if (selectedDate?.slice(0, 7) === calendarGrid.dataset.month) {
+            scalRenderDay(selectedDate);
+        } else if (window.innerWidth >= 1024 && calendarGrid?.dataset.month) {
+            const now = new Date();
+            const nowMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const defaultDate = nowMonth === calendarGrid.dataset.month
+                ? `${nowMonth}-${String(now.getDate()).padStart(2, '0')}`
+                : `${calendarGrid.dataset.month}-01`;
+            if (modalEl) modalEl.dataset.date = defaultDate;
+            scalRenderDay(defaultDate);
+        }
     });
 
     // Update URL
@@ -612,6 +737,7 @@ window.addEventListener('popstate', () => {
 
 /* ── Day click → Day Summary Modal ─────────────────────── */
 function scalRenderDay(dateStr) {
+    scalHighlightTile(dateStr);
     const evts = scalEventMap[dateStr] || [];
     const recordsLink = document.getElementById('daySummaryRecordsLink');
     if (recordsLink) {
@@ -721,9 +847,14 @@ function scalRenderDay(dateStr) {
             else                 { dot.style.background = '#6b7280'; txt.textContent = 'No Status'; }
         }
     }
+
+    const summaryLabel = hasAbsent ? 'Absent' : (hasLate ? 'Late' : (hasPresent ? 'Present' : (hasEvent ? 'Event' : '')));
+    const summaryBg = hasAbsent ? 'rgba(239,68,68,0.16)' : (hasLate ? 'rgba(245,158,11,0.16)' : (hasPresent ? 'rgba(16,185,129,0.16)' : 'rgba(139,92,246,0.16)'));
+    const summaryColor = hasAbsent ? '#fca5a5' : (hasLate ? '#fcd34d' : (hasPresent ? '#6ee7b7' : '#d8b4fe'));
+    scalRenderDesktopInspector(dateStr, evts, summaryLabel, summaryBg, summaryColor);
 }
 
-function scalDayClick(dateStr) {
+function scalOpenDaySummaryModal(dateStr) {
     scalRenderDay(dateStr);
     const modalEl = document.getElementById('daySummaryModal');
     if (modalEl) {
@@ -752,6 +883,15 @@ function scalDayClick(dateStr) {
     }
 }
 
+function scalDayClick(dateStr) {
+    scalRenderDay(dateStr);
+    const modalEl = document.getElementById('daySummaryModal');
+    if (modalEl) modalEl.dataset.date = dateStr;
+    if (window.innerWidth < 1024) {
+        scalOpenDaySummaryModal(dateStr);
+    }
+}
+
 function closeDaySummaryModal() {
     const m = document.getElementById('daySummaryModal');
     if (m) {
@@ -775,6 +915,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (dsm) {
         if (dsm.parentNode !== document.body) document.body.appendChild(dsm);
         dsm.addEventListener('hidden.bs.modal', () => delete dsm.dataset.date);
+    }
+    const inspectorModalBtn = document.getElementById('sdInspectorModalBtn');
+    if (inspectorModalBtn) {
+        inspectorModalBtn.addEventListener('click', () => {
+            const targetDate = inspectorModalBtn.dataset.date || document.getElementById('daySummaryModal')?.dataset.date;
+            if (targetDate) scalOpenDaySummaryModal(targetDate);
+        });
     }
     scalLoadAndRender('replace');
 

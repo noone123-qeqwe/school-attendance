@@ -28,12 +28,13 @@
     @endif
 
     <div class="student-view-switcher" role="group" aria-label="Excuse views">
+        <button type="button" class="d-none d-lg-inline-flex" data-excuse-view="all" aria-controls="excuseNeedsPanel excuseHistoryPanel" aria-pressed="false">Side by side</button>
         <button type="button" data-excuse-view="needs" aria-controls="excuseNeedsPanel" aria-pressed="true">Needs an excuse ({{ $absentRecords->count() }})</button>
         <button type="button" data-excuse-view="history" aria-controls="excuseHistoryPanel" aria-pressed="false">My submissions ({{ $excuseSubmissions->count() }})</button>
     </div>
     <div class="row g-4">
         <!-- Absent Records Requiring Excuses -->
-        <div class="col-12" id="excuseNeedsPanel" data-excuse-panel="needs">
+        <div class="col-12 col-lg-5" id="excuseNeedsPanel" data-excuse-panel="needs">
             <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.2); height: 100%;">
                 <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.2);">
                     <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--gold); margin:0; display:flex; align-items:center; gap:8px;">
@@ -43,7 +44,7 @@
                 
                 <div style="padding: 0;">
                     @forelse($absentRecords as $record)
-                        <div style="padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; transition: background 0.2s ease;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                        <div style="padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; transition: background 0.2s ease;">
                             <div>
                                 <h3 style="font-size: 1rem; font-weight: 700; color: #f3e7cd; margin-bottom: 4px;">{{ $record->subject->name ?? $record->subject_code }}</h3>
                                 <div style="font-size: 0.85rem; color: #b39b82;">
@@ -68,7 +69,7 @@
         </div>
 
         <!-- Submitted Excuses History -->
-        <div class="col-12" id="excuseHistoryPanel" data-excuse-panel="history">
+        <div class="col-12 col-lg-7" id="excuseHistoryPanel" data-excuse-panel="history">
             <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.2); height: 100%;">
                 <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.2);">
                     <h2 style="font-size: 1.25rem; font-weight: 700; color: #60a5fa; margin:0; display:flex; align-items:center; gap:8px;">
@@ -76,7 +77,7 @@
                     </h2>
                 </div>
                 
-                <div style="padding: 0; max-height: 600px; overflow-y: auto;">
+                <div class="excuse-history-scroll" style="padding: 0; max-height: 600px; overflow-y: auto;">
                     @forelse($excuseSubmissions as $excuse)
                         <div style="padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06);">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
@@ -135,12 +136,24 @@
 (function () {
     const buttons = document.querySelectorAll('[data-excuse-view]');
     const panels = document.querySelectorAll('[data-excuse-panel]');
+    const needsPanel = document.getElementById('excuseNeedsPanel');
+    const historyPanel = document.getElementById('excuseHistoryPanel');
     function showExcuseView(view) {
         buttons.forEach(button => button.setAttribute('aria-pressed', button.dataset.excuseView === view ? 'true' : 'false'));
-        panels.forEach(panel => panel.hidden = panel.dataset.excusePanel !== view);
+        panels.forEach(panel => panel.hidden = (view !== 'all' && panel.dataset.excusePanel !== view));
+        if (needsPanel && historyPanel) {
+            if (view === 'all') {
+                needsPanel.className = 'col-12 col-lg-5';
+                historyPanel.className = 'col-12 col-lg-7';
+            } else {
+                needsPanel.className = 'col-12';
+                historyPanel.className = 'col-12';
+            }
+        }
     }
     buttons.forEach(button => button.addEventListener('click', () => showExcuseView(button.dataset.excuseView)));
-    showExcuseView(@json($absentRecords->isNotEmpty() ? 'needs' : 'history'));
+    const initialView = window.innerWidth >= 1024 ? 'all' : @json($absentRecords->isNotEmpty() ? 'needs' : 'history');
+    showExcuseView(initialView);
 })();
 </script>
 @endsection

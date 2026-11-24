@@ -1290,7 +1290,10 @@
             <!-- 3. Screen Controls Toolbar (Search, Filter) -->
             <div class="cor-toolbar no-print">
                 <label class="student-filter-field" for="scheduleSearchInput">Find a class
-                    <input type="search" id="scheduleSearchInput" class="cor-search-input" placeholder="Subject, teacher, or room" aria-label="Filter schedule records">
+                    <span class="position-relative d-block w-100">
+                        <i class="bi bi-search sd-search-icon" aria-hidden="true"></i>
+                        <input type="search" id="scheduleSearchInput" class="cor-search-input" placeholder="Subject, teacher, or room" aria-label="Filter schedule records">
+                    </span>
                 </label>
                 <label class="student-filter-field" for="scheduleDayFilter">Day
                     <select id="scheduleDayFilter">
@@ -1301,6 +1304,17 @@
                         @endforeach
                     </select>
                 </label>
+                <div class="sd-view-toggle d-none d-lg-inline-flex" role="group" aria-label="Classes layout mode">
+                    <button type="button" class="sd-view-toggle-btn is-active" id="corViewCardsBtn" data-cor-view="cards">
+                        <i class="bi bi-grid-fill" aria-hidden="true"></i> Cards
+                    </button>
+                    <button type="button" class="sd-view-toggle-btn" id="corViewTableBtn" data-cor-view="table">
+                        <i class="bi bi-table" aria-hidden="true"></i> COR Table
+                    </button>
+                    <button type="button" class="sd-view-toggle-btn" id="corViewWeeklyBtn" data-cor-view="weekly">
+                        <i class="bi bi-calendar-week" aria-hidden="true"></i> Weekly
+                    </button>
+                </div>
             </div>
             <p class="student-results-count no-print" id="scheduleResultsStatus" role="status">{{ count($groupedSchedules) }} classes</p>
 
@@ -1385,6 +1399,107 @@
                 <div id="scheduleFilterEmpty" class="student-filter-empty" hidden><strong>No matching classes</strong>Try a different day, subject, teacher, or room.</div>
             </div>
 
+            <!-- 5. Desktop COR Table View -->
+            <div class="cor-table-wrap d-none no-print" id="corDesktopTableView">
+                <table class="cor-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Subject Description</th>
+                            <th>Units</th>
+                            <th>Day(s)</th>
+                            <th>Time</th>
+                            <th>Room</th>
+                            <th>Instructor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($groupedSchedules as $sched)
+                            <tr class="cor-table-row" data-days="{{ implode(',', $sched->raw_days) }}" data-is-today="{{ $sched->is_today ? '1' : '0' }}">
+                                <td>
+                                    <div class="d-flex flex-column gap-1">
+                                        <span class="cor-code-badge">{{ $sched->code }}</span>
+                                        <span style="font-size:0.72rem; color:#b39b82;">Sec {{ $sched->section }} &bull; #{{ $sched->class_number }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="font-weight:700; color:#fcfbf9;">{{ $sched->name }}</div>
+                                    @if($sched->is_today)
+                                        <span class="cor-today-indicator mt-1 d-inline-flex"><i class="bi bi-dot"></i> Today</span>
+                                    @endif
+                                </td>
+                                <td style="font-variant-numeric: tabular-nums; font-weight:700;">{{ $sched->units !== '—' ? $sched->units : '—' }}</td>
+                                <td><span class="cor-day-badge">{{ $sched->days }}</span></td>
+                                <td class="cor-time-text" style="white-space:nowrap; font-variant-numeric: tabular-nums;">
+                                    @if($sched->start_time && $sched->end_time)
+                                        {{ \Carbon\Carbon::parse($sched->start_time)->format('h:i A') }} – {{ \Carbon\Carbon::parse($sched->end_time)->format('h:i A') }}
+                                    @else
+                                        TBA
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($sched->room && $sched->room !== 'TBA')
+                                        <span class="cor-room-badge">{{ $sched->room }}</span>
+                                    @else
+                                        <span class="text-muted">TBA</span>
+                                    @endif
+                                </td>
+                                <td style="color:#dfd0bc;">{{ $sched->teacher }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 6. Desktop Weekly Timetable View -->
+            @php
+                $todayNameCor = now()->format('l');
+                $weekDaysList = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            @endphp
+            <div class="sd-cor-weekly-grid d-none no-print" id="corWeeklyGridView">
+                @foreach($weekDaysList as $wDay)
+                    @php
+                        $dayClasses = collect($groupedSchedules)
+                            ->filter(fn ($s) => in_array($wDay, $s->raw_days ?? [], true))
+                            ->sortBy('start_time')
+                            ->values();
+                    @endphp
+                    <div class="sd-cor-week-day {{ $wDay === $todayNameCor ? 'is-today-day' : '' }}" data-week-day="{{ $wDay }}">
+                        <div class="sd-cor-week-head">
+                            <span>{{ $wDay }}</span>
+                            @if($wDay === $todayNameCor)
+                                <span class="cor-today-indicator"><i class="bi bi-dot"></i> Today</span>
+                            @else
+                                <span style="font-size:0.74rem; color:#b39b82; font-weight:600;">{{ $dayClasses->count() }} {{ Str::plural('class', $dayClasses->count()) }}</span>
+                            @endif
+                        </div>
+                        @forelse($dayClasses as $dc)
+                            <div class="sd-sched-grid-card cor-week-item" data-days="{{ implode(',', $dc->raw_days) }}" data-is-today="{{ $dc->is_today ? '1' : '0' }}">
+                                <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
+                                    <span style="font-size: 0.77rem; font-weight: 800; color: #f5dfa8; font-variant-numeric: tabular-nums;">
+                                        @if($dc->start_time && $dc->end_time)
+                                            {{ \Carbon\Carbon::parse($dc->start_time)->format('g:i A') }} – {{ \Carbon\Carbon::parse($dc->end_time)->format('g:i A') }}
+                                        @else
+                                            TBA
+                                        @endif
+                                    </span>
+                                    @if($dc->room && $dc->room !== 'TBA')
+                                        <span class="cor-room-badge" style="padding:2px 8px; font-size:0.7rem;">{{ $dc->room }}</span>
+                                    @endif
+                                </div>
+                                <div style="font-weight: 700; color: #fcfbf9; font-size: 0.9rem; line-height: 1.3;">{{ $dc->name }}</div>
+                                <div class="d-flex align-items-center justify-content-between gap-2 mt-1" style="font-size: 0.76rem; color: #b39b82;">
+                                    <span style="color: #cfa46f; font-weight: 700;">{{ $dc->code }}</span>
+                                    <span class="text-truncate" title="{{ $dc->teacher }}">{{ $dc->teacher }}</span>
+                                </div>
+                            </div>
+                        @empty
+                            <div style="color:#7d6e5d; font-size:0.82rem; padding:14px 4px; text-align:center;">No scheduled classes</div>
+                        @endforelse
+                    </div>
+                @endforeach
+            </div>
+
         </div>
     </div>
 
@@ -1395,13 +1510,58 @@ document.addEventListener('DOMContentLoaded', function() {
     const search = document.getElementById('scheduleSearchInput');
     const day = document.getElementById('scheduleDayFilter');
     const cards = Array.from(document.querySelectorAll('.cor-card-item'));
+    const tableRows = Array.from(document.querySelectorAll('.cor-table-row'));
+    const weekItems = Array.from(document.querySelectorAll('.cor-week-item'));
+    const cardsWrap = document.getElementById('corMobileCardsView');
+    const tableWrap = document.getElementById('corDesktopTableView');
+    const weeklyWrap = document.getElementById('corWeeklyGridView');
+    const cardsBtn = document.getElementById('corViewCardsBtn');
+    const tableBtn = document.getElementById('corViewTableBtn');
+    const weeklyBtn = document.getElementById('corViewWeeklyBtn');
+
+    function setCorView(mode) {
+        const isDesktop = window.innerWidth >= 992;
+        const resolved = !isDesktop ? 'cards' : ((mode === 'table' || mode === 'weekly') ? mode : 'cards');
+        if (cardsWrap) cardsWrap.classList.toggle('d-none', resolved !== 'cards');
+        if (tableWrap) tableWrap.classList.toggle('d-none', resolved !== 'table');
+        if (weeklyWrap) weeklyWrap.classList.toggle('d-none', resolved !== 'weekly');
+        if (cardsBtn) cardsBtn.classList.toggle('is-active', resolved === 'cards');
+        if (tableBtn) tableBtn.classList.toggle('is-active', resolved === 'table');
+        if (weeklyBtn) weeklyBtn.classList.toggle('is-active', resolved === 'weekly');
+        try { if (isDesktop) localStorage.setItem('sdClassesView', resolved); } catch (e) {}
+    }
+
+    if (cardsBtn) cardsBtn.addEventListener('click', function() { setCorView('cards'); });
+    if (tableBtn) tableBtn.addEventListener('click', function() { setCorView('table'); });
+    if (weeklyBtn) weeklyBtn.addEventListener('click', function() { setCorView('weekly'); });
+    const urlView = new URLSearchParams(window.location.search).get('view');
+    try {
+        const saved = localStorage.getItem('sdClassesView');
+        if (urlView === 'weekly' || urlView === 'table' || urlView === 'cards') {
+            setCorView(urlView);
+        } else if (saved === 'table' || saved === 'cards' || saved === 'weekly') {
+            setCorView(saved);
+        }
+    } catch (e) {}
+    window.addEventListener('resize', function() {
+        if (window.innerWidth < 992) {
+            setCorView('cards');
+        }
+    });
+
     function applyScheduleFilter() {
         const query = search.value.trim().toLowerCase();
         let visible = 0;
-        cards.forEach(card => {
+        cards.forEach((card, idx) => {
             const matchesDay = day.value === 'all' || (day.value === 'today' ? card.dataset.isToday === '1' : (card.dataset.days || '').split(',').includes(day.value));
-            card.hidden = !(matchesDay && card.textContent.toLowerCase().includes(query));
-            if (!card.hidden) visible++;
+            const isMatch = matchesDay && card.textContent.toLowerCase().includes(query);
+            card.hidden = !isMatch;
+            if (tableRows[idx]) tableRows[idx].hidden = !isMatch;
+            if (isMatch) visible++;
+        });
+        weekItems.forEach((item) => {
+            const matchesDay = day.value === 'all' || (day.value === 'today' ? item.dataset.isToday === '1' : (item.dataset.days || '').split(',').includes(day.value));
+            item.hidden = !(matchesDay && item.textContent.toLowerCase().includes(query));
         });
         document.getElementById('scheduleResultsStatus').textContent = visible + (visible === 1 ? ' class' : ' classes');
         document.getElementById('scheduleFilterEmpty').hidden = cards.length === 0 || visible > 0;

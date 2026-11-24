@@ -1328,13 +1328,37 @@
         });
     };
 
-    // Delete notification
+    // Delete notification (2-click inline confirmation replacing browser alert/confirm)
     window.deleteNotification = function(id) {
-        if (!confirm('Are you sure you want to delete this notification?')) return;
-        triggerHapticFeedback('heavy');
-
         const card = document.getElementById('notifCard_' + id);
         if (!card) return;
+        const delBtn = card.querySelector('.btn-notif-delete');
+        if (delBtn && delBtn.dataset.confirmPending !== '1') {
+            delBtn.dataset.confirmPending = '1';
+            const origHtml = delBtn.innerHTML;
+            delBtn.innerHTML = '<i class="bi bi-check2" aria-hidden="true"></i><span style="font-size:0.74rem;font-weight:700;margin-left:4px;">Confirm</span>';
+            delBtn.style.width = 'auto';
+            delBtn.style.padding = '0 10px';
+            delBtn.style.background = 'rgba(239, 68, 68, 0.25)';
+            delBtn.style.color = '#fca5a5';
+            delBtn.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+            clearTimeout(delBtn._confirmTimer);
+            delBtn._confirmTimer = setTimeout(() => {
+                delete delBtn.dataset.confirmPending;
+                delBtn.innerHTML = origHtml;
+                delBtn.style.width = '';
+                delBtn.style.padding = '';
+                delBtn.style.background = '';
+                delBtn.style.color = '';
+                delBtn.style.borderColor = '';
+            }, 3500);
+            return;
+        }
+        if (delBtn) {
+            clearTimeout(delBtn._confirmTimer);
+            delete delBtn.dataset.confirmPending;
+        }
+        triggerHapticFeedback('heavy');
 
         card.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
         card.style.opacity = '0';

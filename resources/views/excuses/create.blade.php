@@ -147,15 +147,15 @@
                         Reason for Absence <span style="color: #f87171;">*</span>
                     </label>
                     <select name="reason" id="excuseReason" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,215,145,0.12); border-radius: 10px; color: #f3e7cd; font-size: 0.95rem; outline: none; transition: all 0.2s;" required>
-                        <option value="" style="background: #1a1a2e;">Select a reason</option>
-                        <option value="Medical/Health Issues" {{ old('reason') == 'Medical/Health Issues' ? 'selected' : '' }} style="background: #1a1a2e;">Medical / Health Issues</option>
-                        <option value="Family Emergency" {{ old('reason') == 'Family Emergency' ? 'selected' : '' }} style="background: #1a1a2e;">Family Emergency</option>
-                        <option value="Personal Emergency" {{ old('reason') == 'Personal Emergency' ? 'selected' : '' }} style="background: #1a1a2e;">Personal Emergency</option>
-                        <option value="Transportation Issues" {{ old('reason') == 'Transportation Issues' ? 'selected' : '' }} style="background: #1a1a2e;">Transportation Issues</option>
-                        <option value="Weather Conditions" {{ old('reason') == 'Weather Conditions' ? 'selected' : '' }} style="background: #1a1a2e;">Weather Conditions / Calamity</option>
-                        <option value="Official School Activity / Event" {{ old('reason') == 'Official School Activity / Event' ? 'selected' : '' }} style="background: #1a1a2e;">Official School Activity / Event</option>
-                        <option value="Academic Activity" {{ old('reason') == 'Academic Activity' ? 'selected' : '' }} style="background: #1a1a2e;">Academic Activity</option>
-                        <option value="Other" {{ old('reason') == 'Other' ? 'selected' : '' }} style="background: #1a1a2e;">Other</option>
+                        <option value="" style="background: #16100c;">Select a reason</option>
+                        <option value="Medical/Health Issues" {{ old('reason') == 'Medical/Health Issues' ? 'selected' : '' }} style="background: #16100c;">Medical / Health Issues</option>
+                        <option value="Family Emergency" {{ old('reason') == 'Family Emergency' ? 'selected' : '' }} style="background: #16100c;">Family Emergency</option>
+                        <option value="Personal Emergency" {{ old('reason') == 'Personal Emergency' ? 'selected' : '' }} style="background: #16100c;">Personal Emergency</option>
+                        <option value="Transportation Issues" {{ old('reason') == 'Transportation Issues' ? 'selected' : '' }} style="background: #16100c;">Transportation Issues</option>
+                        <option value="Weather Conditions" {{ old('reason') == 'Weather Conditions' ? 'selected' : '' }} style="background: #16100c;">Weather Conditions / Calamity</option>
+                        <option value="Official School Activity / Event" {{ old('reason') == 'Official School Activity / Event' ? 'selected' : '' }} style="background: #16100c;">Official School Activity / Event</option>
+                        <option value="Academic Activity" {{ old('reason') == 'Academic Activity' ? 'selected' : '' }} style="background: #16100c;">Academic Activity</option>
+                        <option value="Other" {{ old('reason') == 'Other' ? 'selected' : '' }} style="background: #16100c;">Other</option>
                     </select>
                     @error('reason')
                         <div style="color: #f87171; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">{{ $message }}</div>
@@ -208,7 +208,7 @@
             
             <div style="padding: 20px 32px; border-top: 1px solid rgba(212,175,55,0.1); background: rgba(0,0,0,0.25); display: flex; justify-content: flex-end; gap: 16px;">
                 <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary" style="border: 1px solid rgba(255,255,255,0.1); background: transparent;">Cancel</a>
-                <button type="submit" id="submitBtn" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #1a1a2e; font-weight: 700; border: none; padding: 10px 24px;">
+                <button type="submit" id="submitBtn" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #16100c; font-weight: 700; border: none; padding: 10px 24px;">
                     <i class="bi bi-send-fill" style="margin-right: 6px;"></i> <span>Submit Excuse Letter</span>
                 </button>
             </div>

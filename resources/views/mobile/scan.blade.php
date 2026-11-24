@@ -3,6 +3,32 @@
 @section('title', 'Scan QR - Smart Attendance')
 
 @section('content')
+<nav class="sd-scan-desktop-bar d-none d-lg-flex" aria-label="Desktop check-in navigation">
+    <div class="sd-scan-desktop-nav">
+        <a href="{{ route('home') }}" class="sd-scan-nav-link is-primary">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i>
+            <span>Back to Dashboard</span>
+        </a>
+        <a href="{{ route('student.classes') }}" class="sd-scan-nav-link">
+            <i class="bi bi-journal-bookmark" aria-hidden="true"></i>
+            <span>Classes</span>
+        </a>
+        <a href="{{ route('student.calendar') }}" class="sd-scan-nav-link">
+            <i class="bi bi-calendar-event" aria-hidden="true"></i>
+            <span>Attendance &amp; Calendar</span>
+        </a>
+    </div>
+    <div class="sd-scan-desktop-modes" role="group" aria-label="Check-in method">
+        <button type="button" class="sd-scan-mode-pill is-active" id="sdModeScanBtn" data-action="switch-scan">
+            <i class="bi bi-camera-video" aria-hidden="true"></i>
+            <span>QR Camera</span>
+        </button>
+        <button type="button" class="sd-scan-mode-pill" id="sdModeCodeBtn" data-action="switch-code">
+            <i class="bi bi-123" aria-hidden="true"></i>
+            <span>6-Digit Code</span>
+        </button>
+    </div>
+</nav>
 <div class="mobile-scan-page">
     <div class="scan-hero">
         <div class="scan-hero-icon">
@@ -55,6 +81,7 @@
 @endsection
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/student-desktop-ux.css') }}?v={{ filemtime(public_path('css/student-desktop-ux.css')) }}">
 <style>
     .mobile-scan-page {
         display: flex;
@@ -238,4 +265,39 @@
         margin-top: 1px;
     }
 </style>
+@endpush
+
+@push('scripts')
+<script @cspNonce>
+(function() {
+    function syncDesktopModePills(mode) {
+        var scanBtn = document.getElementById('sdModeScanBtn');
+        var codeBtn = document.getElementById('sdModeCodeBtn');
+        if (!scanBtn || !codeBtn) return;
+        var isCode = mode === 'code';
+        scanBtn.classList.toggle('is-active', !isCode);
+        codeBtn.classList.toggle('is-active', isCode);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var params = new URLSearchParams(window.location.search);
+        syncDesktopModePills(params.get('open_code') === '1' ? 'code' : 'scan');
+
+        document.addEventListener('click', function(e) {
+            var trigger = e.target.closest('[data-action="switch-scan"], [data-action="switch-code"], [data-action="open-code"], [data-action="paste-copied-code"]');
+            if (!trigger) return;
+            var action = trigger.getAttribute('data-action');
+            syncDesktopModePills(action === 'switch-scan' ? 'scan' : 'code');
+        }, true);
+
+        var codeContainer = document.getElementById('codeModeContainer');
+        if (codeContainer && typeof MutationObserver !== 'undefined') {
+            new MutationObserver(function() {
+                var visible = window.getComputedStyle(codeContainer).display !== 'none';
+                syncDesktopModePills(visible ? 'code' : 'scan');
+            }).observe(codeContainer, { attributes: true, attributeFilter: ['style', 'class'] });
+        }
+    });
+})();
+</script>
 @endpush

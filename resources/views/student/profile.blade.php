@@ -206,8 +206,8 @@
     <!-- CONTENT GRID -->
     <div class="row g-3 mt-1">
 
-        <!-- LEFT: Academic Info -->
-        <div class="col-lg-7">
+        <!-- LEFT: Academic Info & Quick Actions -->
+        <div class="col-lg-7 d-flex flex-column gap-3">
             <div class="info-card">
                 <div class="info-card-header">
                     <div class="info-card-header-icon" style="background:rgba(207,164,111,0.14);color:#cfa46f;border:1px solid rgba(207,164,111,0.28);">
@@ -234,7 +234,7 @@
                                     {{ Auth::user()->student_number ?: 'Not Assigned' }}
                                 </span>
                                 @if(Auth::user()->student_number)
-                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 copy-student-id-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}'); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy', 1500);" style="font-size:0.75rem; border-color:rgba(255,255,255,0.15); color:#d6c7b2;">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 copy-student-id-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}'); this.innerHTML='<i class=\'bi bi-check2 me-1\'></i>Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-clipboard me-1\'></i>Copy'; }, 1500);" style="font-size:0.75rem; border-color:rgba(255,255,255,0.15); color:#d6c7b2;">
                                         <i class="bi bi-clipboard me-1"></i>Copy
                                     </button>
                                 @endif
@@ -276,6 +276,64 @@
 
                 </div>
             </div>
+
+            <!-- Quick Actions -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-header-icon" style="background:rgba(96,165,250,0.14);color:#60a5fa;border:1px solid rgba(96,165,250,0.28);">
+                        <i class="bi bi-lightning-fill"></i>
+                    </div>
+                    <div class="info-card-title">Quick Actions</div>
+                </div>
+                <div class="info-card-body" style="padding-top:14px;padding-bottom:14px;">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <a href="{{ route('home') }}" class="quick-action-btn" style="text-decoration:none;display:block;">
+                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
+                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(207,164,111,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold,#CFA46F);font-size:0.9rem;">
+                                        <i class="bi bi-grid-fill"></i>
+                                    </div>
+                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Go to Dashboard</span>
+                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ route('student.schedule') }}" style="text-decoration:none;display:block;">
+                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
+                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(207,164,111,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold,#CFA46F);font-size:0.9rem;">
+                                        <i class="bi bi-calendar2-week-fill"></i>
+                                    </div>
+                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">My Schedule</span>
+                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ route('student.calendar') }}#attendance-records" style="text-decoration:none;display:block;">
+                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
+                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(74,222,128,0.12);display:flex;align-items:center;justify-content:center;color:#4ade80;font-size:0.9rem;">
+                                        <i class="bi bi-journal-check"></i>
+                                    </div>
+                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Attendance Log</span>
+                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ route('settings') }}" style="text-decoration:none;display:block;">
+                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
+                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;color:#b39b82;font-size:0.9rem;">
+                                        <i class="bi bi-gear-fill"></i>
+                                    </div>
+                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Account Settings</span>
+                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- RIGHT: Stats + Quick Actions -->
@@ -310,6 +368,10 @@
                         <div class="stat-chip">
                             <div class="stat-chip-value" style="color:#dc2626;">{{ $totalAbsent }}</div>
                             <div class="stat-chip-label">Absent</div>
+                        </div>
+                        <div class="stat-chip">
+                            <div class="stat-chip-value" style="color:#a78bfa;">{{ $totalExcused }}</div>
+                            <div class="stat-chip-label">Excused</div>
                         </div>
                         <div class="stat-chip">
                             <div class="stat-chip-value">{{ $totalAll }}</div>
@@ -421,49 +483,18 @@
                         <i class="bi bi-fingerprint me-2"></i>Register This Device
                     </button>
                     <div id="fpMessage" style="margin-top:12px;font-size:.82rem;display:none;"></div>
+                    <div class="mt-3 pt-3 d-flex align-items-center justify-content-between gap-2 flex-wrap" style="border-top: 1px solid rgba(255,255,255,0.07);">
+                        <a href="{{ route('settings.biometrics.face') }}" style="color:#f5dfa8;font-size:0.8rem;font-weight:700;text-decoration:none;">
+                            <i class="bi bi-camera-video me-1"></i>Face Recognition Setup
+                        </a>
+                        <a href="{{ route('settings') }}#tab-biometrics" style="color:#b39b82;font-size:0.8rem;font-weight:600;text-decoration:none;">
+                            Security Hub <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
 
             <!-- APK Download Card removed - users can install via PWA prompt -->
-
-            <!-- Quick Actions -->
-            <div class="info-card">
-                <div class="info-card-header">
-                    <div class="info-card-header-icon" style="background:rgba(96,165,250,0.14);color:#60a5fa;border:1px solid rgba(96,165,250,0.28);">
-                        <i class="bi bi-lightning-fill"></i>
-                    </div>
-                    <div class="info-card-title">Quick Actions</div>
-                </div>
-                <div class="info-card-body" style="padding-top:14px;padding-bottom:14px;">
-                    <a href="{{ route('home') }}" class="quick-action-btn" style="text-decoration:none;display:block;margin-bottom:8px;">
-                        <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
-                            <div style="width:32px;height:32px;border-radius:8px;background:rgba(207,164,111,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold,#CFA46F);font-size:0.9rem;">
-                                <i class="bi bi-grid-fill"></i>
-                            </div>
-                            <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Go to Dashboard</span>
-                            <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
-                        </div>
-                    </a>
-                    <a href="{{ route('student.schedule') }}" style="text-decoration:none;display:block;margin-bottom:8px;">
-                        <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
-                            <div style="width:32px;height:32px;border-radius:8px;background:rgba(207,164,111,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold,#CFA46F);font-size:0.9rem;">
-                                <i class="bi bi-calendar2-week-fill"></i>
-                            </div>
-                            <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">My Schedule</span>
-                            <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
-                        </div>
-                    </a>
-                    <a href="{{ route('settings') }}" style="text-decoration:none;display:block;">
-                        <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
-                            <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;color:#b39b82;font-size:0.9rem;">
-                                <i class="bi bi-gear-fill"></i>
-                            </div>
-                            <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Account Settings</span>
-                            <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
-                        </div>
-                    </a>
-                </div>
-            </div>
 
         </div>
     </div>

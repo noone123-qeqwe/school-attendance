@@ -504,28 +504,37 @@
         </div>
     </div>
 
-    <!-- Summary chips -->
+    <!-- Summary chips (Interactive status filters) -->
+    @php
+        $activeStatusFilter = $filters['status'] ?? '';
+        $baseRecordParams = array_filter([
+            'year' => $year,
+            'month' => $month,
+            'q' => $filters['q'] ?? null,
+            'record_date' => $filters['record_date'] ?? null,
+        ]);
+    @endphp
     <div class="summary-chips">
-        <div class="summary-chip">
+        <a href="{{ route('student.calendar', $baseRecordParams) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === '' ? 'is-active-chip' : '' }}">
             <div class="summary-chip-value" style="color: #f8e7d3;">{{ $totals['all'] }}</div>
             <div class="summary-chip-label">Total Records</div>
-        </div>
-        <div class="summary-chip">
+        </a>
+        <a href="{{ route('student.calendar', $activeStatusFilter === 'Present' ? $baseRecordParams : array_merge($baseRecordParams, ['status' => 'Present'])) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === 'Present' ? 'is-active-chip' : '' }}">
             <div class="summary-chip-value" style="color: #4ade80;">{{ $totals['Present'] ?? 0 }}</div>
             <div class="summary-chip-label">Present</div>
-        </div>
-        <div class="summary-chip">
+        </a>
+        <a href="{{ route('student.calendar', $activeStatusFilter === 'Late' ? $baseRecordParams : array_merge($baseRecordParams, ['status' => 'Late'])) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === 'Late' ? 'is-active-chip' : '' }}">
             <div class="summary-chip-value" style="color: #fbbf24;">{{ $totals['Late'] ?? 0 }}</div>
             <div class="summary-chip-label">Late</div>
-        </div>
-        <div class="summary-chip">
+        </a>
+        <a href="{{ route('student.calendar', $activeStatusFilter === 'Absent' ? $baseRecordParams : array_merge($baseRecordParams, ['status' => 'Absent'])) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === 'Absent' ? 'is-active-chip' : '' }}">
             <div class="summary-chip-value" style="color: #f87171;">{{ $totals['Absent'] ?? 0 }}</div>
             <div class="summary-chip-label">Absent</div>
-        </div>
-        <div class="summary-chip">
+        </a>
+        <a href="{{ route('student.calendar', $activeStatusFilter === 'Excused' ? $baseRecordParams : array_merge($baseRecordParams, ['status' => 'Excused'])) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === 'Excused' ? 'is-active-chip' : '' }}">
             <div class="summary-chip-value" style="color: #fde68a;">{{ $totals['Excused'] ?? 0 }}</div>
             <div class="summary-chip-label">Excused</div>
-        </div>
+        </a>
     </div>
 
     <!-- Table card -->
@@ -544,7 +553,7 @@
             <input type="hidden" name="month" value="{{ $month }}" data-calendar-month="month">
             <div>
                 <label class="ent-label" for="attendanceRecordsSearch">Class or teacher</label>
-                <input type="search" class="ent-input" id="attendanceRecordsSearch" name="q" maxlength="120" value="{{ $filters['q'] ?? '' }}">
+                <input type="search" class="ent-input" id="attendanceRecordsSearch" name="q" maxlength="120" placeholder="Search subject, code, or instructor" value="{{ $filters['q'] ?? '' }}">
             </div>
             <div>
                 <label class="ent-label" for="studentRecordStatus">Status</label>
