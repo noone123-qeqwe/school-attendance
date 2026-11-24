@@ -62,6 +62,9 @@
         <link rel="stylesheet" href="{{ asset('css/student-settings.css') }}?v={{ filemtime(public_path('css/student-settings.css')) }}">
     @endif
     @if(Auth::user()?->isStudent())
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="{{ asset('css/student-desktop.css') }}?v={{ filemtime(public_path('css/student-desktop.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/student-desktop-pages.css') }}?v={{ filemtime(public_path('css/student-desktop-pages.css')) }}">
         @if(request()->routeIs('settings'))

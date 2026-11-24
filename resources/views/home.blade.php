@@ -1114,6 +1114,11 @@
             </div>
         </div>
 
+        @php
+            $todaySchedCollection = collect($todaySchedule ?? []);
+            $liveClassItem = $todaySchedCollection->firstWhere('status', 'ongoing');
+            $nextClassItem = $todaySchedCollection->firstWhere('status', 'upcoming');
+        @endphp
         <!-- Middle Profile: Avatar & Details -->
         <div class="student-hero-profile">
             <div class="student-avatar-box">
@@ -1141,6 +1146,29 @@
                             <i class="bi bi-people" style="color: #34d399;"></i>
                             <span>Sec {{ Auth::user()->section }}</span>
                         </span>
+                    @endif
+                </div>
+                <div class="sd-hero-spotlight d-none d-lg-flex">
+                    @if($liveClassItem)
+                        <span class="sd-spotlight-dot is-live" aria-hidden="true"></span>
+                        <span class="sd-spotlight-label">Live now</span>
+                        <span class="sd-spotlight-text">{{ $liveClassItem->subject->code }} &middot; {{ $liveClassItem->subject->name }}@if(!empty($liveClassItem->schedule?->room) && strtoupper(trim($liveClassItem->schedule->room)) !== 'TBA') &middot; {{ $liveClassItem->schedule->room }}@endif</span>
+                        <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sd-spotlight-link">Check in <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                    @elseif($nextClassItem)
+                        <span class="sd-spotlight-dot is-next" aria-hidden="true"></span>
+                        <span class="sd-spotlight-label">Up next &middot; {{ $nextClassItem->start_time->format('g:i A') }}</span>
+                        <span class="sd-spotlight-text">{{ $nextClassItem->subject->code }} &middot; {{ $nextClassItem->subject->name }}@if(!empty($nextClassItem->schedule?->room) && strtoupper(trim($nextClassItem->schedule->room)) !== 'TBA') &middot; {{ $nextClassItem->schedule->room }}@endif</span>
+                        <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-spotlight-link">Timetable <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                    @elseif($todaySchedCollection->isNotEmpty())
+                        <span class="sd-spotlight-dot is-done" aria-hidden="true"></span>
+                        <span class="sd-spotlight-label">Today</span>
+                        <span class="sd-spotlight-text">{{ $todaySchedCollection->count() }} {{ \Illuminate\Support\Str::plural('class', $todaySchedCollection->count()) }} completed or past for today</span>
+                        <a href="{{ route('student.calendar') }}#attendance-records" class="sd-spotlight-link">View log <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                    @else
+                        <span class="sd-spotlight-dot" aria-hidden="true"></span>
+                        <span class="sd-spotlight-label">Today</span>
+                        <span class="sd-spotlight-text">No classes scheduled today</span>
+                        <a href="{{ route('student.classes') }}" class="sd-spotlight-link">My classes <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
                     @endif
                 </div>
             </div>
@@ -1250,10 +1278,18 @@
 
 <!-- Quick Stats -->
 <div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:grid; gap:16px; margin-bottom:20px;">
-    <x-card type="kpi" accent="success" label="Present" value="{{ $totalPresent ?? 0 }}" icon="bi bi-check-circle-fill" />
-    <x-card type="kpi" accent="warning" label="Late" value="{{ $totalLate ?? 0 }}" icon="bi bi-clock-fill" />
-    <x-card type="kpi" accent="danger" label="Absent" value="{{ $totalAbsent ?? 0 }}" icon="bi bi-x-circle-fill" />
-    <x-card type="kpi" accent="gold" label="Subjects" value="{{ isset($subjects) ? count($subjects) : 0 }}" icon="bi bi-book-fill" />
+    <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Present']) }}#attendance-records" title="View present attendance records">
+        <x-card type="kpi" accent="success" label="Present" value="{{ $totalPresent ?? 0 }}" icon="bi bi-check-circle-fill" />
+    </a>
+    <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Late']) }}#attendance-records" title="View late attendance records">
+        <x-card type="kpi" accent="warning" label="Late" value="{{ $totalLate ?? 0 }}" icon="bi bi-clock-fill" />
+    </a>
+    <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Absent']) }}#attendance-records" title="View absent records & excuses">
+        <x-card type="kpi" accent="danger" label="Absent" value="{{ $totalAbsent ?? 0 }}" icon="bi bi-x-circle-fill" />
+    </a>
+    <a class="sd-kpi-link" href="{{ route('student.classes') }}" title="View enrolled subjects">
+        <x-card type="kpi" accent="gold" label="Subjects" value="{{ isset($subjects) ? count($subjects) : 0 }}" icon="bi bi-book-fill" />
+    </a>
 </div>
 
 
@@ -1269,7 +1305,7 @@
                 </a>
             </x-slot>
             @if(isset($todaySchedule) && $todaySchedule->count() > 0)
-                <div class="schedule-items-grid">
+                <div class="schedule-items-grid sd-timeline-list">
                 @foreach($todaySchedule as $item)
                     @php
                         $statusColor = $item->status === 'completed' ? '#4ade80' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#f87171' : ($item->status === 'past' ? '#9ca3af' : 'var(--gold)')));
@@ -1277,7 +1313,14 @@
                         $timeInText = $item->attendance?->time_in ? \Carbon\Carbon::parse($item->attendance->time_in)->format('g:i A') : null;
                         $excuseHref = $item->attendance?->id ? route('excuses.create', $item->attendance->id) : route('excuses.create_general');
                     @endphp
-                    <div class="schedule-modern-card" style="border-left: 3.5px solid {{ $statusColor }};">
+                    <div class="schedule-modern-card sd-timeline-item is-status-{{ $item->status }}" style="border-left: 3.5px solid {{ $statusColor }};">
+                        <div class="sd-timeline-time d-none d-lg-flex" aria-hidden="true">
+                            <strong>{{ $item->start_time->format('g:i A') }}</strong>
+                            <span>{{ $item->end_time->format('g:i A') }}</span>
+                        </div>
+                        <div class="sd-timeline-rail d-none d-lg-flex" aria-hidden="true">
+                            <span class="sd-timeline-node" style="background: {{ $statusColor }};"></span>
+                        </div>
                         <div class="schedule-main-info">
                             <div class="schedule-subject-title">{{ $item->subject->name }}</div>
                             <div class="schedule-meta-row">

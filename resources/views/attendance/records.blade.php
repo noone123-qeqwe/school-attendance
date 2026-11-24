@@ -576,7 +576,13 @@
             </div>
         </form>
         <p class="student-results-count px-3">{{ $records->total() }} matching {{ Str::plural('record', $records->total()) }}</p>
-        <!-- Mobile-first Card Layout -->
+        <div class="sd-records-thead d-none d-lg-grid" aria-hidden="true">
+            <span>Course &amp; Date</span>
+            <span>Session Details</span>
+            <span>Status</span>
+            <span class="text-end">Action</span>
+        </div>
+        <!-- Mobile-first Card Layout / Desktop Ledger Rows -->
         <div class="records-container" id="recordsContainer">
             @forelse($records as $record)
             <div class="record-card" data-status="{{ $record->status }}" data-excused="{{ $record->excused || $record->status === 'Excused' ? '1' : '0' }}">

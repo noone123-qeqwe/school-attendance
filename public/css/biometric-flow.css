@@ -1,15 +1,15 @@
 .biometric-flow-page {
-    --gold-primary: #cfa46f;
-    --gold-border: #cfa46f3b;
-    --gold-subtle: #cfa46f20;
-    --surface-card: #1e1713;
-    --text-primary: #f3e7cd;
-    --text-muted: #c2ab93;
+    --gold-primary: #e2b87b;
+    --gold-border: rgba(255, 255, 255, 0.085);
+    --gold-subtle: rgba(226, 184, 123, 0.12);
+    --surface-card: #14110f;
+    --text-primary: #f5f2eb;
+    --text-muted: #9b8e7f;
     margin: 0;
     min-height: 100dvh;
-    background: #120e0b;
+    background: #0b0908;
     color: var(--text-primary);
-    font: 1rem/1.55 Inter, system-ui, sans-serif;
+    font: 1rem/1.55 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .biometric-flow-page *, .biometric-flow-page *::before, .biometric-flow-page *::after { box-sizing: border-box; }
@@ -71,7 +71,19 @@
 .biometric-flow .device-item-meta { color: var(--text-muted); font-size: .8rem; }
 .biometric-flow .bio-device-type-pill { color: var(--gold-primary); font-size: .8rem; }
 .biometric-flow .device-remove-btn { min-height: 44px; padding: 7px 12px; border: 1px solid var(--gold-border); border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
-.biometric-flow .device-count { margin: 0 0 10px; color: var(--text-muted); font-size: .9rem; }
+.biometric-flow .device-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(226, 184, 123, 0.1);
+    border: 1px solid rgba(226, 184, 123, 0.24);
+    color: #f5dfb8;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
 
 .bio-flow-kicker { display: flex; align-items: center; gap: 7px; margin-bottom: 12px; color: var(--gold-primary); font-size: .76rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
 .bio-flow-title-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
