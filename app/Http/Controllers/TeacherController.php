@@ -739,6 +739,13 @@ class TeacherController extends Controller
         return $reportService->downloadCsv($report);
     }
 
+    public function exportExcel(Request $request, \App\Services\AttendanceReportService $reportService)
+    {
+        $subjectCodes = $request->user()->subjects()->pluck('code')->all();
+
+        return $reportService->downloadExcel($reportService->generate($request->query(), $subjectCodes));
+    }
+
     // ─────────────────────────────────────────
     // ABSENT REPORT (Teacher-scoped)
     // ─────────────────────────────────────────

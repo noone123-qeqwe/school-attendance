@@ -518,6 +518,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/reports', [App\Http\Controllers\TeacherController::class, 'reports'])->name('reports');
     Route::get('/reports/export-pdf', [App\Http\Controllers\TeacherController::class, 'exportPdf'])->name('reports.pdf');
     Route::get('/reports/export-csv', [App\Http\Controllers\TeacherController::class, 'exportCsv'])->name('reports.csv');
+    Route::get('/reports/export-xlsx', [App\Http\Controllers\TeacherController::class, 'exportExcel'])->name('reports.xlsx');
     
     // Profile
     Route::get('/profile', [App\Http\Controllers\TeacherController::class, 'profile'])->name('profile');
@@ -798,6 +799,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::get('/reports', [App\Http\Controllers\AdminController::class, 'reports'])->name('reports');
     Route::get('/reports/pdf', [App\Http\Controllers\AdminController::class, 'exportReportsPdf'])->name('reports.pdf');
     Route::get('/reports/csv', [App\Http\Controllers\AdminController::class, 'exportReportsCsv'])->name('reports.csv');
+    Route::get('/reports/xlsx', [App\Http\Controllers\AdminController::class, 'exportReportsExcel'])->name('reports.xlsx');
 
     // Policy & Legal Management — public legal content may contain HTML, so
     // only super administrators may publish or reset it.

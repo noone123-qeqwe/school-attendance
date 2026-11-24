@@ -82,7 +82,10 @@
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Class Attendance Reports</h1>
         <p class="saas-text-muted" style="margin:0;">View detailed student clock-ins, absence lists, and subject attendance rankings.</p>
     </div>
-    <div style="display:flex; gap:10px;">
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{{ route('teacher.reports.xlsx', request()->query()) }}" class="saas-btn saas-btn-secondary">
+            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Export Excel
+        </a>
         <a href="{{ route('teacher.reports.csv', request()->all()) }}" class="saas-btn saas-btn-secondary" style="color:#34d399; border-color:rgba(52,211,153,0.3); text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
             <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
         </a>

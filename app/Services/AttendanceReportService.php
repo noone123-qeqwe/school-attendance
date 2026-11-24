@@ -2,14 +2,17 @@
 
 namespace App\Services;
 
+use App\Exports\AttendanceReportWorkbook;
 use App\Models\Attendance;
 use App\Models\Subject;
 use App\Models\User;
-use App\Models\Section;
 use App\Traits\SanitizesExport;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
+use Generator;
+use Maatwebsite\Excel\Excel;
+use Maatwebsite\Excel\Facades\Excel as Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttendanceReportService
@@ -32,11 +35,11 @@ class AttendanceReportService
         $baseQuery = Attendance::with(['user', 'subject', 'academicYear']);
 
         if ($scopedSubjectCodes !== null) {
-            $baseQuery->whereIn('subject_code', $scopedSubjectCodes);
+            $baseQuery->whereIn('attendances.subject_code', $scopedSubjectCodes);
         }
 
         if (!empty($params['subject'])) {
-            $baseQuery->where('subject_code', $params['subject']);
+            $baseQuery->where('attendances.subject_code', $params['subject']);
         }
 
         if (!empty($params['course'])) {
@@ -121,16 +124,10 @@ class AttendanceReportService
 
             case 'class_summary':
                 $title = 'Class & Section Attendance Summary';
-                $summaryQuery = DB::table('attendances')->whereNull('attendances.deleted_at');
-                if ($scopedSubjectCodes !== null) {
-                    $summaryQuery->whereIn('subject_code', $scopedSubjectCodes);
-                }
-                if (!empty($params['subject'])) {
-                    $summaryQuery->where('subject_code', $params['subject']);
-                }
-                $summaryQuery->whereDate('date', '>=', $startDate)->whereDate('date', '<=', $endDate);
-
-                $summaryData = $summaryQuery->join('users', 'attendances.user_id', '=', 'users.id')
+                $summaryData = (clone $baseQuery)->toBase()
+                    ->whereDate('attendances.date', '>=', $startDate)
+                    ->whereDate('attendances.date', '<=', $endDate)
+                    ->join('users', 'attendances.user_id', '=', 'users.id')
                     ->selectRaw("
                         COALESCE(users.course, 'Unassigned') as course,
                         COALESCE(users.year_level, 0) as year_level,
@@ -157,13 +154,10 @@ class AttendanceReportService
 
             case 'subject_summary':
                 $title = 'Subject Attendance Summary';
-                $subjQuery = DB::table('attendances')->whereNull('deleted_at');
-                if ($scopedSubjectCodes !== null) {
-                    $subjQuery->whereIn('subject_code', $scopedSubjectCodes);
-                }
-                $subjQuery->whereDate('date', '>=', $startDate)->whereDate('date', '<=', $endDate);
-
-                $summaryData = $subjQuery->selectRaw("
+                $summaryData = (clone $baseQuery)->toBase()
+                    ->whereDate('attendances.date', '>=', $startDate)
+                    ->whereDate('attendances.date', '<=', $endDate)
+                    ->selectRaw("
                         subject_code,
                         COUNT(id) as total_records,
                         SUM(CASE WHEN status = 'Present' THEN 1 ELSE 0 END) as present_count,
@@ -281,93 +275,100 @@ class AttendanceReportService
         ];
     }
 
-    /**
-     * Generate a streaming CSV download for the report.
-     */
     public function downloadCsv(array $report): StreamedResponse
     {
-        $type = preg_replace('/[^a-z0-9_-]+/i', '-', (string) ($report['type'] ?? 'daily')) ?: 'daily';
-        $filename = 'attendance-report-' . $type . '-' . now()->format('Y-m-d-His') . '.csv';
-
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
+        $filename = $this->exportFilename($report, 'csv');
 
         return response()->stream(function () use ($report) {
             $handle = fopen('php://output', 'w');
             fputs($handle, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel
 
-            $type = $report['type'];
+            $headings = $this->exportHeadings($report['type']);
+            $rateColumn = array_search(AttendanceReportWorkbook::RATE_HEADING, $headings, true);
+            fputcsv($handle, $headings, escape: '');
+            foreach ($this->exportRows($report) as $row) {
+                if ($rateColumn !== false) {
+                    $row[$rateColumn] .= '%';
+                }
 
-            if ($type === 'percentage') {
-                fputcsv($handle, ['Student Name', 'Student Number', 'Course', 'Year Level', 'Section', 'Total Classes', 'Present', 'Late', 'Absent', 'Excused', 'Attendance Rate (%)']);
-                foreach ($report['percentageData'] as $item) {
-                    $s = $item['student'];
-                    fputcsv($handle, [
-                        $this->sanitizeField($s->name),
-                        $this->sanitizeField($s->student_number ?? 'N/A'),
-                        $this->sanitizeField($s->course ?? 'N/A'),
-                        $this->sanitizeField($s->year_level ?? 'N/A'),
-                        $this->sanitizeField($s->section ?? 'N/A'),
-                        $this->sanitizeField($item['total']),
-                        $this->sanitizeField($item['present']),
-                        $this->sanitizeField($item['late']),
-                        $this->sanitizeField($item['absent']),
-                        $this->sanitizeField($item['excused']),
-                        $this->sanitizeField($item['rate'] . '%'),
-                    ]);
-                }
-            } elseif ($type === 'class_summary') {
-                fputcsv($handle, ['Course', 'Year Level', 'Section', 'Total Records', 'Present', 'Late', 'Absent', 'Excused', 'Attendance Rate (%)']);
-                foreach ($report['summaryData'] as $row) {
-                    fputcsv($handle, [
-                        $this->sanitizeField($row->course),
-                        $this->sanitizeField($row->year_level),
-                        $this->sanitizeField($row->section),
-                        $this->sanitizeField($row->total_records),
-                        $this->sanitizeField($row->present_count),
-                        $this->sanitizeField($row->late_count),
-                        $this->sanitizeField($row->absent_count),
-                        $this->sanitizeField($row->excused_count),
-                        $this->sanitizeField($row->rate . '%'),
-                    ]);
-                }
-            } elseif ($type === 'subject_summary') {
-                fputcsv($handle, ['Subject Code', 'Subject Name', 'Total Records', 'Present', 'Late', 'Absent', 'Excused', 'Attendance Rate (%)']);
-                foreach ($report['summaryData'] as $row) {
-                    fputcsv($handle, [
-                        $this->sanitizeField($row->subject_code),
-                        $this->sanitizeField($row->subject_name),
-                        $this->sanitizeField($row->total_records),
-                        $this->sanitizeField($row->present_count),
-                        $this->sanitizeField($row->late_count),
-                        $this->sanitizeField($row->absent_count),
-                        $this->sanitizeField($row->excused_count),
-                        $this->sanitizeField($row->rate . '%'),
-                    ]);
-                }
-            } else {
-                fputcsv($handle, ['Date', 'Time In', 'Student Name', 'Student Number', 'Subject Code', 'Subject Name', 'Status', 'Excused', 'Method']);
-                foreach ($report['records'] as $att) {
-                    fputcsv($handle, [
-                        $this->sanitizeField($att->date ? (is_string($att->date) ? $att->date : $att->date->format('Y-m-d')) : 'N/A'),
-                        $this->sanitizeField($att->time_in ?? 'N/A'),
-                        $this->sanitizeField($att->user->name ?? 'Unknown'),
-                        $this->sanitizeField($att->user->student_number ?? 'N/A'),
-                        $this->sanitizeField($att->subject_code),
-                        $this->sanitizeField($att->subject->name ?? $att->subject_code),
-                        $this->sanitizeField($att->status),
-                        $this->sanitizeField($att->excused ? 'Yes' : 'No'),
-                        $this->sanitizeField(strtoupper($att->method ?? 'QR')),
-                    ]);
-                }
+                fputcsv($handle, array_map($this->sanitizeField(...), $row), escape: '');
             }
 
             fclose($handle);
-        }, 200, $headers);
+        }, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    public function downloadExcel(array $report): BinaryFileResponse
+    {
+        $previousBinder = Cell::getValueBinder();
+
+        try {
+            $response = Spreadsheet::download(
+                new AttendanceReportWorkbook($this->exportHeadings($report['type']), $this->exportRows($report)),
+                $this->exportFilename($report, 'xlsx'),
+                Excel::XLSX,
+                [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'Cache-Control' => 'no-store',
+                ]
+            );
+            $response->setPrivate();
+
+            return $response;
+        } finally {
+            // Laravel Excel sets a static binder while it builds the file.
+            Cell::setValueBinder($previousBinder);
+        }
+    }
+
+    private function exportFilename(array $report, string $extension): string
+    {
+        $type = preg_replace('/[^a-z0-9_-]+/i', '-', (string) $report['type']) ?: 'daily';
+
+        return 'attendance-report-' . $type . '-' . now()->format('Y-m-d-His') . '.' . $extension;
+    }
+
+    private function exportHeadings(string $type): array
+    {
+        $totals = ['Present', 'Late', 'Absent', 'Excused', AttendanceReportWorkbook::RATE_HEADING];
+
+        return match ($type) {
+            'percentage' => ['Student Name', 'Student Number', 'Course', 'Year Level', 'Section', 'Total Classes', ...$totals],
+            'class_summary' => ['Course', 'Year Level', 'Section', 'Total Records', ...$totals],
+            'subject_summary' => ['Subject Code', 'Subject Name', 'Total Records', ...$totals],
+            default => ['Date', 'Time In', 'Student Name', 'Student Number', 'Subject Code', 'Subject Name', 'Status', 'Excused', 'Method'],
+        };
+    }
+
+    /** @return Generator<int, array> */
+    private function exportRows(array $report): Generator
+    {
+        foreach ($report['data'] as $row) {
+            yield match ($report['type']) {
+                'percentage' => [
+                    $row['student']->name, $row['student']->student_number ?? 'N/A', $row['student']->course ?? 'N/A',
+                    $row['student']->year_level ?? 'N/A', $row['student']->section ?? 'N/A',
+                    $row['total'], $row['present'], $row['late'], $row['absent'], $row['excused'], $row['rate'],
+                ],
+                'class_summary' => [
+                    $row->course, $row->year_level, $row->section, (int) $row->total_records,
+                    (int) $row->present_count, (int) $row->late_count, (int) $row->absent_count, (int) $row->excused_count, $row->rate,
+                ],
+                'subject_summary' => [
+                    $row->subject_code, $row->subject_name, (int) $row->total_records,
+                    (int) $row->present_count, (int) $row->late_count, (int) $row->absent_count, (int) $row->excused_count, $row->rate,
+                ],
+                default => [
+                    $row->date?->format('Y-m-d') ?? 'N/A', $row->time_in ?? 'N/A',
+                    $row->user->name ?? 'Unknown', $row->user->student_number ?? 'N/A',
+                    $row->subject_code, $row->subject->name ?? $row->subject_code, $row->status,
+                    $row->excused ? 'Yes' : 'No', strtoupper($row->method ?? 'QR'),
+                ],
+            };
+        }
     }
 }

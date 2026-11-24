@@ -10,7 +10,10 @@
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Reports</h1>
         <p class="saas-text-muted" style="margin:0;">Choose a report, set the dates, then download your results.</p>
     </div>
-    <div class="admin-page-actions" style="display:flex; gap:10px;">
+    <div class="admin-page-actions d-flex flex-wrap gap-2">
+        <a href="{{ route('admin.reports.xlsx', request()->query()) }}" class="saas-btn saas-btn-secondary">
+            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Export Excel
+        </a>
         <a href="{{ route('admin.reports.csv', request()->all()) }}" class="saas-btn saas-btn-secondary" style="color:#34d399; border-color:rgba(52,211,153,0.3); text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
             <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
         </a>

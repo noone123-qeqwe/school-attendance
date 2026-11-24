@@ -2197,4 +2197,9 @@ class AdminController extends Controller
         $report = $reportService->generate($request->all());
         return $reportService->downloadCsv($report);
     }
+
+    public function exportReportsExcel(Request $request, \App\Services\AttendanceReportService $reportService)
+    {
+        return $reportService->downloadExcel($reportService->generate($request->query()));
+    }
 }
