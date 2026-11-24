@@ -520,6 +520,9 @@ if (document.readyState === 'loading') {
                 <button type="button" class="bio-modal-secondary-btn" id="bioModalSecondaryBtn">
                     Use Password
                 </button>
+                <button type="button" class="bio-modal-secondary-btn" id="bioModalCancelBtn" hidden>
+                    Cancel
+                </button>
             </div>
         </div>
     </div>
@@ -1136,6 +1139,7 @@ function openBiometricModal(config) {
     var pillTextEl = document.getElementById('bioModalUserText');
     var primaryBtn = document.getElementById('bioModalPrimaryBtn');
     var secondaryBtn = document.getElementById('bioModalSecondaryBtn');
+    var cancelBtn = document.getElementById('bioModalCancelBtn');
     var passWrap = document.getElementById('bioModalPasswordWrap');
     var progress = document.getElementById('bioModalProgress');
     var progressText = document.getElementById('bioModalProgressText');
@@ -1175,6 +1179,7 @@ function openBiometricModal(config) {
 
     if (primaryBtn) {
         primaryBtn.hidden = !!(config.hidePrimaryBtn || config.primaryBtnText === false);
+        primaryBtn.style.display = primaryBtn.hidden ? 'none' : '';
         primaryBtn.textContent = biometricText(config.primaryBtnText || 'Set up a passkey');
         primaryBtn.disabled = !!config.primaryDisabled;
     }
@@ -1186,6 +1191,11 @@ function openBiometricModal(config) {
             secondaryBtn.hidden = false;
             secondaryBtn.textContent = biometricText(config.secondaryBtnText || 'Use password');
         }
+        secondaryBtn.style.display = secondaryBtn.hidden ? 'none' : '';
+    }
+    if (cancelBtn) {
+        cancelBtn.hidden = !config.showCancelBtn;
+        cancelBtn.style.display = cancelBtn.hidden ? 'none' : '';
     }
     
     var modalIcon = document.getElementById('bioModalIcon');
@@ -1602,133 +1612,32 @@ async function handleBiometricLogin() {
         }
     }
 
-    return performBiometricLogin(identifier);
+    return openBiometricSignInChoices(identifier);
 }
 
-function performNativeAndroidBiometricLogin(studentNumber) {
-    studentNumber = (studentNumber || (idInput ? idInput.value : '')).trim();
-    if (!studentNumber && window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.getLastIdentifier === 'function') {
-        studentNumber = (window.AndroidDeviceBridge.getLastIdentifier() || '').trim();
-    }
-    if (!studentNumber) {
-        if (typeof window.showStudentIdRequiredModal === 'function') {
-            window.showStudentIdRequiredModal();
-        } else if (idInput) {
-            idInput.focus();
-            showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
-        }
-        return;
-    }
-    var nativeDeviceId = (window.AndroidDeviceBridge && window.AndroidDeviceBridge.getNativeDeviceId) ? window.AndroidDeviceBridge.getNativeDeviceId() : '';
-    var nativeModel = (window.AndroidDeviceBridge && window.AndroidDeviceBridge.getNativeDeviceModel) ? window.AndroidDeviceBridge.getNativeDeviceModel() : '';
+async function openBiometricSignInChoices(identifier) {
+    bioAbortController?.abort();
+    var attempt = new AbortController();
+    bioAbortController = attempt;
+    isBioPending = true;
+    showBiometricProgress('Checking sign-in options', 'Checking passkey availability in this browser.', identifier, 'Checking this browser…');
 
-    if (fpLabel) fpLabel.textContent = 'Touch fingerprint sensor...';
-    if (fpHint) fpHint.textContent = studentNumber ? ('Verifying for ' + studentNumber) : 'Scan your fingerprint to sign in';
-    if (fpIcon) fpIcon.className = 'bi bi-fingerprint';
-    if (fpArrow) fpArrow.className = 'bi bi-hourglass-split fp-row-arrow';
-
-    window._onNativeBioSuccess = async function() {
-        if (fpLabel) fpLabel.textContent = 'Verifying with server...';
-        if (fpHint) fpHint.textContent = 'Please wait...';
-        if (fpIcon) fpIcon.className = 'bi bi-shield-check';
-
-        try {
-            var res = await fetch('{{ route("webauthn.native.login") }}', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Device-Id': nativeDeviceId,
-                    'X-Device-Key': nativeDeviceId,
-                    'X-Device-Fingerprint': nativeDeviceId
-                },
-                body: JSON.stringify({
-                    student_number: studentNumber,
-                    identifier: studentNumber,
-                    device_id: nativeDeviceId,
-                    device_key: nativeDeviceId,
-                    device_model: nativeModel,
-                    device_fingerprint: nativeDeviceId
-                })
-            });
-
-            var result = await res.json();
-            if (result.success) {
-                if (fpLabel) fpLabel.textContent = 'Welcome back!';
-                if (fpHint) fpHint.textContent = 'Redirecting...';
-                if (fpIcon) fpIcon.className = 'bi bi-check-circle-fill text-success';
-                if (result.user && result.user.identifier) {
-                    try {
-                        saveAccount({
-                            identifier: result.user.identifier,
-                            name: result.user.name,
-                            role: result.user.role
-                        });
-                        if (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.setLastIdentifier === 'function') {
-                            window.AndroidDeviceBridge.setLastIdentifier(result.user.identifier);
-                        }
-                    } catch(e) {}
-                }
-                window.location.replace(result.redirect || '{{ route("home") }}');
-            } else {
-                resetBiometricButton();
-                if (result.code === 'SETUP_REQUIRED') {
-                    showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>' + result.message);
-                    openBiometricSetupModal(studentNumber);
-                } else if (result.code === 'USER_NOT_FOUND') {
-                    showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>' + result.message);
-                    if (typeof window.showStudentIdRequiredModal === 'function') {
-                        window.showStudentIdRequiredModal();
-                    } else if (idInput) {
-                        idInput.focus();
-                    }
-                } else {
-                    showFpMessage('error', '<i class="bi bi-x-circle me-2"></i>' + (result.message || 'Login failed.'));
-                    openBiometricModal({
-                        title: 'SIGN IN FAILED',
-                        identifier: studentNumber,
-                        message: (result.message || 'Authentication failed.') + '<br><br>Please try again or use your password.',
-                        badgeType: 'danger',
-                        primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
-                        secondaryBtnText: 'SIGN IN WITH PASSWORD',
-                        onPrimaryClick: function() { performNativeAndroidBiometricLogin(studentNumber); },
-                        onSecondaryClick: closeBiometricModalAndFocusPassword
-                    });
-                }
-            }
-        } catch(err) {
-            resetBiometricButton();
-            showFpMessage('error', '<i class="bi bi-wifi-off me-2"></i>Network error. Please try again.');
-        }
-    };
-
-    window._onNativeBioError = function(errMsg, errCode, isCancelled) {
-        resetBiometricButton();
-        if (isCancelled) {
-            closeBiometricModal();
-            return;
-        }
-        showFpMessage('warning', '<i class="bi bi-exclamation-triangle me-2"></i>' + (errMsg || 'Biometric authentication was cancelled or paused.'));
-        openBiometricModal({
-            title: 'AUTHENTICATION PAUSED',
-            identifier: studentNumber,
-            message: (errMsg || 'Biometric authentication was paused.') + '<br><br>Would you like to try again or sign in with your password?',
-            badgeType: 'warning',
-            primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
-            secondaryBtnText: 'SIGN IN WITH PASSWORD',
-            onPrimaryClick: function() { performNativeAndroidBiometricLogin(studentNumber); },
-            onSecondaryClick: closeBiometricModalAndFocusPassword
-        });
-    };
-
-    window.AndroidDeviceBridge.authenticateBiometric(
-        'Sign In with Fingerprint',
-        studentNumber ? ('Confirm fingerprint for ' + studentNumber) : 'Touch fingerprint sensor to sign in',
-        '_onNativeBioSuccess',
-        '_onNativeBioError'
-    );
+    var capability = await refreshPasskeySignIn();
+    if (attempt.signal.aborted) return;
+    resetBiometricButton();
+    openBiometricModal({
+        title: 'Choose how to sign in',
+        identifier: identifier,
+        message: capability.available
+            ? 'Use a passkey to open your browser’s sign-in options, or use your account password. Your device controls the available verification methods.'
+            : passkeyAvailabilityMessage(capability, 'get'),
+        badgeType: 'info',
+        primaryBtnText: capability.available ? 'Use a passkey' : false,
+        secondaryBtnText: 'Sign in with password',
+        showCancelBtn: true,
+        onPrimaryClick: function() { performBiometricLogin(identifier); },
+        onSecondaryClick: closeBiometricModalAndFocusPassword
+    });
 }
 
 async function performBiometricLogin(studentNumber) {
@@ -1808,7 +1717,6 @@ async function performBiometricLogin(studentNumber) {
             userVerification: 'required',
             timeout: 45000
         };
-        if (capability.platformAvailable) getPublicKey.hints = ['client-device'];
         
         if (allowCredentials.length > 0) {
             getPublicKey.allowCredentials = allowCredentials;
@@ -1981,6 +1889,12 @@ function setupBiometricListeners() {
                 closeBiometricModalAndFocusPassword();
             }
         });
+    }
+
+    var cancelBtn = document.getElementById('bioModalCancelBtn');
+    if (cancelBtn && cancelBtn.dataset.biometricBound !== 'true') {
+        cancelBtn.dataset.biometricBound = 'true';
+        cancelBtn.addEventListener('click', closeBiometricModal);
     }
 
     var bioModalBackdrop = document.getElementById('bioModalBackdrop');
