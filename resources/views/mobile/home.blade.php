@@ -114,6 +114,13 @@
                 <span class="quick-action-label">Submit Excuse</span>
             </a>
 
+            @if(!empty($hasActiveAssistantAssignment))
+                <a href="{{ route('student-assistant.classes') }}" class="quick-action-btn">
+                    <div class="quick-action-icon"><i class="bi bi-qr-code" aria-hidden="true"></i></div>
+                    <span class="quick-action-label">Student Assistant</span>
+                </a>
+            @endif
+
             @if(app(\App\Services\PeerBiometricAttendanceService::class)->isAvailable())
             <a href="{{ route('peer-snap.index') }}" class="quick-action-btn quick-action-peer" aria-label="Check in for a Classmate">
                 <div class="quick-action-icon"><i class="bi bi-person-bounding-box" aria-hidden="true"></i></div>

@@ -100,6 +100,8 @@ class AppServiceProvider extends ServiceProvider
             'layouts.sidebars.teacher',
             'partials.teacher-navigation',
             'layouts.sidebars.student',
+            'partials.student-assistant-mobile-link',
+            'mobile.home',
         ], SidebarComposer::class);
 
         // ── CSP nonce Blade directive ─────────────────────────────────────────

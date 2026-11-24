@@ -5,6 +5,7 @@ namespace App\View\Composers;
 use App\Models\AttendanceCorrection;
 use App\Models\ExcuseSubmission;
 use App\Models\Subject;
+use App\Services\FeatureFlagService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
@@ -19,7 +20,7 @@ class SidebarComposer
     {
         $viewName = $view->name();
 
-        if ($viewName === 'layouts.sidebars.student') {
+        if (in_array($viewName, ['layouts.sidebars.student', 'partials.student-assistant-mobile-link', 'mobile.home'], true)) {
             $view->with('hasActiveAssistantAssignment', $this->resolveStudentAssistantStatus());
             return;
         }
@@ -84,7 +85,7 @@ class SidebarComposer
     private function resolveStudentAssistantStatus(): bool
     {
         $student = Auth::user();
-        if (!$student) {
+        if (!$student?->isStudent() || !$student->isActive()) {
             return false;
         }
 
@@ -92,6 +93,12 @@ class SidebarComposer
         $attrKey = "sidebar_student_assistant_{$student->id}";
         if ($request->attributes->has($attrKey)) {
             return (bool) $request->attributes->get($attrKey);
+        }
+
+        if (!app(FeatureFlagService::class)->enabled('feature.student_assistant_qr')) {
+            $request->attributes->set($attrKey, false);
+
+            return false;
         }
 
         $resolver = function () use ($student): bool {

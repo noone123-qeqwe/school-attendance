@@ -271,7 +271,7 @@
             @php
                 $featureControls = [
                     'face_verification' => ['Face verification', 'Supplementary identity check during attendance.'],
-                    'student_assistant_qr' => ['Student assistant QR', 'Allow assigned student assistants to manage session QR codes.'],
+                    'student_assistant_qr' => ['Student Assistants', 'Allow assigned assistants to manage session QR codes and, with permission, submit attendance for teacher review.'],
                     'gps_verification' => ['GPS verification', 'Use location checks for attendance sessions.'],
                     'device_binding' => ['Device binding', 'Require the student’s registered device when the workflow requests it.'],
                     'sms_notifications' => ['SMS notifications', 'Send supported absence alerts by text message.'],

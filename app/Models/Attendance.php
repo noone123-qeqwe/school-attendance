@@ -24,6 +24,8 @@ class Attendance extends Model
 {
     use SoftDeletes, LogsActivity;
 
+    public const METHOD_AUTOMATIC_ABSENCE = 'automatic_absence';
+
     protected $fillable = [
         'user_id',
         'subject_id',
@@ -308,6 +310,7 @@ class Attendance extends Model
 
         $data['date'] = $date;
         $data['status'] = 'Absent';
+        $data['method'] = self::METHOD_AUTOMATIC_ABSENCE;
 
         $findExisting = static function () use ($userId, $date, $subjectId, $subjectCode) {
             return static::withTrashed()

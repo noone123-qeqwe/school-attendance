@@ -13,7 +13,7 @@ class AttendanceSessionPolicy
     {
         // Admin access to teacher management must not imply student-assistant
         // QR authority, which is intentionally student-only.
-        if (in_array($ability, ['viewAssistantClass', 'viewAssistantQr', 'generateAssistantQr'], true)) {
+        if (in_array($ability, ['viewAssistantClass', 'viewAssistantQr', 'generateAssistantQr', 'submitAssistantAttendance'], true)) {
             return null;
         }
 
@@ -37,7 +37,12 @@ class AttendanceSessionPolicy
 
     public function viewAssistantQr(User $user, AttendanceSession $session): bool
     {
-        if (!$this->viewAssistantClass($user, $session) || !$session->isSessionActive()) {
+        return $this->viewAssistantClass($user, $session) && $this->withinAssistantSessionWindow($session);
+    }
+
+    private function withinAssistantSessionWindow(AttendanceSession $session): bool
+    {
+        if (!$session->isSessionActive()) {
             return false;
         }
 
@@ -70,27 +75,34 @@ class AttendanceSessionPolicy
 
     public function viewAssistantClass(User $user, AttendanceSession $session): bool
     {
+        return $this->activeAssistantAssignment($user, $session) !== null;
+    }
+
+    private function activeAssistantAssignment(User $user, AttendanceSession $session): ?ClassStudentAssistant
+    {
         if (!$user->isStudent() || !$user->isActive()) {
-            return false;
+            return null;
         }
 
         $subject = $session->subject;
         if (!$subject || !$subject->hasStudent($user)) {
-            return false;
+            return null;
         }
 
         $now = now('Asia/Manila');
-        $assignment = ClassStudentAssistant::where('subject_id', $subject->id)
+        return ClassStudentAssistant::where('subject_id', $subject->id)
             ->where('student_id', $user->id)
             ->whereNotNull('active_slot')
             ->whereNull('revoked_at')
             ->where('starts_at', '<=', $now)
             ->where('expires_at', '>=', $now)
             ->first();
-        if (!$assignment) {
-            return false;
-        }
-        return true;
+    }
+
+    public function submitAssistantAttendance(User $user, AttendanceSession $session): bool
+    {
+        return (bool) $this->activeAssistantAssignment($user, $session)?->can_submit_attendance
+            && $this->withinAssistantSessionWindow($session);
     }
 
     public function generateAssistantQr(User $user, AttendanceSession $session): bool

@@ -347,6 +347,7 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::post('/peer-snap/confirm', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'confirm'])->middleware(['device.bound', 'throttle:5,1'])->name('peer-snap.confirm');
     Route::get('/student-assistant/classes', [App\Http\Controllers\StudentAssistantSessionController::class, 'index'])->middleware('feature:student_assistant_qr')->name('student-assistant.classes');
     Route::get('/student-assistant/sessions/{session}', [App\Http\Controllers\StudentAssistantSessionController::class, 'show'])->middleware('feature:student_assistant_qr')->name('student-assistant.sessions.show');
+    Route::post('/student-assistant/sessions/{session}/attendance-reports', [App\Http\Controllers\StudentAssistantSessionController::class, 'submitAttendance'])->middleware(['feature:student_assistant_qr', 'throttle:30,1'])->name('student-assistant.attendance-reports.store');
     Route::get('/student-assistant/sessions/{session}/qr', [App\Http\Controllers\AttendanceQrTokenController::class, 'status'])->middleware('feature:student_assistant_qr')->name('student-assistant.qr.status');
     Route::post('/student-assistant/sessions/{session}/qr', [App\Http\Controllers\AttendanceQrTokenController::class, 'generate'])->middleware(['feature:student_assistant_qr', 'throttle:12,1'])->name('student-assistant.qr.generate');
     Route::post('/student-assistant/sessions/{session}/qr/rotate', [App\Http\Controllers\AttendanceQrTokenController::class, 'rotate'])->middleware(['feature:student_assistant_qr', 'throttle:12,1'])->name('student-assistant.qr.rotate');
@@ -436,8 +437,11 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     // Classroom (Unified Interface)
     Route::get('/classroom', [App\Http\Controllers\TeacherController::class, 'classroomIndex'])->name('classroom.index');
     Route::get('/classroom/{subjectCode}', [App\Http\Controllers\TeacherController::class, 'classroomShow'])->name('classroom.show');
+    Route::get('/classroom/{subjectCode}/assistant-attendance', [App\Http\Controllers\TeacherAssistantAttendanceController::class, 'index'])->name('classroom.assistant-attendance.index');
+    Route::patch('/classroom/{subjectCode}/assistant-attendance/{report}', [App\Http\Controllers\TeacherAssistantAttendanceController::class, 'update'])->middleware('throttle:60,1')->name('classroom.assistant-attendance.update');
     Route::post('/classroom/{subjectCode}/student-assistants', [App\Http\Controllers\StudentAssistantAssignmentController::class, 'store'])->name('classroom.assistants.store');
     Route::put('/classroom/{subjectCode}/student-assistants/{assignment}', [App\Http\Controllers\StudentAssistantAssignmentController::class, 'replace'])->name('classroom.assistants.replace');
+    Route::patch('/classroom/{subjectCode}/student-assistants/{assignment}', [App\Http\Controllers\StudentAssistantAssignmentController::class, 'updatePermissions'])->name('classroom.assistants.permissions');
     Route::delete('/classroom/{subjectCode}/student-assistants/{assignment}', [App\Http\Controllers\StudentAssistantAssignmentController::class, 'destroy'])->name('classroom.assistants.destroy');
     Route::post('/classroom/{subjectCode}/attendance', [App\Http\Controllers\TeacherController::class, 'classroomStoreAttendance'])->name('classroom.attendance.store');
     Route::post('/classroom/{subjectCode}/mark-all-present', [App\Http\Controllers\TeacherController::class, 'markAllPresent'])->name('classroom.markAllPresent');
@@ -644,6 +648,15 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::get('/subjects/create', [App\Http\Controllers\AdminController::class, 'createSubject'])->name('subjects.create');
     Route::post('/subjects', [App\Http\Controllers\AdminController::class, 'storeSubject'])->name('subjects.store');
     Route::get('/subjects/export-pdf', [App\Http\Controllers\AdminController::class, 'exportSubjectsPdf'])->name('subjects.pdf');
+    Route::prefix('/subjects/{subject}/student-assistants')->name('subjects.assistants.')
+        ->middleware('can:administer,App\Models\ClassStudentAssistant')
+        ->controller(App\Http\Controllers\Admin\StudentAssistantController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::put('/{assignment}', 'replace')->name('replace');
+            Route::patch('/{assignment}', 'updatePermissions')->name('permissions');
+            Route::delete('/{assignment}', 'destroy')->name('destroy');
+        });
 
     // Enrollments
     Route::get('/subjects/{subject}/enrollments', [App\Http\Controllers\Admin\EnrollmentController::class, 'index'])->name('enrollments.index');

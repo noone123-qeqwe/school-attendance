@@ -2,7 +2,7 @@
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div>
             <h2 id="assistant-heading" style="font-size:1.25rem;font-weight:700;color:#f3e7cd;margin:0;">Student Assistants</h2>
-            <p style="color:#b39b82;margin:5px 0 0;">Up to two enrolled students may display the QR for this class.</p>
+            <p style="color:#b39b82;margin:5px 0 0;">Assign up to two enrolled students to display the QR and, if permitted, submit attendance for your review.</p>
         </div>
         @if($availableAssistantSlots > 0 && $eligibleAssistantStudents->isNotEmpty())
             <button type="button" class="btn-action" data-bs-toggle="modal" data-bs-target="#assignAssistantModal">
@@ -31,6 +31,7 @@
                                 <div class="info-label">Assistant {{ $assistant->active_slot }} · {{ $assistant->status }}</div>
                                 <div class="info-value">{{ $assistant->student?->name ?? 'Unavailable student' }}</div>
                                 <small style="color:#b39b82;">Through {{ $assistant->expires_at->format('M d, Y') }}</small>
+                                <div><small>{{ $assistant->can_submit_attendance ? 'QR and attendance submissions' : 'QR only' }}</small></div>
                             </div>
                             @if($assistant->revoked_at === null && $assistant->expires_at >= now())
                                 <div class="d-flex gap-2 flex-wrap">
@@ -44,6 +45,19 @@
                                 </div>
                             @endif
                         </div>
+                        @if($assistant->revoked_at === null && $assistant->expires_at >= now())
+                            <details class="mt-3">
+                                <summary>Change permissions</summary>
+                                <form action="{{ route('teacher.classroom.assistants.permissions', [$subject->code, $assistant->id]) }}" method="POST">
+                                    @csrf @method('PATCH')
+                                    @include('partials.student-assistant-permission', [
+                                        'permissionId' => 'assistantEditSubmission' . $assistant->id,
+                                        'allowSubmission' => $assistant->can_submit_attendance,
+                                    ])
+                                    <button type="submit" class="btn-secondary btn-action mt-2">Save permissions</button>
+                                </form>
+                            </details>
+                        @endif
                     </div>
                 </div>
             @endforeach
@@ -71,7 +85,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                @include('teacher.classroom.partials.student-assistant-fields', ['assistant' => null])
+                @include('partials.student-assistant-assignment-fields', ['assistant' => null])
             </div>
             <div class="modal-footer" style="border-color:rgba(207,164,111,.2);">
                 <button type="button" class="btn-secondary btn-action" data-bs-dismiss="modal">Cancel</button>
@@ -93,7 +107,7 @@
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        @include('teacher.classroom.partials.student-assistant-fields')
+                        @include('partials.student-assistant-assignment-fields')
                     </div>
                     <div class="modal-footer" style="border-color:rgba(207,164,111,.2);">
                         <button type="button" class="btn-secondary btn-action" data-bs-dismiss="modal">Cancel</button>

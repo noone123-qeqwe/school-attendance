@@ -326,6 +326,12 @@
 
 @include('teacher.classroom.partials.student-assistants')
 
+<div class="mb-3">
+    <a href="{{ route('teacher.classroom.assistant-attendance.index', $subject->code) }}" class="btn-secondary btn-action">
+        <i class="bi bi-clipboard-check" aria-hidden="true"></i> Review assistant submissions
+    </a>
+</div>
+
 @php
     // Calculate statistics
     $totalStudents = $students->count();

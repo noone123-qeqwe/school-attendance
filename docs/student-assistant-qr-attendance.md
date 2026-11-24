@@ -47,6 +47,25 @@ substitute a school address or assistant location.
    activity appears in the teacher-only Session Activity panel. Significant
    scan anomalies queue an in-app teacher alert.
 
+## Delegated attendance submissions
+
+The assigned teacher and full administrators can appoint, replace, or remove
+assistants. Administrators use **Subjects → Assistants**, and an admin change
+is audited and sends the class teacher an in-app notice. The same two slots
+are shared by both appointment paths.
+
+An assignment defaults to QR duties. Enable **Submit attendance for teacher
+review** on the assignment to let the assistant submit Present or Late for an
+eligible classmate during an active session. The assistant can follow their
+own submissions in **Student Assistant**. Mobile students with an active
+assignment can open it from **More**.
+
+Teachers open **Assistant submissions** from the class or QR screen. Each
+submission stays pending until the assigned teacher approves or dismisses it.
+Approval records attendance for the original class date, and preserves an
+existing verified or staff-edited record. A submission can still be reviewed
+after its class session closes. Offline attendance remains a teacher workflow.
+
 ## Deployment
 
 Run the normal Laravel migrations. Keep `APP_KEY` stable after issuing QR

@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ClassStudentAssistant extends Model
 {
     protected $fillable = [
-        'subject_id', 'student_id', 'assigned_by_teacher_id',
-        'active_slot', 'starts_at', 'expires_at', 'revoked_at',
+        'subject_id', 'student_id', 'assigned_by_teacher_id', 'assigned_by_admin_id',
+        'active_slot', 'starts_at', 'expires_at', 'revoked_at', 'can_submit_attendance',
     ];
 
     protected $casts = [
@@ -17,6 +17,7 @@ class ClassStudentAssistant extends Model
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
         'revoked_at' => 'datetime',
+        'can_submit_attendance' => 'boolean',
     ];
 
     public function subject(): BelongsTo
@@ -33,6 +34,12 @@ class ClassStudentAssistant extends Model
     public function assigningTeacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by_teacher_id');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function assigningAdmin(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_by_admin_id');
     }
 
     public function isActive(): bool

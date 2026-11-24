@@ -91,6 +91,11 @@
                         <a href="{{ route('admin.enrollments.index', $subject) }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="color:var(--ent-primary);">
                             <i class="bi bi-people" aria-hidden="true"></i> Roster
                         </a>
+                        @can('administer', \App\Models\ClassStudentAssistant::class)
+                        <a href="{{ route('admin.subjects.assistants.index', $subject) }}" class="ent-btn ent-btn-xs ent-btn-ghost">
+                            <i class="bi bi-person-badge" aria-hidden="true"></i> Assistants
+                        </a>
+                        @endcan
                         <a href="{{ route('admin.class-schedules.index', ['subject_id' => $subject->id]) }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="color:#D4AF37;" title="Assign / View Schedule">
                             <i class="bi bi-clock-fill" aria-hidden="true"></i> Schedule
                         </a>

@@ -922,6 +922,7 @@
                 @elseif(Auth::user()->isParent())
                     @include('partials.parent-navigation', ['mobile' => true])
                 @else
+                    @include('partials.student-assistant-mobile-link')
                     <a href="{{ route('student.schedule') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-clock-history"></i></div>
                         <span class="more-sheet-item-label">Schedule</span>

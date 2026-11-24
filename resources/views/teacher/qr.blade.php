@@ -476,6 +476,11 @@
                             </div>
                         </div>
                         <div class="d-flex flex-wrap align-items-center gap-2">
+                            @if (auth()->user()->isTeacher() && (int) $subject->instructor_id === (int) auth()->id())
+                                <a href="{{ route('teacher.classroom.assistant-attendance.index', $subject->code) }}" class="btn modern-btn secondary">
+                                    <i class="bi bi-clipboard-check me-1" aria-hidden="true"></i> Assistant submissions
+                                </a>
+                            @endif
                             <!-- Sound Toggle Button -->
                             <button type="button" id="soundToggleBtn" class="btn modern-btn secondary" onclick="toggleClockInSound()" title="Toggle clock-in audio chimes" style="padding: 10px 14px !important;">
                                 <i class="bi bi-volume-up-fill me-1" id="soundIcon"></i>
