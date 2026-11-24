@@ -24,6 +24,9 @@ function checkProfilePasskeyWhenVisible() {
     if (!document.hidden && !profilePasskeyRegistrationPending) refreshProfilePasskeyCapability();
 }
 
-window.addEventListener('pageshow', checkProfilePasskeyWhenVisible);
+checkProfilePasskeyWhenVisible();
+window.addEventListener('pageshow', event => {
+    if (event.persisted) checkProfilePasskeyWhenVisible();
+});
 document.addEventListener('visibilitychange', checkProfilePasskeyWhenVisible);
 </script>
