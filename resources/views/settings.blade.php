@@ -1326,8 +1326,8 @@
 
                     @if($user->isStudent())
                     <div id="studentBiometricChoices" class="student-biometric-choices">
-                        <a id="studentFaceRegistrationLink" href="{{ route('settings.biometrics.face') }}"><i class="bi bi-camera-video" aria-hidden="true"></i><span><strong>Face registration</strong><small>Register your face with the camera for attendance.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-                        <a id="studentFingerprintRegistrationLink" href="{{ route('settings.biometrics.fingerprint') }}"><i class="bi bi-fingerprint" aria-hidden="true"></i><span><strong>Fingerprint registration</strong><small>Set up secure device sign-in or manage registered devices.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                        <a id="studentFaceRegistrationLink" href="{{ route('settings.biometrics.face') }}"><i class="bi bi-camera-video" aria-hidden="true"></i><span><strong>Face registration for attendance</strong><small>Use the camera to register your face for attendance checks.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                        <a id="studentFingerprintRegistrationLink" href="{{ route('settings.biometrics.fingerprint') }}"><i class="bi bi-shield-lock" aria-hidden="true"></i><span><strong>Device passkey</strong><small>Set up sign-in with face unlock, a fingerprint, or your screen lock.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
                     </div>
                     @else
                     <div id="studentPasskeySettings">

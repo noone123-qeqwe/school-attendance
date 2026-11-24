@@ -29,6 +29,51 @@ class AuthOtpAndRbacHardeningTest extends TestCase
         ], $overrides));
     }
 
+    public function test_device_lock_options_allow_a_students_registered_passkey_with_required_verification(): void
+    {
+        $student = $this->createUser();
+        $credential = $student->webauthnCredentials()->create([
+            'credential_id' => 'dGVzdC1zdHVkZW50LXBhc3NrZXk',
+            'public_key' => <<<'PEM'
+                -----BEGIN PUBLIC KEY-----
+                MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEJQ6V8r1g93isH5pxPxeW/P2bfUiX
+                V4vPDB6MtEg4yFSZO+yifg44lONIPY5R85iDgt51BAo03UddM6kZz3jmFw==
+                -----END PUBLIC KEY-----
+                PEM,
+        ]);
+        $this->assertSame('fingerprint', $credential->refresh()->biometric_type);
+
+        $this->postJson(route('webauthn.login.options'), [
+            'identifier' => $student->student_number,
+            'biometric_method' => 'device_lock',
+        ])->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('userVerification', 'required')
+            ->assertJsonCount(1, 'allowCredentials')
+            ->assertJsonPath('allowCredentials.0.id', $credential->credential_id)
+            ->assertJsonPath('allowCredentials.0.type', 'public-key');
+    }
+
+    public function test_device_lock_options_do_not_distinguish_camera_only_and_unknown_accounts(): void
+    {
+        $student = $this->createUser();
+        $student->webauthnCredentials()->create([
+            'credential_id' => 'face_legacy_camera',
+            'public_key' => '[0.1, 0.2, 0.3]',
+            'biometric_type' => 'face',
+        ]);
+
+        $unknown = $this->postJson(route('webauthn.login.options'), [
+            'identifier' => 'missing.account@gmail.com',
+            'biometric_method' => 'device_lock',
+        ])->assertNotFound()->assertJsonPath('code', 'BIOMETRIC_UNAVAILABLE');
+
+        $this->postJson(route('webauthn.login.options'), [
+            'identifier' => $student->student_number,
+            'biometric_method' => 'device_lock',
+        ])->assertNotFound()->assertExactJson($unknown->json());
+    }
+
     #[TestWith([[]], 'without a section')]
     #[TestWith([['section_id' => 1]], 'with an earlier form')]
     public function test_student_registration_leaves_section_assignment_to_the_school(array $formFields): void

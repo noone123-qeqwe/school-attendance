@@ -358,14 +358,14 @@ if (document.readyState === 'loading') {
             <div id="fingerprintSection" style="display: block;">
                 <!-- Inline message area for biometric feedback -->
                 <div id="fpMessage" role="status" style="display:none;"></div>
-                <button type="button" class="fp-row anim-fade-up anim-d5" id="fpRowBtn" aria-label="Sign in with Biometrics" aria-haspopup="dialog" aria-controls="biometricModal">
+                <button type="button" class="fp-row anim-fade-up anim-d5" id="fpRowBtn" aria-label="Sign in with a passkey" aria-haspopup="dialog" aria-controls="biometricModal">
                     <div class="fp-row-left">
                         <div class="fp-icon-wrap">
-                            <i class="bi bi-fingerprint" id="fpIcon"></i>
+                            <i class="bi bi-shield-lock" id="fpIcon"></i>
                         </div>
                         <div>
-                            <div class="fp-row-label" id="fpLabel">Sign in with Biometrics</div>
-                            <div class="fp-row-hint" id="fpHint">Fingerprint, Face ID, or device security</div>
+                            <div class="fp-row-label" id="fpLabel">Sign in with a passkey</div>
+                            <div class="fp-row-hint" id="fpHint">Face unlock, fingerprint, or screen lock</div>
                         </div>
                     </div>
                     <i class="bi bi-chevron-right fp-row-arrow" id="fpArrow"></i>
@@ -483,21 +483,14 @@ if (document.readyState === 'loading') {
 
             <header class="bio-dialog-heading">
                 <div class="bio-dialog-icon" aria-hidden="true">
-                    <i class="bi bi-fingerprint" id="bioModalIcon"></i>
+                    <i class="bi bi-shield-lock" id="bioModalIcon"></i>
                 </div>
-                <h2 class="bio-modal-title" id="bioModalTitle" tabindex="-1">Biometric sign-in</h2>
+                <h2 class="bio-modal-title" id="bioModalTitle" tabindex="-1">Passkey sign-in</h2>
                 <div class="bio-modal-user-pill" id="bioModalUserPill" style="display:none;">
                     <i class="bi bi-person-badge" aria-hidden="true"></i><span id="bioModalUserText"></span>
                 </div>
             </header>
-            <p class="bio-modal-desc" id="bioModalDesc">
-                Biometric login is not registered for this account. Please use your password or register your biometrics first.
-            </p>
-
-            <!-- Biometric Method Selection List -->
-            <div id="bioModalMethodsWrap" style="display:none;">
-                <div class="bio-method-list" id="bioModalMethodsList"></div>
-            </div>
+            <p class="bio-modal-desc" id="bioModalDesc">Use your device’s secure prompt to sign in.</p>
 
             <div id="bioModalProgress" class="bio-dialog-progress" role="status" hidden>
                 <span id="bioModalProgressIcon" class="biometric-spinner" aria-hidden="true"></span>
@@ -519,10 +512,7 @@ if (document.readyState === 'loading') {
             <!-- Action Buttons -->
             <div class="bio-modal-actions">
                 <button type="button" class="glass-btn glass-btn-primary" id="bioModalPrimaryBtn">
-                    <i class="bi bi-shield-lock-fill me-2"></i>Set Up Biometrics
-                </button>
-                <button type="button" class="bio-modal-secondary-btn" id="bioModalChooseMethodBtn" style="display:none;">
-                    <i class="bi bi-grid-fill me-1"></i>Choose Another Method
+                    Set up a passkey
                 </button>
                 <button type="button" class="bio-modal-secondary-btn" id="bioModalSecondaryBtn">
                     Use Password
@@ -776,9 +766,9 @@ function updateBiometricHint() {
             var accounts = getSavedAccounts();
             var match = accounts.find(function(a) { return a.identifier.toLowerCase() === curVal.toLowerCase(); });
             var displayName = match ? (match.name || match.identifier) : curVal;
-            fpHint.textContent = 'Touch sensor for ' + displayName;
+            fpHint.textContent = 'Use a passkey for ' + displayName;
         } else {
-            fpHint.textContent = 'Fingerprint, Face ID, or device security (Any user)';
+            fpHint.textContent = 'Face unlock, fingerprint, or screen lock';
         }
     }
 }
@@ -1040,15 +1030,14 @@ function bufferToBase64Url(buffer) {
 function resetBiometricButton() {
     isBioPending = false;
     bioAbortController = null;
-    if (typeof stopFaceRecognitionLoginCamera === 'function') stopFaceRecognitionLoginCamera();
     if (!fpRowBtn) return;
     fpRowBtn.disabled = false;
     fpRowBtn.style.opacity = '1';
     fpRowBtn.style.cursor = 'pointer';
     fpRowBtn.removeAttribute('title');
-    if (fpLabel) fpLabel.textContent = 'Sign in with Biometrics';
-    if (fpHint) fpHint.textContent = 'Fingerprint, Face ID, or device security';
-    if (fpIcon) fpIcon.className = 'bi bi-fingerprint';
+    if (fpLabel) fpLabel.textContent = 'Sign in with a passkey';
+    updateBiometricHint();
+    if (fpIcon) fpIcon.className = 'bi bi-shield-lock';
     if (fpArrow) fpArrow.className = 'bi bi-chevron-right fp-row-arrow';
 }
 
@@ -1100,10 +1089,6 @@ function focusPasswordField() {
 let activeSetupIdentifier = '';
 let currentPrimaryModalCallback = null;
 let currentSecondaryModalCallback = null;
-let currentChooseMethodCallback = null;
-let lastAvailableMethods = null;
-let lastBiometricOptions = null;
-
 function openBiometricModal(config) {
     config = config || {};
     var modal = document.getElementById('biometricModal');
@@ -1127,8 +1112,8 @@ function openBiometricModal(config) {
     hideFpMessage();
     modal.dataset.tone = config.badgeType || 'info';
     modal.dataset.dismissible = config.complete ? 'false' : 'true';
-    if (titleEl) titleEl.textContent = config.title || 'Set up biometric sign-in';
-    if (descEl) descEl.textContent = biometricText(config.message || 'Use your password to sign in or set up biometrics on this device.');
+    if (titleEl) titleEl.textContent = config.title || 'Passkey sign-in';
+    if (descEl) descEl.textContent = biometricText(config.message || 'Use your password to sign in or set up a passkey on this device.');
     if (progress) progress.hidden = !config.progress;
     if (progressText) progressText.textContent = config.progress || '';
     if (progressIcon) {
@@ -1152,90 +1137,10 @@ function openBiometricModal(config) {
     currentPrimaryModalCallback = typeof config.onPrimaryClick === 'function' ? config.onPrimaryClick : handleSetupBiometricsClick;
     currentSecondaryModalCallback = typeof config.onSecondaryClick === 'function' ? config.onSecondaryClick : closeBiometricModalAndFocusPassword;
 
-    // Render dynamic biometric method selection list if provided
-    var methodsWrap = document.getElementById('bioModalMethodsWrap');
-    var methodsList = document.getElementById('bioModalMethodsList');
-    if (methodsWrap && methodsList) {
-        if (config.methods && Array.isArray(config.methods) && config.methods.length > 0) {
-            methodsWrap.style.display = 'block';
-            methodsList.innerHTML = '';
-            config.methods.forEach(function(method) {
-                var card = document.createElement('button');
-                card.type = 'button';
-                card.className = 'bio-method-card';
-                card.setAttribute('data-bio-method', method.id);
-                card.setAttribute('aria-label', method.name + ' - ' + method.desc);
-
-                var leftDiv = document.createElement('div');
-                leftDiv.className = 'bio-method-left';
-
-                var iconBox = document.createElement('div');
-                iconBox.className = 'bio-method-icon-box';
-                var iTag = document.createElement('i');
-                iTag.className = 'bi ' + method.icon;
-                iconBox.appendChild(iTag);
-                leftDiv.appendChild(iconBox);
-
-                var infoDiv = document.createElement('div');
-                infoDiv.className = 'bio-method-info';
-                var nameDiv = document.createElement('div');
-                nameDiv.className = 'bio-method-name';
-                nameDiv.textContent = method.name;
-                var descDiv = document.createElement('div');
-                descDiv.className = 'bio-method-desc';
-                descDiv.textContent = method.desc;
-                infoDiv.appendChild(nameDiv);
-                infoDiv.appendChild(descDiv);
-                leftDiv.appendChild(infoDiv);
-
-                var arrowIcon = document.createElement('i');
-                arrowIcon.className = 'bi bi-chevron-right bio-method-arrow';
-
-                card.appendChild(leftDiv);
-                card.appendChild(arrowIcon);
-
-                card.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (typeof config.onMethodSelect === 'function') {
-                        config.onMethodSelect(method);
-                    }
-                });
-
-                methodsList.appendChild(card);
-            });
-        } else {
-            methodsWrap.style.display = 'none';
-            methodsList.innerHTML = '';
-        }
-    }
-
     if (primaryBtn) {
         primaryBtn.hidden = !!(config.hidePrimaryBtn || config.primaryBtnText === false);
-        primaryBtn.textContent = biometricText(config.primaryBtnText || 'Set up biometrics');
+        primaryBtn.textContent = biometricText(config.primaryBtnText || 'Set up a passkey');
         primaryBtn.disabled = !!config.primaryDisabled;
-    }
-
-    var chooseMethodBtn = document.getElementById('bioModalChooseMethodBtn');
-    if (chooseMethodBtn) {
-        if (config.showChooseMethodBtn) {
-            chooseMethodBtn.hidden = false;
-            if (config.chooseMethodBtnText) {
-                chooseMethodBtn.textContent = biometricText(config.chooseMethodBtnText);
-            } else {
-                chooseMethodBtn.textContent = 'Choose another method';
-            }
-            currentChooseMethodCallback = typeof config.onChooseMethodClick === 'function' 
-                ? config.onChooseMethodClick 
-                : function() {
-                    if (lastAvailableMethods && lastAvailableMethods.length > 0) {
-                        openBiometricSelectionPrompt(lastAvailableMethods, activeSetupIdentifier, lastBiometricOptions);
-                    } else {
-                        handleBiometricLogin();
-                    }
-                };
-        } else {
-            chooseMethodBtn.hidden = true;
-        }
     }
 
     if (secondaryBtn) {
@@ -1249,13 +1154,7 @@ function openBiometricModal(config) {
     
     var modalIcon = document.getElementById('bioModalIcon');
     if (modalIcon) {
-        if (config.headerIcon) {
-            modalIcon.className = 'bi ' + config.headerIcon;
-        } else if (config.methods && config.methods.length > 0) {
-            modalIcon.className = 'bi bi-shield-lock';
-        } else {
-            modalIcon.className = 'bi bi-fingerprint';
-        }
+        modalIcon.className = 'bi ' + (config.headerIcon || 'bi-shield-lock');
     }
 
     modal.style.display = 'flex';
@@ -1282,7 +1181,6 @@ function showBiometricProgress(title, message, identifier, progress, options = {
 }
 
 function closeBiometricModal() {
-    if (typeof stopFaceRecognitionLoginCamera === 'function') stopFaceRecognitionLoginCamera();
     if (bioAbortController) {
         try { bioAbortController.abort(); } catch(e) {}
         bioAbortController = null;
@@ -1346,14 +1244,13 @@ document.addEventListener('keydown', function(e) {
 
 function openBiometricSetupModal(identifier) {
     activeSetupIdentifier = identifier || (idInput ? idInput.value.trim() : '');
-    showFpMessage('warning', '<i class="bi bi-exclamation-triangle-fill me-2"></i>Biometric login is not registered for this account. Please use your password or register your biometrics first.');
     openBiometricModal({
-        title: 'BIOMETRIC NOT REGISTERED',
+        title: 'Set up a passkey',
         identifier: activeSetupIdentifier,
-        message: 'Biometric login is not registered for this account.<br><br>Please use your password or register your biometrics first.',
+        message: 'Check your account details. To set up a passkey on this device, confirm your account password.',
         badgeType: 'warning',
-        primaryBtnText: '<i class="bi bi-shield-lock-fill me-2"></i>SET UP BIOMETRICS',
-        secondaryBtnText: 'USE PASSWORD',
+        primaryBtnText: 'Set up a passkey',
+        secondaryBtnText: 'Sign in with password',
         onPrimaryClick: handleSetupBiometricsClick,
         onSecondaryClick: closeBiometricModalAndFocusPassword
     });
@@ -1364,21 +1261,16 @@ async function handleSetupBiometricsClick() {
     var passInputInForm = document.getElementById('loginPassword');
     var passInputInModal = document.getElementById('bioModalPasswordInput');
     
-    var password = '';
-    if (passInputInForm && passInputInForm.value) {
-        password = passInputInForm.value;
-    } else if (passInputInModal && passInputInModal.value) {
-        password = passInputInModal.value;
-    }
+    var password = passInputInModal?.value || passInputInForm?.value || '';
 
     if (!password) {
         openBiometricModal({
             title: 'VERIFY YOUR ACCOUNT',
             identifier: activeSetupIdentifier,
-            message: 'Confirm your account password before registering this device.',
+            message: 'Confirm your account password before setting up a passkey on this device.',
             showPassword: true,
             badgeType: 'warning',
-            primaryBtnText: '<i class="bi bi-check-circle-fill me-2"></i>VERIFY & ENABLE BIOMETRICS',
+            primaryBtnText: 'Verify and set up passkey',
             secondaryBtnText: 'USE PASSWORD',
             onPrimaryClick: handleSetupBiometricsClick,
             onSecondaryClick: closeBiometricModalAndFocusPassword
@@ -1435,7 +1327,7 @@ async function startBiometricRegistration(identifier, password) {
             return;
         }
 
-        showBiometricProgress('Confirm on your device', 'Follow the secure prompt. Your device may ask for a fingerprint, Face ID, or a screen lock.', identifier, 'Step 2 of 2 · Waiting for your device', { icon: 'bi-phone' });
+        showBiometricProgress('Confirm on your device', 'Your device may ask for face unlock, a fingerprint, or your screen lock.', identifier, 'Step 2 of 2 · Waiting for your device', { icon: 'bi-phone' });
 
         var challenge = base64ToUint8Array(opts.challenge);
         var userId = base64ToUint8Array(opts.user.id);
@@ -1563,9 +1455,9 @@ async function startBiometricRegistration(identifier, password) {
             } catch (e) {}
 
             openBiometricModal({
-                title: '✓ BIOMETRIC SIGN-IN ENABLED',
+                title: 'Passkey ready',
                 identifier: identifier,
-                message: 'Biometric sign-in is now enabled for this account on this device.',
+                message: 'You can now use this passkey to sign in.',
                 badgeType: 'success',
                 primaryBtnText: 'CONTINUE',
                 secondaryBtnText: false,
@@ -1639,142 +1531,6 @@ function handleDirectReEnrollClick(e) {
     openBiometricSetupModal(idVal);
 }
 
-// Dynamic Device Biometric Capabilities & Selection
-let _deviceBioCapabilitiesCache = null;
-
-async function getDeviceBiometricCapabilities() {
-    if (_deviceBioCapabilitiesCache) {
-        return _deviceBioCapabilitiesCache;
-    }
-
-    var isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    var isWebAuthnSupported = !!(isSecure && window.PublicKeyCredential && navigator.credentials && typeof navigator.credentials.get === 'function');
-    var isPlatformAvailable = false;
-    var platformAvailabilityKnown = false;
-    if (isWebAuthnSupported && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
-        try {
-            isPlatformAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-            platformAvailabilityKnown = true;
-        } catch(e) {
-            isPlatformAvailable = false;
-        }
-    }
-
-    var ua = navigator.userAgent || '';
-    var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    var isAndroid = /Android/i.test(ua);
-    var isWindows = /Windows/i.test(ua);
-    var isMac = /Macintosh/i.test(ua) && !isIOS;
-
-    var isIosFaceId = isIOS && (window.screen.height / window.screen.width > 2 || (window.visualViewport && window.visualViewport.height / window.visualViewport.width > 2) || (typeof window.CSS !== 'undefined' && CSS.supports('padding-top: env(safe-area-inset-top)')));
-
-
-
-    _deviceBioCapabilitiesCache = {
-        isWebAuthnSupported: isWebAuthnSupported,
-        isPlatformAvailable: isPlatformAvailable,
-        platformAvailabilityKnown: platformAvailabilityKnown,
-        isIOS: isIOS,
-        isIosFaceId: isIosFaceId,
-        isAndroid: isAndroid,
-        isWindows: isWindows,
-        isMac: isMac,
-    };
-
-    return _deviceBioCapabilitiesCache;
-}
-
-function filterAvailableBiometricMethods(serverMethods, deviceCaps) {
-    deviceCaps = deviceCaps || { isPlatformAvailable: true, isIOS: false, isIosFaceId: false, isAndroid: false, isWindows: false };
-    serverMethods = Array.isArray(serverMethods) ? serverMethods : ['fingerprint', 'face', 'device_lock'];
-
-    var methods = [];
-
-    // Method 1: Fingerprint (Touch ID, Fingerprint sensor)
-    var canTryLocalAuthenticator = deviceCaps.isPlatformAvailable
-        || (deviceCaps.isWebAuthnSupported && !deviceCaps.platformAvailabilityKnown);
-    var fpSupported = canTryLocalAuthenticator;
-    if (serverMethods.includes('fingerprint') && fpSupported) {
-        methods.push({
-            id: 'fingerprint',
-            name: deviceCaps.isMac ? 'Touch ID / Fingerprint' : 'Fingerprint',
-            desc: deviceCaps.isMac ? 'Touch sensor to sign in with Touch ID' : 'Touch sensor or scan fingerprint to sign in',
-            icon: 'bi-fingerprint',
-            uv: 'preferred'
-        });
-    }
-
-    // Method 2: Device face sign-in (Face ID / Windows Hello passkey)
-    // A webcam is not an authenticator. Only offer this method when the device
-    // reports a user-verifying platform authenticator (Face ID/Windows Hello).
-    var faceSupported = canTryLocalAuthenticator;
-    if (serverMethods.includes('face') && faceSupported) {
-        methods.push({
-            id: 'face',
-            name: deviceCaps.isIOS ? 'Face ID' : 'Face ID / Windows Hello',
-            desc: 'Use this device’s protected sign-in prompt; a PIN may be offered by the device',
-            icon: 'bi-person-bounding-box',
-            uv: 'required'
-        });
-    }
-
-    // Method 3: Device PIN/password/pattern as a fallback when supported
-    if (serverMethods.includes('device_lock') && canTryLocalAuthenticator) {
-        methods.push({
-            id: 'device_lock',
-            name: deviceCaps.isWindows ? 'Windows Hello PIN / Screen Lock' : (deviceCaps.isIOS ? 'Device Passcode / Screen Lock' : 'Device PIN / Pattern / Screen Lock'),
-            desc: deviceCaps.isIOS ? 'Use device passcode or security key' : 'Use device PIN, pattern, or system password',
-            icon: 'bi-shield-lock-fill',
-            uv: 'required'
-        });
-    }
-
-    return methods;
-}
-
-function stopFaceRecognitionLoginCamera() {
-    // Kept for callers that close the biometric dialog; device verification has no camera stream.
-}
-async function startFaceRecognitionLogin(identifier, opts) {
-    // Compatibility entry point: face sign-in uses the device's signed WebAuthn assertion.
-    return performBiometricLogin(identifier || (idInput ? idInput.value.trim() : ''), {
-        id: 'face',
-        name: 'Face ID / Windows Hello',
-        icon: 'bi-person-bounding-box',
-        uv: 'required'
-    }, opts);
-}
-function openBiometricSelectionPrompt(methods, identifier, opts) {
-    lastAvailableMethods = methods;
-    lastBiometricOptions = opts;
-    activeSetupIdentifier = identifier || (idInput ? idInput.value.trim() : '');
-
-    openBiometricModal({
-        title: 'SIGN IN WITH BIOMETRICS',
-        identifier: activeSetupIdentifier,
-        message: 'Choose an enrolled authentication method on your device to sign in:',
-        badgeType: 'info',
-        methods: methods,
-        hidePrimaryBtn: true,
-        secondaryBtnText: 'SIGN IN WITH PASSWORD',
-        showChooseMethodBtn: false,
-        onMethodSelect: function(selectedMethod) {
-            handleSelectBiometricMethod(selectedMethod, activeSetupIdentifier, opts);
-        },
-        onSecondaryClick: closeBiometricModalAndFocusPassword
-    });
-}
-
-function handleSelectBiometricMethod(selectedMethod, identifier, opts) {
-    closeBiometricModal();
-    if (fpLabel) fpLabel.textContent = selectedMethod.name + '...';
-    if (fpHint) fpHint.textContent = 'Tap here to cancel (or verify)';
-    if (fpIcon) fpIcon.className = 'bi ' + selectedMethod.icon;
-    if (fpArrow) fpArrow.className = 'bi bi-x-circle fp-row-arrow';
-
-    performBiometricLogin(identifier, selectedMethod, opts);
-}
-
 // Handle biometric login button click
 async function handleBiometricLogin() {
     if (biometricRedirectStarted) return;
@@ -1785,7 +1541,7 @@ async function handleBiometricLogin() {
     // Guard: ensure environment supports WebAuthn / secure context
     if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
         resetBiometricButton();
-        showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>Biometric authentication requires HTTPS or localhost. Please sign in with your password.');
+        showFpMessage('warning', 'Passkey sign-in requires a secure connection. Sign in with your password.');
         focusPasswordField();
         return;
     }
@@ -1816,122 +1572,7 @@ async function handleBiometricLogin() {
         }
     }
 
-    // Modal helper for when identifier is required during targeted setup
-    window.showStudentIdRequiredModal = function() {
-        openBiometricModal({
-            title: 'STUDENT ID OR EMAIL REQUIRED',
-            message: 'Enter your Student ID, email, or mobile number. If this device has a passkey, you can try it directly.',
-            badgeType: 'warning',
-            primaryBtnText: '<i class="bi bi-person-fill me-2"></i>ENTER STUDENT ID / EMAIL',
-            secondaryBtnText: '<i class="bi bi-passkey me-2"></i>USE DEVICE PASSKEY',
-            onPrimaryClick: closeBiometricModalAndFocusIdentifier,
-            onSecondaryClick: function() {
-                closeBiometricModal();
-                performBiometricLogin('');
-            }
-        });
-    };
-
-    var attempt = new AbortController();
-    bioAbortController = attempt;
-    isBioPending = true;
-    showBiometricProgress('Biometric sign-in', 'We’re checking which sign-in methods are available for this device.', identifier, 'Finding available methods…');
-
-    var savedAccounts = (typeof getSavedAccounts === 'function') ? getSavedAccounts() : [];
-    var savedIds = savedAccounts.map(function(a) { return a.identifier; }).filter(Boolean);
-
-    try {
-        // Only discover methods here. The selected method obtains its fresh,
-        // single-use challenge in performBiometricLogin().
-        var optRes = await fetch('{{ route("webauthn.available.methods") }}', {
-            method: 'POST',
-            signal: attempt.signal,
-            credentials: 'same-origin',
-            headers: { 
-                'X-CSRF-TOKEN': '{{ csrf_token() }}', 
-                'Content-Type': 'application/json', 
-                'Accept': 'application/json' 
-            },
-            body: JSON.stringify({ 
-                student_number: identifier, 
-                identifier: identifier,
-                saved_identifiers: savedIds
-            })
-        });
-
-        var opts = await optRes.json();
-        if (attempt.signal.aborted) return;
-
-        if (opts.requires_device_enrollment) {
-            resetBiometricButton();
-            showFpMessage('info', '<i class="bi bi-shield-check me-2"></i>' + (opts.message || 'Verify your password to enroll secure device sign-in.'));
-            openBiometricModal({
-                title: 'ACTIVATE DEVICE BIOMETRICS',
-                identifier: identifier,
-                message: (opts.message || 'This account needs a secure device credential.') + '<br><br>Verify your password to enroll a protected device sign-in method.',
-                badgeType: 'info',
-                showPassword: true,
-                primaryBtnText: '<i class="bi bi-check-circle-fill me-2"></i>ACTIVATE BIOMETRICS',
-                secondaryBtnText: 'USE PASSWORD',
-                onPrimaryClick: handleSetupBiometricsClick,
-                onSecondaryClick: closeBiometricModalAndFocusPassword
-            });
-            return;
-        }
-
-        if (!optRes.ok || !opts.success) {
-            resetBiometricButton();
-            var genericBioMessage = 'Biometric sign-in could not be started. Check your sign-in details, use your password, or set up device sign-in after signing in.';
-            showFpMessage('warning', '<i class="bi bi-shield-lock-fill me-2"></i>' + genericBioMessage);
-            openBiometricModal({
-                title: 'BIOMETRIC SIGN-IN UNAVAILABLE',
-                identifier: identifier,
-                message: genericBioMessage,
-                badgeType: 'warning',
-                primaryBtnText: 'USE PASSWORD',
-                secondaryBtnText: 'CHECK SIGN-IN DETAILS',
-                onPrimaryClick: closeBiometricModalAndFocusPassword,
-                onSecondaryClick: closeBiometricModalAndFocusIdentifier
-            });
-            return;
-        }
-
-        // Detect device biometric capabilities dynamically and filter available methods
-        var deviceCaps = await getDeviceBiometricCapabilities();
-        if (attempt.signal.aborted) return;
-        resetBiometricButton();
-        var availableMethods = filterAvailableBiometricMethods(opts.available_methods, deviceCaps);
-
-        if (availableMethods.length === 0) {
-            showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>No compatible biometric authentication method was detected on this device. Please sign in with your password.');
-            openBiometricModal({
-                title: 'BIOMETRICS UNAVAILABLE',
-                message: 'No supported biometric authentication hardware was detected on this device.<br><br>Please sign in using your account password.',
-                badgeType: 'warning',
-                primaryBtnText: 'SIGN IN WITH PASSWORD',
-                secondaryBtnText: 'CANCEL',
-                onPrimaryClick: closeBiometricModalAndFocusPassword,
-                onSecondaryClick: closeBiometricModal
-            });
-            return;
-        }
-
-        // If face is the only available method, launch its WebAuthn device prompt directly
-        if (availableMethods.length === 1 && availableMethods[0].id === 'face') {
-            startFaceRecognitionLogin(identifier || opts.identifier, opts);
-            return;
-        }
-
-        // Present the user with the biometric methods supported and enrolled on their device
-        openBiometricSelectionPrompt(availableMethods, identifier || opts.identifier, opts);
-
-    } catch(err) {
-        if (attempt.signal.aborted) return;
-        console.error('Error fetching biometric options:', err);
-        closeBiometricModal();
-        showFpMessage('error', '<i class="bi bi-exclamation-triangle-fill me-2"></i>Could not check biometric availability. Please sign in with your password.');
-        focusPasswordField();
-    }
+    return performBiometricLogin(identifier);
 }
 
 function performNativeAndroidBiometricLogin(studentNumber) {
@@ -2060,11 +1701,9 @@ function performNativeAndroidBiometricLogin(studentNumber) {
     );
 }
 
-async function performBiometricLogin(studentNumber, selectedMethod) {
+async function performBiometricLogin(studentNumber) {
     if (biometricRedirectStarted) return;
     studentNumber = (studentNumber || '').trim();
-    selectedMethod = selectedMethod || { id: 'fingerprint', name: 'Biometric', icon: 'bi-fingerprint', uv: 'required' };
-    var onDeviceMethod = selectedMethod.id === 'fingerprint' || selectedMethod.id === 'face';
 
     // Abort previous prompt if any
     if (bioAbortController) {
@@ -2073,25 +1712,12 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
     var attempt = new AbortController();
     bioAbortController = attempt;
     isBioPending = true;
-    showBiometricProgress('Preparing sign-in', 'Your device will ask you to confirm.', studentNumber, 'Connecting securely…', { icon: selectedMethod.icon });
+    showBiometricProgress('Preparing passkey sign-in', 'Your device will ask you to confirm.', studentNumber, 'Connecting securely…');
 
-    var savedAccounts = (typeof getSavedAccounts === 'function') ? getSavedAccounts() : [];
+    var savedAccounts = !studentNumber ? getSavedAccounts() : [];
     var savedIds = savedAccounts.map(function(a) { return a.identifier; }).filter(Boolean);
 
     try {
-        if (onDeviceMethod && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
-            var platformAvailable = null;
-            try {
-                platformAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-            } catch (availabilityError) {
-                // Some browsers cannot answer the capability query. The local-only
-                // WebAuthn request below remains the definitive check on those devices.
-            }
-            if (attempt.signal.aborted) return;
-            if (platformAvailable === false) {
-                throw new Error('No on-device verification is set up. Enable fingerprint, Face ID, or Windows Hello in device settings, or sign in with your password.');
-            }
-        }
         // Every attempt needs a fresh, single-use challenge, including retries from the error dialog.
         var optRes = await fetch('{{ route("webauthn.login.options") }}', {
                 method: 'POST',
@@ -2104,7 +1730,7 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
                 body: JSON.stringify({ 
                     student_number: studentNumber, 
                     identifier: studentNumber,
-                    biometric_method: selectedMethod.id,
+                    biometric_method: 'device_lock',
                     saved_identifiers: savedIds
                 }),
                 signal: attempt.signal
@@ -2112,18 +1738,24 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
         var opts = await optRes.json();
         if (attempt.signal.aborted) return;
 
-        if (!opts || !opts.success) {
-            throw new Error(opts?.message || 'Biometric login failed to initialize.');
+        if (opts?.code === 'BIOMETRIC_UNAVAILABLE' && studentNumber) {
+            resetBiometricButton();
+            openBiometricSetupModal(studentNumber);
+            return;
         }
 
-        var allowCredentials = (opts.allowCredentials || []).map(function(c) {
-            var cred = { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
-            if (c.transports && Array.isArray(c.transports) && c.transports.length > 0) {
-                cred.transports = onDeviceMethod ? ['internal'] : c.transports;
-            } else {
-                cred.transports = onDeviceMethod ? ['internal'] : ['internal', 'hybrid'];
-            }
-            return cred;
+        if (!optRes.ok || !opts?.success) {
+            throw new Error(optRes.status === 429
+                ? 'Too many sign-in attempts. Wait a moment and try again.'
+                : 'Passkey sign-in could not be started.');
+        }
+
+        var allowCredentials = (opts.allowCredentials || []).map(function(credential) {
+            return {
+                type: credential.type || 'public-key',
+                id: base64ToUint8Array(credential.id),
+                transports: credential.transports || ['internal', 'hybrid']
+            };
         });
 
         if (studentNumber && allowCredentials.length === 0) {
@@ -2139,24 +1771,19 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
         var getPublicKey = {
             challenge: challenge,
             userVerification: 'required',
+            hints: ['client-device'],
             timeout: 45000
         };
         
         if (allowCredentials.length > 0) {
             getPublicKey.allowCredentials = allowCredentials;
         }
-        if (onDeviceMethod) {
-            getPublicKey.hints = ['client-device'];
-        }
         
         if (effectiveRpId) {
             getPublicKey.rpId = effectiveRpId;
         }
 
-        var promptHelp = selectedMethod.id === 'face'
-            ? 'Confirm with Face ID or Windows Hello when prompted. A device PIN may be offered.'
-            : (selectedMethod.id === 'device_lock' ? 'Use your PIN or screen lock in the device prompt.' : 'Follow your device’s fingerprint or screen-lock prompt.');
-        showBiometricProgress('Confirm on your device', promptHelp, studentNumber, 'Waiting for your device…', { icon: selectedMethod.icon });
+        showBiometricProgress('Confirm on your device', 'Your device may ask for face unlock, a fingerprint, or your screen lock.', studentNumber, 'Waiting for your device…', { icon: 'bi-phone' });
 
         var assertion = null;
         try {
@@ -2171,7 +1798,7 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
 
             // If allowCredentials failed on this device (e.g. user presented another enrolled credential),
             // attempt discoverable passkey before giving up
-            if (!onDeviceMethod && getPublicKey.allowCredentials && getPublicKey.allowCredentials.length > 0) {
+            if (!studentNumber && getPublicKey.allowCredentials) {
                 console.warn('Biometric query with allowCredentials failed, trying discoverable passkey fallback...', firstErr);
                 var fallbackPublicKey = Object.assign({}, getPublicKey);
                 delete fallbackPublicKey.allowCredentials;
@@ -2231,7 +1858,7 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
                 assertion: assertionData,
                 student_number: studentNumber,
                 identifier: studentNumber,
-                biometric_method: selectedMethod.id,
+                biometric_method: 'device_lock',
                 device_key: devKey,
                 device_fingerprint: devKey
             })
@@ -2240,39 +1867,13 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
         var result = await loginRes.json();
         if (attempt.signal.aborted) return;
 
-        if (loginRes.ok && result.success) {
-            completeBiometricLogin(result);
-        } else {
-            resetBiometricButton();
-
-            var failMsg = 'Biometric sign-in could not be completed. Try again or use your password.';
-            showFpMessage('error', '<i class="bi bi-x-circle me-2"></i>' + failMsg);
-            
-            openBiometricModal({
-                title: 'AUTHENTICATION FAILED',
-                message: failMsg + '<br><br>Please try again, choose another method, or sign in using your password.',
-                badgeType: 'danger',
-                primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
-                secondaryBtnText: 'SIGN IN WITH PASSWORD',
-                showChooseMethodBtn: true,
-                onPrimaryClick: function() {
-                    closeBiometricModal();
-                    performBiometricLogin(studentNumber, selectedMethod);
-                },
-                onChooseMethodClick: function() {
-                    closeBiometricModal();
-                    if (lastAvailableMethods && lastAvailableMethods.length > 0) {
-                        openBiometricSelectionPrompt(lastAvailableMethods, studentNumber, lastBiometricOptions);
-                    } else {
-                        handleBiometricLogin();
-                    }
-                },
-                onSecondaryClick: closeBiometricModalAndFocusPassword
-            });
+        if (!loginRes.ok || !result.success) {
+            throw new Error('Passkey sign-in could not be completed.');
         }
+        completeBiometricLogin(result);
     } catch (err) {
         if (attempt.signal.aborted) return;
-        console.error('Biometric authentication error:', err);
+        console.error('Passkey sign-in error:', err);
         resetBiometricButton();
 
         if (err.name === 'AbortError') {
@@ -2280,85 +1881,22 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
             return;
         }
 
-        var isLockout = /lockout|locked|too\s*many/i.test(err.message || '');
-        if (isLockout) {
-            showFpMessage('error', '<i class="bi bi-shield-exclamation me-2"></i>Biometric sensor locked out. Please use another method or sign in with your password.');
-            openBiometricModal({
-                title: 'SENSOR LOCKED OUT',
-                message: 'Biometric sensor locked out due to multiple failed attempts.<br><br>Please use your device PIN, pattern, or sign in with your account password.',
-                badgeType: 'danger',
-                primaryBtnText: '<i class="bi bi-grid-fill me-2"></i>CHOOSE ANOTHER METHOD',
-                secondaryBtnText: 'SIGN IN WITH PASSWORD',
-                showChooseMethodBtn: true,
-                onPrimaryClick: function() {
-                    closeBiometricModal();
-                    if (lastAvailableMethods && lastAvailableMethods.length > 0) {
-                        openBiometricSelectionPrompt(lastAvailableMethods, studentNumber, lastBiometricOptions);
-                    } else {
-                        handleBiometricLogin();
-                    }
-                },
-                onSecondaryClick: closeBiometricModalAndFocusPassword
-            });
-            return;
-        }
-
-        if (err.name === 'NotAllowedError') {
-            openBiometricModal({
-                title: 'Device prompt didn’t finish',
-                identifier: studentNumber,
-                message: 'Try the device prompt again or sign in with your password.',
-                badgeType: 'warning',
-                primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
-                secondaryBtnText: 'SIGN IN WITH PASSWORD',
-                showChooseMethodBtn: lastAvailableMethods.length > 1,
-                onPrimaryClick: function() {
-                    closeBiometricModal();
-                    performBiometricLogin(studentNumber, selectedMethod);
-                },
-                onChooseMethodClick: function() {
-                    openBiometricSelectionPrompt(lastAvailableMethods, studentNumber, lastBiometricOptions);
-                },
-                onSecondaryClick: closeBiometricModalAndFocusPassword
-            });
-            return;
-        } else if (err.name === 'InvalidStateError') {
-            showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>Your biometric sign-in is not set up on this device.');
-            openBiometricModal({
-                title: 'BIOMETRICS NOT SET UP',
-                message: 'Your biometric credential is not registered on this device.<br><br>Please sign in with your password.',
-                badgeType: 'warning',
-                primaryBtnText: 'SIGN IN WITH PASSWORD',
-                secondaryBtnText: 'CANCEL',
-                onPrimaryClick: closeBiometricModalAndFocusPassword,
-                onSecondaryClick: closeBiometricModal
-            });
-            return;
-        } else {
-            var errMsg = err.message || 'Your biometric authentication could not be completed.';
-            showFpMessage('error', '<i class="bi bi-exclamation-triangle-fill me-2"></i>' + errMsg);
-            openBiometricModal({
-                title: 'AUTHENTICATION FAILED',
-                message: errMsg + '<br><br>Please try again, choose another method, or sign in with your password.',
-                badgeType: 'danger',
-                primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
-                secondaryBtnText: 'SIGN IN WITH PASSWORD',
-                showChooseMethodBtn: true,
-                onPrimaryClick: function() {
-                    closeBiometricModal();
-                    performBiometricLogin(studentNumber, selectedMethod);
-                },
-                onChooseMethodClick: function() {
-                    closeBiometricModal();
-                    if (lastAvailableMethods && lastAvailableMethods.length > 0) {
-                        openBiometricSelectionPrompt(lastAvailableMethods, studentNumber, lastBiometricOptions);
-                    } else {
-                        handleBiometricLogin();
-                    }
-                },
-                onSecondaryClick: closeBiometricModalAndFocusPassword
-            });
-        }
+        var promptIncomplete = err.name === 'NotAllowedError';
+        openBiometricModal({
+            title: promptIncomplete ? 'Device prompt didn’t finish' : 'Passkey sign-in unavailable',
+            identifier: studentNumber,
+            message: promptIncomplete
+                ? 'Try again on a device that has your passkey, or sign in with your password.'
+                : (err.message || 'Passkey sign-in could not be completed.') + ' Try again or sign in with your password.',
+            badgeType: 'warning',
+            primaryBtnText: 'Try again',
+            secondaryBtnText: 'Sign in with password',
+            onPrimaryClick: function() {
+                closeBiometricModal();
+                performBiometricLogin(studentNumber);
+            },
+            onSecondaryClick: closeBiometricModalAndFocusPassword
+        });
     }
 }
 
@@ -2405,21 +1943,6 @@ function setupBiometricListeners() {
                 currentSecondaryModalCallback(e);
             } else {
                 closeBiometricModalAndFocusPassword();
-            }
-        });
-    }
-
-    var chooseMethodBtn = document.getElementById('bioModalChooseMethodBtn');
-    if (chooseMethodBtn && chooseMethodBtn.dataset.biometricBound !== 'true') {
-        chooseMethodBtn.dataset.biometricBound = 'true';
-        chooseMethodBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (typeof currentChooseMethodCallback === 'function') {
-                currentChooseMethodCallback(e);
-            } else if (lastAvailableMethods && lastAvailableMethods.length > 0) {
-                openBiometricSelectionPrompt(lastAvailableMethods, activeSetupIdentifier, lastBiometricOptions);
-            } else {
-                handleBiometricLogin();
             }
         });
     }

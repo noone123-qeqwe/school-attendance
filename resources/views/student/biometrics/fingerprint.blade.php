@@ -1,7 +1,7 @@
 @extends('layouts.biometric-flow')
 
-@section('title', 'Fingerprint registration')
-@section('description', 'Set up secure sign-in on this device. Your device may offer a PIN or another verification method.')
+@section('title', 'Device passkey')
+@section('description', 'Your device may ask for face unlock, a fingerprint, or your screen lock.')
 @section('pageClass', 'fingerprint-registration-page')
 
 @section('content')
@@ -14,19 +14,19 @@
     <div id="bioIdleView">
         <div class="bio-flow-kicker"><i class="bi bi-shield-lock" aria-hidden="true"></i> Device-protected sign-in</div>
         <div class="bio-flow-title-row">
-            <span class="bio-flow-symbol" aria-hidden="true"><i class="bi bi-fingerprint"></i></span>
+            <span class="bio-flow-symbol" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
             <div>
-                <h2>Fingerprint sign-in</h2>
-                <p>Use your device’s secure prompt to add a quick sign-in method.</p>
+                <h2>Set up a passkey</h2>
+                <p>Follow your device’s prompt to link a passkey to your account.</p>
             </div>
         </div>
         <p class="bio-privacy-note"><i class="bi bi-lock" aria-hidden="true"></i><span>Your fingerprint or face stays on your device. The app saves a secure sign-in key.</span></p>
-        <button type="button" id="startBioBtn" class="flow-button flow-primary"><i class="bi bi-fingerprint" aria-hidden="true"></i> Register fingerprint</button>
+        <button type="button" id="startBioBtn" class="flow-button flow-primary"><i class="bi bi-shield-lock" aria-hidden="true"></i> Set up a passkey</button>
     </div>
     <div id="bioScanningView" style="display:none" aria-live="polite" aria-atomic="false">
         <div class="bio-flow-waiting" aria-hidden="true"><span class="biometric-spinner"></span></div>
         <h2 id="fpScanningTitle">Confirm on your device</h2>
-        <p id="fpStatusSub">Follow the secure prompt to register your device. Your device may ask for a PIN.</p>
+        <p id="fpStatusSub">Follow the secure prompt to finish setting up your passkey.</p>
         <button type="button" id="cancelBioBtn" class="flow-button"><i class="bi bi-x-lg" aria-hidden="true"></i> Cancel</button>
     </div>
     <div id="bioSuccessView" style="display:none" role="status" aria-live="polite">

@@ -564,7 +564,7 @@ async function beginFingerprintRegistration() {
     if (fpScanningTitle) fpScanningTitle.textContent = registrationType === 'face' ? 'Confirm face unlock on your device' : 'Confirm on your device';
     if (fpStatusSub) fpStatusSub.textContent = registrationType === 'face'
         ? 'Complete the secure prompt. A PIN may be offered by your device.'
-        : 'Follow the secure prompt. Your device may ask for a fingerprint or screen lock.';
+        : 'Follow the secure prompt. Your device may ask for face unlock, a fingerprint, or your screen lock.';
     updateProgressiveFeedback(25, registrationType === 'face' ? 'Waiting for device confirmation…' : 'Waiting for secure device prompt…');
     const fpPctLabel = document.getElementById(registrationType === 'face' ? 'facePctLabel' : 'fpPctLabel');
     if (fpPctLabel) fpPctLabel.textContent = 'Waiting';
@@ -749,8 +749,8 @@ async function beginFingerprintRegistration() {
             if (scanningView) scanningView.style.display = 'none';
             if (successView) {
                 successView.style.display = 'block';
-                if (successTitle) successTitle.textContent = registrationType === 'face' ? 'Face Sign-in Registered!' : 'Fingerprint Registered Successfully!';
-                if (successDesc) successDesc.textContent = result.message || 'Your device credential is linked to your account.';
+                if (successTitle) successTitle.textContent = 'Passkey registered';
+                if (successDesc) successDesc.textContent = 'Your passkey is linked to your account.';
             }
             focusBiometricHeading(successTitle);
             await loadDevices();
