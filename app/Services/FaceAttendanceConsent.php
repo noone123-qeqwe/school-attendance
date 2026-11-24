@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\PeerFaceEnrollment;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -29,7 +30,7 @@ class FaceAttendanceConsent
     public function update(User $student, User $actor, ?string $source): void
     {
         abort_unless($student->isStudent(), 404);
-        abort_unless($actor->isSuperAdmin() || ($source === null && $student->is($actor)), 403);
+        abort_unless($actor->isSuperAdmin() || ($source === null && $student->is($actor)) || ($source === 'adult_student' && $student->is($actor)), 403);
         abort_if($source !== null && !in_array($source, self::SOURCES, true), 422);
 
         DB::transaction(function () use ($student, $actor, $source) {
@@ -37,6 +38,10 @@ class FaceAttendanceConsent
             $records = DB::table('face_attendance_consents');
             if ($source === null) {
                 $records->where('student_id', $student->id)->delete();
+                app(ProfileFacePhotoService::class)->delete($student);
+                PeerFaceEnrollment::where('user_id', $student->id)
+                    ->whereNull('revoked_at')
+                    ->update(['revoked_at' => now()]);
             } else {
                 $records->updateOrInsert(['student_id' => $student->id], [
                     'source' => $source,

@@ -230,7 +230,7 @@ class OtpApiController extends Controller
         Otp::clearFailedVerify($userId, $purpose);
         if (isset($otpRecord->is_guest)) {
             Cache::forget($otpRecord->cacheKey);
-        } else {
+        } elseif ($purpose !== 'forgot_password') {
             $otpRecord->update(['used' => true]);
         }
 

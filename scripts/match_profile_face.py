@@ -375,6 +375,69 @@ def verify_attendance(samples, poses, references, recognizer, threshold, pad_thr
     result(matched, code, score, count, liveness_passed=True)
 
 
+def verify_peer_snap(samples, challenge, references, recognizer, threshold, pad_threshold):
+    count = len(samples)
+    if count != 5:
+        result(False, "INCOMPLETE_MULTI_FRAME_CAPTURE", frame_count=count, frame_consistent=False)
+        return
+
+    weakest_pad = min(sample[2] for sample in samples)
+    if weakest_pad < pad_threshold:
+        code = "LIVENESS_FAILED" if weakest_pad < 0.5 else "LIVENESS_UNCERTAIN"
+        result(False, code, frame_count=count)
+        return
+
+    yaws = []
+    boxes = []
+    pixels = []
+    features = []
+    max_pixel_diff = 0.0
+    for index, ((yaw, _pitch), box, _pad_score, feature, gray_thumb) in enumerate(samples):
+        yaws.append(yaw)
+        boxes.append(box)
+        pixels.append(gray_thumb)
+        features.append(feature)
+        if index > 0:
+            prev_box = boxes[index - 1]
+            if math.hypot(box[0] - prev_box[0], box[1] - prev_box[1]) > 0.28:
+                result(False, "LIVE_FRAME_INCONSISTENT", frame_count=count, frame_consistent=False)
+                return
+            if max(abs(box[i] - prev_box[i]) for i in (2, 3)) > 0.28:
+                result(False, "LIVE_FRAME_INCONSISTENT", frame_count=count, frame_consistent=False)
+                return
+            diff = float(abs(gray_thumb - pixels[index - 1]).mean())
+            if diff > max_pixel_diff:
+                max_pixel_diff = diff
+
+    # Require non-identical dynamic motion across the 5 frames (blocks static photo replay).
+    if max_pixel_diff < 0.20:
+        result(False, "LIVENESS_FAILED", frame_count=count, frame_consistent=False)
+        return
+
+    yaw_deltas = [y - yaws[0] for y in yaws]
+    yaw_span = max(yaws) - min(yaws)
+    if challenge == "turn_left" and max(yaw_deltas) < 0.08 and yaw_span < 0.10:
+        result(False, "LIVE_POSE_MISMATCH", frame_count=count, frame_consistent=False)
+        return
+    if challenge == "turn_right" and min(yaw_deltas) > -0.08 and yaw_span < 0.10:
+        result(False, "LIVE_POSE_MISMATCH", frame_count=count, frame_consistent=False)
+        return
+
+    adjacent_scores = [
+        best_reference_score([features[i - 1]], features[i], recognizer)
+        for i in range(1, count)
+    ]
+    if min(adjacent_scores) < max(0.24, threshold - 0.08):
+        result(False, "LIVE_FRAME_INCONSISTENT", min(adjacent_scores), count, frame_consistent=False)
+        return
+
+    ref_scores = [best_reference_score(references, feature, recognizer) for feature in features]
+    similarity = min(ref_scores)
+    matched = similarity >= threshold
+    code = "MATCH" if matched else "BIOMETRIC_MISMATCH"
+    result(matched, code, similarity, count, frame_consistent=True, liveness_passed=True)
+
+
 def main():
     if len(sys.argv) == 5 and sys.argv[1] == "--validate-profile":
         return validate_profile_image(sys.argv[2], sys.argv[3], sys.argv[4])
@@ -384,6 +447,7 @@ def main():
 
     arguments = sys.argv[1:]
     poses = None
+    peer_challenge = None
     pad_model = None
     pad_threshold = None
     if arguments and arguments[0] == "--attendance":
@@ -400,10 +464,25 @@ def main():
             result(False, "MATCHER_UNAVAILABLE")
             return 2
         arguments = arguments[4:]
+    elif arguments and arguments[0] == "--peer-snap":
+        if len(arguments) < 4:
+            result(False, "MATCHER_UNAVAILABLE")
+            return 2
+        peer_challenge = arguments[1]
+        pad_model = arguments[2]
+        try:
+            pad_threshold = float(arguments[3])
+        except ValueError:
+            pad_threshold = 0
+        if peer_challenge not in ("blink_twice", "turn_left", "turn_right") or not 0.5 < pad_threshold <= 1:
+            result(False, "MATCHER_UNAVAILABLE")
+            return 2
+        arguments = arguments[4:]
     reference_set = bool(arguments and arguments[0] == "--reference-set")
     if reference_set:
         arguments = arguments[1:]
-    if len(arguments) not in ((18,) if poses else (5, 6, 7)):
+    expected_arg_len = (18,) if poses else ((9,) if peer_challenge else (5, 6, 7))
+    if len(arguments) not in expected_arg_len:
         result(False, "MATCHER_UNAVAILABLE")
         return 2
 
@@ -446,6 +525,11 @@ def main():
             pad = cv2.dnn.readNetFromONNX(pad_model)
             samples = [attendance_sample(path, detector, recognizer, pad) for path in live_paths]
             verify_attendance(samples, poses, references, recognizer, threshold, pad_threshold)
+            return 0
+        if peer_challenge:
+            pad = cv2.dnn.readNetFromONNX(pad_model)
+            samples = [attendance_sample(path, detector, recognizer, pad) for path in live_paths]
+            verify_peer_snap(samples, peer_challenge, references, recognizer, threshold, pad_threshold)
             return 0
         live_features = [face_feature(path, detector, recognizer, "LIVE") for path in live_paths]
         similarities = [

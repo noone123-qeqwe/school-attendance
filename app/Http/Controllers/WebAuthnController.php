@@ -327,7 +327,7 @@ class WebAuthnController extends Controller
 
         $user = $this->findUserByIdentifier($identifier);
 
-        if (!$user || !$user->isActive() || !Hash::check((string) $request->input('password'), (string) ($user?->password ?? ''))) {
+        if (!$user || !$user->isActive() || !Hash::check((string) $request->input('password'), (string) $user->password)) {
             $attempt = $lockout->recordFailedAttempt($identifier, $ip);
             $response = response()->json([
                 'success' => false,
@@ -566,27 +566,18 @@ class WebAuthnController extends Controller
             }
         }
 
-        // 3. Handle account mismatch / account switching
-        $allowSwitch = $isSwitchUser;
-
+        // 3. Handle account mismatch
         if ($expectedUser && $user && $expectedUser->id !== $user->id) {
-            if ($allowSwitch) {
-                \Illuminate\Support\Facades\Log::info('WebAuthn user switched account to detected biometric owner', [
-                    'from_user_id' => $expectedUser->id,
-                    'to_user_id' => $user->id,
-                ]);
-            } else {
-                \Illuminate\Support\Facades\Log::warning('WebAuthn account mismatch attempt', [
-                    'expected_user_id' => $expectedUser->id,
-                    'credential_user_id' => $user->id,
-                    'credential_fingerprint' => hash('sha256', $credentialId),
-                ]);
-                return response()->json([
-                    'success' => false,
-                    'code' => 'BIOMETRIC_UNAVAILABLE',
-                    'message' => 'Biometric sign-in could not be completed. Check your sign-in details or use your password.',
-                ], 401);
-            }
+            \Illuminate\Support\Facades\Log::warning('WebAuthn account mismatch attempt', [
+                'expected_user_id' => $expectedUser->id,
+                'credential_user_id' => $user->id,
+                'credential_fingerprint' => hash('sha256', $credentialId),
+            ]);
+            return response()->json([
+                'success' => false,
+                'code' => 'BIOMETRIC_UNAVAILABLE',
+                'message' => 'Biometric sign-in could not be completed. Check your sign-in details or use your password.',
+            ], 401);
         }
 
         \Illuminate\Support\Facades\Log::info('WebAuthn login attempt', [

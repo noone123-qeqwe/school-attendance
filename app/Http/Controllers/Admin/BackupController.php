@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Models\BackupLog;
+use App\Services\ExcuseAttachmentStorage;
 use App\Services\PostgresBackupService;
 
 class BackupController extends Controller
@@ -134,6 +136,7 @@ class BackupController extends Controller
                 'path' => 'backups/' . $filename,
                 'size' => filesize($filepath)
             ]);
+            $this->persistBackupToRemoteDisk($filepath, 'backups/' . $filename);
 
             if (request()->wantsJson()) {
                 return response()->json([
@@ -191,6 +194,7 @@ class BackupController extends Controller
                 'path' => 'backups/' . $filename,
                 'size' => filesize($filepath),
             ]);
+            $this->persistBackupToRemoteDisk($filepath, 'backups/' . $filename);
 
             if (request()->wantsJson()) {
                 return response()->json([
@@ -224,9 +228,9 @@ class BackupController extends Controller
         abort_if(!Auth::user()->isSuperAdmin(), 403);
 
         $safeFilename = basename($backup->filename);
-        $filepath = storage_path('app/backups/' . $safeFilename);
+        $filepath = $this->resolveLocalBackupPath($safeFilename, 'backups/' . $safeFilename);
 
-        if (!file_exists($filepath)) {
+        if (!$filepath || !file_exists($filepath)) {
             return back()->with('error', 'Backup file not found on disk.');
         }
 
@@ -391,9 +395,9 @@ class BackupController extends Controller
         abort_if(!Auth::user()->isSuperAdmin(), 403);
 
         $safeFilename = basename($backup->filename);
-        $filepath = storage_path('app/backups/' . $safeFilename);
+        $filepath = $this->resolveLocalBackupPath($safeFilename, $backup->path ?: ('backups/' . $safeFilename));
 
-        if (file_exists($filepath)) {
+        if ($filepath && file_exists($filepath)) {
             return response()->download($filepath, $safeFilename);
         }
         return back()->with('error', 'Backup file not found.');
@@ -402,12 +406,111 @@ class BackupController extends Controller
     public function destroy(BackupLog $backup)
     {
         abort_if(!Auth::user()->isSuperAdmin(), 403);
-        $filepath = storage_path('app/' . $backup->path);
+        $relativePath = $backup->path ?: ('backups/' . basename($backup->filename));
+        $filepath = storage_path('app/' . $relativePath);
         if (file_exists($filepath)) {
             unlink($filepath);
         }
+        $this->deleteBackupFromRemoteDisk($relativePath);
         $backup->delete();
         
         return back()->with('success', 'Backup deleted successfully!');
+    }
+
+    private function remoteBackupDisk(): ?string
+    {
+        $disk = app(ExcuseAttachmentStorage::class)->diskName();
+
+        return $disk !== 'local' ? $disk : null;
+    }
+
+    private function persistBackupToRemoteDisk(string $localPath, string $relativePath): void
+    {
+        $disk = $this->remoteBackupDisk();
+        if (!$disk || !is_file($localPath)) {
+            return;
+        }
+
+        $stream = fopen($localPath, 'rb');
+        if ($stream === false) {
+            return;
+        }
+
+        try {
+            Storage::disk($disk)->put($relativePath, $stream);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to persist database backup to remote storage disk.', [
+                'disk' => $disk,
+                'exception' => get_class($e),
+            ]);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+    }
+
+    private function resolveLocalBackupPath(string $safeFilename, string $relativePath): ?string
+    {
+        $localPath = storage_path('app/backups/' . $safeFilename);
+        if (is_file($localPath)) {
+            return $localPath;
+        }
+
+        $disk = $this->remoteBackupDisk();
+        if (!$disk) {
+            return null;
+        }
+
+        try {
+            $storage = Storage::disk($disk);
+            if (!$storage->exists($relativePath)) {
+                return null;
+            }
+
+            $stream = $storage->readStream($relativePath);
+            if (!is_resource($stream)) {
+                return null;
+            }
+
+            File::ensureDirectoryExists(dirname($localPath), 0755, true);
+            $target = fopen($localPath, 'wb');
+            if ($target === false) {
+                fclose($stream);
+                return null;
+            }
+
+            stream_copy_to_stream($stream, $target);
+            fclose($target);
+            fclose($stream);
+
+            return $localPath;
+        } catch (\Throwable $e) {
+            Log::warning('Failed to hydrate backup from remote storage disk.', [
+                'disk' => $disk,
+                'exception' => get_class($e),
+            ]);
+            return null;
+        }
+    }
+
+    private function deleteBackupFromRemoteDisk(string $relativePath): void
+    {
+        $disk = $this->remoteBackupDisk();
+        if (!$disk) {
+            return;
+        }
+
+        try {
+            $storage = Storage::disk($disk);
+            if ($storage->exists($relativePath)) {
+                $storage->delete($relativePath);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Failed to remove backup from remote storage disk.', [
+                'disk' => $disk,
+                'exception' => get_class($e),
+            ]);
+        }
     }
 }

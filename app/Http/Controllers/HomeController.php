@@ -321,6 +321,13 @@ class HomeController extends Controller
     }
     $subjectStats = $subjectStats->sortBy('rate')->values();
 
+    $announcements = Announcement::with('author')
+        ->published()
+        ->visibleTo($user)
+        ->latest()
+        ->take(5)
+        ->get();
+
     return view('home', compact(
         'currentClass',
         'attendanceStatus',
@@ -335,7 +342,8 @@ class HomeController extends Controller
         'totalAbsent',
         'streakCount',
         'todaySchedule',
-        'subjectStats'
+        'subjectStats',
+        'announcements'
     ));
 }
 
@@ -553,6 +561,7 @@ class HomeController extends Controller
     {
         return view('student.biometrics.face', [
             'hasCameraFaceEnrollment' => \App\Models\ProfileFacePhoto::where('user_id', $request->user()->id)->exists(),
+            'hasFaceConsent' => app(\App\Services\FaceAttendanceConsent::class)->approved($request->user()),
             'faceEnrollmentAvailable' => $features->enabled('feature.face_verification'),
         ]);
     }

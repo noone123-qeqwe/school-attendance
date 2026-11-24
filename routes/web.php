@@ -300,10 +300,10 @@ Route::middleware('auth')->group(function () {
 
     // Device Binding Management (Authenticated Users)
     Route::get('/device/status', [App\Http\Controllers\DeviceBindingController::class, 'status'])->name('device.status');
-    Route::post('/device/bind', [App\Http\Controllers\DeviceBindingController::class, 'bind'])->name('device.bind');
-    Route::post('/device/unbind', [App\Http\Controllers\DeviceBindingController::class, 'unbind'])->name('device.unbind');
-    Route::post('/device/lock', [App\Http\Controllers\DeviceBindingController::class, 'lock'])->name('device.lock');
-    Route::post('/device/unlock', [App\Http\Controllers\DeviceBindingController::class, 'unlock'])->name('device.unlock');
+    Route::post('/device/bind', [App\Http\Controllers\DeviceBindingController::class, 'bind'])->middleware('throttle:device.manage')->name('device.bind');
+    Route::post('/device/unbind', [App\Http\Controllers\DeviceBindingController::class, 'unbind'])->middleware('throttle:device.manage')->name('device.unbind');
+    Route::post('/device/lock', [App\Http\Controllers\DeviceBindingController::class, 'lock'])->middleware('throttle:device.manage')->name('device.lock');
+    Route::post('/device/unlock', [App\Http\Controllers\DeviceBindingController::class, 'unlock'])->middleware('throttle:device.manage')->name('device.unlock');
 });
 
 // Mobile App Routes (All authenticated users)
@@ -332,7 +332,7 @@ Route::middleware('auth')->prefix('mobile')->name('mobile.')->group(function () 
     });
     
     // Admin mobile routes
-    Route::middleware('admin')->group(function () {
+    Route::middleware(['admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\MobileController::class, 'dashboard'])->name('dashboard');
         Route::get('/settings', [App\Http\Controllers\MobileController::class, 'settings'])->name('settings');
     });
@@ -343,8 +343,8 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/peer-snap', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'index'])->middleware('feature:peer_biometric')->name('peer-snap.index');
     Route::get('/peer-snap/sessions', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'sessions'])->middleware(['feature:peer_biometric', 'device.bound', 'throttle:30,1'])->name('peer-snap.sessions');
     Route::post('/peer-snap/session', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'start'])->middleware(['feature:peer_biometric', 'device.bound', 'throttle:10,1'])->name('peer-snap.start');
-    // Allow a pending attempt to be rejected and consumed if the feature is disabled mid-flow.
-    Route::post('/peer-snap/confirm', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'confirm'])->middleware(['device.bound', 'throttle:5,1'])->name('peer-snap.confirm');
+    // Enforce feature flag, bound device, and attempt throttle on confirmation.
+    Route::post('/peer-snap/confirm', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'confirm'])->middleware(['feature:peer_biometric', 'device.bound', 'throttle:5,1'])->name('peer-snap.confirm');
     Route::get('/student-assistant/classes', [App\Http\Controllers\StudentAssistantSessionController::class, 'index'])->middleware('feature:student_assistant_qr')->name('student-assistant.classes');
     Route::get('/student-assistant/sessions/{session}', [App\Http\Controllers\StudentAssistantSessionController::class, 'show'])->middleware('feature:student_assistant_qr')->name('student-assistant.sessions.show');
     Route::post('/student-assistant/sessions/{session}/attendance-reports', [App\Http\Controllers\StudentAssistantSessionController::class, 'submitAttendance'])->middleware(['feature:student_assistant_qr', 'throttle:30,1'])->name('student-assistant.attendance-reports.store');
@@ -704,9 +704,11 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     
     Route::post('/password', [App\Http\Controllers\AdminController::class, 'updatePassword'])->name('password.update');
 
-    // Activity Log
-    Route::get('/activity-log', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity.log');
-    Route::get('/activity-log/export', [App\Http\Controllers\Admin\ActivityLogController::class, 'export'])->name('activity.log.export');
+    // Activity Log (Blocked for data_entry; allowed for super_admin and auditor)
+    Route::middleware('admin.audit')->group(function () {
+        Route::get('/activity-log', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity.log');
+        Route::get('/activity-log/export', [App\Http\Controllers\Admin\ActivityLogController::class, 'export'])->name('activity.log.export');
+    });
 
     // Teacher Management
     Route::get('/teachers', [App\Http\Controllers\AdminController::class, 'teachers'])->name('teachers');
@@ -723,15 +725,17 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::patch('/teacher/{teacher}/deactivate', [App\Http\Controllers\AdminController::class, 'deactivateTeacher'])->name('teacher.deactivate');
     Route::patch('/teacher/{id}/reactivate', [App\Http\Controllers\AdminController::class, 'reactivateTeacher'])->name('teacher.reactivate');
 
-    // Admin Management
-    Route::get('/admins', [App\Http\Controllers\AdminController::class, 'admins'])->name('admins');
-    Route::get('/admin/create', [App\Http\Controllers\AdminController::class, 'createAdmin'])->name('admin.create');
-    Route::post('/admin', [App\Http\Controllers\AdminController::class, 'storeAdmin'])->name('admin.store');
-    Route::get('/admin/{admin}/edit', [App\Http\Controllers\AdminController::class, 'editAdmin'])->name('admin.edit');
-    Route::put('/admin/{admin}', [App\Http\Controllers\AdminController::class, 'updateAdmin'])->name('admin.update');
-    Route::delete('/admin/{admin}', [App\Http\Controllers\AdminController::class, 'destroyAdmin'])->name('admin.destroy');
-    Route::patch('/admin/{admin}/deactivate', [App\Http\Controllers\AdminController::class, 'deactivateAdmin'])->name('admin.deactivate');
-    Route::patch('/admin/{id}/reactivate', [App\Http\Controllers\AdminController::class, 'reactivateAdmin'])->name('admin.reactivate');
+    // Admin Management (Super Admin Only — aligned with AdminNavigation)
+    Route::middleware('admin.super')->group(function () {
+        Route::get('/admins', [App\Http\Controllers\AdminController::class, 'admins'])->name('admins');
+        Route::get('/admin/create', [App\Http\Controllers\AdminController::class, 'createAdmin'])->name('admin.create');
+        Route::post('/admin', [App\Http\Controllers\AdminController::class, 'storeAdmin'])->name('admin.store');
+        Route::get('/admin/{admin}/edit', [App\Http\Controllers\AdminController::class, 'editAdmin'])->name('admin.edit');
+        Route::put('/admin/{admin}', [App\Http\Controllers\AdminController::class, 'updateAdmin'])->name('admin.update');
+        Route::delete('/admin/{admin}', [App\Http\Controllers\AdminController::class, 'destroyAdmin'])->name('admin.destroy');
+        Route::patch('/admin/{admin}/deactivate', [App\Http\Controllers\AdminController::class, 'deactivateAdmin'])->name('admin.deactivate');
+        Route::patch('/admin/{id}/reactivate', [App\Http\Controllers\AdminController::class, 'reactivateAdmin'])->name('admin.reactivate');
+    });
 
     // Parent Management
     Route::get('/parents', [App\Http\Controllers\Admin\ParentManagementController::class, 'index'])->name('parents.index');

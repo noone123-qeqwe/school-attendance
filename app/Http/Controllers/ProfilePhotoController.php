@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Models\PeerFaceEnrollment;
+use App\Services\FaceAttendanceConsent;
 use App\Services\FeatureFlagService;
 use App\Services\ProfileFaceEnrollmentService;
 use App\Services\ProfileFacePhotoService;
@@ -24,6 +26,16 @@ class ProfilePhotoController extends Controller
 
         if (!app(FeatureFlagService::class)->enabled('feature.face_verification')) {
             return response()->json(['success' => false, 'code' => 'FACE_VERIFICATION_DISABLED', 'message' => 'Face attendance enrollment is currently unavailable.'], 503);
+        }
+
+        $consent = app(FaceAttendanceConsent::class);
+        $alreadyConsented = $consent->approved($user);
+        if (!$alreadyConsented && !$request->boolean('consent_accepted')) {
+            return response()->json([
+                'success' => false,
+                'code' => 'CONSENT_REQUIRED',
+                'message' => 'Please review and accept the biometric attendance consent notice before registering your face.',
+            ], 422);
         }
 
         $multiView = $request->has('face_images') || $request->hasFile('face_images');
@@ -52,7 +64,15 @@ class ProfilePhotoController extends Controller
                     ($quality['code'] ?? '') === 'MATCHER_UNAVAILABLE' ? 503 : 422);
             }
             try {
-                DB::transaction(fn () => $photos->saveCameraViews($user, $views));
+                DB::transaction(function () use ($photos, $consent, $user, $views, $alreadyConsented, $request) {
+                    $photos->saveCameraViews($user, $views);
+                    if (!$alreadyConsented && $request->boolean('consent_accepted')) {
+                        $consent->update($user, $user, 'adult_student');
+                    }
+                    PeerFaceEnrollment::where('user_id', $user->id)
+                        ->whereNotNull('revoked_at')
+                        ->update(['revoked_at' => null, 'consented_at' => now()]);
+                });
             } catch (\Throwable $e) {
                 Log::error('Multi-view face enrollment storage failed', ['user_id' => $user->id, 'exception' => $e::class]);
                 return response()->json(['success' => false, 'message' => 'The face captures could not be saved securely. Please retry.'], 500);
@@ -81,7 +101,16 @@ class ProfilePhotoController extends Controller
         }
 
         try {
-            DB::transaction(fn () => $photos->saveCameraEnrollment($user, $jpeg));
+            DB::transaction(function () use ($photos, $consent, $user, $jpeg, $alreadyConsented, $request) {
+                $photos->saveCameraEnrollment($user, $jpeg);
+                if (!$alreadyConsented && $request->boolean('consent_accepted')) {
+                    $consent->update($user, $user, 'adult_student');
+                }
+                PeerFaceEnrollment::where('user_id', $user->id)
+                    ->where('verifier_subject_ref', 'local_profile_face_' . $user->id)
+                    ->whereNotNull('revoked_at')
+                    ->update(['revoked_at' => null, 'consented_at' => now()]);
+            });
         } catch (\Throwable $e) {
             Log::error('Camera face enrollment storage failed', ['user_id' => $user->id, 'exception' => $e::class]);
             return response()->json(['success' => false, 'message' => 'The face enrollment could not be saved securely. Please try again.'], 500);
@@ -253,21 +282,30 @@ class ProfilePhotoController extends Controller
         }
 
         try {
-            if ($user->profile_image) {
-                $previousPath = $user->profile_image;
-                DB::transaction(function () use ($user) {
-                    app(\App\Services\ProfileFacePhotoService::class)->delete($user);
+            $hadFaceEnrollment = \App\Models\ProfileFacePhoto::where('user_id', $user->id)->exists();
+            $previousPath = $user->profile_image;
+
+            DB::transaction(function () use ($user, $previousPath) {
+                app(\App\Services\ProfileFacePhotoService::class)->delete($user);
+                PeerFaceEnrollment::where('user_id', $user->id)
+                    ->whereNull('revoked_at')
+                    ->update(['revoked_at' => now()]);
+                if ($previousPath) {
                     $user->profile_image = null;
                     $user->save();
-                });
-
-                if (!str_starts_with($previousPath, 'http')) {
-                    Storage::disk('public')->delete($previousPath);
                 }
+            });
 
-                Log::info('Profile photo removed', [
+            if ($previousPath && !str_starts_with($previousPath, 'http')) {
+                Storage::disk('public')->delete($previousPath);
+            }
+
+            if ($previousPath || $hadFaceEnrollment) {
+                Log::info('Profile photo and/or face enrollment removed', [
                     'user_id' => $user->id,
                     'role' => $user->role,
+                    'removed_profile_image' => (bool) $previousPath,
+                    'removed_face_enrollment' => $hadFaceEnrollment,
                 ]);
             }
 

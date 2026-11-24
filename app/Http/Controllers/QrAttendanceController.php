@@ -1974,38 +1974,8 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'error_type' => 'not_enrolled', 'message' => 'You are not enrolled in this class.'], 422);
         }
 
-        // Proxy Attendance Check (Prevent one physical device from clocking in multiple students for the same session)
-        $deviceService = app(\App\Services\DeviceBindingService::class);
-        $currentDeviceHash = $user->deviceBinding?->device_hash ?: $deviceService->getDeviceHashFromRequest($request);
-        $currentHwFp = $user->deviceBinding?->hardware_fingerprint ?: $deviceService->getHardwareFingerprintFromRequest($request);
-
-        if ($currentDeviceHash || $currentHwFp) {
-            $otherUserIdsOnSameDevice = \App\Models\DeviceBinding::where(function ($q) use ($currentDeviceHash, $currentHwFp) {
-                    if ($currentDeviceHash) {
-                        $q->where('device_hash', $currentDeviceHash);
-                    }
-                    if ($currentHwFp) {
-                        $q->orWhere('hardware_fingerprint', $currentHwFp);
-                    }
-                })
-                ->where('user_id', '!=', $user->id)
-                ->pluck('user_id');
-
-            if ($otherUserIdsOnSameDevice->isNotEmpty()) {
-                $alreadyClockedInPeer = Attendance::where('session_id', $session->id)
-                    ->whereIn('user_id', $otherUserIdsOnSameDevice)
-                    ->whereIn('status', ['Present', 'Late'])
-                    ->with('user')
-                    ->first();
-
-                if ($alreadyClockedInPeer) {
-                    return response()->json([
-                        'success'    => false,
-                        'error_type' => 'proxy_device_detected',
-                        'message'    => 'Proxy attendance detected. This device was already used by another student (' . ($alreadyClockedInPeer->user->name ?? 'peer') . ') to clock in for this session. Each student must use their own personal device.'
-                    ], 422);
-                }
-            }
+        if ($proxyResponse = $this->checkAntiProxyDeviceUsage($request, $user, $session)) {
+            return $proxyResponse;
         }
 
         $radiusMeters = $gpsVerificationEnabled ? (int) $session->getAllowedRadius() : 0;
@@ -2777,45 +2747,8 @@ class QrAttendanceController extends Controller
             ]);
         }
 
-        // 2.5 Proxy Attendance Check (Prevent one physical device from clocking in multiple students for the same session)
-        $deviceService = app(\App\Services\DeviceBindingService::class);
-        $currentDeviceHash = $user->deviceBinding?->device_hash ?: $deviceService->getDeviceHashFromRequest($request);
-        $currentHwFp = $user->deviceBinding?->hardware_fingerprint ?: $deviceService->getHardwareFingerprintFromRequest($request);
-
-        if ($currentDeviceHash || $currentHwFp) {
-            $otherUserIdsOnSameDevice = \App\Models\DeviceBinding::where(function ($q) use ($currentDeviceHash, $currentHwFp) {
-                    if ($currentDeviceHash) {
-                        $q->where('device_hash', $currentDeviceHash);
-                    }
-                    if ($currentHwFp) {
-                        $q->orWhere('hardware_fingerprint', $currentHwFp);
-                    }
-                })
-                ->where('user_id', '!=', $user->id)
-                ->pluck('user_id');
-
-            if ($otherUserIdsOnSameDevice->isNotEmpty()) {
-                $alreadyClockedInPeer = Attendance::where('session_id', $session->id)
-                    ->whereIn('user_id', $otherUserIdsOnSameDevice)
-                    ->whereIn('status', ['Present', 'Late'])
-                    ->with('user')
-                    ->first();
-
-                if ($alreadyClockedInPeer) {
-                    Log::warning('Proxy attendance attempt blocked in processScan', [
-                        'current_user_id' => $user->id,
-                        'peer_user_id'    => $alreadyClockedInPeer->user_id,
-                        'session_id'      => $session->id,
-                        'device_hash'     => $currentDeviceHash,
-                    ]);
-
-                    return response()->json([
-                        'success'    => false,
-                        'error_type' => 'proxy_device_detected',
-                        'message'    => 'Proxy attendance detected. This device was already used by another student (' . ($alreadyClockedInPeer->user->name ?? 'peer') . ') to clock in for this session. Each student must use their own personal device.'
-                    ], 422);
-                }
-            }
+        if ($proxyResponse = $this->checkAntiProxyDeviceUsage($request, $user, $session, true)) {
+            return $proxyResponse;
         }
 
         // 3. Geofence Distance Check
@@ -3084,6 +3017,69 @@ class QrAttendanceController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Block proxy clock-ins when another student already checked in for the session
+     * from the same bound device hash or hardware fingerprint.
+     */
+    private function checkAntiProxyDeviceUsage(
+        Request $request,
+        User $user,
+        AttendanceSession $session,
+        bool $logWarning = false,
+    ): ?\Illuminate\Http\JsonResponse {
+        if (!(bool) Setting::get('anti_proxy_device_check', 1)) {
+            return null;
+        }
+
+        $deviceService = app(\App\Services\DeviceBindingService::class);
+        $currentDeviceHash = $user->deviceBinding?->device_hash ?: $deviceService->getDeviceHashFromRequest($request);
+        $currentHwFp = $user->deviceBinding?->hardware_fingerprint ?: $deviceService->getHardwareFingerprintFromRequest($request);
+
+        if (!$currentDeviceHash && !$currentHwFp) {
+            return null;
+        }
+
+        $otherUserIdsOnSameDevice = \App\Models\DeviceBinding::where(function ($q) use ($currentDeviceHash, $currentHwFp) {
+            if ($currentDeviceHash) {
+                $q->where('device_hash', $currentDeviceHash);
+            }
+            if ($currentHwFp) {
+                $q->orWhere('hardware_fingerprint', $currentHwFp);
+            }
+        })
+            ->where('user_id', '!=', $user->id)
+            ->pluck('user_id');
+
+        if ($otherUserIdsOnSameDevice->isEmpty()) {
+            return null;
+        }
+
+        $alreadyClockedInPeer = Attendance::where('session_id', $session->id)
+            ->whereIn('user_id', $otherUserIdsOnSameDevice)
+            ->whereIn('status', ['Present', 'Late'])
+            ->with('user')
+            ->first();
+
+        if (!$alreadyClockedInPeer) {
+            return null;
+        }
+
+        if ($logWarning) {
+            Log::warning('Proxy attendance attempt blocked in processScan', [
+                'current_user_id' => $user->id,
+                'peer_user_id'    => $alreadyClockedInPeer->user_id,
+                'session_id'      => $session->id,
+                'device_hash'     => $currentDeviceHash,
+            ]);
+        }
+
+        return response()->json([
+            'success'    => false,
+            'error_type' => 'proxy_device_detected',
+            'message'    => 'Proxy attendance detected. This device was already used by another student (' . ($alreadyClockedInPeer->user->name ?? 'peer') . ') to clock in for this session. Each student must use their own personal device.',
+        ], 422);
     }
 
     /**

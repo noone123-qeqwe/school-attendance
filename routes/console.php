@@ -35,9 +35,14 @@ Schedule::command('app:backup-database --prune --days=14')->dailyAt('02:00')->on
 // Hourly SQLite WAL Checkpoint & Query Plan Optimization
 Schedule::command('app:wal-checkpoint')->hourly()->onOneServer()->withoutOverlapping();
 
-// Automated Pruning of Failed Queue Jobs & Expired Password Tokens
+// Automated Pruning of Failed Queue Jobs, Expired Password Tokens & Used/Expired OTPs
 Schedule::command('queue:prune-failed --hours=48')->daily()->onOneServer()->withoutOverlapping();
 Schedule::command('auth:clear-resets')->everyFifteenMinutes()->onOneServer()->withoutOverlapping();
+Schedule::call(function () {
+    \App\Models\Otp::where('used', true)
+        ->orWhere('expires_at', '<=', now())
+        ->delete();
+})->everyFifteenMinutes()->name('otp-purge-expired')->onOneServer()->withoutOverlapping();
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());

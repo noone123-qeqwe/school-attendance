@@ -68,6 +68,17 @@ class Otp extends Model
     }
 
     /**
+     * Determine whether failed verification attempts for this user/email + purpose
+     * have already reached the lock threshold.
+     */
+    public static function hasExceededVerifyAttempts(int|string $userOrEmail, string $purpose): bool
+    {
+        $key = 'otp_verify_fails:' . sha1(strtolower(trim((string) $userOrEmail)) . ':' . $purpose);
+
+        return (int) Cache::get($key, 0) >= self::MAX_VERIFY_ATTEMPTS;
+    }
+
+    /**
      * Clear failed OTP verification attempts on success.
      */
     public static function clearFailedVerify(int|string $userOrEmail, string $purpose): void
@@ -104,6 +115,7 @@ class Otp extends Model
     public static function generate(int $userId, string $purpose): self
     {
         self::invalidatePrevious($userId, $purpose);
+        static::clearFailedVerify($userId, $purpose);
         static::setCooldown($userId, $purpose);
 
         return static::create([
@@ -122,8 +134,10 @@ class Otp extends Model
         $cleanEmail = strtolower(trim($email));
 
         self::invalidatePrevious($cleanEmail, $purpose);
+        static::clearFailedVerify($cleanEmail, $purpose);
         if ($userId) {
             self::invalidatePrevious($userId, $purpose);
+            static::clearFailedVerify($userId, $purpose);
             static::setCooldown($userId, $purpose);
         }
         static::setCooldown($cleanEmail, $purpose);

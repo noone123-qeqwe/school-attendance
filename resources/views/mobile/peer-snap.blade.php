@@ -36,7 +36,7 @@
     </section>
 
     <section id="peerResult" class="peer-card peer-result" role="status" aria-live="polite" tabindex="-1" hidden></section>
-    <p class="peer-privacy"><i class="bi bi-shield-lock"></i> Camera frames are sent for verification and are not saved in your attendance account.</p>
+    <p class="peer-privacy"><i class="bi bi-shield-lock"></i> Live verification frames are processed transiently against the classmate's encrypted enrollment and are not saved to either student's attendance account.</p>
 </main>
 
 <style>

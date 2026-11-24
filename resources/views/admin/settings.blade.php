@@ -177,11 +177,11 @@
                 <div class="admin-settings-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                     <div class="saas-form-group">
                         <label class="saas-label">Campus Latitude</label>
-                        <input type="number" step="any" name="gps_lat" id="setting_gps_lat" class="saas-input" placeholder="e.g. 14.509600" value="{{ \App\Models\Setting::get('gps_lat', '') }}">
+                        <input type="number" step="any" name="gps_lat" id="setting_gps_lat" class="saas-input" placeholder="e.g. 12.371860" value="{{ \App\Models\Setting::get('gps_lat', '') }}">
                     </div>
                     <div class="saas-form-group">
                         <label class="saas-label">Campus Longitude</label>
-                        <input type="number" step="any" name="gps_lng" id="setting_gps_lng" class="saas-input" placeholder="e.g. 121.009000" value="{{ \App\Models\Setting::get('gps_lng', '') }}">
+                        <input type="number" step="any" name="gps_lng" id="setting_gps_lng" class="saas-input" placeholder="e.g. 123.620110" value="{{ \App\Models\Setting::get('gps_lng', '') }}">
                     </div>
                 </div>
                 <div id="campusGpsStatus" style="font-size:0.75rem;margin-top:8px;display:none;"></div>

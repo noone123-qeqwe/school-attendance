@@ -61,8 +61,7 @@ class PeerBiometricAttendanceService
                 Log::warning('peer_snap.start_denied', ['session_id' => $sessionId, 'voucher_student_id' => $host->id, 'reason' => 'subject_rate_limited']);
                 abort(429, 'Too many failed attempts. Please try later.');
             }
-            $enrollment = $subject ? PeerFaceEnrollment::where('user_id', $subject->id)
-                ->whereNull('revoked_at')->where('model_version', config('peer_snap.model_version'))->first() : null;
+            $enrollment = $subject ? $this->resolveActiveEnrollment($subject) : null;
             $existing = $subject ? Attendance::withTrashed()->where('user_id', $subject->id)
                 ->where('subject_code', $session->subject_code)->whereDate('date', now('Asia/Manila')->toDateString())
                 ->first() : null;
@@ -135,8 +134,9 @@ class PeerBiometricAttendanceService
         if (isset($claim['error'])) abort($claim['error'], $claim['message']);
         /** @var PeerVouchRequest $attempt */
         $attempt = $claim['attempt'];
+        $activeModelVersion = $this->verifier->activeModelVersion();
         $enrollment = PeerFaceEnrollment::where('user_id', $attempt->subject_student_id)
-            ->whereNull('revoked_at')->where('model_version', config('peer_snap.model_version'))->first();
+            ->whereNull('revoked_at')->where('model_version', $activeModelVersion)->first();
 
         try {
             if (!$enrollment) throw new \RuntimeException('Enrollment unavailable.');
@@ -162,6 +162,7 @@ class PeerBiometricAttendanceService
                 $session = AttendanceSession::whereKey($attempt->session_id)->lockForUpdate()->first();
                 $lockedAttempt = PeerVouchRequest::whereKey($attempt->id)->lockForUpdate()->first();
                 $subject = User::whereKey($attempt->subject_student_id)->lockForUpdate()->first();
+                $activeModelVersion = $this->verifier->activeModelVersion();
                 if (!$lockedAttempt || $lockedAttempt->status !== 'processing') abort(409, 'Verification request already used.');
                 if (!$this->isAvailable()) {
                     $lockedAttempt->update(['status' => 'rejected', 'failure_reason' => 'feature_unavailable', 'consumed_at' => now()]);
@@ -173,7 +174,7 @@ class PeerBiometricAttendanceService
                     || $this->locked($host->id, $subject->id)
                     || !PeerFaceEnrollment::where('user_id', $subject->id)
                         ->where('verifier_subject_ref', $enrollment->verifier_subject_ref)
-                        ->where('model_version', config('peer_snap.model_version'))->whereNull('revoked_at')->exists()
+                        ->where('model_version', $activeModelVersion)->whereNull('revoked_at')->exists()
                     || $this->successfulVouches($session->id, $host->id) >= config('peer_snap.max_vouches')) {
                     $lockedAttempt->update(['status' => 'rejected', 'failure_reason' => 'eligibility_changed', 'consumed_at' => now()]);
                     return ['error' => 409, 'message' => 'Session eligibility changed. Please try again.'];
@@ -263,11 +264,46 @@ class PeerBiometricAttendanceService
 
     public function isAvailable(): bool
     {
-        return (bool) config('peer_snap.enabled')
-            && str_starts_with((string) config('peer_snap.verifier_url'), 'https://')
-            && (bool) config('peer_snap.verifier_token') && (bool) config('peer_snap.model_version')
-            && config('peer_snap.match_threshold') > 0 && config('peer_snap.match_threshold') <= 1
-            && config('peer_snap.pad_threshold') > 0 && config('peer_snap.pad_threshold') <= 1;
+        return (bool) config('peer_snap.enabled') && $this->verifier->isAvailable();
+    }
+
+    /**
+     * Resolve or auto-sync a PeerFaceEnrollment when running with the built-in local OpenCV verifier.
+     * Local verification reuses the student's existing encrypted camera face enrollment and consent.
+     */
+    private function resolveActiveEnrollment(User $subject): ?PeerFaceEnrollment
+    {
+        $activeModelVersion = $this->verifier->activeModelVersion();
+        $existing = PeerFaceEnrollment::where('user_id', $subject->id)->first();
+
+        if ($existing && $existing->revoked_at === null && $existing->model_version === $activeModelVersion) {
+            return $existing;
+        }
+
+        if ($this->verifier->usesExternalVerifier() || !$this->verifier->usesLocalVerifier()) {
+            return null;
+        }
+
+        // Local fallback requires both approved camera attendance consent and encrypted camera photos.
+        if (!app(FaceAttendanceConsent::class)->approved($subject)
+            || !app(ProfileFacePhotoService::class)->hasCameraEnrollment($subject)) {
+            return null;
+        }
+
+        // Respect explicit revocation unless the user re-enrolled / updated consent afterward.
+        if ($existing && $existing->revoked_at !== null) {
+            return null;
+        }
+
+        return PeerFaceEnrollment::updateOrCreate(
+            ['user_id' => $subject->id],
+            [
+                'verifier_subject_ref' => 'local_profile_face_' . $subject->id,
+                'model_version' => $activeModelVersion,
+                'consented_at' => now(),
+                'revoked_at' => null,
+            ],
+        );
     }
 
     private function audit(PeerVouchRequest $attempt): array

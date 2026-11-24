@@ -1269,6 +1269,34 @@
     </div>
 </div>
 
+@if(isset($announcements) && $announcements->isNotEmpty())
+<div class="row g-4 mb-4" id="studentAnnouncementsSection">
+    <div class="col-12">
+        <x-card title="Campus &amp; Class Announcements" icon="bi bi-megaphone-fill">
+            <div class="schedule-items-grid">
+                @foreach($announcements as $announcement)
+                    <div class="schedule-modern-card" style="border-left: 3.5px solid #cfa46f; flex-direction: column; align-items: stretch; gap: 8px;">
+                        <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                            <div class="schedule-subject-title" style="margin:0;">{{ $announcement->title }}</div>
+                            <span class="schedule-code-badge">{{ $announcement->target_audience ?? 'All' }}</span>
+                        </div>
+                        <p style="margin:0; font-size:0.86rem; line-height:1.55; color:#d8cbb8; white-space:pre-line;">{{ $announcement->content }}</p>
+                        <div class="schedule-meta-row" style="margin-top:2px;">
+                            <span class="schedule-instructor-badge">
+                                <i class="bi bi-person-fill text-gold-muted me-1"></i>{{ $announcement->author->name ?? 'Administration' }}
+                            </span>
+                            <span class="schedule-time-badge">
+                                <i class="bi bi-clock me-1" style="color:#cfa46f; font-size:0.75rem;"></i>{{ ($announcement->scheduled_for ?? $announcement->created_at)->diffForHumans() }}
+                            </span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </x-card>
+    </div>
+</div>
+@endif
+
 <style>
     /* ─── Squircle Attendance Calendar ─────────────────────────── */
     .scal-card {

@@ -10,8 +10,8 @@ class GpsController extends Controller
 {
     public function showConfig()
     {
-        $currentLat = \App\Models\Setting::get('gps_lat', '14.6507');
-        $currentLng = \App\Models\Setting::get('gps_lng', '121.0689');
+        $currentLat = \App\Models\Setting::get('gps_lat', '12.37186');
+        $currentLng = \App\Models\Setting::get('gps_lng', '123.62011');
         $currentRadius = \App\Models\Setting::get('gps_radius', '50');
         
         return view('admin.gps-config', compact('currentLat', 'currentLng', 'currentRadius'));

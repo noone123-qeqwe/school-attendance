@@ -292,6 +292,22 @@ class AppServiceProvider extends ServiceProvider
             });
         });
 
+        RateLimiter::for('device.manage', function (Request $request) {
+            $userKey = $request->user()?->id
+                ? $this->rateLimitKey('device_manage_user', (string) $request->user()->id)
+                : $this->rateLimitKey('device_manage_ip', $request->ip() ?: 'unknown');
+            $ipKey = $this->rateLimitKey('device_manage_net', $request->ip() ?: 'unknown');
+
+            return [
+                Limit::perMinute(10)->by($userKey)->response(function (Request $request, array $headers) {
+                    return $this->format429Response($request, 'Too many device binding requests. Please wait ' . ($headers['Retry-After'] ?? 60) . ' seconds.', $headers);
+                }),
+                Limit::perMinute(30)->by($ipKey)->response(function (Request $request, array $headers) {
+                    return $this->format429Response($request, 'Too many device management requests from this network.', $headers);
+                }),
+            ];
+        });
+
         // 5. Email verification & resend protection
         RateLimiter::for('email.verify', function (Request $request) {
             $email = $this->requestIdentifier($request, ['email', 'identifier', 'gmail']);

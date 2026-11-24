@@ -175,9 +175,14 @@ class AuthController extends Controller
                     ], 202);
                 }
 
-                if (!preg_match('/^\d{6}$/', $otpInput) ||
-                    Otp::recordFailedVerify($user->id, $purpose) > Otp::MAX_VERIFY_ATTEMPTS) {
+                if (!preg_match('/^\d{6}$/', $otpInput)) {
+                    Otp::recordFailedVerify($user->id, $purpose);
                     return response()->json(['message' => 'Invalid or expired verification code.'], 422);
+                }
+
+                if (Otp::hasExceededVerifyAttempts($user->id, $purpose)) {
+                    Otp::invalidatePrevious($user->id, $purpose);
+                    return response()->json(['message' => 'Too many failed verification attempts. Please request a new code.'], 422);
                 }
 
                 $otp = Otp::where('user_id', $user->id)
@@ -185,6 +190,10 @@ class AuthController extends Controller
                     ->where('used', false)->where('expires_at', '>', now())
                     ->latest()->first();
                 if (!$otp) {
+                    if (Otp::recordFailedVerify($user->id, $purpose) >= Otp::MAX_VERIFY_ATTEMPTS) {
+                        Otp::invalidatePrevious($user->id, $purpose);
+                        return response()->json(['message' => 'Too many failed verification attempts. Please request a new code.'], 422);
+                    }
                     return response()->json(['message' => 'Invalid or expired verification code.'], 422);
                 }
                 $otp->update(['used' => true]);

@@ -45,6 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.ip'      => \App\Http\Middleware\EnsureAdminIpWhitelisted::class,
             'admin.super'   => \App\Http\Middleware\SuperAdminMiddleware::class,
             'admin.auditor' => \App\Http\Middleware\RestrictAuditor::class,
+            'admin.audit'   => \App\Http\Middleware\ExcludeDataEntryAdmin::class,
             'password.rotate.api' => \App\Http\Middleware\RequirePasswordRotation::class,
             'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
         ]);

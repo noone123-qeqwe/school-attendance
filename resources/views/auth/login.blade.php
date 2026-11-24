@@ -85,9 +85,9 @@ const footerModals = {
     contact: `<h3 style="margin:0 0 16px;color:#cfa46f;font-size:1.2rem;"><i class="bi bi-envelope-fill me-2"></i>Contact Us</h3>
         <p style="color:#b39b82;line-height:1.7;font-size:0.9rem;">For support or inquiries, reach out through the following channels:</p>
         <div style="margin:16px 0;padding:16px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.08);">
-            <p style="color:#f3e7cd;font-size:0.9rem;margin:0 0 8px;"><i class="bi bi-building me-2" style="color:#cfa46f;"></i><strong>School Administration Office</strong></p>
-            <p style="color:#b39b82;font-size:0.85rem;margin:0 0 6px;"><i class="bi bi-envelope me-2"></i>admin@school.edu.ph</p>
-            <p style="color:#b39b82;font-size:0.85rem;margin:0 0 6px;"><i class="bi bi-telephone me-2"></i>(02) 8123-4567</p>
+            <p style="color:#f3e7cd;font-size:0.9rem;margin:0 0 8px;"><i class="bi bi-building me-2" style="color:#cfa46f;"></i><strong>Osmeña Colleges — Administration Office</strong></p>
+            <p style="color:#b39b82;font-size:0.85rem;margin:0 0 6px;"><i class="bi bi-envelope me-2"></i>admin@osmena.edu</p>
+            <p style="color:#b39b82;font-size:0.85rem;margin:0 0 6px;"><i class="bi bi-geo-alt me-2"></i>Osmeña St., Masbate City (near Mobo), Philippines</p>
             <p style="color:#b39b82;font-size:0.85rem;margin:0;"><i class="bi bi-clock me-2"></i>Mon–Fri, 8:00 AM – 5:00 PM</p>
         </div>
         <p style="color:#b39b82;line-height:1.7;font-size:0.9rem;">For technical issues with the attendance system, please contact your class adviser or the IT department.</p>`

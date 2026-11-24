@@ -455,6 +455,33 @@
     </div>
 </div>
 
+@if(isset($announcements) && $announcements->isNotEmpty())
+<div class="parent-section-card mb-4" id="parentAnnouncementsSection">
+    <div class="parent-section-head">
+        <h2 class="parent-section-title">
+            <i class="bi bi-megaphone-fill text-gold"></i>
+            <span>School &amp; Class Announcements</span>
+        </h2>
+        <span style="font-size:0.76rem; color:#b39b82; font-weight:600;">{{ $announcements->count() }} latest</span>
+    </div>
+    <div class="d-grid gap-3">
+        @foreach($announcements as $announcement)
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(207, 164, 111, 0.16); border-left: 3.5px solid #cfa46f; border-radius: 14px; padding: 14px 16px;">
+                <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-1">
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #f8fafc;">{{ $announcement->title }}</div>
+                    <span style="font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(207, 164, 111, 0.14); color: #ffd166; border: 1px solid rgba(207, 164, 111, 0.3);">{{ $announcement->target_audience ?? 'All' }}</span>
+                </div>
+                <p style="font-size: 0.85rem; color: #d8cbb8; line-height: 1.55; margin: 0 0 8px 0; white-space: pre-line;">{{ $announcement->content }}</p>
+                <div style="font-size: 0.74rem; color: #b39b82; display: flex; gap: 12px; flex-wrap: wrap;">
+                    <span><i class="bi bi-person-fill me-1 text-gold"></i>{{ $announcement->author->name ?? 'Administration' }}</span>
+                    <span><i class="bi bi-clock me-1 text-gold"></i>{{ ($announcement->scheduled_for ?? $announcement->created_at)->diffForHumans() }}</span>
+                </div>
+            </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 @if(count($childrenData) > 1)
 <!-- ── CHILD PICKER ── -->
 <div class="student-switcher-wrap">

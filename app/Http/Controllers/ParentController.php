@@ -164,7 +164,14 @@ class ParentController extends Controller
         });
 
         $selectedChild = ParentNavigation::selectChild($children, $request);
-        return view('parent.dashboard', compact('user', 'childrenData', 'children', 'selectedChild'));
+        $announcements = \App\Models\Announcement::with('author')
+            ->published()
+            ->visibleTo($user)
+            ->latest()
+            ->take(5)
+            ->get();
+
+        return view('parent.dashboard', compact('user', 'childrenData', 'children', 'selectedChild', 'announcements'));
     }
 
     /**

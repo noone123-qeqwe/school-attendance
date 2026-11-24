@@ -123,7 +123,7 @@ class GenerateVapidKeys extends Command
 
             // Update or append VAPID_SUBJECT
             if (!preg_match('/^VAPID_SUBJECT=.*$/m', $envContent)) {
-                $envContent .= "\nVAPID_SUBJECT=mailto:admin@school-attendance.edu";
+                $envContent .= "\nVAPID_SUBJECT=mailto:admin@osmena.edu";
             }
 
             file_put_contents($envFile, $envContent);

@@ -9,25 +9,29 @@
                  ],
     "license":  "MIT",
     "require":  {
-                    "php":  "^8.2",
-                    "barryvdh/laravel-dompdf":  "^3.1",
-                    "cloudinary-labs/cloudinary-laravel":  "^3.0",
-                    "jenssegers/agent":  "^2.6",
-                    "laravel/framework":  "^12.0",
-                    "laravel/reverb":  "^1.10",
-                    "laravel/sanctum":  "^4.3",
-                    "laravel/tinker":  "^2.10.1",
-                    "maatwebsite/excel":  "^3.1",
-                    "minishlink/web-push":  "^11.0",
-                    "pusher/pusher-php-server":  "^7.2",
-                    "spatie/laravel-activitylog":  "^4.12"
-                },
+        "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.1",
+        "cloudinary-labs/cloudinary-laravel": "^3.0",
+        "jenssegers/agent": "^2.6",
+        "laravel/framework": "^12.0",
+        "laravel/reverb": "^1.10",
+        "laravel/sanctum": "^4.3",
+        "laravel/tinker": "^2.10.1",
+        "league/flysystem-aws-s3-v3": "^3.0",
+        "maatwebsite/excel": "^3.1",
+        "minishlink/web-push": "^11.0",
+        "pusher/pusher-php-server": "^7.2",
+        "spatie/laravel-activitylog": "^4.12"
+    },
     "require-dev":  {
+                        "fakerphp/faker":  "^1.23",
                         "larastan/larastan":  "^3.10",
                         "laravel/pail":  "^1.2.2",
                         "laravel/pint":  "^1.24",
                         "laravel/sail":  "^1.41",
-                        "nunomaduro/collision":  "^8.6"
+                        "mockery/mockery":  "^1.6",
+                        "nunomaduro/collision":  "^8.6",
+                        "phpunit/phpunit":  "^11.5.50"
                     },
     "autoload":  {
                      "files": ["app/helpers.php"],
@@ -36,7 +40,16 @@
                                    "Database\\Seeders\\": "database/seeders/"
                                }
                  },
+    "autoload-dev":  {
+                         "psr-4":  {
+                                       "Tests\\": "tests/"
+                                   }
+                     },
     "scripts":  {
+                    "test":  [
+                                 "@php artisan config:clear --ansi",
+                                 "@php artisan test"
+                             ],
                     "setup":  [
                                   "composer install",
                                   "@php -r \"file_exists(\u0027.env\u0027) || !file_exists(\u0027.env.example\u0027) || copy(\u0027.env.example\u0027, \u0027.env\u0027);\"",

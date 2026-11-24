@@ -8,8 +8,10 @@ return [
     'session_ttl_seconds' => (int) env('PEER_VERIFICATION_TTL_SECONDS', 120),
     'presence_fresh_seconds' => (int) env('PEER_PRESENCE_FRESH_SECONDS', 120),
     'match_threshold' => (float) env('PEER_FACE_MATCH_THRESHOLD', 0.85),
+    'local_match_threshold' => (float) env('PEER_LOCAL_MATCH_THRESHOLD', 0.363),
     'pad_threshold' => (float) env('PEER_PAD_THRESHOLD', 0.90),
     'model_version' => env('PEER_FACE_MODEL_VERSION', ''),
+    'local_model_version' => env('PEER_LOCAL_MODEL_VERSION', 'opencv_yunet_sface_v1'),
     'verifier_url' => env('PEER_FACE_VERIFIER_URL', ''),
     'verifier_token' => env('PEER_FACE_VERIFIER_TOKEN', ''),
 ];

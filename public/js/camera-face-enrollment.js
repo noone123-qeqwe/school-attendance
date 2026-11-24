@@ -279,6 +279,12 @@
         }
 
         start.addEventListener('click', async () => {
+            const consentBox = document.getElementById('cameraFaceConsentCheckbox');
+            if (consentBox && !consentBox.checked) {
+                setStatus('Please check the biometric attendance consent box above before starting your face scan.', '#fbbf24');
+                consentBox.focus({ preventScroll: true });
+                return;
+            }
             const attempt = ++requestId;
             reset();
             if (!navigator.mediaDevices?.getUserMedia) {
@@ -338,6 +344,12 @@
         });
         save.addEventListener('click', async () => {
             if (saving || !poses.every(([pose]) => views[pose])) return;
+            const consentBox = document.getElementById('cameraFaceConsentCheckbox');
+            if (consentBox && !consentBox.checked) {
+                setStatus('Please confirm biometric attendance consent before saving your face profile.', '#fbbf24');
+                consentBox.focus({ preventScroll: true });
+                return;
+            }
             const attempt = requestId;
             saving = true;
             [save, retake, cancel].forEach(button => { button.disabled = true; });
@@ -346,6 +358,7 @@
             setStatus('Checking all three face captures and saving securely…');
             const form = new FormData();
             poses.forEach(([pose]) => form.append('face_images[' + pose + ']', views[pose], pose + '.jpg'));
+            if (!consentBox || consentBox.checked) form.append('consent_accepted', '1');
             try {
                 const response = await fetch(root.dataset.enrollmentUrl, {
                     method: 'POST', credentials: 'same-origin', body: form,

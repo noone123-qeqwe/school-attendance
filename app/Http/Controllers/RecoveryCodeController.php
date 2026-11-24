@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\RecoveryCode;
+use App\Services\AccountLockoutService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class RecoveryCodeController extends Controller
 {
-    public function login(Request $request)
+    public function login(Request $request, AccountLockoutService $lockoutService)
     {
         $request->validate([
             'identifier' => 'required|string',
@@ -18,26 +19,27 @@ class RecoveryCodeController extends Controller
         ]);
 
         $identifier = trim($request->identifier);
+        $ip = $request->ip();
 
-        // Look up by student_number, email, or employee_id
-        $user = User::where('student_number', $identifier)
-            ->orWhere('email', $identifier)
-            ->orWhere('employee_id', $identifier)
-            ->orWhereRaw('LOWER(email) = ?', [strtolower($identifier)])
-            ->orWhereRaw('LOWER(student_number) = ?', [strtolower($identifier)])
-            ->first();
+        if ($lockoutService->isAccountLocked($identifier) || $lockoutService->isLocked($identifier, $ip)) {
+            $seconds = max(60, $lockoutService->getRemainingSeconds($identifier, $ip));
+            $minutes = (int) ceil($seconds / 60);
 
-        if (!$user) {
-            $clean = preg_replace('/[^a-zA-Z0-9]/', '', $identifier);
-            if ($clean !== '') {
-                $user = User::whereRaw("REPLACE(REPLACE(student_number, '-', ''), ' ', '') = ?", [$clean])
-                    ->orWhereRaw("REPLACE(REPLACE(employee_id, '-', ''), ' ', '') = ?", [$clean])
-                    ->first();
-            }
+            return back()->withErrors([
+                'identifier' => "Too many failed sign-in attempts. Please wait {$minutes} minute(s) before trying again.",
+            ])->withInput($request->only('identifier'));
         }
 
+        $user = User::findByIdentifier($identifier, false);
+
         if (!$user) {
-            return back()->withErrors(['identifier' => 'Invalid credentials or recovery code.'])->withInput();
+            $lockoutService->recordFailedAttempt($identifier, $ip);
+            return back()->withErrors(['identifier' => 'Invalid credentials or recovery code.'])->withInput($request->only('identifier'));
+        }
+
+        // Ensure user account is active before verifying recovery secrets
+        if (!$user->isActive()) {
+            return back()->withErrors(['identifier' => 'Your account has been deactivated. Please contact the school administrator.'])->withInput($request->only('identifier'));
         }
 
         // Fetch unused recovery codes for this user
@@ -54,13 +56,19 @@ class RecoveryCodeController extends Controller
         }
 
         if (!$validCode) {
-            return back()->withErrors(['identifier' => 'Invalid credentials or recovery code.'])->withInput();
+            $lockoutService->recordFailedAttempt($identifier, $ip);
+            return back()->withErrors(['identifier' => 'Invalid credentials or recovery code.'])->withInput($request->only('identifier'));
         }
 
-        // Ensure user account is active before allowing login
-        if (!$user->isActive()) {
-            return back()->withErrors(['identifier' => 'Your account has been deactivated. Please contact the school administrator.'])->withInput();
+        // Block shared starter-password accounts from bypassing credential rotation via recovery code
+        if ($user->usesSharedStarterPassword()) {
+            $user->forceFill(['must_change_password' => true])->saveQuietly();
+            return back()->withErrors([
+                'identifier' => 'This account uses a shared starter password. Use Forgot Password to verify your email and set a new password.',
+            ])->withInput($request->only('identifier'));
         }
+
+        $lockoutService->clear($identifier, $ip);
 
         // Mark code as used
         $validCode->update([
@@ -71,6 +79,7 @@ class RecoveryCodeController extends Controller
         // Log the user in
         Auth::login($user, true);
         $request->session()->regenerate();
+        $request->session()->forget('admin_2fa_verified');
         $request->session()->put('user_role', $user->role);
         $request->session()->put('login_timestamp', now()->toString());
 
@@ -80,7 +89,11 @@ class RecoveryCodeController extends Controller
             $request->session()->save();
         }
 
-        // Redirect based on role
+        if ($user->ensurePasswordChangeRequired()) {
+            return redirect()->route('password.change.form');
+        }
+
+        // Redirect based on role (admin middleware enforces 2FA for admins)
         if ($user->isAdmin()) return redirect()->route('admin.dashboard');
         if ($user->isTeacher()) return redirect()->route('teacher.dashboard');
         if ($user->isParent()) return redirect()->route('parent.dashboard');

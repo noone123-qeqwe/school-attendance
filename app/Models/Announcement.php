@@ -41,28 +41,118 @@ class Announcement extends Model
     }
 
     /**
-     * Scope: announcements visible to a given student user.
+     * Scope: announcements visible to a given user across roles and enrollments.
      */
     public function scopeVisibleTo($query, $user)
     {
-        return $query->where(function ($q) use ($user) {
-            $q->where('target_audience', 'All')
-              ->orWhere(function ($q2) use ($user) {
-                  $q2->where('target_audience', 'Course')
-                     ->where('target_id', $user->course_id ?? 0);
-              })
-              ->orWhere(function ($q2) use ($user) {
-                  $q2->where('target_audience', 'Section')
-                     ->where('target_id', $user->section_id ?? 0);
-              })
-              ->orWhere(function ($q2) use ($user) {
-                  $q2->where('target_audience', 'Department')
-                     ->where('target_id', $user->department_id ?? 0);
-              })
-              ->orWhere(function ($q2) use ($user) {
-                  $q2->where('target_audience', 'Subject')
-                     ->whereIn('target_id', $user->getAllSubjects()->pluck('id')->toArray() ?? []);
-              });
+        if (!$user instanceof User) {
+            return $query->where('target_audience', 'All');
+        }
+
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        $courseNames = [];
+        $sectionNames = [];
+        $departmentNames = [];
+        $subjectIds = [];
+        $roleAudiences = ['All'];
+
+        if ($user->isStudent()) {
+            $roleAudiences[] = 'Student';
+            if (!empty($user->course)) $courseNames[] = (string) $user->course;
+            if (!empty($user->section)) $sectionNames[] = (string) $user->section;
+            if (!empty($user->department)) $departmentNames[] = (string) $user->department;
+            $subjectIds = $user->getAllSubjects()->pluck('id')->map(fn ($id) => (int) $id)->all();
+        } elseif ($user->isParent()) {
+            $roleAudiences[] = 'Parent';
+            foreach ($user->children()->get() as $child) {
+                if (!empty($child->course)) $courseNames[] = (string) $child->course;
+                if (!empty($child->section)) $sectionNames[] = (string) $child->section;
+                if (!empty($child->department)) $departmentNames[] = (string) $child->department;
+                foreach ($child->getAllSubjects() as $subj) {
+                    $subjectIds[] = (int) $subj->id;
+                }
+            }
+        } elseif ($user->isTeacher()) {
+            $roleAudiences[] = 'Teacher';
+            if (!empty($user->department)) $departmentNames[] = (string) $user->department;
+            $subjectIds = $user->teachingSubjects()->pluck('id')->map(fn ($id) => (int) $id)->all();
+        }
+
+        $courseIds = $this->resolveCourseTargetIds($courseNames);
+        $sectionIds = $this->resolveSectionTargetIds($sectionNames);
+        $departmentIds = $this->resolveDepartmentTargetIds($departmentNames);
+        $subjectIds = array_values(array_unique(array_filter($subjectIds)));
+
+        return $query->where(function ($q) use ($roleAudiences, $courseIds, $sectionIds, $departmentIds, $subjectIds) {
+            $q->whereIn('target_audience', $roleAudiences);
+
+            if ($courseIds !== []) {
+                $q->orWhere(function ($q2) use ($courseIds) {
+                    $q2->where('target_audience', 'Course')->whereIn('target_id', $courseIds);
+                });
+            }
+            if ($sectionIds !== []) {
+                $q->orWhere(function ($q2) use ($sectionIds) {
+                    $q2->where('target_audience', 'Section')->whereIn('target_id', $sectionIds);
+                });
+            }
+            if ($departmentIds !== []) {
+                $q->orWhere(function ($q2) use ($departmentIds) {
+                    $q2->where('target_audience', 'Department')->whereIn('target_id', $departmentIds);
+                });
+            }
+            if ($subjectIds !== []) {
+                $q->orWhere(function ($q2) use ($subjectIds) {
+                    $q2->where('target_audience', 'Subject')->whereIn('target_id', $subjectIds);
+                });
+            }
         });
+    }
+
+    /** @param string[] $names @return int[] */
+    private function resolveCourseTargetIds(array $names): array
+    {
+        $clean = array_values(array_unique(array_filter(array_map('trim', $names))));
+        if ($clean === []) {
+            return [];
+        }
+
+        return Course::whereIn('code', $clean)
+            ->orWhereIn('name', $clean)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /** @param string[] $names @return int[] */
+    private function resolveSectionTargetIds(array $names): array
+    {
+        $clean = array_values(array_unique(array_filter(array_map('trim', $names))));
+        if ($clean === []) {
+            return [];
+        }
+
+        return Section::whereIn('name', $clean)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /** @param string[] $names @return int[] */
+    private function resolveDepartmentTargetIds(array $names): array
+    {
+        $clean = array_values(array_unique(array_filter(array_map('trim', $names))));
+        if ($clean === []) {
+            return [];
+        }
+
+        return Department::whereIn('code', $clean)
+            ->orWhereIn('name', $clean)
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 }

@@ -1333,8 +1333,9 @@ class AdminController extends Controller
 
         $otpClean = trim((string) $request->otp);
 
-        if (\App\Models\Otp::recordFailedVerify($user->id, 'admin_login') > \App\Models\Otp::MAX_VERIFY_ATTEMPTS) {
-            return back()->withErrors(['otp' => 'Too many attempts. Try again later.']);
+        if (\App\Models\Otp::hasExceededVerifyAttempts($user->id, 'admin_login')) {
+            \App\Models\Otp::invalidatePrevious($user->id, 'admin_login');
+            return back()->withErrors(['otp' => 'Too many attempts. Try again later or request a new code.']);
         }
 
         $otpRecord = \App\Models\Otp::where('user_id', $user->id)
@@ -1345,6 +1346,10 @@ class AdminController extends Controller
             ->latest()->first();
 
         if (!$otpRecord) {
+            if (\App\Models\Otp::recordFailedVerify($user->id, 'admin_login') >= \App\Models\Otp::MAX_VERIFY_ATTEMPTS) {
+                \App\Models\Otp::invalidatePrevious($user->id, 'admin_login');
+                return back()->withErrors(['otp' => 'Too many attempts. Try again later or request a new code.']);
+            }
             if (app()->environment('local', 'testing')) {
                 $latest = \App\Models\Otp::where('user_id', $user->id)
                     ->where('purpose', 'admin_login')
@@ -1416,6 +1421,7 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     public function admins(Request $request)
     {
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         $query = User::where('role', 'admin');
 
         if ($request->filled('search')) {

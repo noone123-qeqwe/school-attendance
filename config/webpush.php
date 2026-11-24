@@ -13,7 +13,7 @@ return [
     */
 
     'vapid' => [
-        'subject' => env('VAPID_SUBJECT', env('APP_URL', 'mailto:admin@school-attendance.edu')),
+        'subject' => env('VAPID_SUBJECT', env('APP_URL', 'mailto:admin@osmena.edu')),
         'public_key' => env('VAPID_PUBLIC_KEY'),
         'private_key' => env('VAPID_PRIVATE_KEY'),
         'pem_file' => env('VAPID_PEM_FILE', null),

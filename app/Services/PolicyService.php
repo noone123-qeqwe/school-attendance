@@ -241,7 +241,7 @@ class PolicyService
         <li><strong>Credentials:</strong> Account usernames, email addresses, and securely salted, one-way hashed passwords (using bcrypt with a minimum work factor of 12 rounds). Plaintext passwords are never stored or accessible by anyone.</li>
         <li><strong>Biometric / WebAuthn Credentials:</strong> For users enabling "Sign in with biometrics" (Fingerprint / Face ID / Passkeys), the system stores only standard WebAuthn public keys, credential IDs, and signature counters. <em>Physical biometric samples (fingerprint scans or facial templates) remain strictly inside your device's hardware security enclave and are never transmitted to, processed by, or stored on our servers.</em></li>
         <li><strong>Session & Security Data:</strong> Active session tokens, remember-me tokens, failed login attempt counters, and timestamped account lockout flags to protect accounts from brute-force intrusions.</li>
-        <li><strong>Optional Camera Attendance:</strong> Where the school offers this option and has documented the required student or guardian consent, the school server temporarily processes camera stills to check liveness and compare them with the student's encrypted camera enrollment. The check does not keep video or add the stills to attendance records. The system logs the outcome and keeps a short-lived digest to detect repeated submissions. Students may withdraw camera attendance consent or use an approved device or teacher-assisted attendance option.</li>
+        <li><strong>Optional Camera &amp; Peer Attendance:</strong> Where the school offers camera verification or supervised Peer Snap (a classmate's bound device checking in a consenting peer locally on the school server), temporary camera stills are checked for liveness and compared against the student's encrypted camera enrollment without storing attendance stills or video permanently. The system logs the outcome and keeps a short-lived digest to detect repeated submissions. Students may withdraw camera attendance consent (which deletes their encrypted camera enrollment) or use an approved device or teacher-assisted attendance option.</li>
     </ul>
 
     <h4>E. Email Verification and One-Time Passcode (OTP) Information</h4>
@@ -307,7 +307,7 @@ class PolicyService
     <ul>
         <li><strong>Active Attendance Records:</strong> Retained for the duration of the current academic term and through the completion of grading appeals.</li>
         <li><strong>Academic History & Logs:</strong> Archived in accordance with statutory academic transcript and institutional accountability requirements.</li>
-        <li><strong>Temporary Verification Tokens:</strong> OTP codes expire after 10 minutes and are permanently purged upon use or expiration.</li>
+        <li><strong>Temporary Verification Tokens:</strong> OTP codes expire after 10 minutes and are purged from the database every 15 minutes upon use or expiration.</li>
         <li><strong>Soft Deletes & Archival:</strong> Inactive records are archived using soft-deletion safeguards, preventing accidental permanent destruction while restricting active access.</li>
     </ul>
 </div>
