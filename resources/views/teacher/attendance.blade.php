@@ -14,12 +14,15 @@
         @php
             $attendanceFilterQuery = request()->only(['date','status','subject','student_name']);
         @endphp
-        <div class="d-flex gap-2 teacher-page-actions">
+        <div class="d-flex flex-wrap gap-2 teacher-page-actions">
             <a href="{{ route('teacher.attendance.preview', $attendanceFilterQuery) }}" class="btn btn-outline">
                 <i class="bi bi-eye-fill"></i> Preview PDF
             </a>
             <a href="{{ route('teacher.attendance.csv', $attendanceFilterQuery) }}" class="btn btn-outline">
                 <i class="bi bi-filetype-csv"></i> Export CSV
+            </a>
+            <a href="{{ route('teacher.attendance.xlsx', $attendanceFilterQuery) }}" class="btn btn-outline">
+                <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Export Excel
             </a>
             <a href="{{ route('teacher.reports') }}" class="btn btn-outline">
                 <i class="bi bi-bar-chart-fill"></i> View Reports

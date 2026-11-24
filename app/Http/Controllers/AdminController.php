@@ -976,34 +976,13 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     // ATTENDANCE MONITORING
     // ─────────────────────────────────────────
-    public function attendanceLogs(Request $request)
+    public function attendanceLogs(Request $request, \App\Services\AttendanceReportService $reportService)
     {
         $tab = $request->get('tab', 'summary'); // 'summary' or 'records'
         $subjects = Subject::orderBy('name')->get();
 
         if ($tab === 'records') {
-            $recordQuery = Attendance::with(['user', 'subject', 'academicYear'])
-                ->orderBy('date', 'desc')
-                ->orderBy('time_in', 'desc');
-
-            if ($request->filled('date'))       $recordQuery->whereDate('date', $request->date);
-            if ($request->filled('date_from'))  $recordQuery->whereDate('date', '>=', $request->date_from);
-            if ($request->filled('date_to'))    $recordQuery->whereDate('date', '<=', $request->date_to);
-            if ($request->filled('status')) {
-                if ($request->status === 'Excused') {
-                    $recordQuery->where('excused', true);
-                } else {
-                    $recordQuery->where('status', $request->status);
-                }
-            }
-            if ($request->filled('subject'))    $recordQuery->where('subject_code', $request->subject);
-            if ($request->filled('course'))     $recordQuery->whereHas('user', fn($q) => $q->where('course', $request->course));
-            if ($request->filled('year_level')) $recordQuery->whereHas('user', fn($q) => $q->where('year_level', $request->year_level));
-            if ($request->filled('search')) {
-                $s = $request->search;
-                $recordQuery->whereHas('user', fn($q) => $q->where('name', 'like', "%{$s}%")->orWhere('student_number', 'like', "%{$s}%"));
-            }
-
+            $recordQuery = $reportService->recordsQuery($request->query());
             $records = $recordQuery->paginate(30)->withQueryString();
             $logs = collect();
 
@@ -1061,34 +1040,12 @@ class AdminController extends Controller
         return back()->with('success', "Attendance record updated to {$newStatus}.");
     }
 
-    public function exportAttendancePdf(Request $request)
+    public function exportAttendancePdf(Request $request, \App\Services\AttendanceReportService $reportService)
     {
-        $query = Attendance::with(['user','subject'])->orderBy('date','desc');
-
-        // Apply same filters as attendanceLogs
-        if ($request->filled('date'))         $query->whereDate('date', $request->date);
-        if ($request->filled('status')) {
-            if ($request->status === 'Excused') {
-                $query->where('excused', true);
-            } else {
-                $query->where('status', $request->status)->where('excused', false);
-            }
-        }
-        if ($request->filled('year_level'))   $query->whereHas('user', fn($q) => $q->where('year_level', $request->year_level));
-        if ($request->filled('semester'))     $query->whereHas('user', fn($q) => $q->where('semester', $request->semester));
-        if ($request->filled('course'))       $query->whereHas('user', fn($q) => $q->where('course', $request->course));
-        if ($request->filled('subject'))      $query->where('subject_code', $request->subject);
-        
-        if ($request->filled('student_name')) {
-            $search = $request->student_name;
-            $query->whereHas('user', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('student_number', 'like', "%{$search}%");
-            });
-        }
-
+        $query = $reportService->recordsQuery($request->query());
         $logs = $query->get();
-        $filters = $request->only(['date', 'status', 'year_level', 'semester', 'course', 'subject', 'student_name']);
+        $filters = $request->only(['date', 'date_from', 'date_to', 'status', 'year_level', 'semester', 'course', 'subject']);
+        $filters['student_name'] = $request->query('search', $request->query('student_name'));
         
         $pdf = Pdf::loadView('admin.attendance.pdf', compact('logs', 'filters'));
         
@@ -1096,68 +1053,28 @@ class AdminController extends Controller
         return $pdf->download($filename);
     }
 
-    public function previewAttendancePdf(Request $request)
+    public function previewAttendancePdf(Request $request, \App\Services\AttendanceReportService $reportService)
     {
-        $query = Attendance::with(['user','subject'])->orderBy('date','desc');
-
-        // Apply same filters as attendanceLogs
-        if ($request->filled('date'))         $query->whereDate('date', $request->date);
-        if ($request->filled('status')) {
-            if ($request->status === 'Excused') {
-                $query->where('excused', true);
-            } else {
-                $query->where('status', $request->status)->where('excused', false);
-            }
-        }
-        if ($request->filled('year_level'))   $query->whereHas('user', fn($q) => $q->where('year_level', $request->year_level));
-        if ($request->filled('semester'))     $query->whereHas('user', fn($q) => $q->where('semester', $request->semester));
-        if ($request->filled('course'))       $query->whereHas('user', fn($q) => $q->where('course', $request->course));
-        if ($request->filled('subject'))      $query->where('subject_code', $request->subject);
-        
-        if ($request->filled('student_name')) {
-            $search = $request->student_name;
-            $query->whereHas('user', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('student_number', 'like', "%{$search}%");
-            });
-        }
-
+        $query = $reportService->recordsQuery($request->query());
         $logs = $query->get();
-        $filters = $request->only(['date', 'status', 'year_level', 'semester', 'course', 'subject', 'student_name']);
+        $filters = $request->only(['date', 'date_from', 'date_to', 'status', 'year_level', 'semester', 'course', 'subject']);
+        $filters['student_name'] = $request->query('search', $request->query('student_name'));
         
         return view('admin.attendance.preview', compact('logs', 'filters'));
     }
 
-    public function exportAttendanceCsv(Request $request)
+    public function exportAttendanceCsv(Request $request, \App\Services\AttendanceReportService $reportService)
     {
-        $query = Attendance::with(['user','subject'])->orderBy('date','desc');
-
-        // Apply same filters as attendanceLogs
-        if ($request->filled('date'))         $query->whereDate('date', $request->date);
-        if ($request->filled('status')) {
-            if ($request->status === 'Excused') {
-                $query->where('excused', true);
-            } else {
-                $query->where('status', $request->status)->where('excused', false);
-            }
-        }
-        if ($request->filled('year_level'))   $query->whereHas('user', fn($q) => $q->where('year_level', $request->year_level));
-        if ($request->filled('semester'))     $query->whereHas('user', fn($q) => $q->where('semester', $request->semester));
-        if ($request->filled('course'))       $query->whereHas('user', fn($q) => $q->where('course', $request->course));
-        if ($request->filled('subject'))      $query->where('subject_code', $request->subject);
-        
-        if ($request->filled('student_name')) {
-            $search = $request->student_name;
-            $query->whereHas('user', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('student_number', 'like', "%{$search}%");
-            });
-        }
-
+        $query = $reportService->recordsQuery($request->query());
         $logs = $query->get();
         $filename = 'attendance-logs-' . now()->format('Y-m-d-H-i-s') . '.csv';
         
         return Excel::download(new AttendanceExport($logs), $filename);
+    }
+
+    public function exportAttendanceExcel(Request $request, \App\Services\AttendanceReportService $reportService)
+    {
+        return $reportService->downloadRecordsExcel($reportService->recordsQuery($request->query())->lazy());
     }
 
 

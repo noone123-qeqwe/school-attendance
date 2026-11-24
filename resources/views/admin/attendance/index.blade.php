@@ -5,22 +5,28 @@
 @section('page-sub', 'Classes and individual records')
 
 @section('content')
+@php
+    $attendanceExportFilters = $tab === 'summary' ? request()->only(['date', 'subject']) : request()->except(['tab', 'page']);
+@endphp
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 admin-page-heading">
     <div>
         <h1 class="saas-heading saas-heading-lg mb-1">Attendance Records</h1>
         <p class="saas-text-muted m-0">Find a class or student, review their attendance, and download records.</p>
     </div>
 
-    <div class="d-flex gap-2 admin-page-actions">
+    <div class="d-flex flex-wrap gap-2 admin-page-actions">
         @if(Auth::user()->admin_sub_role !== 'data_entry')
         <a href="{{ route('admin.activity.log') }}" class="btn btn-outline" style="border-color: rgba(96, 165, 250, 0.3); color: #60a5fa;">
             <i class="bi bi-shield-lock"></i> Audit Trail
         </a>
         @endif
-        <a href="{{ route('admin.attendance.export', request()->all()) }}" class="btn btn-outline" style="border-color: rgba(74, 222, 128, 0.3); color: #4ade80;">
+        <a href="{{ route('admin.attendance.export', $attendanceExportFilters) }}" class="btn btn-outline" style="border-color: rgba(74, 222, 128, 0.3); color: #4ade80;">
             <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
         </a>
-        <a href="{{ route('admin.attendance.preview', request()->query()) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
+        <a href="{{ route('admin.attendance.xlsx', $attendanceExportFilters) }}" class="btn btn-outline">
+            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Export Excel
+        </a>
+        <a href="{{ route('admin.attendance.preview', $attendanceExportFilters) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
             <i class="bi bi-file-earmark-pdf"></i> Export PDF
         </a>
     </div>

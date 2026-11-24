@@ -479,6 +479,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/attendance/preview-pdf', [App\Http\Controllers\TeacherController::class, 'previewAttendancePdf'])->name('attendance.preview');
     Route::get('/attendance/export-pdf', [App\Http\Controllers\TeacherController::class, 'exportAttendancePdf'])->name('attendance.pdf');
     Route::get('/attendance/export-csv', [App\Http\Controllers\TeacherController::class, 'exportAttendanceCsv'])->name('attendance.csv');
+    Route::get('/attendance/export-xlsx', [App\Http\Controllers\TeacherController::class, 'exportAttendanceExcel'])->name('attendance.xlsx');
     Route::post('/attendance/{attendance}/excuse', [App\Http\Controllers\TeacherController::class, 'excuseAttendance'])->name('attendance.excuse');
     Route::post('/attendance/{attendance}/override', [App\Http\Controllers\TeacherController::class, 'overrideAttendance'])->name('attendance.override');
     Route::get('/corrections', [App\Http\Controllers\TeacherController::class, 'corrections'])->name('corrections');
@@ -611,6 +612,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::get('/attendance/export-pdf', [App\Http\Controllers\AdminController::class, 'exportAttendancePdf'])->name('attendance.pdf');
     Route::get('/attendance/preview-pdf', [App\Http\Controllers\AdminController::class, 'previewAttendancePdf'])->name('attendance.preview');
     Route::get('/attendance/export-csv', [App\Http\Controllers\AdminController::class, 'exportAttendanceCsv'])->name('attendance.export');
+    Route::get('/attendance/export-xlsx', [App\Http\Controllers\AdminController::class, 'exportAttendanceExcel'])->name('attendance.xlsx');
     
     // QR Management
     Route::get('/qr', [App\Http\Controllers\Admin\QrManagementController::class, 'index'])->name('qr');

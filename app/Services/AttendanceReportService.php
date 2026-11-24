@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Traits\SanitizesExport;
 use Carbon\Carbon;
 use Generator;
+use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Excel;
 use Maatwebsite\Excel\Facades\Excel as Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Cell\Cell;
@@ -18,6 +19,51 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class AttendanceReportService
 {
     use SanitizesExport;
+
+    /**
+     * @param list<string>|null $subjectCodes
+     * @return Builder<Attendance>
+     */
+    public function recordsQuery(array $filters, ?array $subjectCodes = null): Builder
+    {
+        $query = Attendance::with(['user', 'subject', 'academicYear'])
+            ->orderByDesc('date')->orderByDesc('time_in')->orderByDesc('id');
+
+        if ($subjectCodes !== null) {
+            $query->whereIn('subject_code', $subjectCodes);
+        }
+        $subject = $filters['subject'] ?? $filters['subject_code'] ?? null;
+        if (filled($subject)) {
+            $query->where('subject_code', $subject);
+        }
+
+        foreach (['date' => '=', 'date_from' => '>=', 'date_to' => '<='] as $filter => $operator) {
+            if (filled($filters[$filter] ?? null)) {
+                $query->whereDate('date', $operator, $filters[$filter]);
+            }
+        }
+
+        $status = strtolower((string) ($filters['status'] ?? ''));
+        if ($status === 'excused') {
+            $query->where('excused', true);
+        } elseif ($status !== '') {
+            $query->whereRaw('LOWER(status) = ?', [$status])
+                ->where(fn (Builder $attendance) => $attendance->where('excused', false)->orWhereNull('excused'));
+        }
+
+        foreach (['course', 'year_level', 'semester'] as $filter) {
+            if (filled($filters[$filter] ?? null)) {
+                $query->whereHas('user', fn (Builder $student) => $student->where($filter, $filters[$filter]));
+            }
+        }
+        $search = $filters['search'] ?? $filters['student_name'] ?? null;
+        if (filled($search)) {
+            $query->whereHas('user', fn (Builder $student) => $student->where('name', 'like', "%{$search}%")
+                ->orWhere('student_number', 'like', "%{$search}%"));
+        }
+
+        return $query;
+    }
 
     /**
      * Generate structured attendance report based on request filters.
@@ -323,6 +369,11 @@ class AttendanceReportService
             // Laravel Excel sets a static binder while it builds the file.
             Cell::setValueBinder($previousBinder);
         }
+    }
+
+    public function downloadRecordsExcel(iterable $records): BinaryFileResponse
+    {
+        return $this->downloadExcel(['type' => 'records', 'data' => $records]);
     }
 
     private function exportFilename(array $report, string $extension): string

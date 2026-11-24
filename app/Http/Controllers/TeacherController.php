@@ -322,42 +322,11 @@ class TeacherController extends Controller
     // ─────────────────────────────────────────
     // ATTENDANCE MANAGEMENT
     // ─────────────────────────────────────────
-    public function attendance(Request $request)
+    public function attendance(Request $request, \App\Services\AttendanceReportService $reportService)
     {
-        $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-            ->get();
-        
-        $subjectCodes = $teacherSubjects->pluck('code');
-
-        $query = Attendance::with(['user', 'subject'])
-            ->whereIn('subject_code', $subjectCodes)
-            ->orderBy('date', 'desc');
-
-        // Apply filters
-        if ($request->filled('date')) {
-            $query->whereDate('date', $request->date);
-        }
-        if ($request->filled('status')) {
-            if ($request->status === 'Excused') {
-                $query->where('excused', true);
-            } else {
-                $query->whereRaw('LOWER(status) = ?', [strtolower($request->status)])
-                     ->where('excused', false);
-            }
-        }
-        if ($request->filled('subject')) {
-            $query->where('subject_code', $request->subject);
-        }
-        
-        // Student name search
-        if ($request->filled('student_name')) {
-            $search = $request->student_name;
-            $query->whereHas('user', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('student_number', 'like', "%{$search}%");
-            });
-        }
+        $teacher = $request->user();
+        $teacherSubjects = $teacher->subjects()->get();
+        $query = $reportService->recordsQuery($request->query(), $teacherSubjects->pluck('code')->all());
 
         $attendanceRecords = $query->paginate(20)->withQueryString();
 
@@ -383,37 +352,11 @@ class TeacherController extends Controller
         return back()->with('success', 'Attendance marked as excused.');
     }
 
-    public function exportAttendancePdf(Request $request)
+    public function exportAttendancePdf(Request $request, \App\Services\AttendanceReportService $reportService)
     {
-        $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-            ->get();
-        
-        $subjectCodes = $teacherSubjects->pluck('code');
-
-        $query = Attendance::with(['user', 'subject'])
-            ->whereIn('subject_code', $subjectCodes)
-            ->orderBy('date', 'desc');
-
-        // Apply same filters as attendance method
-        if ($request->filled('date'))         $query->whereDate('date', $request->date);
-        if ($request->filled('status')) {
-            if ($request->status === 'Excused') {
-                $query->where('excused', true);
-            } else {
-                $query->whereRaw('LOWER(status) = ?', [strtolower($request->status)])
-                     ->where('excused', false);
-            }
-        }
-        if ($request->filled('subject'))      $query->where('subject_code', $request->subject);
-        
-        if ($request->filled('student_name')) {
-            $search = $request->student_name;
-            $query->whereHas('user', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('student_number', 'like', "%{$search}%");
-            });
-        }
+        $teacher = $request->user();
+        $teacherSubjects = $teacher->subjects()->get();
+        $query = $reportService->recordsQuery($request->query(), $teacherSubjects->pluck('code')->all());
 
         $attendanceRecords = $query->get();
         $filters = $request->only(['date', 'status', 'subject', 'student_name']);
@@ -432,37 +375,11 @@ class TeacherController extends Controller
         return $pdf->download($filename);
     }
 
-    public function previewAttendancePdf(Request $request)
+    public function previewAttendancePdf(Request $request, \App\Services\AttendanceReportService $reportService)
     {
-        $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-            ->get();
-        
-        $subjectCodes = $teacherSubjects->pluck('code');
-
-        $query = Attendance::with(['user', 'subject'])
-            ->whereIn('subject_code', $subjectCodes)
-            ->orderBy('date', 'desc');
-
-        // Apply same filters as attendance method
-        if ($request->filled('date'))         $query->whereDate('date', $request->date);
-        if ($request->filled('status')) {
-            if ($request->status === 'Excused') {
-                $query->where('excused', true);
-            } else {
-                $query->whereRaw('LOWER(status) = ?', [strtolower($request->status)])
-                     ->where('excused', false);
-            }
-        }
-        if ($request->filled('subject'))      $query->where('subject_code', $request->subject);
-        
-        if ($request->filled('student_name')) {
-            $search = $request->student_name;
-            $query->whereHas('user', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('student_number', 'like', "%{$search}%");
-            });
-        }
+        $teacher = $request->user();
+        $teacherSubjects = $teacher->subjects()->get();
+        $query = $reportService->recordsQuery($request->query(), $teacherSubjects->pluck('code')->all());
 
         $attendanceRecords = $query->get();
         $filters = $request->only(['date', 'status', 'subject', 'student_name']);
@@ -2002,24 +1919,22 @@ class TeacherController extends Controller
         return Excel::download(new StudentsExport($students), 'students.csv', \Maatwebsite\Excel\Excel::CSV);
     }
 
-    public function exportAttendanceCsv(Request $request)
+    public function exportAttendanceCsv(Request $request, \App\Services\AttendanceReportService $reportService)
     {
-        $teacher = Auth::user();
-        $mySubjectCodes = $teacher->subjects()->pluck('code')->toArray();
+        $subjectCodes = $request->user()->subjects()->pluck('code')->all();
+        abort_if($request->filled('subject_code') && !in_array($request->query('subject_code'), $subjectCodes, true), 403);
 
-        $filters = $request->only(['subject_code', 'date', 'status']);
-        if (!empty($filters['subject_code']) && !in_array($filters['subject_code'], $mySubjectCodes, true)) {
-            abort(403);
-        }
-
-        $query = Attendance::with(['user', 'subject'])->whereIn('subject_code', $mySubjectCodes);
-        if (!empty($filters['subject_code'])) $query->where('subject_code', $filters['subject_code']);
-        if (!empty($filters['date'])) $query->whereDate('date', $filters['date']);
-        if (!empty($filters['status'])) $query->where('status', $filters['status']);
-        
-        $logs = $query->orderBy('date', 'desc')->get();
+        $logs = $reportService->recordsQuery($request->query(), $subjectCodes)->get();
 
         return Excel::download(new AttendanceExport($logs), 'attendance.csv', \Maatwebsite\Excel\Excel::CSV);
+    }
+
+    public function exportAttendanceExcel(Request $request, \App\Services\AttendanceReportService $reportService)
+    {
+        $subjectCodes = $request->user()->subjects()->pluck('code')->all();
+        $records = $reportService->recordsQuery($request->query(), $subjectCodes)->lazy();
+
+        return $reportService->downloadRecordsExcel($records);
     }
 
     public function corrections(Request $request)
