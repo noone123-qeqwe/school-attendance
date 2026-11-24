@@ -382,6 +382,8 @@
         .fp-row-left i { font-size: 1.05rem; color: #34d399; transition: all 0.3s; }
         .fp-row-label { font-size: 0.82rem; font-weight: 700; color: #ffffff; letter-spacing: -0.1px; transition: all 0.2s; }
         .fp-row-hint { font-size: 0.67rem; color: rgba(255, 255, 255, 0.65); margin-top: 1px; transition: all 0.2s; }
+        #passkeyAvailability { margin: 0 0 8px; font-size: 0.78rem; line-height: 1.45; }
+        #passkeyAvailability:empty { display: none; }
         .fp-row-arrow { color: rgba(255, 255, 255, 0.45); font-size: 0.8rem; transition: all 0.2s; }
         .fp-row:hover .fp-row-arrow { color: #f5dfa8; transform: translateX(2px); }
 

@@ -1316,10 +1316,10 @@
                     </div>
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
-                            <div class="sc-title">Biometrics Verification</div>
+                            <div class="sc-title">{{ $user->isStudent() ? 'Biometrics' : 'Device passkeys' }}</div>
                             <span class="sec-badge sec-badge-green"><i class="bi bi-patch-check-fill"></i> WebAuthn security</span>
                         </div>
-                        <div class="sc-sub">Register a camera-based face profile for attendance, or set up device-protected sign-in with a fingerprint, face unlock, or screen lock.</div>
+                        <div class="sc-sub">{{ $user->isStudent() ? 'Register your face for attendance or set up a device passkey for sign-in.' : 'Set up a device passkey for sign-in.' }}</div>
                     </div>
                 </div>
                 <div class="sc-body">
@@ -1327,205 +1327,49 @@
                     @if($user->isStudent())
                     <div id="studentBiometricChoices" class="student-biometric-choices">
                         <a id="studentFaceRegistrationLink" href="{{ route('settings.biometrics.face') }}"><i class="bi bi-camera-video" aria-hidden="true"></i><span><strong>Face registration for attendance</strong><small>Use the camera to register your face for attendance checks.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-                        <a id="studentFingerprintRegistrationLink" href="{{ route('settings.biometrics.fingerprint') }}"><i class="bi bi-shield-lock" aria-hidden="true"></i><span><strong>Device passkey</strong><small>Set up sign-in with face unlock, a fingerprint, or your screen lock.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                        <a id="studentFingerprintRegistrationLink" href="{{ route('settings.biometrics.fingerprint') }}"><i class="bi bi-shield-lock" aria-hidden="true"></i><span><strong>Device passkey</strong><small>Set up sign-in with the secure prompt on this device.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
                     </div>
                     @else
                     <div id="studentPasskeySettings">
-                    <!-- In-app browser & Insecure Context Alert -->
-                    <div id="webauthnUnsupported" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
-                        <div style="display:flex;align-items:flex-start;gap:12px;">
-                            <i class="bi bi-exclamation-triangle" style="font-size:1.2rem;flex-shrink:0;margin-top:2px;"></i>
-                            <div>
-                                <div style="font-weight:700;margin-bottom:4px;" id="unsupportedTitle">Biometric sensor not available on this browser</div>
-                                <div id="webauthnUnsupportedMsg" style="font-size:.8rem;opacity:.9;line-height:1.5;">
-                                    Your current browser or connection does not support hardware biometric sign-in.
-                                </div>
-                                <a id="openInBrowserBtn" href="#" onclick="openInSystemBrowser()" style="display:none;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;">
-                                    <i class="bi bi-box-arrow-up-right"></i> Open in External Browser
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ── Step 1: Method Selection ── -->
                     <div class="bio-flow-section">
-                        <div class="bio-section-title-wrap">
-                            <span class="bio-step-badge">Step 1</span>
-                            <div>
-                                <div class="bio-step-title">{{ $user->isStudent() ? 'Fingerprint sign-in' : 'Choose a device sign-in method' }}</div>
-                                <div class="bio-step-subtitle">{{ $user->isStudent() ? 'Register the secure credential on the device you use to sign in.' : 'Your device verifies you locally. It may offer a fingerprint, face unlock, or screen lock.' }}</div>
-                            </div>
-                        </div>
-
-                        <div class="bio-method-grid">
-                            <!-- Option 1: Fingerprint -->
-                            <div class="bio-method-card selected" id="methodCardFp" data-method="fingerprint" tabindex="0" role="button" aria-pressed="true" onclick="selectBiometricMethod('fingerprint')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectBiometricMethod('fingerprint')}">
-                                <div class="bio-card-radio">
-                                    <div class="bio-radio-inner">
-                                        <i class="bi bi-check-lg"></i>
-                                    </div>
-                                </div>
-                                <div class="bio-method-icon-wrap bio-fp-icon">
-                                    <i class="bi bi-fingerprint"></i>
-                                </div>
-                                <div class="bio-method-info">
-                                    <div class="bio-method-header">
-                                        <span class="bio-method-name">Fingerprint</span>
-                                        <span class="bio-status-pill not-reg" id="statusBadgeFingerprint">Checking...</span>
-                                    </div>
-                                    <p class="bio-method-desc">
-                                        Use your built-in fingerprint sensor when available. Your device may also offer face unlock or a PIN.
-                                    </p>
-                                    <div class="bio-method-meta">
-                                        <span class="bio-spec-chip"><i class="bi bi-shield-check" style="color:#34d399;"></i> WebAuthn</span>
-                                        <span class="bio-spec-chip"><i class="bi bi-cpu" style="color:#cfa46f;"></i> Device-protected key</span>
-                                        <span class="bio-spec-chip"><i class="bi bi-lightning-charge" style="color:#34d399;"></i> User verified</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Option 2: Device face sign-in -->
-                            @if(!$user->isStudent())
-                            <div class="bio-method-card" id="methodCardFace" data-method="face" tabindex="0" role="button" aria-pressed="false" onclick="selectBiometricMethod('face')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectBiometricMethod('face')}">
-                                <div class="bio-card-radio">
-                                    <div class="bio-radio-inner">
-                                        <i class="bi bi-check-lg"></i>
-                                    </div>
-                                </div>
-                                <div class="bio-method-icon-wrap bio-face-icon">
-                                    <i class="bi bi-person-bounding-box"></i>
-                                </div>
-                                <div class="bio-method-info">
-                                    <div class="bio-method-header">
-                                        <span class="bio-method-name">Device face unlock</span>
-                                        <span class="bio-status-pill not-reg" id="statusBadgeFace">Checking...</span>
-                                    </div>
-                                    <p class="bio-method-desc">
-                                        This creates a device passkey and uses Face ID, Windows Hello, or another supported device check. It does not create a camera face profile for attendance.
-                                    </p>
-                                    <div class="bio-method-meta">
-                                        <span class="bio-spec-chip"><i class="bi bi-eye" style="color:#38bdf8;"></i> On-device</span>
-                                        <span class="bio-spec-chip"><i class="bi bi-patch-check" style="color:#cfa46f;"></i> Verified passkey</span>
-                                        <span class="bio-spec-chip"><i class="bi bi-lock" style="color:#38bdf8;"></i> No face upload</span>
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- ── Step 2: Registration & Scanning Stage ── -->
-                    <div class="bio-flow-section" style="margin-top:26px;">
-                        <div class="bio-section-title-wrap">
-                            <span class="bio-step-badge">Step 2</span>
-                            <div>
-                                <div class="bio-step-title" id="bioStep2Title">Confirm this device</div>
-                                <div class="bio-step-subtitle" id="bioStep2Subtitle">Selected method: <strong id="selectedMethodDisplay" style="color:#34d399;">Fingerprint</strong> <span id="selectedMethodHelper">— Follow your device prompt to finish.</span></div>
-                            </div>
-                        </div>
-
                         <!-- Scanner Stage Container -->
                         <div class="bio-scanner-card" id="bioScannerStage">
 
                             <!-- State A: Idle / Ready Overview -->
                             <div class="bio-stage-view" id="bioIdleView">
                                 <div class="bio-preview-container">
-                                    <!-- Fingerprint Idle Graphic -->
-                                    <div id="fpIdlePreview" class="bio-method-preview active">
-                                        <div class="bio-idle-sensor-ring">
+                                    <div class="bio-method-preview active">
+                                        <div class="bio-idle-sensor-ring" aria-hidden="true">
                                             <div class="bio-radar-ring"></div>
                                             <div class="bio-radar-ring delay-1"></div>
-                                            <i class="bi bi-fingerprint bio-idle-sensor-icon"></i>
+                                            <i class="bi bi-shield-lock bio-idle-sensor-icon"></i>
                                         </div>
-                                        <div class="bio-preview-title">Add fingerprint sign-in</div>
-                                        <div class="bio-preview-sub">Continue to register a secure device key. Your device may ask for a fingerprint, face unlock, or screen lock.</div>
-                                    </div>
-
-                                    <!-- Face Idle Graphic -->
-                                    <div id="faceIdlePreview" class="bio-method-preview">
-                                        <div class="bio-idle-face-box">
-                                            <span class="hud-corner hud-tl"></span>
-                                            <span class="hud-corner hud-tr"></span>
-                                            <span class="hud-corner hud-bl"></span>
-                                            <span class="hud-corner hud-br"></span>
-                                            <div class="hud-face-reticle">
-                                                <i class="bi bi-person-bounding-box bio-idle-face-icon"></i>
-                                            </div>
-                                        </div>
-                                        <div class="bio-preview-title">Use device face unlock</div>
-                                        <div class="bio-preview-sub">Confirm in the secure prompt. This creates a device sign-in key, not an attendance face profile.</div>
+                                        <div class="bio-preview-title">Add a device passkey</div>
+                                        <div class="bio-preview-sub">Follow the secure prompt on the device you use to sign in.</div>
                                     </div>
                                 </div>
-
                                 <div class="bio-action-row">
-                                    <button type="button" id="startBioBtn" class="sbtn btn-emerald bio-primary-cta">
-                                        <i class="bi bi-fingerprint me-2"></i>Continue to Register Fingerprint
+                                    <button type="button" id="startBioBtn" class="sbtn btn-emerald bio-primary-cta" aria-describedby="devicePasskeyStatus" disabled>
+                                        <i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Register this device
                                     </button>
-                                    <span class="bio-hardware-note">
-                                        <i class="bi bi-shield-check text-success me-1"></i>FIDO2 / WebAuthn Device Passkey Security
-                                    </span>
                                 </div>
+                                <p id="devicePasskeyStatus" class="bio-preview-sub" role="status">Checking device passkey support…</p>
                             </div>
-
-                            <!-- State B: Active Live Scanning Stage -->
+                            <!-- Device verification -->
                             <div class="bio-stage-view" id="bioScanningView" style="display:none;">
                                 <div class="bio-scan-hud-container">
 
-                                    <!-- Fingerprint Realistic Scanner -->
-                                    <div id="fpActiveScanner" class="bio-scanner-display active">
-                                        <div class="fp-scan-frame">
+                                    <div class="bio-scanner-display active">
+                                        <div class="fp-scan-frame" id="devicePasskeyFrame" aria-hidden="true">
                                             <div class="fp-pulse-wave"></div>
-                                            <div class="fp-laser-line" id="fpLaserLine"></div>
-                                            <!-- Concentric Authentic Dermal Ridge Vectors -->
-                                            <svg class="fp-svg" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path class="fp-ridge" d="M60 46 C53 46 48 52 48 62 C48 72 54 80 60 88 C66 80 72 72 72 62 C72 52 67 46 60 46" />
-                                                <path class="fp-ridge" d="M60 36 C46 36 38 46 38 62 C38 82 48 98 56 110" />
-                                                <path class="fp-ridge" d="M60 36 C74 36 82 46 82 62 C82 82 72 98 64 110" />
-                                                <path class="fp-ridge" d="M60 26 C40 26 30 38 30 62 C30 92 42 110 50 122" />
-                                                <path class="fp-ridge" d="M60 26 C80 26 90 38 90 62 C90 92 78 110 70 122" />
-                                                <path class="fp-ridge" d="M60 16 C34 16 22 32 22 62 C22 98 36 120 46 132" />
-                                                <path class="fp-ridge" d="M60 16 C86 16 98 32 98 62 C98 98 84 120 74 132" />
-                                                <path class="fp-ridge" d="M60 7 C28 7 14 26 14 62 C14 104 30 128 42 138" />
-                                                <path class="fp-ridge" d="M60 7 C92 7 106 26 106 62 C106 104 90 128 78 138" />
-                                            </svg>
+                                            <i class="bi bi-shield-lock bio-idle-sensor-icon"></i>
                                         </div>
-                                        <div class="bio-scanning-title" id="fpScanningTitle">Touch Fingerprint Sensor</div>
-                                        <div class="bio-scanning-sub" id="fpStatusSub">Place your finger on your device sensor or confirm the prompt</div>
-
-                                        <!-- Progressive Scan Feedback -->
-                                        <div class="bio-progress-container">
-                                            <div class="bio-progress-track">
-                                                <div class="bio-progress-fill" id="fpProgressFill" style="width: 25%;"></div>
-                                            </div>
-                                            <div class="bio-progress-labels">
-                                                <span class="bio-progress-state" id="fpStateLabel">Waiting for sensor touch...</span>
-                                                <span class="bio-progress-pct" id="fpPctLabel">Ready</span>
-                                            </div>
-                                        </div>
+                                        <div class="bio-scanning-title" id="fpScanningTitle">Preparing device prompt</div>
+                                        <div class="bio-scanning-sub" id="fpStatusSub" role="status">Setting up the passkey request.</div>
                                     </div>
-
-                                    <!-- Device verification prompt; no camera capture occurs here. -->
-                                    <div id="faceActiveScanner" class="bio-scanner-display">
-                                        <div class="face-scan-frame" id="faceScanFrame">
-                                            <span class="hud-corner hud-tl"></span>
-                                            <span class="hud-corner hud-tr"></span>
-                                            <span class="hud-corner hud-bl"></span>
-                                            <span class="hud-corner hud-br"></span>
-                                            <div class="face-holo-mesh"><i class="bi bi-person-check" aria-hidden="true"></i></div>
-                                        </div>
-                                        <div class="bio-scanning-title" id="faceScanningTitle">Waiting for Device Verification</div>
-                                        <div class="bio-scanning-sub" id="faceStatusSub">Complete the protected prompt on your device. A PIN may be available.</div>
-                                        <div class="bio-progress-container">
-                                            <div class="bio-progress-track"><div class="bio-progress-fill cyan-fill" id="faceProgressFill" style="width: 0%;"></div></div>
-                                            <div class="bio-progress-labels">
-                                                <span class="bio-progress-state" id="faceStateLabel">Waiting for device prompt...</span>
-                                                <span class="bio-progress-pct" id="facePctLabel">Ready</span>
-                                            </div>
-                                        </div>
-                                    </div></div>
-
+                                </div>
                                 <div class="bio-cancel-row">
-                                    <button type="button" onclick="cancelBiometricRegistration()" class="cancel-btn bio-cancel-btn">
+                                    <button type="button" id="cancelBioBtn" class="cancel-btn bio-cancel-btn">
                                         <i class="bi bi-x-circle me-1"></i>Cancel Registration
                                     </button>
                                 </div>
@@ -1540,16 +1384,13 @@
                                             <path class="bio-success-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
                                         </svg>
                                     </div>
-                                    <div class="bio-success-title" id="bioSuccessTitle">Biometric Registered Successfully!</div>
-                                    <div class="bio-success-desc" id="bioSuccessDesc">
+                                    <div class="bio-success-title" id="bioSuccessTitle">Passkey registered</div>
+                                    <div class="bio-success-desc">
                                         Your device passkey has been verified and linked to your account.
                                     </div>
                                     <div class="bio-success-actions">
-                                        <button type="button" onclick="resetToSelectionStage()" class="sbtn btn-emerald" style="padding:10px 24px;">
+                                        <button type="button" id="doneBioBtn" class="sbtn btn-emerald" style="padding:10px 24px;">
                                             <i class="bi bi-check-lg me-1"></i>Done
-                                        </button>
-                                        <button type="button" onclick="switchOrRegisterOtherMethod()" class="cancel-btn" id="registerOtherBtn" style="padding:10px 20px;">
-                                            <i class="bi bi-plus-circle me-1"></i>Register Other Method
                                         </button>
                                     </div>
                                 </div>
@@ -1563,14 +1404,11 @@
                                     </div>
                                     <div class="bio-error-title" id="bioErrorTitle">Registration Failed</div>
                                     <div class="bio-error-desc" id="bioErrorDesc">
-                                        The biometric prompt was cancelled or timed out.
+                                        Try registering your device again.
                                     </div>
                                     <div class="bio-error-actions">
-                                        <button type="button" onclick="retryBiometricRegistration()" class="sbtn btn-emerald" id="retryBtn" style="padding:10px 24px;">
+                                        <button type="button" class="sbtn btn-emerald" id="retryBtn" style="padding:10px 24px;">
                                             <i class="bi bi-arrow-repeat me-1"></i>Try Again
-                                        </button>
-                                        <button type="button" onclick="switchBiometricMethodFallback()" class="cancel-btn" id="fallbackSwitchBtn" style="padding:10px 20px;">
-                                            <i class="bi bi-arrow-left-right me-1"></i>Switch Method
                                         </button>
                                     </div>
                                 </div>
@@ -1579,17 +1417,17 @@
                         </div>
                     </div>
 
-                    <!-- ── Step 3: Registered Hardware Credentials List ── -->
+                    <!-- Registered devices -->
                     <div style="margin-top:28px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;">
-                            <div style="font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">Registered Hardware Credentials</div>
+                            <div style="font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">Registered devices</div>
                             <span id="deviceCountBadge" style="font-size:.72rem;background:rgba(207,164,111,0.12);color:var(--gold,#cfa46f);padding:3px 10px;border-radius:99px;border:1px solid rgba(207,164,111,0.25);font-weight:700;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;">Loading...</span>
                         </div>
                         <div id="deviceList">
                             <div style="text-align:center;padding:32px 20px;color:#94a3b8;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
                                 <i class="bi bi-shield-lock" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
-                                <div style="font-weight:700;color:#f8fafc;margin-bottom:4px;">No biometric credentials registered yet</div>
-                                <div style="font-size:.78rem;color:#94a3b8;">Choose a device sign-in method above to register this device.</div>
+                                <div style="font-weight:700;color:#f8fafc;margin-bottom:4px;">No device passkeys registered yet</div>
+                                <div style="font-size:.78rem;color:#94a3b8;">Use the registration button to add this device.</div>
                             </div>
                         </div>
                     </div>
@@ -2207,6 +2045,7 @@
 window.__SETTINGS_CONFIG__ = @json($settingsJsConfig);
 </script>
 @unless($user->isStudent())
+<script src="{{ asset('js/device-passkey-capabilities.js') }}?v={{ filemtime(public_path('js/device-passkey-capabilities.js')) }}" @cspNonce></script>
 <script @cspNonce>
 @include('partials.device-biometric-registration-script')
 </script>

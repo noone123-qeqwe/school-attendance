@@ -1,7 +1,7 @@
 @extends('layouts.biometric-flow')
 
 @section('title', 'Device passkey')
-@section('description', 'Your device may ask for face unlock, a fingerprint, or your screen lock.')
+@section('description', 'Set up passwordless sign-in with your device’s secure prompt.')
 @section('pageClass', 'fingerprint-registration-page')
 
 @section('content')
@@ -20,8 +20,9 @@
                 <p>Follow your device’s prompt to link a passkey to your account.</p>
             </div>
         </div>
-        <p class="bio-privacy-note"><i class="bi bi-lock" aria-hidden="true"></i><span>Your fingerprint or face stays on your device. The app saves a secure sign-in key.</span></p>
-        <button type="button" id="startBioBtn" class="flow-button flow-primary"><i class="bi bi-shield-lock" aria-hidden="true"></i> Set up a passkey</button>
+        <p class="bio-privacy-note"><i class="bi bi-lock" aria-hidden="true"></i><span>Your device verifies you locally. The app saves a public key for sign-in.</span></p>
+        <button type="button" id="startBioBtn" class="flow-button flow-primary" aria-describedby="devicePasskeyStatus" disabled><i class="bi bi-shield-lock" aria-hidden="true"></i> Set up a passkey</button>
+        <p id="devicePasskeyStatus" class="biometric-flow-status" role="status">Checking device passkey support…</p>
     </div>
     <div id="bioScanningView" style="display:none" aria-live="polite" aria-atomic="false">
         <div class="bio-flow-waiting" aria-hidden="true"><span class="biometric-spinner"></span></div>
@@ -31,8 +32,8 @@
     </div>
     <div id="bioSuccessView" style="display:none" role="status" aria-live="polite">
         <div class="bio-flow-result-icon is-success" aria-hidden="true"><i class="bi bi-check-lg"></i></div>
-        <h2 id="bioSuccessTitle">Device registered</h2>
-        <p id="bioSuccessDesc"></p>
+        <h2 id="bioSuccessTitle">Passkey registered</h2>
+        <p>Your passkey is linked to your account.</p>
         <a href="{{ route('settings') }}#tab-biometrics" class="flow-button flow-primary"><i class="bi bi-arrow-left" aria-hidden="true"></i> Done</a>
     </div>
     <div id="bioErrorView" style="display:none" role="alert">
@@ -54,13 +55,10 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/device-passkey-capabilities.js') }}?v={{ filemtime(public_path('js/device-passkey-capabilities.js')) }}" @cspNonce></script>
 <script @cspNonce>
 @include('partials.device-biometric-registration-script')
 
-document.getElementById('startBioBtn').addEventListener('click', beginSelectedBiometricRegistration);
-document.getElementById('retryBtn').addEventListener('click', retryBiometricRegistration);
-document.getElementById('cancelBioBtn').addEventListener('click', cancelBiometricRegistration);
-window.addEventListener('pagehide', cancelBiometricRegistration);
-loadDevices();
+initializeDevicePasskeyRegistration();
 </script>
 @endpush

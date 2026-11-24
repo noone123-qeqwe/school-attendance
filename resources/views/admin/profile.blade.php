@@ -315,15 +315,15 @@
                     </div>
                 </div>
 
-                <!-- Fingerprint / Biometric Device -->
+                <!-- Device passkey -->
                 <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,215,145,0.06);">
-                    <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Fingerprint / Biometric Login</div>
+                    <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Device passkeys</div>
                     
-                    <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:12px;padding:14px 18px;font-size:.85rem;margin-bottom:14px;">
+                    <div id="webauthnUnsupported" role="status" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:12px;padding:14px 18px;font-size:.85rem;margin-bottom:14px;">
                         <div style="display:flex;align-items:flex-start;gap:10px;">
                             <i class="bi bi-exclamation-triangle" style="font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
                             <div id="webauthnUnsupportedMsg" style="font-size:.8rem;line-height:1.4;">
-                                Biometric login is not supported on this browser or device.
+                                Passkey setup is unavailable on this device.
                             </div>
                         </div>
                     </div>
@@ -331,14 +331,14 @@
                     <div style="margin-bottom:16px;">
                         <div id="deviceList">
                             <div style="text-align:center;padding:16px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:10px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
-                                <i class="bi bi-fingerprint" style="font-size:1.8rem;display:block;margin-bottom:6px;opacity:.4;color:var(--gold,#CFA46F);"></i>
-                                No fingerprint registered yet.
+                                <i class="bi bi-shield-lock" style="font-size:1.8rem;display:block;margin-bottom:6px;opacity:.4;color:var(--gold,#CFA46F);"></i>
+                                No passkeys registered yet.
                             </div>
                         </div>
                     </div>
 
-                    <button type="button" onclick="registerFingerprint()" id="registerFpBtn" class="adm-save-btn" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);color:white;">
-                        <i class="bi bi-fingerprint me-2"></i>Register This Device
+                    <button type="button" onclick="registerDevicePasskey()" id="registerFpBtn" disabled class="adm-save-btn" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);color:white;">
+                        <i class="bi bi-shield-lock me-2"></i>Set up a passkey
                     </button>
                     <div id="fpMessage" style="margin-top:12px;font-size:.82rem;display:none;"></div>
                 </div>
@@ -347,7 +347,7 @@
                 <div>
                     <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Recovery Codes</div>
                     <p style="font-size:.85rem;color:#64748b;margin-bottom:12px;">
-                        Recovery codes can be used to log in if you lose access to your email or fingerprint.
+                        Recovery codes can be used to log in if you lose access to your email or passkey.
                     </p>
                     <button type="button" onclick="generateRecoveryCodes()" id="generateCodesBtn" class="adm-save-btn" style="background:linear-gradient(135deg,#eab308,#ca8a04);border-color:#ca8a04;color:white;">
                         <i class="bi bi-key-fill me-2"></i>Generate Recovery Codes
@@ -369,6 +369,7 @@
 
 </div>
 
+@include('partials.profile-device-passkey-capability')
 <script @cspNonce>
 function togglePw(id, btn, e) {
     if (e && e.preventDefault) e.preventDefault();
@@ -560,35 +561,9 @@ function generateRecoveryCodes() {
     });
 }
 
-// ── WebAuthn Fingerprint Registration ──
+// ── Passkey registration ──
 async function loadDevices() {
     const list = document.getElementById('deviceList');
-    const btn = document.getElementById('registerFpBtn');
-    const unsupported = document.getElementById('webauthnUnsupported');
-
-    if (!window.PublicKeyCredential) {
-        if (unsupported) {
-            unsupported.style.display = 'block';
-            const msgEl = document.getElementById('webauthnUnsupportedMsg');
-            if (msgEl) {
-                if (!window.isSecureContext) {
-                    msgEl.innerHTML = 'Biometric WebAuthn requires a <strong>secure connection (HTTPS or localhost)</strong>. If accessing from mobile, please open via HTTPS.';
-                } else {
-                    msgEl.innerHTML = 'Biometric login is not supported by your current browser or device.';
-                }
-            }
-        }
-        if (btn) {
-            btn.style.display = 'inline-flex';
-            btn.onclick = function() {
-                if (!window.isSecureContext) {
-                    alert('Biometric registration requires HTTPS (secure context). Please open via HTTPS or localhost.');
-                } else {
-                    alert('Biometric authentication is not supported by your browser or device.');
-                }
-            };
-        }
-    }
     try {
         const res = await fetch('{{ route("webauthn.devices") }}');
         const devices = await res.json();
@@ -599,7 +574,7 @@ async function loadDevices() {
         if (devices && devices.length > 0) {
             const registeredMsg = document.createElement('div');
             registeredMsg.style.cssText = 'text-align:center;padding:12px;color:#4ade80;font-size:.85rem;background:rgba(74,222,128,0.1);border-radius:10px;border:1px solid rgba(74,222,128,0.2);margin-bottom:12px;font-weight:600;';
-            registeredMsg.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>You have registered a fingerprint.';
+            registeredMsg.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Credentials linked to this account.';
             list.appendChild(registeredMsg);
 
             devices.forEach(d => {
@@ -607,7 +582,7 @@ async function loadDevices() {
                 div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,215,145,0.06);';
                 div.innerHTML = `
                     <div style="width:34px;height:34px;border-radius:9px;background:rgba(74,222,128,0.1);display:flex;align-items:center;justify-content:center;color:#4ade80;flex-shrink:0;">
-                        <i class="bi bi-fingerprint"></i>
+                        <i class="bi bi-shield-lock"></i>
                     </div>
                     <div style="flex:1;">
                         <div style="font-size:.85rem;font-weight:600;color:#f3e7cd;">${d.name || d.device_name || "My Device"}</div>
@@ -624,8 +599,8 @@ async function loadDevices() {
             emptyDiv.id = 'noDevices';
             emptyDiv.style.cssText = 'text-align:center;padding:16px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:10px;border:1px dashed rgba(207,164,111,0.2);';
             emptyDiv.innerHTML = `
-                <i class="bi bi-fingerprint" style="font-size:1.8rem;display:block;margin-bottom:6px;opacity:.4;color:var(--gold,#CFA46F);"></i>
-                No fingerprint registered yet.
+                <i class="bi bi-shield-lock" style="font-size:1.8rem;display:block;margin-bottom:6px;opacity:.4;color:var(--gold,#CFA46F);"></i>
+                No passkeys registered yet.
             `;
             list.appendChild(emptyDiv);
         }
@@ -658,17 +633,7 @@ function bufferToBase64Url(buffer) {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-let prefetchOptions = null;
-async function prefetchWebAuthn() {
-    try {
-        const optRes = await fetch('{{ route("webauthn.register.options") }}', {
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
-        });
-        prefetchOptions = await optRes.json();
-    } catch(e) {}
-}
-
-async function registerFingerprint() {
+async function registerDevicePasskey() {
     if (window.location.hostname === '127.0.0.1') {
         const targetUrl = window.location.href.replace('//127.0.0.1', '//localhost');
         window.location.replace(targetUrl);
@@ -677,18 +642,24 @@ async function registerFingerprint() {
 
     const btn = document.getElementById('registerFpBtn');
     const msg = document.getElementById('fpMessage');
+    if (!btn || btn.disabled) return;
+    profilePasskeyRegistrationPending = true;
     btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Waiting for biometric prompt...';
     msg.style.display = 'none';
 
+    let available = false;
     try {
+        available = await refreshProfilePasskeyCapability();
+        if (!available) return;
+
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Waiting for your device...';
         const optRes = await fetch('{{ route("webauthn.register.options") }}', {
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
         });
         const opts = await optRes.json();
 
         if (!optRes.ok || !opts.challenge || !opts.user) {
-            throw new Error(opts.message || 'Failed to initialize biometric registration options.');
+            throw new Error(opts.message || 'Could not start passkey setup options.');
         }
 
         const challenge = base64ToUint8Array(opts.challenge);
@@ -707,18 +678,6 @@ async function registerFingerprint() {
             id: base64ToUint8Array(c.id)
         }));
 
-        let hasPlatformAuth = false;
-        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
-            try {
-                hasPlatformAuth = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-            } catch(e) {
-                hasPlatformAuth = false;
-            }
-        }
-        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function' && !hasPlatformAuth) {
-            throw new Error('No on-device biometric sign-in is available. Set up fingerprint or Windows Hello in your device settings, then try again.');
-        }
-
         const basePublicKey = {
             challenge,
             rp: rp,
@@ -733,9 +692,7 @@ async function registerFingerprint() {
             hints: ['client-device']
         };
 
-        // Enforce on-device platform biometric attachment so Android Chrome,
-        // iOS Touch ID/Face ID, and Windows Hello invoke the native sensor directly
-        // without prompting with the external security key chooser (NFC/USB).
+        // Require device verification with the local platform authenticator.
         let credential = null;
         try {
             credential = await navigator.credentials.create({
@@ -763,7 +720,7 @@ async function registerFingerprint() {
         }
 
         if (!credential) {
-            throw new Error('Biometric registration was cancelled.');
+            throw new Error('Passkey setup was canceled.');
         }
 
         const rawId = bufferToBase64Url(credential.rawId);
@@ -791,9 +748,7 @@ async function registerFingerprint() {
         if (result.success) {
             msg.style.display = 'block';
             msg.style.color = '#4ade80';
-            msg.innerHTML = '<i class="bi bi-check-circle me-2"></i>Fingerprint registered successfully!';
-            btn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Register This Device';
-            btn.disabled = false;
+            msg.innerHTML = '<i class="bi bi-check-circle me-2"></i>Passkey registered successfully.';
             loadDevices();
         } else {
             throw new Error(result.message || 'Registration failed');
@@ -801,14 +756,16 @@ async function registerFingerprint() {
     } catch(err) {
         msg.style.display = 'block';
         msg.style.color = '#f87171';
-        msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + (err.message || 'Fingerprint registration cancelled.');
-        btn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Register This Device';
-        btn.disabled = false;
+        msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + (err.message || 'Passkey setup was canceled.');
+    } finally {
+        profilePasskeyRegistrationPending = false;
+        btn.disabled = !available;
+        btn.innerHTML = '<i class="bi bi-shield-lock me-2"></i>Set up a passkey';
     }
 }
 
 async function removeDevice(id, btn) {
-    if (!confirm('Remove this fingerprint device?')) return;
+    if (!confirm('Remove this device credential?')) return;
     try {
         await fetch('{{ route("webauthn.remove") }}', {
             method: 'DELETE',
@@ -823,7 +780,6 @@ async function removeDevice(id, btn) {
 
 document.addEventListener('DOMContentLoaded', () => {
     loadDevices();
-    prefetchWebAuthn();
 });
 </script>
 @endsection

@@ -183,7 +183,6 @@ window.switchSecuritySub = function(subKey, btn) {
     // 5. Special handlers for biometrics or device sub-sections
     if (subKey === 'biometrics' || subKey === 'all') {
         if (typeof loadDevices === 'function') loadDevices();
-        if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
     }
     if (subKey === 'device' || subKey === 'all') {
         if (typeof checkDeviceBindingStatus === 'function') checkDeviceBindingStatus();
@@ -1090,10 +1089,8 @@ const SETTINGS_SEARCH_INDEX = [
     { title: 'Student ID Number', desc: '7-character institutional student ID', cat: 'Account', tab: 'profile', icon: 'bi-card-text', elId: 'studentId' },
     { title: 'Change Password', desc: 'Update account password and security credentials', cat: 'Security & Access', tab: 'security', icon: 'bi-key-fill', elId: 'current_password' },
     { title: 'Active Sessions & Audit Trail', desc: 'Review login history and active device sessions', cat: 'Security & Access', tab: 'security', icon: 'bi-shield-check', elId: 'tab-security' },
-    { title: 'Biometrics Sensors', desc: 'Manage hardware biometric credentials', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-fingerprint', elId: 'tab-fingerprint' },
-    { title: 'Fingerprint Registration', desc: 'Register hardware fingerprint sensor via WebAuthn', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-fingerprint', elId: 'methodCardFp' },
-    { title: 'Device Passkey', desc: 'Enroll a passkey using your device security prompt', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-key', elId: 'methodCardFace' },
-    { title: 'Registered Hardware Credentials', desc: 'View, test, or remove registered biometric tokens', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-usb-drive', elId: 'deviceList' },
+    { title: 'Device Passkey', desc: 'Register a passkey using the secure prompt on your device', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-key', elId: 'startBioBtn' },
+    { title: 'Registered Devices', desc: 'View or remove registered device passkeys', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-shield-lock', elId: 'deviceList' },
     { title: 'Device Binding & Trust', desc: 'Hardware device binding and attendance authorization', cat: 'Security & Access', tab: 'device', icon: 'bi-phone', elId: 'tab-device' },
     { title: 'Bind Current Device', desc: 'Cryptographically bind this phone or computer to your attendance', cat: 'Security & Access', tab: 'device', icon: 'bi-phone-fill', elId: 'tabDeviceBindBtn' },
     { title: 'Emergency Device Lock', desc: 'Lock attendance check-ins exclusively to your authorized device', cat: 'Security & Access', tab: 'device', icon: 'bi-shield-lock-fill', elId: 'tab-device' },
@@ -1341,9 +1338,8 @@ function initMobileSearchToggle() {
 
 function initSettingsPage() {
     const studentSettings = document.querySelector('[data-student-settings]');
-    if (!studentSettings) {
-        if (typeof loadDevices === 'function') loadDevices();
-        if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
+    if (!studentSettings && typeof initializeDevicePasskeyRegistration === 'function') {
+        initializeDevicePasskeyRegistration();
     }
     if (typeof updateStabsScrollArrows === 'function') updateStabsScrollArrows();
     if (typeof initSettingsSearch === 'function') initSettingsSearch();
@@ -1388,24 +1384,6 @@ function initSettingsPage() {
     }
     window.addEventListener('resize', updateStabsScrollArrows, { passive: true });
 
-    // Direct event listener bindings for Biometrics Registration (CSP compliant)
-    const cardFp = document.getElementById('methodCardFp') || document.getElementById('methodCardFingerprint');
-    if (cardFp) cardFp.addEventListener('click', () => selectBiometricMethod('fingerprint'));
-    const cardFace = document.getElementById('methodCardFace');
-    if (cardFace) cardFace.addEventListener('click', () => selectBiometricMethod('face'));
-    const startBioBtn = document.getElementById('startBioBtn');
-    if (startBioBtn) {
-        startBioBtn.addEventListener('click', () => beginSelectedBiometricRegistration());
-    }
-    const cancelBioBtn = document.querySelector('.bio-cancel-btn');
-    if (cancelBioBtn) cancelBioBtn.addEventListener('click', () => cancelBiometricRegistration());
-    const retryBtn = document.getElementById('retryBtn');
-    if (retryBtn) retryBtn.addEventListener('click', () => retryBiometricRegistration());
-    const fallbackSwitchBtn = document.getElementById('fallbackSwitchBtn');
-    if (fallbackSwitchBtn) fallbackSwitchBtn.addEventListener('click', () => switchBiometricMethodFallback());
-    const registerOtherBtn = document.getElementById('registerOtherBtn');
-    if (registerOtherBtn) registerOtherBtn.addEventListener('click', () => switchOrRegisterOtherMethod());
-
     // Check if hash or localStorage requested a specific tab (e.g., #tab-fingerprint or #fingerprint)
     const rawHash = window.location.hash.replace('#tab-', '').replace('#', '');
     const storedTab = localStorage.getItem('active_settings_tab');
@@ -1430,21 +1408,6 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initSettingsPage);
 } else {
     initSettingsPage();
-}
-
-// Explicit window bindings for external callers and inline fallbacks
-if (!(window.__SETTINGS_CONFIG__ || {}).isStudent) {
-window.selectBiometricMethod = selectBiometricMethod;
-window.beginSelectedBiometricRegistration = beginSelectedBiometricRegistration;
-window.beginFaceRegistration = beginFaceRegistration;
-window.beginFingerprintRegistration = beginFingerprintRegistration;
-window.cancelBiometricRegistration = cancelBiometricRegistration;
-window.resetToSelectionStage = resetToSelectionStage;
-window.switchOrRegisterOtherMethod = switchOrRegisterOtherMethod;
-window.retryBiometricRegistration = retryBiometricRegistration;
-window.switchBiometricMethodFallback = switchBiometricMethodFallback;
-window.loadDevices = loadDevices;
-window.removeDevice = removeDevice;
 }
 
 // ── Student Family & Guardian Binding Handlers ──
