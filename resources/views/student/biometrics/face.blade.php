@@ -5,7 +5,9 @@
 @section('pageClass', 'face-registration-page')
 
 @section('content')
-<section class="biometric-flow-card" id="cameraFaceEnrollment" data-enrollment-url="{{ route('profile.face.enroll') }}" aria-label="Camera registration">
+<section class="biometric-flow-card" id="cameraFaceEnrollment" data-enrollment-url="{{ route('profile.face.enroll') }}"
+    @if($faceEnrollmentAvailable) data-guidance-url="{{ Vite::asset('resources/js/attendance-face-guidance.js') }}" @endif
+    aria-label="Camera registration">
     @if($faceEnrollmentAvailable)
         <div class="bio-flow-kicker"><i class="bi bi-camera" aria-hidden="true"></i> Camera-based attendance profile</div>
         <div class="bio-flow-title-row">
@@ -45,7 +47,6 @@
             <span>I voluntarily consent to the encrypted storage and liveness matching of my camera face captures for classroom attendance verification under the <a href="{{ route('privacy') }}" target="_blank" rel="noopener" style="color:#ffd166;text-decoration:underline;">Privacy Notice</a>.</span>
         </label>
         <div class="biometric-flow-actions">
-            <button type="button" id="cameraFaceCaptureBtn" hidden class="flow-button flow-primary">Capture front view</button>
             <button type="button" id="cameraFaceRetakeBtn" hidden class="flow-button">Retake</button>
             <button type="button" id="cameraFaceSaveBtn" hidden class="flow-button flow-primary">Register face</button>
             <button type="button" id="cameraFaceCancelBtn" hidden class="flow-button">Cancel capture</button>

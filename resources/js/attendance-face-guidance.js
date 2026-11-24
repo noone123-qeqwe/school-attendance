@@ -35,7 +35,7 @@ function poseFromEyes(keypoints, width, height) {
     };
 }
 
-function inspectFace(canvas, ctx, detection) {
+export function inspectFace(canvas, ctx, detection) {
     const box = detection.boundingBox;
     if (!box) return { message: 'Center your face in the oval.' };
     const { width, height } = canvas;
@@ -95,7 +95,7 @@ export function captureSteps(poses) {
     return poses.flatMap((pose, index) => index ? [{ pose: 'front', count: 1, transition: true }, { pose, count: 2 }] : [{ pose, count: 2 }]);
 }
 
-function drawPreview(video, canvas, ctx) {
+export function drawPreview(video, canvas, ctx) {
     const viewportAspect = video.clientWidth / video.clientHeight || 1;
     const width = Math.min(video.videoWidth, video.videoHeight * viewportAspect);
     const height = Math.min(video.videoHeight, video.videoWidth / viewportAspect);

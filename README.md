@@ -17,6 +17,8 @@ php artisan serve
 
 For background work, run `php artisan queue:work` and `php artisan schedule:work` in separate terminals. Never use a temporary `APP_KEY` for a persistent installation. Configure the same stable key for every instance and restart.
 
+For automatic face capture outside Docker, copy `vision_wasm*` from `node_modules/@mediapipe/tasks-vision/wasm/` to `public/face-guidance/v1/`. Put `blaze-face-short-range.tflite` in the same directory using the model URL and SHA-256 pinned in `Dockerfile`.
+
 ## Attendance rule
 
 The current data model stores **one attendance result per student, subject, and local calendar date**. A QR session identifies the capture window and verification evidence; it does not create a second attendance result for a repeat meeting of that subject on the same date. The unique database index and `Attendance::updateOrCreateRecord()` enforce this rule. Confirm a policy change with the school before changing the index, reports, and auto-absence logic together.

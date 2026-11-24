@@ -68,7 +68,7 @@ class SecurityHeaders
         }
         $assetSource = $assetOrigin !== '' ? ' ' . $assetOrigin : '';
 
-        $faceGuidanceWasm = $request->routeIs('qr.scan') ? " 'wasm-unsafe-eval'" : '';
+        $faceGuidanceWasm = $request->routeIs('qr.scan', 'settings.biometrics.face') ? " 'wasm-unsafe-eval'" : '';
         $csp = implode(' ', [
             "default-src 'self';",
 

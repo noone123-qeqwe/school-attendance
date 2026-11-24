@@ -20,6 +20,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Vite;
 use Tests\TestCase;
 
 class AttendancePrivacyConsentAndFeaturesTest extends TestCase
@@ -136,6 +137,33 @@ class AttendancePrivacyConsentAndFeaturesTest extends TestCase
             $resOff = $method->invoke($controller, $request, $studentB->fresh('deviceBinding'), $session);
             $this->assertNull($resOff);
         }
+    }
+
+    public function test_face_registration_allows_webassembly_for_local_capture_guidance(): void
+    {
+        $student = User::create([
+            'name' => 'Face Registration Student',
+            'student_number' => '2026-FACE',
+            'course' => 'BSIT',
+            'year_level' => '1',
+            'email' => 'face.student@gmail.com',
+            'password' => Hash::make('StrongPass#12345'),
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        Vite::shouldReceive('asset')
+            ->once()
+            ->with('resources/js/attendance-face-guidance.js')
+            ->andReturn('/build/assets/attendance-face-guidance.js');
+
+        $face = $this->actingAs($student)->get(route('settings.biometrics.face'));
+        $face->assertOk()->assertSee('data-guidance-url="/build/assets/attendance-face-guidance.js"', false);
+        $this->assertStringContainsString(" 'wasm-unsafe-eval'", $face->headers->get('Content-Security-Policy'));
+
+        $fingerprint = $this->get(route('settings.biometrics.fingerprint'));
+        $fingerprint->assertOk();
+        $this->assertStringNotContainsString(" 'wasm-unsafe-eval'", $fingerprint->headers->get('Content-Security-Policy'));
     }
 
     public function test_withdrawing_consent_and_deleting_profile_photo_purge_camera_only_biometrics(): void
