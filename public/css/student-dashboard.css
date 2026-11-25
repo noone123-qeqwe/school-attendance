@@ -1,33 +1,180 @@
 /* ==========================================================================
-   Student Dashboard — "Sovereign Academic Cockpit" (Desktop + Mobile)
-   Unified design system for /home and /mobile/home.
-   Scoped strictly to .sd-cockpit, .sd-mobile-cockpit, and dashboard modals
-   so sibling student pages remain completely untouched.
+   Student Dashboard — "Osmeña Colleges Burgundy & Pearl Silver" Theme
+   Matched directly to public/images/logo.png:
+   - Deep Oxblood Burgundy Seal: #300810, #381018, #481820, #6e1b2c
+   - Embossed Pearl Silver & Alabaster: #fcf9fa, #e8dfe2, #b89fa6
+   Scoped strictly to the student dashboard (/home and /mobile/home).
    ========================================================================== */
 
 :root {
-    --sdc-canvas: #0c0908;
-    --sdc-surface: #15110e;
-    --sdc-surface-2: #1c1613;
-    --sdc-surface-3: #241d18;
-    --sdc-border: rgba(230, 194, 128, 0.14);
-    --sdc-border-subtle: rgba(255, 255, 255, 0.075);
-    --sdc-border-strong: rgba(230, 194, 128, 0.36);
-    --sdc-gold: #e5c07b;
-    --sdc-gold-bright: #f7e2b5;
-    --sdc-gold-deep: #b88b43;
-    --sdc-crimson: #991b1b;
-    --sdc-text: #fcf8f2;
-    --sdc-text-soft: #d5c9ba;
-    --sdc-muted: #9e9081;
+    --sdc-canvas: #0f0407;
+    --sdc-surface: #1b090f;
+    --sdc-surface-2: #270e17;
+    --sdc-surface-3: #361320;
+    --sdc-seal-core: #3e111b;
+    --sdc-seal-mid: #5a1827;
+    --sdc-seal-bright: #8a2439;
+    --sdc-rose-accent: #e48fa0;
+    --sdc-silver: #ece4e7;
+    --sdc-silver-bright: #ffffff;
+    --sdc-border: rgba(236, 224, 228, 0.15);
+    --sdc-border-subtle: rgba(236, 224, 228, 0.09);
+    --sdc-border-strong: rgba(236, 224, 228, 0.34);
+    --sdc-text: #fcf9fa;
+    --sdc-text-soft: #dfd1d5;
+    --sdc-muted: #b0979f;
     --sdc-emerald: #34d399;
     --sdc-amber: #fbbf24;
-    --sdc-rose: #f87171;
-    --sdc-sky: #60a5fa;
+    --sdc-rose: #ff6b7a;
+    --sdc-sky: #7dd3fc;
     --sdc-radius-xl: 22px;
     --sdc-radius-lg: 18px;
     --sdc-radius-md: 14px;
     --sdc-radius-sm: 10px;
+}
+
+/* ── Viewport & Shell Harmony (Desktop + Mobile on Dashboard Routes) ──── */
+body.student-portal,
+body.student-mobile-portal {
+    background:
+        radial-gradient(ellipse 65% 45% at 88% -6%, rgba(120, 30, 48, 0.36) 0%, transparent 66%),
+        radial-gradient(ellipse 48% 42% at 10% 10%, rgba(72, 24, 32, 0.34) 0%, transparent 64%),
+        #0f0407 !important;
+    color: var(--sdc-text);
+}
+
+@media screen and (min-width: 1024px) {
+    body.student-portal .sidebar {
+        background: linear-gradient(180deg, #1d0910 0%, #110508 100%) !important;
+        border-right: 1px solid rgba(236, 224, 228, 0.12) !important;
+    }
+
+    body.student-portal .sidebar .sidebar-divider {
+        background: rgba(236, 224, 228, 0.12) !important;
+    }
+
+    body.student-portal .sidebar .student-nav-label {
+        color: #9e818a !important;
+    }
+
+    body.student-portal .sidebar .student-sidebar-nav .nav-link {
+        color: #ccb9bf !important;
+    }
+
+    body.student-portal .sidebar .student-sidebar-nav .nav-link i {
+        color: #bda3ac !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+    }
+
+    body.student-portal .sidebar .student-sidebar-nav .nav-link:hover {
+        background: rgba(138, 36, 57, 0.22) !important;
+        border-color: rgba(236, 224, 228, 0.14) !important;
+        color: #ffffff !important;
+    }
+
+    body.student-portal .sidebar .student-sidebar-nav .nav-link:hover i {
+        color: #ffffff !important;
+        background: rgba(138, 36, 57, 0.38) !important;
+    }
+
+    body.student-portal .sidebar .student-sidebar-nav .nav-link.active {
+        background: linear-gradient(135deg, rgba(122, 28, 46, 0.56) 0%, rgba(56, 16, 24, 0.65) 100%) !important;
+        border-color: rgba(236, 224, 228, 0.28) !important;
+        color: #ffffff !important;
+        box-shadow: inset 3px 0 0 #ece4e7 !important;
+    }
+
+    body.student-portal .sidebar .student-sidebar-nav .nav-link.active i {
+        background: rgba(255, 255, 255, 0.14) !important;
+        color: #ffffff !important;
+    }
+
+    body.student-portal .top-header {
+        background: rgba(20, 6, 11, 0.92) !important;
+        border-bottom-color: rgba(236, 224, 228, 0.12) !important;
+    }
+
+    body.student-portal .top-header .header-page-title {
+        color: #fcf9fa !important;
+    }
+
+    body.student-portal .top-header .header-page-sub {
+        color: #b0979f !important;
+    }
+
+    body.student-portal .top-header :is(.burger-btn, .notif-btn, .header-account-trigger, #headerSearchBar) {
+        background: #220b12 !important;
+        border-color: rgba(236, 224, 228, 0.15) !important;
+        color: #ece4e7 !important;
+    }
+
+    body.student-portal .top-header :is(.burger-btn, .notif-btn, .header-account-trigger, #headerSearchBar):hover {
+        background: #32111c !important;
+        border-color: rgba(236, 224, 228, 0.32) !important;
+        color: #ffffff !important;
+    }
+
+    body.student-portal .top-header :is(.header-search-icon, .header-search-key) {
+        color: #e48fa0 !important;
+    }
+
+    body.student-portal .top-header .header-search-key {
+        background: #14060a !important;
+        border-color: rgba(236, 224, 228, 0.2) !important;
+    }
+
+    body.student-portal .top-header .header-profile-img {
+        border-color: rgba(236, 224, 228, 0.34) !important;
+    }
+}
+
+@media screen and (max-width: 767.98px) {
+    body.student-portal .top-header,
+    body.student-mobile-portal .mobile-header {
+        background: rgba(22, 7, 12, 0.92) !important;
+        border-bottom-color: rgba(236, 224, 228, 0.14) !important;
+    }
+
+    body.student-portal .header-page-title,
+    body.student-mobile-portal .header-title {
+        color: #fcf9fa !important;
+    }
+
+    body.student-portal .header-page-sub {
+        color: #b0979f !important;
+    }
+
+    body.student-portal .mobile-bottom-nav,
+    body.student-mobile-portal .mobile-bottom-nav {
+        background: rgba(22, 7, 12, 0.95) !important;
+        border-color: rgba(236, 224, 228, 0.14) !important;
+        border-top-color: rgba(228, 143, 160, 0.36) !important;
+    }
+
+    body.student-portal .mobile-bottom-nav .mbn-item.active,
+    body.student-mobile-portal .mobile-bottom-nav .nav-item.active:not(.nav-item-primary),
+    body.student-mobile-portal .mobile-bottom-nav .nav-item.active:not(.nav-item-primary) i,
+    body.student-mobile-portal .mobile-bottom-nav .nav-item.active:not(.nav-item-primary) span {
+        color: #ffffff !important;
+    }
+
+    body.student-portal .mobile-bottom-nav .mbn-featured-btn,
+    body.student-mobile-portal .mobile-bottom-nav .nav-scan-jewel {
+        background: radial-gradient(circle at 35% 28%, #ffffff 0%, #eae0e3 48%, #c9b5bc 100%) !important;
+        color: #300810 !important;
+        border-color: #20070e !important;
+        box-shadow: 0 6px 20px rgba(120, 24, 44, 0.55), 0 2px 8px rgba(0, 0, 0, 0.55) !important;
+    }
+
+    body.student-portal .mobile-bottom-nav .mbn-featured-btn svg,
+    body.student-mobile-portal .mobile-bottom-nav .nav-scan-jewel svg {
+        color: #300810 !important;
+    }
+
+    body.student-mobile-portal .mobile-bottom-nav .nav-item.active:not(.nav-item-primary)::before {
+        background: linear-gradient(90deg, #ffffff, #e48fa0) !important;
+        box-shadow: 0 0 10px rgba(236, 224, 228, 0.7) !important;
+    }
 }
 
 /* ── Root Cockpit Wrapper ──────────────────────────────────────────────── */
@@ -48,7 +195,7 @@ body.student-portal #mainContent .sd-cockpit,
 
 .sd-cockpit :is(a, button):focus-visible,
 .sd-mobile-cockpit :is(a, button):focus-visible {
-    outline: 2px solid var(--sdc-gold) !important;
+    outline: 2px solid var(--sdc-silver) !important;
     outline-offset: 3px;
 }
 
@@ -70,9 +217,9 @@ body.student-portal #mainContent .sd-cockpit .sd-notice-banner,
     padding: 14px 16px !important;
     margin: 0 !important;
     border-radius: var(--sdc-radius-md) !important;
-    border: 1px solid rgba(230, 194, 128, 0.3) !important;
-    background: linear-gradient(135deg, rgba(230, 194, 128, 0.11), rgba(21, 17, 14, 0.94)) !important;
-    color: #f6e7c8;
+    border: 1px solid rgba(228, 143, 160, 0.34) !important;
+    background: linear-gradient(135deg, rgba(90, 24, 39, 0.56), rgba(27, 9, 15, 0.96)) !important;
+    color: #f6eaed;
     font-size: 0.84rem;
     line-height: 1.5;
 }
@@ -85,8 +232,8 @@ body.student-portal #mainContent .sd-cockpit .sd-notice-icon,
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    background: rgba(230, 194, 128, 0.16);
-    color: var(--sdc-gold);
+    background: rgba(236, 224, 228, 0.14);
+    color: var(--sdc-silver-bright);
     font-size: 0.96rem;
 }
 
@@ -113,9 +260,9 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     padding: 13px 16px !important;
     margin: 0 !important;
     border-radius: var(--sdc-radius-md) !important;
-    border: 1px solid rgba(248, 113, 113, 0.34) !important;
-    background: rgba(153, 27, 27, 0.2) !important;
-    color: #fecaca;
+    border: 1px solid rgba(255, 107, 122, 0.4) !important;
+    background: rgba(153, 27, 45, 0.28) !important;
+    color: #ffd7dc;
     font-size: 0.84rem;
     font-weight: 600;
 }
@@ -128,10 +275,10 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     padding: 18px 20px;
     border-radius: var(--sdc-radius-lg);
     background:
-        radial-gradient(ellipse 60% 90% at 100% 0%, rgba(239, 68, 68, 0.16) 0%, transparent 70%),
-        linear-gradient(155deg, rgba(84, 18, 18, 0.44), rgba(21, 13, 12, 0.96));
-    border: 1px solid rgba(248, 113, 113, 0.32);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+        radial-gradient(ellipse 60% 90% at 100% 0%, rgba(255, 107, 122, 0.2) 0%, transparent 70%),
+        linear-gradient(155deg, rgba(112, 20, 38, 0.62), rgba(26, 8, 13, 0.96));
+    border: 1px solid rgba(255, 107, 122, 0.38);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.36);
 }
 
 .sd-warning-top {
@@ -147,8 +294,8 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    background: rgba(239, 68, 68, 0.18);
-    border: 1px solid rgba(248, 113, 113, 0.34);
+    background: rgba(255, 107, 122, 0.18);
+    border: 1px solid rgba(255, 107, 122, 0.36);
     color: var(--sdc-rose);
     font-size: 1.05rem;
 }
@@ -156,13 +303,13 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 .sd-warning-title {
     font-size: 0.96rem;
     font-weight: 800;
-    color: #fee2e2;
+    color: #ffe4e8;
     margin: 0 0 3px;
 }
 
 .sd-warning-sub {
     font-size: 0.8rem;
-    color: #d6c0b6;
+    color: #dcc2c8;
     margin: 0;
     line-height: 1.45;
 }
@@ -176,8 +323,8 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 .sd-warning-card {
     padding: 12px 14px;
     border-radius: 12px;
-    background: rgba(11, 8, 7, 0.62);
-    border: 1px solid rgba(248, 113, 113, 0.22);
+    background: rgba(15, 4, 7, 0.62);
+    border: 1px solid rgba(255, 107, 122, 0.25);
 }
 
 .sd-warning-card-head {
@@ -195,9 +342,9 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     gap: 5px;
     padding: 2px 8px;
     border-radius: 7px;
-    background: rgba(239, 68, 68, 0.16);
-    border: 1px solid rgba(248, 113, 113, 0.3);
-    color: #fca5a5;
+    background: rgba(255, 107, 122, 0.16);
+    border: 1px solid rgba(255, 107, 122, 0.34);
+    color: #ffb3bc;
     font-size: 0.72rem;
     font-weight: 700;
 }
@@ -209,7 +356,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 
 .sd-warning-msg {
     font-size: 0.83rem;
-    color: #f6efe7;
+    color: #fcf4f6;
     line-height: 1.48;
 }
 
@@ -235,28 +382,28 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 }
 
 .sd-warning-btn-primary {
-    background: linear-gradient(135deg, #dc2626, #991b1b);
-    border: 1px solid rgba(248, 113, 113, 0.45);
-    color: #fff;
+    background: linear-gradient(135deg, #ffffff, #e6dce0);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #381018;
 }
 
 .sd-warning-btn-primary:hover {
-    filter: brightness(1.08);
-    color: #fff;
+    filter: brightness(1.04);
+    color: #280810;
 }
 
 .sd-warning-btn-ghost {
-    background: rgba(255, 255, 255, 0.045);
-    border: 1px solid rgba(248, 113, 113, 0.3);
-    color: #fecaca;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 179, 188, 0.34);
+    color: #ffe4e8;
 }
 
 .sd-warning-btn-ghost:hover {
-    background: rgba(248, 113, 113, 0.12);
+    background: rgba(255, 107, 122, 0.16);
     color: #fff;
 }
 
-/* ── 1. Top Command / Identity Ribbon ──────────────────────────────────── */
+/* ── 1. Top Command / Identity Ribbon (Logo Seal Medallion Aesthetic) ─── */
 .sd-command-bar {
     display: flex;
     flex-direction: column;
@@ -264,11 +411,11 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     padding: 16px 18px;
     border-radius: var(--sdc-radius-xl);
     background:
-        radial-gradient(ellipse 55% 110% at 96% 0%, rgba(229, 192, 123, 0.11) 0%, transparent 65%),
-        radial-gradient(ellipse 40% 90% at 0% 100%, rgba(153, 27, 27, 0.14) 0%, transparent 65%),
-        linear-gradient(160deg, #191310 0%, #120d0b 100%);
-    border: 1px solid var(--sdc-border);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        radial-gradient(ellipse 58% 120% at 96% 0%, rgba(138, 36, 57, 0.42) 0%, transparent 66%),
+        radial-gradient(ellipse 46% 95% at 0% 100%, rgba(72, 24, 32, 0.52) 0%, transparent 68%),
+        linear-gradient(155deg, #320c16 0%, #1c080e 58%, #140509 100%);
+    border: 1px solid rgba(236, 224, 228, 0.18);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.09);
 }
 
 .sd-identity-cluster {
@@ -285,8 +432,8 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     flex: 0 0 52px;
     padding: 2px;
     border-radius: 16px;
-    background: linear-gradient(135deg, rgba(247, 226, 181, 0.9), rgba(153, 27, 27, 0.65));
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.42);
+    background: linear-gradient(135deg, #ffffff 0%, #cdb8bf 45%, #6e1b2c 100%);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.48);
 }
 
 .sd-avatar-ring img {
@@ -295,7 +442,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     border-radius: 14px;
     object-fit: cover;
     display: block;
-    background: #14100d;
+    background: #1b090f;
 }
 
 .sd-avatar-live-dot {
@@ -306,8 +453,8 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     height: 12px;
     border-radius: 50%;
     background: var(--sdc-emerald);
-    border: 2.5px solid #14100d;
-    box-shadow: 0 0 8px rgba(52, 211, 153, 0.7);
+    border: 2.5px solid #1b090f;
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.72);
 }
 
 .sd-identity-copy {
@@ -329,9 +476,9 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     gap: 5px;
     padding: 2px 9px;
     border-radius: 999px;
-    background: rgba(229, 192, 123, 0.13);
-    border: 1px solid rgba(229, 192, 123, 0.25);
-    color: var(--sdc-gold-bright);
+    background: rgba(255, 255, 255, 0.11);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #ffffff;
     font-size: 0.69rem;
     font-weight: 750;
     letter-spacing: 0.05em;
@@ -344,15 +491,15 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     gap: 5px;
     padding: 2px 9px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.045);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 4, 7, 0.46);
+    border: 1px solid rgba(236, 224, 228, 0.14);
     color: var(--sdc-text-soft);
     font-size: 0.71rem;
     font-weight: 650;
 }
 
 .sd-clock-pill i {
-    color: var(--sdc-gold);
+    color: var(--sdc-rose-accent);
     font-size: 0.68rem;
 }
 
@@ -380,21 +527,26 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     gap: 5px;
     font-size: 0.74rem;
     font-weight: 600;
-    color: var(--sdc-muted);
+    color: var(--sdc-text-soft);
 }
 
 .sd-meta-tag i {
     font-size: 0.72rem;
-    opacity: 0.85;
+    color: var(--sdc-rose-accent);
+    opacity: 0.9;
 }
 
 .sd-meta-tag.is-id {
     padding: 2px 8px;
     border-radius: 6px;
-    background: rgba(229, 192, 123, 0.11);
-    border: 1px solid rgba(229, 192, 123, 0.24);
-    color: var(--sdc-gold-bright);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #ffffff;
     font-size: 0.71rem;
+}
+
+.sd-meta-tag.is-id i {
+    color: #ece4e7;
 }
 
 .sd-command-actions {
@@ -421,29 +573,31 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     transition: transform 0.16s ease, filter 0.16s ease, background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
+/* Embossed Pearl-Silver Primary CTA (echoing logo tree & lettering) */
 .sd-cta-primary {
-    background: linear-gradient(135deg, #f2d59b 0%, #d4a65c 100%);
-    border-color: rgba(255, 245, 224, 0.42);
-    color: #171008;
-    box-shadow: 0 8px 20px rgba(212, 166, 92, 0.24);
+    background: linear-gradient(135deg, #ffffff 0%, #eae0e3 58%, #d7c7cc 100%);
+    border-color: rgba(255, 255, 255, 0.65);
+    color: #300810;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
 
 .sd-cta-primary:hover {
-    filter: brightness(1.05);
+    filter: brightness(1.04);
     transform: translateY(-1px);
-    color: #171008;
-    box-shadow: 0 10px 24px rgba(212, 166, 92, 0.34);
+    color: #24060c;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.44), 0 0 18px rgba(236, 224, 228, 0.22);
 }
 
+/* Velvet Burgundy Glass Secondary CTA */
 .sd-cta-secondary {
-    background: rgba(255, 255, 255, 0.045);
-    border-color: rgba(229, 192, 123, 0.28);
+    background: rgba(90, 24, 39, 0.42);
+    border-color: rgba(236, 224, 228, 0.26);
     color: var(--sdc-text);
 }
 
 .sd-cta-secondary:hover {
-    background: rgba(229, 192, 123, 0.12);
-    border-color: rgba(229, 192, 123, 0.48);
+    background: rgba(120, 30, 48, 0.62);
+    border-color: rgba(236, 224, 228, 0.48);
     color: #fff;
     transform: translateY(-1px);
 }
@@ -467,7 +621,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     border-radius: var(--sdc-radius-xl);
     background: var(--sdc-surface);
     border: 1px solid var(--sdc-border-subtle);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .sd-focus-stage::before {
@@ -479,25 +633,25 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 }
 
 .sd-focus-stage.is-live {
-    border-color: rgba(52, 211, 153, 0.34);
+    border-color: rgba(52, 211, 153, 0.38);
     background:
-        radial-gradient(ellipse 68% 90% at 100% 0%, rgba(16, 185, 129, 0.17) 0%, transparent 68%),
-        radial-gradient(ellipse 45% 70% at 0% 100%, rgba(251, 191, 36, 0.09) 0%, transparent 70%),
-        #15120f;
+        radial-gradient(ellipse 68% 90% at 100% 0%, rgba(16, 185, 129, 0.16) 0%, transparent 66%),
+        radial-gradient(ellipse 48% 72% at 0% 100%, rgba(110, 27, 44, 0.34) 0%, transparent 70%),
+        #1b090f;
 }
 
 .sd-focus-stage.is-next {
-    border-color: rgba(229, 192, 123, 0.28);
+    border-color: rgba(228, 143, 160, 0.3);
     background:
-        radial-gradient(ellipse 65% 85% at 100% 0%, rgba(229, 192, 123, 0.14) 0%, transparent 66%),
-        #16120f;
+        radial-gradient(ellipse 65% 88% at 100% 0%, rgba(138, 36, 57, 0.34) 0%, transparent 68%),
+        #1b090f;
 }
 
 .sd-focus-stage.is-idle {
-    border-color: var(--sdc-border-subtle);
+    border-color: var(--sdc-border);
     background:
-        radial-gradient(ellipse 55% 80% at 100% 0%, rgba(229, 192, 123, 0.07) 0%, transparent 68%),
-        #15110e;
+        radial-gradient(ellipse 58% 82% at 100% 0%, rgba(96, 26, 41, 0.3) 0%, transparent 68%),
+        #1b090f;
 }
 
 .sd-focus-head {
@@ -516,7 +670,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: var(--sdc-gold);
+    color: var(--sdc-rose-accent);
 }
 
 .sd-focus-stage.is-live .sd-focus-eyebrow {
@@ -533,13 +687,13 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 
 .sd-pulse-dot.is-live {
     background: var(--sdc-emerald);
-    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.22);
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.24);
     animation: sdLivePulse 2s ease-in-out infinite;
 }
 
 .sd-pulse-dot.is-next {
-    background: var(--sdc-gold);
-    box-shadow: 0 0 0 4px rgba(229, 192, 123, 0.18);
+    background: var(--sdc-silver-bright);
+    box-shadow: 0 0 0 4px rgba(236, 224, 228, 0.18);
 }
 
 .sd-pulse-dot.is-done {
@@ -547,7 +701,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 }
 
 @keyframes sdLivePulse {
-    0%, 100% { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.25); }
+    0%, 100% { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.26); }
     50% { box-shadow: 0 0 0 7px rgba(52, 211, 153, 0.06); }
 }
 
@@ -578,9 +732,9 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     font-weight: 750;
     padding: 3px 9px;
     border-radius: 7px;
-    background: rgba(229, 192, 123, 0.13);
-    border: 1px solid rgba(229, 192, 123, 0.28);
-    color: var(--sdc-gold-bright);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(236, 224, 228, 0.24);
+    color: #ffffff;
 }
 
 .sd-focus-body {
@@ -615,7 +769,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 }
 
 .sd-focus-meta i {
-    color: var(--sdc-gold);
+    color: var(--sdc-rose-accent);
     font-size: 0.8rem;
 }
 
@@ -637,7 +791,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 .sd-session-meter-track {
     height: 6px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.1);
     overflow: hidden;
 }
 
@@ -645,7 +799,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     display: block;
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #34d399 0%, #e5c07b 55%, #fbbf24 100%);
+    background: linear-gradient(90deg, #34d399 0%, #e48fa0 60%, #ffffff 100%);
     transition: width 0.4s ease;
 }
 
@@ -656,7 +810,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     flex-wrap: wrap;
     gap: 10px 14px;
     padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(236, 224, 228, 0.08);
 }
 
 .sd-focus-actions {
@@ -703,14 +857,14 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--sdc-gold);
+    color: var(--sdc-silver);
     font-size: 0.81rem;
     font-weight: 700;
     text-decoration: none;
 }
 
 .sd-focus-link:hover {
-    color: var(--sdc-gold-bright);
+    color: #ffffff;
     text-decoration: underline;
 }
 
@@ -736,10 +890,10 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     padding: 20px;
     border-radius: var(--sdc-radius-xl);
     background:
-        radial-gradient(ellipse 75% 75% at 100% 0%, rgba(229, 192, 123, 0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 75% 75% at 100% 0%, rgba(110, 27, 44, 0.32) 0%, transparent 72%),
         var(--sdc-surface);
-    border: 1px solid var(--sdc-border-subtle);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--sdc-border);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .sd-standing-top {
@@ -765,7 +919,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 
 .sd-gauge-track {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.08);
+    stroke: rgba(236, 224, 228, 0.11);
     stroke-width: 7;
 }
 
@@ -779,7 +933,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 .sd-gauge-fill.is-rate-good { stroke: var(--sdc-emerald); }
 .sd-gauge-fill.is-rate-warning { stroke: var(--sdc-amber); }
 .sd-gauge-fill.is-rate-danger { stroke: var(--sdc-rose); }
-.sd-gauge-fill.is-rate-empty { stroke: rgba(148, 163, 184, 0.35); }
+.sd-gauge-fill.is-rate-empty { stroke: rgba(236, 224, 228, 0.28); }
 
 .sd-gauge-center {
     position: absolute;
@@ -842,8 +996,8 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 
 .sd-standing-tier.is-rate-good { background: rgba(16, 185, 129, 0.14); color: var(--sdc-emerald); border: 1px solid rgba(52, 211, 153, 0.28); }
 .sd-standing-tier.is-rate-warning { background: rgba(245, 158, 11, 0.14); color: var(--sdc-amber); border: 1px solid rgba(251, 191, 36, 0.28); }
-.sd-standing-tier.is-rate-danger { background: rgba(239, 68, 68, 0.14); color: var(--sdc-rose); border: 1px solid rgba(248, 113, 113, 0.28); }
-.sd-standing-tier.is-rate-empty { background: rgba(255, 255, 255, 0.06); color: var(--sdc-muted); border: 1px solid rgba(255, 255, 255, 0.1); }
+.sd-standing-tier.is-rate-danger { background: rgba(255, 107, 122, 0.14); color: var(--sdc-rose); border: 1px solid rgba(255, 107, 122, 0.3); }
+.sd-standing-tier.is-rate-empty { background: rgba(236, 224, 228, 0.08); color: var(--sdc-text-soft); border: 1px solid rgba(236, 224, 228, 0.14); }
 
 .sd-standing-desc {
     margin: 0 0 8px;
@@ -866,28 +1020,28 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     border-radius: 8px;
     font-size: 0.72rem;
     font-weight: 700;
-    background: rgba(255, 255, 255, 0.045);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(236, 224, 228, 0.12);
     color: var(--sdc-text-soft);
 }
 
 .sd-mini-chip.is-streak {
-    background: rgba(249, 115, 22, 0.13);
-    border-color: rgba(251, 146, 60, 0.28);
-    color: #fdba74;
+    background: rgba(138, 36, 57, 0.34);
+    border-color: rgba(228, 143, 160, 0.36);
+    color: #ffdce3;
 }
 
 .sd-mini-chip.is-pending {
-    background: rgba(96, 165, 250, 0.12);
-    border-color: rgba(96, 165, 250, 0.28);
-    color: #93c5fd;
+    background: rgba(125, 211, 252, 0.12);
+    border-color: rgba(125, 211, 252, 0.28);
+    color: #bae6fd;
     text-decoration: none;
 }
 
 /* 7-Day Interactive Attendance Pulse Strip */
 .sd-pulse-strip-wrap {
     padding-top: 14px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(236, 224, 228, 0.08);
 }
 
 .sd-pulse-strip-head {
@@ -908,7 +1062,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 
 .sd-pulse-strip-hint {
     font-size: 0.7rem;
-    color: var(--sdc-gold);
+    color: var(--sdc-rose-accent);
     font-weight: 600;
 }
 
@@ -928,8 +1082,8 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     padding: 8px 4px;
     min-height: 58px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.065);
+    background: rgba(15, 4, 7, 0.5);
+    border: 1px solid rgba(236, 224, 228, 0.08);
     color: var(--sdc-text-soft);
     cursor: pointer;
     font: inherit;
@@ -938,15 +1092,15 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 }
 
 .sd-pulse-day:hover {
-    background: rgba(229, 192, 123, 0.1);
-    border-color: rgba(229, 192, 123, 0.34);
+    background: rgba(110, 27, 44, 0.36);
+    border-color: rgba(236, 224, 228, 0.3);
     transform: translateY(-1px);
     color: var(--sdc-text);
 }
 
 .sd-pulse-day.is-today {
-    background: rgba(229, 192, 123, 0.11);
-    border-color: rgba(229, 192, 123, 0.42);
+    background: linear-gradient(160deg, rgba(120, 30, 48, 0.56), rgba(56, 16, 24, 0.65));
+    border-color: rgba(236, 224, 228, 0.44);
 }
 
 .sd-pulse-day-short {
@@ -958,7 +1112,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 }
 
 .sd-pulse-day.is-today .sd-pulse-day-short {
-    color: var(--sdc-gold-bright);
+    color: #ffffff;
 }
 
 .sd-pulse-day-num {
@@ -972,7 +1126,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(236, 224, 228, 0.18);
 }
 
 .sd-pulse-day.is-status-present .sd-pulse-pip {
@@ -987,7 +1141,7 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 
 .sd-pulse-day.is-status-absent .sd-pulse-pip {
     background: var(--sdc-rose);
-    box-shadow: 0 0 8px rgba(248, 113, 113, 0.65);
+    box-shadow: 0 0 8px rgba(255, 107, 122, 0.65);
 }
 
 /* ── 3. Quick Workspace Dock (Swipeable on Mobile, Grid on Desktop) ────── */
@@ -1033,8 +1187,9 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    background: rgba(229, 192, 123, 0.1);
-    color: var(--sdc-gold);
+    background: rgba(110, 27, 44, 0.42);
+    border: 1px solid rgba(236, 224, 228, 0.16);
+    color: var(--sdc-silver-bright);
     font-size: 0.94rem;
 }
 
@@ -1062,9 +1217,9 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
 .sd-dock-badge {
     padding: 2px 7px;
     border-radius: 999px;
-    background: rgba(96, 165, 250, 0.16);
-    border: 1px solid rgba(96, 165, 250, 0.34);
-    color: #93c5fd;
+    background: rgba(125, 211, 252, 0.16);
+    border: 1px solid rgba(125, 211, 252, 0.34);
+    color: #bae6fd;
     font-size: 0.68rem;
     font-weight: 800;
 }
@@ -1098,12 +1253,12 @@ body.student-portal #mainContent .sd-cockpit .sd-error-banner {
     gap: 5px;
     font-size: 0.78rem;
     font-weight: 700;
-    color: var(--sdc-gold);
+    color: var(--sdc-rose-accent);
     text-decoration: none;
 }
 
 .sd-section-head a:hover {
-    color: var(--sdc-gold-bright);
+    color: #ffffff;
     text-decoration: underline;
 }
 
@@ -1143,7 +1298,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     border-radius: var(--sdc-radius-lg);
     background: var(--sdc-surface);
     border: 1px solid var(--sdc-border-subtle);
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
     transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
@@ -1171,8 +1326,8 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 
 .sd-kpi-tile[data-accent="success"] .sd-kpi-badge { background: rgba(52, 211, 153, 0.14); color: var(--sdc-emerald); }
 .sd-kpi-tile[data-accent="warning"] .sd-kpi-badge { background: rgba(251, 191, 36, 0.14); color: var(--sdc-amber); }
-.sd-kpi-tile[data-accent="danger"] .sd-kpi-badge { background: rgba(248, 113, 113, 0.14); color: var(--sdc-rose); }
-.sd-kpi-tile[data-accent="gold"] .sd-kpi-badge { background: rgba(229, 192, 123, 0.14); color: var(--sdc-gold); }
+.sd-kpi-tile[data-accent="danger"] .sd-kpi-badge { background: rgba(255, 107, 122, 0.16); color: var(--sdc-rose); }
+.sd-kpi-tile[data-accent="gold"] .sd-kpi-badge { background: rgba(236, 224, 228, 0.13); color: var(--sdc-silver-bright); }
 
 .sd-kpi-arrow {
     color: var(--sdc-muted);
@@ -1183,7 +1338,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 
 .sd-kpi-trigger:hover .sd-kpi-arrow {
     opacity: 1;
-    color: var(--sdc-gold);
+    color: var(--sdc-silver-bright);
     transform: translate(2px, -2px);
 }
 
@@ -1219,7 +1374,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 .sd-kpi-bar {
     height: 3px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(236, 224, 228, 0.08);
     overflow: hidden;
 }
 
@@ -1232,7 +1387,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 .sd-kpi-tile[data-accent="success"] .sd-kpi-bar-fill { background: var(--sdc-emerald); }
 .sd-kpi-tile[data-accent="warning"] .sd-kpi-bar-fill { background: var(--sdc-amber); }
 .sd-kpi-tile[data-accent="danger"] .sd-kpi-bar-fill { background: var(--sdc-rose); }
-.sd-kpi-tile[data-accent="gold"] .sd-kpi-bar-fill { background: var(--sdc-gold); }
+.sd-kpi-tile[data-accent="gold"] .sd-kpi-bar-fill { background: linear-gradient(90deg, var(--sdc-rose-accent), var(--sdc-silver-bright)); }
 
 /* ── 5. Main Asymmetric Workspace & Surface Panels ─────────────────────── */
 .sd-workspace-grid {
@@ -1254,7 +1409,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     border-radius: var(--sdc-radius-xl);
     background: var(--sdc-surface);
     border: 1px solid var(--sdc-border-subtle);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
     overflow: hidden;
 }
 
@@ -1265,8 +1420,8 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     flex-wrap: wrap;
     gap: 10px 12px;
     padding: 18px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
-    background: rgba(255, 255, 255, 0.012);
+    border-bottom: 1px solid rgba(236, 224, 228, 0.075);
+    background: rgba(255, 255, 255, 0.015);
 }
 
 .sd-surface-title-group {
@@ -1283,9 +1438,9 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    background: rgba(229, 192, 123, 0.11);
-    border: 1px solid rgba(229, 192, 123, 0.22);
-    color: var(--sdc-gold);
+    background: rgba(110, 27, 44, 0.44);
+    border: 1px solid rgba(236, 224, 228, 0.18);
+    color: var(--sdc-silver-bright);
     font-size: 0.96rem;
 }
 
@@ -1312,8 +1467,8 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     padding: 6px 12px;
     border-radius: 9px;
     background: var(--sdc-surface-2);
-    border: 1px solid rgba(229, 192, 123, 0.24);
-    color: var(--sdc-gold-bright);
+    border: 1px solid rgba(236, 224, 228, 0.22);
+    color: var(--sdc-silver-bright);
     font-size: 0.75rem;
     font-weight: 700;
     text-decoration: none;
@@ -1323,7 +1478,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 
 .sd-pill-btn:hover {
     background: var(--sdc-surface-3);
-    border-color: rgba(229, 192, 123, 0.45);
+    border-color: rgba(236, 224, 228, 0.42);
     color: #fff;
 }
 
@@ -1338,8 +1493,8 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     gap: 6px;
     padding: 4px;
     border-radius: 11px;
-    background: rgba(10, 8, 7, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.065);
+    background: rgba(14, 4, 7, 0.72);
+    border: 1px solid rgba(236, 224, 228, 0.08);
     margin-bottom: 14px;
 }
 
@@ -1360,12 +1515,12 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 
 .sd-filter-btn:hover {
     color: var(--sdc-text);
-    background: rgba(255, 255, 255, 0.045);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .sd-filter-btn.is-active {
-    background: rgba(229, 192, 123, 0.18);
-    color: var(--sdc-gold-bright);
+    background: linear-gradient(135deg, rgba(122, 28, 46, 0.72), rgba(72, 18, 30, 0.8));
+    color: #ffffff;
 }
 
 .sd-timeline {
@@ -1381,33 +1536,33 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     gap: 12px;
     padding: 14px 15px;
     border-radius: 14px;
-    background: rgba(12, 9, 8, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-left: 3px solid var(--tl-color, var(--sdc-gold));
+    background: rgba(15, 4, 7, 0.56);
+    border: 1px solid rgba(236, 224, 228, 0.075);
+    border-left: 3px solid var(--tl-color, var(--sdc-rose-accent));
     transition: background 0.16s ease, border-color 0.16s ease;
 }
 
 .sd-timeline-row:hover {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(229, 192, 123, 0.22);
-    border-left-color: var(--tl-color, var(--sdc-gold));
+    background: rgba(90, 24, 39, 0.24);
+    border-color: rgba(236, 224, 228, 0.22);
+    border-left-color: var(--tl-color, var(--sdc-rose-accent));
 }
 
 .sd-timeline-row.is-status-ongoing {
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.11) 0%, rgba(16, 13, 11, 0.8) 100%);
-    border-color: rgba(251, 191, 36, 0.3);
+    background: linear-gradient(135deg, rgba(138, 36, 57, 0.32) 0%, rgba(21, 7, 11, 0.85) 100%);
+    border-color: rgba(251, 191, 36, 0.34);
     border-left-color: var(--sdc-amber);
 }
 
 .sd-timeline-row.is-status-completed {
-    background: rgba(16, 185, 129, 0.04);
-    border-color: rgba(52, 211, 153, 0.15);
+    background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(52, 211, 153, 0.18);
     border-left-color: var(--sdc-emerald);
 }
 
 .sd-timeline-row.is-status-missed {
-    background: rgba(239, 68, 68, 0.045);
-    border-color: rgba(248, 113, 113, 0.18);
+    background: rgba(255, 107, 122, 0.06);
+    border-color: rgba(255, 107, 122, 0.22);
     border-left-color: var(--sdc-rose);
 }
 
@@ -1452,8 +1607,8 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     gap: 5px;
     padding: 2px 8px;
     border-radius: 6px;
-    background: rgba(229, 192, 123, 0.11);
-    color: var(--sdc-gold-bright);
+    background: rgba(110, 27, 44, 0.42);
+    color: #ffffff;
     font-size: 0.72rem;
     font-weight: 700;
 }
@@ -1461,9 +1616,9 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 .sd-code-tag {
     padding: 2px 7px;
     border-radius: 6px;
-    background: rgba(229, 192, 123, 0.1);
-    border: 1px solid rgba(229, 192, 123, 0.22);
-    color: var(--sdc-gold-bright);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(236, 224, 228, 0.22);
+    color: #f5ecee;
     font-size: 0.71rem;
     font-weight: 700;
 }
@@ -1471,7 +1626,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 .sd-tl-progress {
     height: 4px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(236, 224, 228, 0.1);
     overflow: hidden;
     margin-top: 9px;
 }
@@ -1479,7 +1634,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 .sd-tl-progress-fill {
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--sdc-gold), var(--sdc-amber));
+    background: linear-gradient(90deg, var(--sdc-rose-accent), var(--sdc-silver-bright));
 }
 
 .sd-tl-chips {
@@ -1496,7 +1651,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     gap: 5px;
     padding: 4px 10px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
     color: var(--sdc-text-soft);
     font-size: 0.72rem;
     font-weight: 650;
@@ -1505,28 +1660,29 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 }
 
 .sd-tl-chip.is-checked {
-    background: rgba(16, 185, 129, 0.13);
+    background: rgba(16, 185, 129, 0.14);
     color: #6ee7b7;
 }
 
 .sd-tl-chip.is-checkin {
-    background: rgba(229, 192, 123, 0.17);
-    border: 1px solid rgba(229, 192, 123, 0.34);
-    color: var(--sdc-gold-bright);
+    background: linear-gradient(135deg, #ffffff, #e6dce0);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    color: #300810;
+    font-weight: 750;
 }
 
 .sd-tl-chip.is-checkin:hover {
-    background: rgba(229, 192, 123, 0.28);
-    color: #fff;
+    filter: brightness(1.05);
+    color: #24060c;
 }
 
 .sd-tl-chip.is-excuse {
-    background: rgba(239, 68, 68, 0.14);
-    color: #fca5a5;
+    background: rgba(255, 107, 122, 0.16);
+    color: #ffb3bc;
 }
 
 .sd-tl-chip.is-excuse:hover {
-    background: rgba(239, 68, 68, 0.24);
+    background: rgba(255, 107, 122, 0.28);
     color: #fff;
 }
 
@@ -1538,7 +1694,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     padding: 20px 14px;
     margin-top: 8px;
     border-radius: 12px;
-    border: 1px dashed rgba(229, 192, 123, 0.24);
+    border: 1px dashed rgba(236, 224, 228, 0.24);
     text-align: center;
     color: var(--sdc-muted);
     font-size: 0.82rem;
@@ -1563,9 +1719,9 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     border-radius: 14px;
     display: grid;
     place-items: center;
-    background: rgba(229, 192, 123, 0.1);
-    border: 1px solid rgba(229, 192, 123, 0.22);
-    color: var(--sdc-gold);
+    background: rgba(110, 27, 44, 0.42);
+    border: 1px solid rgba(236, 224, 228, 0.22);
+    color: var(--sdc-silver-bright);
     font-size: 1.25rem;
     margin-bottom: 6px;
 }
@@ -1597,8 +1753,8 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     gap: 12px;
     padding: 11px 13px;
     border-radius: 13px;
-    background: rgba(12, 9, 8, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.055);
+    background: rgba(15, 4, 7, 0.54);
+    border: 1px solid rgba(236, 224, 228, 0.07);
 }
 
 .sd-recent-icon {
@@ -1613,7 +1769,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 
 .sd-recent-icon.is-present { background: rgba(52, 211, 153, 0.14); color: var(--sdc-emerald); }
 .sd-recent-icon.is-late { background: rgba(251, 191, 36, 0.14); color: var(--sdc-amber); }
-.sd-recent-icon.is-absent { background: rgba(248, 113, 113, 0.14); color: var(--sdc-rose); }
+.sd-recent-icon.is-absent { background: rgba(255, 107, 122, 0.16); color: var(--sdc-rose); }
 
 .sd-recent-copy {
     flex: 1;
@@ -1664,15 +1820,15 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     color: inherit;
     padding: 13px 14px;
     border-radius: 14px;
-    background: rgba(12, 9, 8, 0.52);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(15, 4, 7, 0.56);
+    border: 1px solid rgba(236, 224, 228, 0.08);
     cursor: pointer;
     transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
 .sd-subject-card:hover {
-    background: rgba(255, 255, 255, 0.035);
-    border-color: rgba(229, 192, 123, 0.28);
+    background: rgba(90, 24, 39, 0.28);
+    border-color: rgba(236, 224, 228, 0.28);
     transform: translateY(-1px);
 }
 
@@ -1694,7 +1850,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 .sd-subject-code {
     font-size: 0.72rem;
     font-weight: 750;
-    color: var(--sdc-gold);
+    color: var(--sdc-rose-accent);
     flex-shrink: 0;
 }
 
@@ -1721,7 +1877,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 .sd-meter-track {
     height: 6px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.075);
+    background: rgba(236, 224, 228, 0.09);
     overflow: hidden;
     margin-bottom: 8px;
 }
@@ -1749,9 +1905,9 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     margin-left: auto;
     padding: 2px 8px;
     border-radius: 999px;
-    background: rgba(239, 68, 68, 0.14);
-    border: 1px solid rgba(248, 113, 113, 0.32);
-    color: #fca5a5;
+    background: rgba(255, 107, 122, 0.16);
+    border: 1px solid rgba(255, 107, 122, 0.34);
+    color: #ffb3bc;
     font-size: 0.67rem;
     font-weight: 750;
 }
@@ -1766,14 +1922,14 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 .sd-ann-card {
     padding: 14px 15px;
     border-radius: 14px;
-    background: rgba(12, 9, 8, 0.52);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-left: 3px solid var(--sdc-gold);
+    background: rgba(15, 4, 7, 0.56);
+    border: 1px solid rgba(236, 224, 228, 0.08);
+    border-left: 3px solid var(--sdc-silver);
 }
 
 .sd-ann-card.is-urgent {
     border-left-color: var(--sdc-rose);
-    background: rgba(239, 68, 68, 0.055);
+    background: rgba(255, 107, 122, 0.08);
 }
 
 .sd-ann-head {
@@ -1815,11 +1971,12 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     margin: -2px 0 8px;
     font-size: 0.75rem;
     font-weight: 750;
-    color: var(--sdc-gold);
+    color: var(--sdc-rose-accent);
     cursor: pointer;
 }
 
 .sd-ann-toggle:hover {
+    color: #ffffff;
     text-decoration: underline;
 }
 
@@ -1833,7 +1990,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 }
 
 .sd-ann-meta i {
-    color: var(--sdc-gold);
+    color: var(--sdc-rose-accent);
 }
 
 /* ── Desktop & Tablet Breakpoints ──────────────────────────────────────── */
@@ -1931,7 +2088,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
         bottom: -24px;
         left: 50%;
         width: 1.5px;
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(236, 224, 228, 0.11);
         transform: translateX(-50%);
     }
 
@@ -1943,10 +2100,10 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
         width: 10px;
         height: 10px;
         border-radius: 50%;
-        background: var(--tl-color, var(--sdc-gold));
+        background: var(--tl-color, var(--sdc-silver));
         position: relative;
         z-index: 1;
-        box-shadow: 0 0 0 4px rgba(18, 14, 11, 0.96);
+        box-shadow: 0 0 0 4px rgba(27, 9, 15, 0.98);
     }
 
     .sd-timeline-row.is-status-ongoing .sd-tl-node {
@@ -2106,12 +2263,12 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     }
 }
 
-/* ── Dashboard Modals (Subject Breakdown, Day Summary, Records) ────────── */
+/* ── Dashboard Modals (Burgundy & Pearl-Silver Sheet Styling) ──────────── */
 .scal-sheet-handle,
 .day-modal-sheet-handle {
     width: 42px;
     height: 4.5px;
-    background: rgba(255, 255, 255, 0.22);
+    background: rgba(236, 224, 228, 0.28);
     border-radius: 99px;
     margin: 12px auto 4px auto;
     display: none;
@@ -2128,7 +2285,7 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     z-index: 10050 !important;
     backdrop-filter: blur(8px) !important;
     -webkit-backdrop-filter: blur(8px) !important;
-    background: rgba(0, 0, 0, 0.74) !important;
+    background: rgba(12, 3, 6, 0.76) !important;
 }
 
 #daySummaryModal .modal-dialog {
@@ -2138,57 +2295,57 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
 #daySummaryModal .modal-content,
 #attendanceRecordsModal .modal-content,
 #subjectBreakdownModal .modal-content {
-    background: linear-gradient(180deg, #191310 0%, #0e0a08 100%) !important;
-    border: 1px solid rgba(229, 192, 123, 0.22) !important;
+    background: linear-gradient(180deg, #240b13 0%, #120509 100%) !important;
+    border: 1px solid rgba(236, 224, 228, 0.2) !important;
     border-radius: 22px !important;
-    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.85), 0 0 36px rgba(207, 164, 111, 0.08) !important;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.85), 0 0 36px rgba(110, 27, 44, 0.22) !important;
     position: relative;
 }
 
 #daySummaryModal .modal-content::before { display: none !important; }
 
 .day-modal-action-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 8px; }
-.day-nav-stepper { display: inline-flex; align-items: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 3px; gap: 2px; }
-.day-nav-step-btn { width: 32px; height: 32px; border-radius: 8px; background: transparent; border: none; color: #cfa46f; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; }
-.day-nav-step-btn:hover { background: rgba(207,164,111,0.15); color: #ffd166; }
-.day-nav-today-btn { height: 32px; padding: 0 11px; border-radius: 8px; background: rgba(207,164,111,0.12); border: 1px solid rgba(207,164,111,0.25); color: #ffd166; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
-.day-nav-today-btn:hover { background: rgba(207,164,111,0.25); border-color: #ffd166; color: #fff; }
-.day-modal-close-btn { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #cfa46f; display: inline-flex; align-items: center; justify-content: center; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; }
-.day-modal-close-btn:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.35); color: #f87171; }
-.day-modal-header-content { padding: 4px 20px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-.day-modal-date { font-size: 1.2rem; font-weight: 800; color: #f8fafc; margin: 0 0 8px; line-height: 1.25; }
+.day-nav-stepper { display: inline-flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(236,224,228,0.14); border-radius: 12px; padding: 3px; gap: 2px; }
+.day-nav-step-btn { width: 32px; height: 32px; border-radius: 8px; background: transparent; border: none; color: #ece4e7; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; }
+.day-nav-step-btn:hover { background: rgba(138,36,57,0.42); color: #ffffff; }
+.day-nav-today-btn { height: 32px; padding: 0 11px; border-radius: 8px; background: rgba(138,36,57,0.38); border: 1px solid rgba(236,224,228,0.24); color: #ffffff; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+.day-nav-today-btn:hover { background: rgba(138,36,57,0.62); border-color: #ffffff; color: #fff; }
+.day-modal-close-btn { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 1px solid rgba(236,224,228,0.16); color: #ece4e7; display: inline-flex; align-items: center; justify-content: center; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; }
+.day-modal-close-btn:hover { background: rgba(255,107,122,0.18); border-color: rgba(255,107,122,0.42); color: #ff6b7a; }
+.day-modal-header-content { padding: 4px 20px 14px; border-bottom: 1px solid rgba(236,224,228,0.08); }
+.day-modal-date { font-size: 1.2rem; font-weight: 800; color: #fcf9fa; margin: 0 0 8px; line-height: 1.25; }
 .day-summary-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .day-summary-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 0.74rem; font-weight: 700; }
-.day-summary-chip.chip-count { background: rgba(207,164,111,0.12); color: #f3ede4; border: 1px solid rgba(207,164,111,0.25); }
-.day-summary-chip.chip-present { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
-.day-summary-chip.chip-late { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
-.day-summary-chip.chip-absent { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
-.day-summary-chip.chip-empty { background: rgba(255,255,255,0.04); color: #a8937e; border: 1px solid rgba(255,255,255,0.08); }
+.day-summary-chip.chip-count { background: rgba(138,36,57,0.34); color: #fcf9fa; border: 1px solid rgba(236,224,228,0.24); }
+.day-summary-chip.chip-present { background: rgba(16,185,129,0.14); color: #34d399; border: 1px solid rgba(16,185,129,0.32); }
+.day-summary-chip.chip-late { background: rgba(245,158,11,0.14); color: #fbbf24; border: 1px solid rgba(245,158,11,0.32); }
+.day-summary-chip.chip-absent { background: rgba(255,107,122,0.16); color: #ff6b7a; border: 1px solid rgba(255,107,122,0.34); }
+.day-summary-chip.chip-empty { background: rgba(255,255,255,0.05); color: #b0979f; border: 1px solid rgba(236,224,228,0.1); }
 .day-section-header { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 12px; }
-.day-section-label { font-size: 0.74rem; font-weight: 800; color: #cfa46f; text-transform: uppercase; letter-spacing: 0.08em; }
-.day-section-icon { color: #cfa46f; font-size: 0.8rem; }
-.day-section-badge { font-size: 0.72rem; font-weight: 700; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #b39b82; padding: 2px 8px; border-radius: 6px; }
-.att-detail-card { background: linear-gradient(145deg, rgba(32,24,20,0.9), rgba(18,13,11,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 15px 17px; position: relative; overflow: hidden; }
+.day-section-label { font-size: 0.74rem; font-weight: 800; color: #e48fa0; text-transform: uppercase; letter-spacing: 0.08em; }
+.day-section-icon { color: #e48fa0; font-size: 0.8rem; }
+.day-section-badge { font-size: 0.72rem; font-weight: 700; background: rgba(255,255,255,0.05); border: 1px solid rgba(236,224,228,0.12); color: #dfd1d5; padding: 2px 8px; border-radius: 6px; }
+.att-detail-card { background: linear-gradient(145deg, rgba(46,16,26,0.88), rgba(22,7,12,0.95)); border: 1px solid rgba(236,224,228,0.1); border-radius: 16px; padding: 15px 17px; position: relative; overflow: hidden; }
 .att-detail-card.status-border-present { border-left: 4px solid #10b981 !important; }
 .att-detail-card.status-border-late { border-left: 4px solid #f59e0b !important; }
-.att-detail-card.status-border-absent { border-left: 4px solid #ef4444 !important; }
+.att-detail-card.status-border-absent { border-left: 4px solid #ff6b7a !important; }
 .att-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
-.att-card-subject-title { font-weight: 800; font-size: 1.02rem; color: #f8fafc; line-height: 1.32; margin-bottom: 6px; }
+.att-card-subject-title { font-weight: 800; font-size: 1.02rem; color: #fcf9fa; line-height: 1.32; margin-bottom: 6px; }
 .att-card-meta { font-size: 0.8rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.att-code-pill { background: rgba(207,164,111,0.15); color: #ffd166; border: 1px solid rgba(207,164,111,0.35); font-weight: 800; font-size: 0.74rem; padding: 2px 8px; border-radius: 6px; }
-.att-instructor-pill { color: #c5b3a1; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px; }
+.att-code-pill { background: rgba(138,36,57,0.36); color: #ffffff; border: 1px solid rgba(236,224,228,0.28); font-weight: 800; font-size: 0.74rem; padding: 2px 8px; border-radius: 6px; }
+.att-instructor-pill { color: #dfd1d5; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px; }
 .att-status-badge { padding: 5px 12px; border-radius: 10px; font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.att-status-badge.present { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.35); }
-.att-status-badge.late { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.35); }
-.att-status-badge.absent { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.35); }
-.att-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 11px 13px; }
-.att-grid-col-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #cfa46f; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
-.att-grid-col-val { font-size: 0.86rem; font-weight: 700; color: #f1f5f9; }
-.day-card-excuse-btn { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding: 8px 12px; border-radius: 10px; background: rgba(207,164,111,0.08); border: 1px dashed rgba(207,164,111,0.3); color: #ffd166; font-size: 0.76rem; font-weight: 700; text-decoration: none; }
-.day-empty-card { text-align: center; padding: 34px 18px; background: rgba(255,255,255,0.02); border-radius: 18px; border: 1px dashed rgba(255,255,255,0.08); }
-.day-empty-icon { width: 54px; height: 54px; border-radius: 16px; background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.22); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; color: #ffd166; font-size: 1.5rem; }
-.subject-minimal-card { border-color: rgba(255, 255, 255, 0.06); }
-.subject-minimal-card:hover { background: rgba(255, 255, 255, 0.035) !important; border-color: rgba(207, 164, 111, 0.3) !important; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45); }
+.att-status-badge.present { background: rgba(16,185,129,0.14); color: #34d399; border: 1px solid rgba(16,185,129,0.35); }
+.att-status-badge.late { background: rgba(245,158,11,0.14); color: #fbbf24; border: 1px solid rgba(245,158,11,0.35); }
+.att-status-badge.absent { background: rgba(255,107,122,0.16); color: #ff6b7a; border: 1px solid rgba(255,107,122,0.38); }
+.att-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: rgba(12,3,6,0.45); border: 1px solid rgba(236,224,228,0.07); border-radius: 12px; padding: 11px 13px; }
+.att-grid-col-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #e48fa0; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+.att-grid-col-val { font-size: 0.86rem; font-weight: 700; color: #fcf9fa; }
+.day-card-excuse-btn { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding: 8px 12px; border-radius: 10px; background: rgba(138,36,57,0.28); border: 1px dashed rgba(236,224,228,0.34); color: #ffffff; font-size: 0.76rem; font-weight: 700; text-decoration: none; }
+.day-empty-card { text-align: center; padding: 34px 18px; background: rgba(255,255,255,0.025); border-radius: 18px; border: 1px dashed rgba(236,224,228,0.14); }
+.day-empty-icon { width: 54px; height: 54px; border-radius: 16px; background: rgba(110,27,44,0.42); border: 1px solid rgba(236,224,228,0.24); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; color: #ffffff; font-size: 1.5rem; }
+.subject-minimal-card { border-color: rgba(236, 224, 228, 0.09); }
+.subject-minimal-card:hover { background: rgba(110, 27, 44, 0.28) !important; border-color: rgba(236, 224, 228, 0.34) !important; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45); }
 
 @media (max-width: 768px) {
     #daySummaryModal .modal-dialog,

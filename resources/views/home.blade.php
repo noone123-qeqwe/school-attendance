@@ -478,7 +478,7 @@
                         <div class="sd-timeline">
                             @foreach($todaySchedCollection as $item)
                                 @php
-                                    $statusColor = $item->status === 'completed' ? '#34d399' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#f87171' : ($item->status === 'past' ? '#9ca3af' : '#e5c07b')));
+                                    $statusColor = $item->status === 'completed' ? '#34d399' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#ff6b7a' : ($item->status === 'past' ? '#b0979f' : '#e48fa0')));
                                     $roomName = trim((string) ($item->schedule?->room ?? ''));
                                     $instructorName = trim((string) ($item->subject->instructorUser?->name ?? $item->subject->instructor ?? ''));
                                     $timeInText = $item->attendance?->time_in ? \Carbon\Carbon::parse($item->attendance->time_in)->format('g:i A') : null;
@@ -639,7 +639,7 @@
                                 @php
                                     $hasSubjectRecords = $sub->total > 0;
                                     $rateClass = !$hasSubjectRecords ? '' : ($sub->rate >= 85 ? 'is-good' : ($sub->rate >= 75 ? 'is-warn' : 'is-risk'));
-                                    $barColor = !$hasSubjectRecords ? 'rgba(255,255,255,0.14)' : ($sub->rate >= 85 ? '#34d399' : ($sub->rate >= 75 ? '#fbbf24' : '#f87171'));
+                                    $barColor = !$hasSubjectRecords ? 'rgba(236,224,228,0.16)' : ($sub->rate >= 85 ? '#34d399' : ($sub->rate >= 75 ? '#fbbf24' : '#ff6b7a'));
                                     $barWidth = $hasSubjectRecords ? min(100, max(0, $sub->rate)) : 0;
                                 @endphp
                                 <button type="button"
@@ -727,18 +727,18 @@
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="scal-sheet-handle"></div>
-            <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 border-bottom" style="border-color:rgba(255,255,255,0.07)!important;">
+            <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 border-bottom" style="border-color:rgba(236,224,228,0.1)!important;">
                 <div class="d-flex align-items-center gap-3">
-                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(229,192,123,0.14); border:1px solid rgba(229,192,123,0.28); display:flex; align-items:center; justify-content:center; color:#e5c07b; font-size:1.15rem;">
+                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(110,27,44,0.48); border:1px solid rgba(236,224,228,0.24); display:flex; align-items:center; justify-content:center; color:#ffffff; font-size:1.15rem;">
                         <i class="bi bi-pie-chart-fill"></i>
                     </div>
                     <div>
-                        <h3 style="font-weight:800; font-size:1.15rem; color:#fcf8f2; margin:0;">Subject Breakdown</h3>
-                        <div style="font-size:0.78rem; color:#b5a89a; margin-top:2px;">Attendance rate &amp; records per enrolled subject</div>
+                        <h3 style="font-weight:800; font-size:1.15rem; color:#fcf9fa; margin:0;">Subject Breakdown</h3>
+                        <div style="font-size:0.78rem; color:#b0979f; margin-top:2px;">Attendance rate &amp; records per enrolled subject</div>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-3">
-                    <span class="badge" style="background:rgba(229,192,123,0.12); color:#e5c07b; border:1px solid rgba(229,192,123,0.25); font-size:0.76rem; font-weight:700; padding:6px 12px; border-radius:10px;">
+                    <span class="badge" style="background:rgba(110,27,44,0.42); color:#fcf9fa; border:1px solid rgba(236,224,228,0.24); font-size:0.76rem; font-weight:700; padding:6px 12px; border-radius:10px;">
                         {{ count($subjectStats ?? []) }} {{ \Illuminate\Support\Str::plural('Subject', count($subjectStats ?? [])) }}
                     </span>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -746,60 +746,60 @@
             </div>
             <div class="px-4 py-4" style="max-height:72vh; overflow-y:auto;">
                 @if(empty($subjectStats) || count($subjectStats) === 0)
-                    <div style="text-align:center; padding:42px 20px; background:rgba(255,255,255,0.02); border-radius:18px; border:1px dashed rgba(255,255,255,0.08);">
-                        <div style="width:52px; height:52px; border-radius:14px; background:rgba(229,192,123,0.1); border:1px solid rgba(229,192,123,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; color:#e5c07b; font-size:1.4rem;">
+                    <div style="text-align:center; padding:42px 20px; background:rgba(255,255,255,0.025); border-radius:18px; border:1px dashed rgba(236,224,228,0.14);">
+                        <div style="width:52px; height:52px; border-radius:14px; background:rgba(110,27,44,0.44); border:1px solid rgba(236,224,228,0.24); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; color:#ffffff; font-size:1.4rem;">
                             <i class="bi bi-journal-x"></i>
                         </div>
-                        <p style="color:#b5a89a; font-size:0.9rem; font-weight:600; margin:0;">No enrolled subject records found</p>
+                        <p style="color:#dfd1d5; font-size:0.9rem; font-weight:600; margin:0;">No enrolled subject records found</p>
                     </div>
                 @else
                     <div class="row g-3">
                         @foreach($subjectStats as $sub)
                             @php
                                 $hasRecords = $sub->total > 0;
-                                $brkRateColor = '#94a3b8';
-                                $brkRateBg    = 'rgba(148,163,184,0.12)';
-                                $brkRateBorder= 'rgba(148,163,184,0.26)';
+                                $brkRateColor = '#b0979f';
+                                $brkRateBg    = 'rgba(236,224,228,0.1)';
+                                $brkRateBorder= 'rgba(236,224,228,0.22)';
                                 if ($hasRecords) {
                                     if ($sub->rate < 75) {
-                                        $brkRateColor  = '#f87171';
-                                        $brkRateBg     = 'rgba(239,68,68,0.12)';
-                                        $brkRateBorder = 'rgba(239,68,68,0.3)';
+                                        $brkRateColor  = '#ff6b7a';
+                                        $brkRateBg     = 'rgba(255,107,122,0.14)';
+                                        $brkRateBorder = 'rgba(255,107,122,0.34)';
                                     } elseif ($sub->rate < 85) {
                                         $brkRateColor  = '#fbbf24';
-                                        $brkRateBg     = 'rgba(245,158,11,0.12)';
-                                        $brkRateBorder = 'rgba(245,158,11,0.3)';
+                                        $brkRateBg     = 'rgba(245,158,11,0.14)';
+                                        $brkRateBorder = 'rgba(245,158,11,0.32)';
                                     } else {
                                         $brkRateColor  = '#34d399';
-                                        $brkRateBg     = 'rgba(16,185,129,0.12)';
-                                        $brkRateBorder = 'rgba(16,185,129,0.3)';
+                                        $brkRateBg     = 'rgba(16,185,129,0.14)';
+                                        $brkRateBorder = 'rgba(16,185,129,0.32)';
                                     }
                                 }
                             @endphp
                             <div class="col-12 col-md-6">
-                                <div class="subject-minimal-card" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:16px 18px; height:100%; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.22s ease;">
+                                <div class="subject-minimal-card" style="background:rgba(15,4,7,0.5); border:1px solid rgba(236,224,228,0.1); border-radius:16px; padding:16px 18px; height:100%; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.22s ease;">
                                     <div>
                                         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;">
                                             <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-                                                <span class="sd-mono" style="background:rgba(229,192,123,0.14); color:#e5c07b; border:1px solid rgba(229,192,123,0.26); font-size:0.74rem; font-weight:800; padding:3px 8px; border-radius:7px; flex-shrink:0;">{{ $sub->code }}</span>
-                                                <span style="font-size:0.9rem; font-weight:700; color:#fcf8f2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ $sub->name }}">{{ $sub->name }}</span>
+                                                <span class="sd-mono" style="background:rgba(110,27,44,0.45); color:#ffffff; border:1px solid rgba(236,224,228,0.26); font-size:0.74rem; font-weight:800; padding:3px 8px; border-radius:7px; flex-shrink:0;">{{ $sub->code }}</span>
+                                                <span style="font-size:0.9rem; font-weight:700; color:#fcf9fa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ $sub->name }}">{{ $sub->name }}</span>
                                             </div>
                                             <span class="badge sd-tabular" style="background:{{ $brkRateBg }}; color:{{ $brkRateColor }}; border:1px solid {{ $brkRateBorder }}; font-size:0.8rem; font-weight:800; padding:4px 9px; border-radius:8px; flex-shrink:0;">{{ $hasRecords ? $sub->rate.'%' : 'No records' }}</span>
                                         </div>
-                                        <div style="height:5px; background:rgba(255,255,255,0.07); border-radius:99px; overflow:hidden; margin-bottom:13px;">
+                                        <div style="height:5px; background:rgba(236,224,228,0.09); border-radius:99px; overflow:hidden; margin-bottom:13px;">
                                             <div style="width:{{ $hasRecords ? min(100, max(0, $sub->rate)) : 0 }}%; height:100%; background:{{ $brkRateColor }}; border-radius:99px;"></div>
                                         </div>
                                     </div>
-                                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05);">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:10px; border-top:1px solid rgba(236,224,228,0.07);">
                                         <div class="sd-tabular" style="display:flex; align-items:center; gap:10px;">
-                                            <span style="font-size:0.75rem; color:#b5a89a;"><strong style="color:#34d399;">{{ $sub->present }}</strong> Present</span>
-                                            <span style="font-size:0.75rem; color:#b5a89a;"><strong style="color:#fbbf24;">{{ $sub->late }}</strong> Late</span>
-                                            <span style="font-size:0.75rem; color:#b5a89a;"><strong style="color:#f87171;">{{ $sub->absent }}</strong> Absent</span>
+                                            <span style="font-size:0.75rem; color:#b0979f;"><strong style="color:#34d399;">{{ $sub->present }}</strong> Present</span>
+                                            <span style="font-size:0.75rem; color:#b0979f;"><strong style="color:#fbbf24;">{{ $sub->late }}</strong> Late</span>
+                                            <span style="font-size:0.75rem; color:#b0979f;"><strong style="color:#ff6b7a;">{{ $sub->absent }}</strong> Absent</span>
                                             @if($sub->excused > 0)
-                                                <span style="font-size:0.75rem; color:#b5a89a;"><strong style="color:#60a5fa;">{{ $sub->excused }}</strong> Excused</span>
+                                                <span style="font-size:0.75rem; color:#b0979f;"><strong style="color:#7dd3fc;">{{ $sub->excused }}</strong> Excused</span>
                                             @endif
                                         </div>
-                                        <span class="sd-tabular" style="font-size:0.72rem; color:#948678; font-weight:600;">{{ $sub->total }} {{ \Illuminate\Support\Str::plural('Session', $sub->total) }}</span>
+                                        <span class="sd-tabular" style="font-size:0.72rem; color:#9e818a; font-weight:600;">{{ $sub->total }} {{ \Illuminate\Support\Str::plural('Session', $sub->total) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -807,11 +807,11 @@
                     </div>
                 @endif
             </div>
-            <div class="px-4 py-3 border-top d-flex justify-content-between align-items-center" style="border-color:rgba(255,255,255,0.07)!important; background:rgba(255,255,255,0.015);">
-                <a href="{{ route('student.classes') }}" class="btn btn-sm" style="background:rgba(229,192,123,0.12); border:1px solid rgba(229,192,123,0.3); color:#e5c07b; font-weight:700; font-size:0.82rem; border-radius:10px; padding:7px 16px;">
+            <div class="px-4 py-3 border-top d-flex justify-content-between align-items-center" style="border-color:rgba(236,224,228,0.1)!important; background:rgba(255,255,255,0.015);">
+                <a href="{{ route('student.classes') }}" class="btn btn-sm" style="background:rgba(110,27,44,0.45); border:1px solid rgba(236,224,228,0.28); color:#ffffff; font-weight:700; font-size:0.82rem; border-radius:10px; padding:7px 16px;">
                     <i class="bi bi-book-fill me-1"></i> My Classes
                 </a>
-                <button type="button" class="btn btn-sm" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#fcf8f2; font-weight:700; font-size:0.82rem; border-radius:10px; padding:7px 18px;">
+                <button type="button" class="btn btn-sm" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.08); border:1px solid rgba(236,224,228,0.14); color:#fcf9fa; font-weight:700; font-size:0.82rem; border-radius:10px; padding:7px 18px;">
                     Close
                 </button>
             </div>
@@ -844,15 +844,15 @@
                 <h3 class="day-modal-date" id="daySummaryTitle">Date</h3>
                 <div class="day-summary-badges" id="daySummarySubtitle">
                     <span class="day-summary-chip chip-empty" id="daySummaryStatusText">
-                        <span id="daySummaryStatusDot" style="width:7px; height:7px; border-radius:50%; background:#ffd166; display:inline-block;"></span>
+                        <span id="daySummaryStatusDot" style="width:7px; height:7px; border-radius:50%; background:#e48fa0; display:inline-block;"></span>
                         Attendance Details
                     </span>
                 </div>
             </div>
             <div class="px-4 pb-4 pt-1">
                 <div id="daySummaryContent" class="d-flex flex-column gap-3"></div>
-                <div style="font-size:0.75rem; color:#8f826f; text-align:center; margin-top:20px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                    <i class="bi bi-shield-check" style="color:#e5c07b;"></i>
+                <div style="font-size:0.75rem; color:#b0979f; text-align:center; margin-top:20px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    <i class="bi bi-shield-check" style="color:#e48fa0;"></i>
                     <span>Real-time records, events, and schedules for this date.</span>
                 </div>
             </div>
@@ -865,34 +865,34 @@
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="scal-sheet-handle"></div>
-            <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 border-bottom" style="border-color:rgba(255,255,255,0.06)!important;">
+            <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 border-bottom" style="border-color:rgba(236,224,228,0.08)!important;">
                 <div class="d-flex align-items-center gap-3">
-                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(229,192,123,0.14); border:1px solid rgba(229,192,123,0.28); display:flex; align-items:center; justify-content:center; color:#e5c07b; font-size:1.15rem;">
+                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(110,27,44,0.48); border:1px solid rgba(236,224,228,0.24); display:flex; align-items:center; justify-content:center; color:#ffffff; font-size:1.15rem;">
                         <i class="bi bi-clock-history"></i>
                     </div>
                     <div>
-                        <h3 style="font-weight:800; font-size:1.2rem; color:#fcf8f2; margin:0;">Attendance Records</h3>
-                        <div style="font-size:0.8rem; color:#b5a89a; margin-top:2px;">Complete attendance history per subject and date</div>
+                        <h3 style="font-weight:800; font-size:1.2rem; color:#fcf9fa; margin:0;">Attendance Records</h3>
+                        <div style="font-size:0.8rem; color:#b0979f; margin-top:2px;">Complete attendance history per subject and date</div>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-3">
-                    <span id="recordsModalCount" class="badge sd-tabular" style="background:rgba(229,192,123,0.12); color:#e5c07b; border:1px solid rgba(229,192,123,0.25); font-size:0.78rem; padding:6px 12px; border-radius:10px;">
+                    <span id="recordsModalCount" class="badge sd-tabular" style="background:rgba(110,27,44,0.42); color:#fcf9fa; border:1px solid rgba(236,224,228,0.24); font-size:0.78rem; padding:6px 12px; border-radius:10px;">
                         {{ $totalRecords }} Records
                     </span>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
             </div>
 
-            <div class="px-4 py-3 border-bottom" style="background:rgba(255,255,255,0.015); border-color:rgba(255,255,255,0.05)!important;">
+            <div class="px-4 py-3 border-bottom" style="background:rgba(255,255,255,0.015); border-color:rgba(236,224,228,0.07)!important;">
                 <div class="row g-2">
                     <div class="col-12 col-md-6">
                         <div style="position:relative;">
-                            <i class="bi bi-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#8f826f; font-size:0.85rem;"></i>
-                            <input type="text" id="recordsSearchInput" oninput="filterAttendanceRecords()" class="form-control form-control-sm" placeholder="Search subject, code, or instructor..." style="background:#0f0c0a; border:1px solid rgba(255,255,255,0.1); color:#fcf8f2; border-radius:10px; padding-left:34px; font-size:0.82rem; height:38px;">
+                            <i class="bi bi-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#b0979f; font-size:0.85rem;"></i>
+                            <input type="text" id="recordsSearchInput" oninput="filterAttendanceRecords()" class="form-control form-control-sm" placeholder="Search subject, code, or instructor..." style="background:#14050a; border:1px solid rgba(236,224,228,0.14); color:#fcf9fa; border-radius:10px; padding-left:34px; font-size:0.82rem; height:38px;">
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <select id="recordsStatusFilter" onchange="filterAttendanceRecords()" class="form-select form-select-sm" style="background:#0f0c0a; border:1px solid rgba(255,255,255,0.1); color:#fcf8f2; border-radius:10px; font-size:0.82rem; height:38px;">
+                        <select id="recordsStatusFilter" onchange="filterAttendanceRecords()" class="form-select form-select-sm" style="background:#14050a; border:1px solid rgba(236,224,228,0.14); color:#fcf9fa; border-radius:10px; font-size:0.82rem; height:38px;">
                             <option value="all">All Statuses</option>
                             <option value="present">Present</option>
                             <option value="late">Late</option>
@@ -901,7 +901,7 @@
                         </select>
                     </div>
                     <div class="col-6 col-md-3">
-                        <select id="recordsMonthFilter" onchange="filterAttendanceRecords()" class="form-select form-select-sm" style="background:#0f0c0a; border:1px solid rgba(255,255,255,0.1); color:#fcf8f2; border-radius:10px; font-size:0.82rem; height:38px;">
+                        <select id="recordsMonthFilter" onchange="filterAttendanceRecords()" class="form-select form-select-sm" style="background:#14050a; border:1px solid rgba(236,224,228,0.14); color:#fcf9fa; border-radius:10px; font-size:0.82rem; height:38px;">
                             <option value="all">All Months</option>
                         </select>
                     </div>
@@ -912,11 +912,11 @@
                 <div id="recordsModalList" class="d-flex flex-column gap-2"></div>
             </div>
 
-            <div class="px-4 py-3 border-top d-flex justify-content-between align-items-center" style="border-color:rgba(255,255,255,0.06)!important; background:rgba(255,255,255,0.01);">
-                <a href="{{ route('student.calendar') }}#attendance-records" class="btn btn-outline-warning btn-sm" style="border-radius:10px; font-weight:700; font-size:0.82rem; padding:7px 16px; border-color:rgba(229,192,123,0.4); color:#e5c07b;">
+            <div class="px-4 py-3 border-top d-flex justify-content-between align-items-center" style="border-color:rgba(236,224,228,0.08)!important; background:rgba(255,255,255,0.015);">
+                <a href="{{ route('student.calendar') }}#attendance-records" class="btn btn-sm" style="border-radius:10px; font-weight:700; font-size:0.82rem; padding:7px 16px; background:rgba(110,27,44,0.45); border:1px solid rgba(236,224,228,0.28); color:#ffffff;">
                     <i class="bi bi-box-arrow-up-right me-1"></i> Open Full History Page
                 </a>
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:10px; font-weight:700; font-size:0.82rem; padding:7px 18px; background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.1);">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:10px; font-weight:700; font-size:0.82rem; padding:7px 18px; background:rgba(255,255,255,0.08); border-color:rgba(236,224,228,0.14);">
                     Close
                 </button>
             </div>
@@ -1042,7 +1042,7 @@ function showAttDetail(dateKey, day) {
         }).catch(function() {
             if (currentSelectedDateKey !== dateKey) return;
             if (subtitleEl) subtitleEl.textContent = 'Calendar unavailable';
-            if (contentEl) contentEl.innerHTML = '<div class="day-empty-card" role="alert"><p>Could not load calendar details. Close this window and open the day again to retry.</p><a href="{{ route('student.calendar') }}" style="color:#ffd166;">Open attendance and school calendar</a></div>';
+            if (contentEl) contentEl.innerHTML = '<div class="day-empty-card" role="alert"><p>Could not load calendar details. Close this window and open the day again to retry.</p><a href="{{ route('student.calendar') }}" style="color:#e48fa0;">Open attendance and school calendar</a></div>';
         });
         return;
     }
@@ -1062,8 +1062,8 @@ function showAttDetail(dateKey, day) {
             contentEl.innerHTML = `
                 <div class="day-empty-card">
                     <div class="day-empty-icon"><i class="bi bi-calendar2-x"></i></div>
-                    <div style="font-weight:800; font-size:1.02rem; color:#f3ede4; margin-bottom:6px;">No records or events for this date.</div>
-                    <div style="font-size:0.82rem; color:#8f826f; max-width:300px; margin:0 auto; line-height:1.5;">There are no attendance records, classes, exams, events, or holidays recorded for this date.</div>
+                    <div style="font-weight:800; font-size:1.02rem; color:#fcf9fa; margin-bottom:6px;">No records or events for this date.</div>
+                    <div style="font-size:0.82rem; color:#b0979f; max-width:300px; margin:0 auto; line-height:1.5;">There are no attendance records, classes, exams, events, or holidays recorded for this date.</div>
                 </div>`;
         }
     } else {
@@ -1073,7 +1073,7 @@ function showAttDetail(dateKey, day) {
             const lateCount = records.filter(r => r.status_lower === 'late').length;
             const absentCount = records.filter(r => r.status_lower === 'absent').length;
 
-            badgesHtml += `<span class="day-summary-chip chip-count"><i class="bi bi-journal-bookmark-fill me-1" style="color:#cfa46f;"></i> ${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}</span>`;
+            badgesHtml += `<span class="day-summary-chip chip-count"><i class="bi bi-journal-bookmark-fill me-1" style="color:#e48fa0;"></i> ${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}</span>`;
             if (presentCount > 0) badgesHtml += `<span class="day-summary-chip chip-present"><i class="bi bi-check-circle-fill me-1"></i> ${presentCount} Present</span>`;
             if (lateCount > 0) badgesHtml += `<span class="day-summary-chip chip-late"><i class="bi bi-clock-fill me-1"></i> ${lateCount} Late</span>`;
             if (absentCount > 0) badgesHtml += `<span class="day-summary-chip chip-absent"><i class="bi bi-x-circle-fill me-1"></i> ${absentCount} Absent</span>`;
@@ -1152,12 +1152,12 @@ function showAttDetail(dateKey, day) {
                             ${r.time_out ? `
                             <div>
                                 <div class="att-grid-col-label"><i class="bi bi-box-arrow-right"></i> Clock-out</div>
-                                <div class="att-grid-col-val" style="color:#b39b82;">${escapeHtml(r.time_out)}</div>
+                                <div class="att-grid-col-val" style="color:#dfd1d5;">${escapeHtml(r.time_out)}</div>
                             </div>` : ''}
                             ${r.remarks ? `
                             <div style="grid-column: 1 / -1;">
                                 <div class="att-grid-col-label"><i class="bi bi-chat-left-text"></i> Remarks</div>
-                                <div style="font-size:0.82rem; font-weight:500; color:#ffd166;">${escapeHtml(r.remarks)}</div>
+                                <div style="font-size:0.82rem; font-weight:500; color:#e48fa0;">${escapeHtml(r.remarks)}</div>
                             </div>` : ''}
                         </div>
                         ${st === 'absent' ? `
@@ -1196,10 +1196,10 @@ function showAttDetail(dateKey, day) {
                 const iconClass = isExam ? 'bi-award-fill' : (isHoliday ? 'bi-flag-fill' : 'bi-calendar-event-fill');
 
                 let metaRows = '';
-                if (evt.subject) metaRows += `<div style="font-size:0.9rem; font-weight:700; color:#ffd166; margin-top:6px;"><i class="bi bi-book-half me-1"></i>${escapeHtml(evt.subject)}</div>`;
-                if (evt.time) metaRows += `<div style="font-size:0.84rem; color:#f3ede4; margin-top:4px;"><i class="bi bi-clock-fill me-1" style="color:#cfa46f;"></i>${escapeHtml(evt.time)}</div>`;
-                if (evt.location) metaRows += `<div style="font-size:0.84rem; color:#b39b82; margin-top:4px;"><i class="bi bi-geo-alt-fill me-1" style="color:#cfa46f;"></i>${escapeHtml(evt.location)}</div>`;
-                if (evt.description && evt.description.trim() !== '') metaRows += `<div style="font-size:0.81rem; color:#8f826f; margin-top:6px; line-height:1.45;">${escapeHtml(evt.description)}</div>`;
+                if (evt.subject) metaRows += `<div style="font-size:0.9rem; font-weight:700; color:#ffffff; margin-top:6px;"><i class="bi bi-book-half me-1" style="color:#e48fa0;"></i>${escapeHtml(evt.subject)}</div>`;
+                if (evt.time) metaRows += `<div style="font-size:0.84rem; color:#fcf9fa; margin-top:4px;"><i class="bi bi-clock-fill me-1" style="color:#e48fa0;"></i>${escapeHtml(evt.time)}</div>`;
+                if (evt.location) metaRows += `<div style="font-size:0.84rem; color:#dfd1d5; margin-top:4px;"><i class="bi bi-geo-alt-fill me-1" style="color:#e48fa0;"></i>${escapeHtml(evt.location)}</div>`;
+                if (evt.description && evt.description.trim() !== '') metaRows += `<div style="font-size:0.81rem; color:#b0979f; margin-top:6px; line-height:1.45;">${escapeHtml(evt.description)}</div>`;
 
                 fullHtml += `
                     <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); ${borderStyle} border-radius: 14px; padding: 15px 16px;">
@@ -1261,7 +1261,7 @@ async function loadAttendanceRecordsForModal() {
     const listEl = document.getElementById('recordsModalList');
     if (listEl) {
         listEl.innerHTML = `
-            <div style="text-align:center;padding:40px 20px;color:#b39b82;">
+            <div style="text-align:center;padding:40px 20px;color:#b0979f;">
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Loading attendance records…
             </div>`;
@@ -1299,7 +1299,7 @@ async function loadAttendanceRecordsForModal() {
         .catch(() => {
             if (listEl) {
                 listEl.innerHTML = `
-                    <div style="text-align:center;padding:40px 20px;color:#b39b82;">
+                    <div style="text-align:center;padding:40px 20px;color:#b0979f;">
                         Could not load attendance records. Close this window and try again.
                     </div>`;
             }
@@ -1412,9 +1412,9 @@ function renderAttendanceRecordsList(items) {
 
     if (items.length === 0) {
         listEl.innerHTML = `
-            <div style="text-align:center; padding:40px 20px; color:#8f826f; background:rgba(255,255,255,0.02); border-radius:18px; border:1px dashed rgba(255,255,255,0.08);">
-                <i class="bi bi-search" style="font-size:2rem; color:#cfa46f; display:block; margin-bottom:10px; opacity:0.6;"></i>
-                <div style="font-weight:700; font-size:0.95rem; color:#f3ede4;">No records match your filters</div>
+            <div style="text-align:center; padding:40px 20px; color:#b0979f; background:rgba(255,255,255,0.025); border-radius:18px; border:1px dashed rgba(236,224,228,0.14);">
+                <i class="bi bi-search" style="font-size:2rem; color:#e48fa0; display:block; margin-bottom:10px; opacity:0.75;"></i>
+                <div style="font-weight:700; font-size:0.95rem; color:#fcf9fa;">No records match your filters</div>
                 <div style="font-size:0.8rem; margin-top:4px;">Try clearing your search query or changing filters.</div>
             </div>`;
         return;
@@ -1424,31 +1424,31 @@ function renderAttendanceRecordsList(items) {
     items.forEach(r => {
         const st = (r.status_lower || 'absent');
         const iconClass = st === 'present' ? 'bi-check-circle-fill' : (st === 'late' ? 'bi-clock-fill' : 'bi-x-circle-fill');
-        const clockInColor = st === 'present' ? '#4ade80' : (st === 'late' ? '#fbbf24' : '#f87171');
+        const clockInColor = st === 'present' ? '#4ade80' : (st === 'late' ? '#fbbf24' : '#ff6b7a');
         const clockInText = r.clock_in || (st === 'absent' ? 'No clock-in' : '—');
         const isNoClockIn = clockInText.toLowerCase().includes('no clock-in');
 
         html += `
-            <div class="record-modal-item" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:15px 17px; margin-bottom:8px;">
+            <div class="record-modal-item" style="background:rgba(15,4,7,0.52); border:1px solid rgba(236,224,228,0.09); border-radius:16px; padding:15px 17px; margin-bottom:8px;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
                     <div>
-                        <div style="font-size:0.78rem; font-weight:700; color:#ffd166; display:flex; align-items:center; gap:6px;">
+                        <div style="font-size:0.78rem; font-weight:700; color:#e48fa0; display:flex; align-items:center; gap:6px;">
                             <i class="bi bi-calendar-event"></i> ${escapeHtml(r.date_formatted)}
-                            <span style="color:rgba(255,255,255,0.35); font-weight:400;">(${escapeHtml(r.day_name)})</span>
+                            <span style="color:rgba(236,224,228,0.45); font-weight:400;">(${escapeHtml(r.day_name)})</span>
                         </div>
-                        <h4 style="margin:4px 0 0; font-size:1rem; font-weight:800; color:#fcf8f2; line-height:1.3;">${escapeHtml(r.subject)}</h4>
+                        <h4 style="margin:4px 0 0; font-size:1rem; font-weight:800; color:#fcf9fa; line-height:1.3;">${escapeHtml(r.subject)}</h4>
                     </div>
                     <div style="display:flex; align-items:center; gap:6px;">
                         <span class="att-status-badge ${st}">
                             <i class="bi ${iconClass}"></i> ${escapeHtml(r.status)}
                         </span>
-                        ${r.excused ? `<span style="padding:5px 10px; border-radius:8px; font-size:0.72rem; font-weight:700; background:rgba(207,164,111,0.15); color:#ffd166; border:1px solid rgba(207,164,111,0.3);">Excused</span>` : ''}
+                        ${r.excused ? `<span style="padding:5px 10px; border-radius:8px; font-size:0.72rem; font-weight:700; background:rgba(110,27,44,0.45); color:#ffffff; border:1px solid rgba(236,224,228,0.3);">Excused</span>` : ''}
                     </div>
                 </div>
-                <div style="font-size:0.8rem; color:#cfa46f; margin-bottom:11px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div style="font-size:0.8rem; color:#e48fa0; margin-bottom:11px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                     <span class="att-code-pill">${escapeHtml(r.code)}</span>
-                    <span style="color:rgba(255,255,255,0.25);">•</span>
-                    <span style="color:#b39b82;"><i class="bi bi-person me-1"></i>${escapeHtml(r.instructor)}</span>
+                    <span style="color:rgba(236,224,228,0.28);">•</span>
+                    <span style="color:#dfd1d5;"><i class="bi bi-person me-1"></i>${escapeHtml(r.instructor)}</span>
                 </div>
                 <div class="att-info-grid">
                     <div>
@@ -1457,16 +1457,16 @@ function renderAttendanceRecordsList(items) {
                     </div>
                     <div>
                         <div class="att-grid-col-label"><i class="bi bi-box-arrow-in-right"></i> Actual Clock-in</div>
-                        <div class="att-grid-col-val" style="color:${isNoClockIn ? '#f87171' : clockInColor};">${escapeHtml(clockInText)}</div>
+                        <div class="att-grid-col-val" style="color:${isNoClockIn ? '#ff6b7a' : clockInColor};">${escapeHtml(clockInText)}</div>
                     </div>
                     <div>
                         <div class="att-grid-col-label"><i class="bi bi-box-arrow-right"></i> Clock-out</div>
-                        <div class="att-grid-col-val" style="color:#b39b82;">${escapeHtml(r.clock_out)}</div>
+                        <div class="att-grid-col-val" style="color:#dfd1d5;">${escapeHtml(r.clock_out)}</div>
                     </div>
                     ${r.remarks && r.remarks !== '—' && r.remarks !== 'None' ? `
                     <div style="grid-column:1 / -1;">
                         <div class="att-grid-col-label"><i class="bi bi-chat-left-text"></i> Remarks</div>
-                        <div style="font-size:0.8rem; font-weight:500; color:#ffd166;">${escapeHtml(r.remarks)}</div>
+                        <div style="font-size:0.8rem; font-weight:500; color:#e48fa0;">${escapeHtml(r.remarks)}</div>
                     </div>` : ''}
                 </div>
             </div>`;
