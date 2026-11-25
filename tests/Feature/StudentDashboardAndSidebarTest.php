@@ -587,6 +587,7 @@ class StudentDashboardAndSidebarTest extends TestCase
             route('mobile.scan'),
             route('settings'),
             route('settings.biometrics.face'),
+            route('settings.biometrics.fingerprint'),
         ];
 
         foreach ($studentRoutes as $url) {
@@ -636,7 +637,7 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertDontSee('student-portal-master.css', false);
     }
 
-    public function test_face_studio_and_classic_fingerprint_registration_render(): void
+    public function test_reinvented_face_and_fingerprint_registration_and_verification_studios_render(): void
     {
         $student = $this->createStudent([
             'email' => 'student.biometric.studio@gmail.com',
@@ -654,15 +655,13 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertSee('id="cameraFaceStartBtn"', false)
             ->assertSee('id="cameraFaceConsentCheckbox"', false);
 
-        // Classic fingerprint registration
+        // Fingerprint registration studio
         $this->actingAs($student)
             ->get(route('settings.biometrics.fingerprint'))
             ->assertOk()
-            ->assertSee('Fingerprint sign-in')
-            ->assertDontSee('Encrypted Biometric Studio')
-            ->assertSee('css/fingerprint-flow.css', false)
-            ->assertDontSee('student-portal-master.css', false)
-            ->assertSee('id="confirmBioBtn"', false)
+            ->assertSee('Encrypted Biometric Studio', false)
+            ->assertSee('bio-sensor-stage', false)
+            ->assertSee('bio-sensor-pad', false)
             ->assertSee('id="startBioBtn"', false)
             ->assertSee('id="deviceList"', false);
 

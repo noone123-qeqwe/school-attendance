@@ -788,44 +788,6 @@
         .face-laser-line, .status-dot.pulsing, .spin, .outside-range-icon-pulse { animation: none !important; }
         .btn-verify-face, .btn-retry-face, .outside-range-btn-primary { transition: none !important; }
     }
-
-    /* Fingerprint attendance uses the original device verification panel. */
-    .verify-wrapper[data-fingerprint] {
-        display: flex; flex-direction: column; align-items: center;
-        min-height: 100dvh;
-        padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-        background:
-            radial-gradient(circle at top right, rgba(122, 26, 26, 0.28), transparent 48%),
-            radial-gradient(circle at bottom left, rgba(212, 175, 55, 0.12), transparent 52%),
-            var(--ds-bg, #110A0A);
-        color: var(--ds-text-primary, #FCF8F2);
-    }
-    .verify-wrapper[data-fingerprint] .verify-card {
-        max-width: 520px; width: 100%; border-radius: 24px;
-        padding: clamp(16px, 4vw, 26px);
-        background: linear-gradient(180deg, rgba(30, 21, 21, 0.96) 0%, rgba(20, 12, 12, 0.98) 100%);
-        border: 1px solid var(--ds-border, rgba(212, 175, 55, 0.22));
-        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 28px rgba(207, 164, 111, 0.08);
-        text-align: center;
-    }
-    .verify-wrapper[data-fingerprint] .v-icon {
-        width: 80px; height: 80px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 16px; font-size: 2rem; transition: all .4s;
-        background: rgba(212, 175, 55, 0.14);
-        border: 1px solid rgba(212, 175, 55, 0.25);
-    }
-    .verify-wrapper[data-fingerprint] .v-title { font-size: 1.15rem; font-weight: 800; color: var(--ds-text-primary, #FCF8F2); margin-bottom: 6px; }
-    .verify-wrapper[data-fingerprint] .v-sub   { font-size: .85rem; color: var(--ds-text-secondary, #D1C5B4); line-height: 1.5; margin-bottom: 0; }
-    .verify-wrapper[data-fingerprint] .retry-btn {
-        width: 100%; padding: 13px; margin-top: 14px;
-        background: linear-gradient(135deg, #16a34a, #22c55e);
-        color: white; font-weight: 700; font-size: .9rem;
-        border: none; border-radius: 12px; cursor: pointer;
-        display: none; align-items: center; justify-content: center; gap: 8px;
-        transition: all .25s;
-    }
-    .verify-wrapper[data-fingerprint] .retry-btn:hover { transform: translateY(-2px); }
 </style>
 
 <div class="verify-wrapper">
@@ -1484,8 +1446,8 @@ function bufferToBase64Url(buffer) {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-async function requestFingerprintAssertion(options, signal, timeout = 20000, internalOnly = false) {
-    if (window.DevicePasskeys.useAndroidFingerprint('get', options.allowCredentials)) {
+async function requestFingerprintAssertion(options, signal, timeout = 20000) {
+    if (window.DevicePasskeys?.hasAndroidPasskeyBridge?.()) {
         return window.DevicePasskeys.requestAndroidPasskey('get', {
             challenge: options.challenge,
             rpId: options.rpId,
@@ -1515,7 +1477,7 @@ async function requestFingerprintAssertion(options, signal, timeout = 20000, int
             return {
                 type: credential.type || 'public-key',
                 id: base64ToUint8Array(credential.id),
-                transports: internalOnly || transports.indexOf('internal') !== -1 ? ['internal'] : transports
+                transports: transports.indexOf('internal') !== -1 ? ['internal'] : transports
             };
         }),
         hints: Array.isArray(options.hints) && options.hints.length ? options.hints : ['client-device'],
@@ -1623,7 +1585,10 @@ async function submitAttendance(payload, signal) {
     xhr2.setRequestHeader('X-CSRF-TOKEN', CSRF);
     xhr2.setRequestHeader('Content-Type', 'application/json');
     xhr2.setRequestHeader('Accept', 'application/json');
-    // The PWA adds device headers at send time. The JSON body also carries the device key.
+    if (devKey) {
+        xhr2.setRequestHeader('X-Device-Key', devKey);
+        xhr2.setRequestHeader('X-Device-Fingerprint', devKey);
+    }
     xhr2.onload = function() {
         var response;
         try {
@@ -1750,7 +1715,6 @@ function switchMethod(method) {
 }
 
 function showFaceIntro() {
-    document.querySelector('.verify-wrapper').removeAttribute('data-fingerprint');
     stopCamera();
     document.getElementById('faceScanArea').style.display = 'block';
     document.getElementById('faceAttendanceNotice').hidden = false;
@@ -1940,7 +1904,6 @@ window.addEventListener('pageshow', function (event) {
     }
 });
 function doFingerprint() {
-    document.querySelector('.verify-wrapper').setAttribute('data-fingerprint', '');
     stopCamera();
     var scanArea = document.getElementById('faceScanArea');
     if (scanArea) scanArea.style.display = 'none';
@@ -1959,7 +1922,7 @@ function doFingerprint() {
     document.getElementById('retryFpBtn').style.display = 'none';
     setSpinner();
     document.getElementById('vTitle').textContent = 'Verifying Identity';
-    document.getElementById('vSub').textContent = 'Touch your fingerprint sensor or follow your device’s screen lock prompt.';
+    document.getElementById('vSub').textContent = 'Complete your device biometric or screen lock prompt...';
     hideMsg();
 
     var devKey = (typeof window.getOrCreateDeviceKey === 'function')
@@ -1972,7 +1935,10 @@ function doFingerprint() {
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.withCredentials = true;
     xhr.setRequestHeader('Accept', 'application/json');
-    // The PWA adds device headers at send time. The JSON body also carries the device key.
+    if (devKey) {
+        xhr.setRequestHeader('X-Device-Key', devKey);
+        xhr.setRequestHeader('X-Device-Fingerprint', devKey);
+    }
     xhr.onload = function() {
         if (xhr.status !== 200) {
             fingerprintInProgress = false;
@@ -1999,7 +1965,7 @@ function doFingerprint() {
             fingerprintInProgress = true;
             scanButton.style.display = 'none';
             try {
-                var credentialData = await requestFingerprintAssertion(opts, undefined, 60000, true);
+                var credentialData = await requestFingerprintAssertion(opts, undefined, 60000);
                 setStep(4);
                 setIcon('#f0fdf4', 'bi bi-fingerprint', '#16a34a');
                 document.getElementById('vTitle').textContent = 'Confirming attendance';
@@ -2014,7 +1980,7 @@ function doFingerprint() {
                 }
             }
         };
-        if (!window.DevicePasskeys.useAndroidFingerprint('get', opts.allowCredentials) && navigator.userActivation?.isActive === false) {
+        if (!window.DevicePasskeys?.hasAndroidPasskeyBridge?.() && navigator.userActivation?.isActive === false) {
             var readyAt = performance.now();
             fingerprintInProgress = false;
             document.getElementById('vTitle').textContent = 'Ready to scan';
