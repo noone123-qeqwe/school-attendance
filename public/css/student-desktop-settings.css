@@ -28,121 +28,8 @@
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .settings-layout-grid {
-        grid-template-columns: minmax(188px, 224px) minmax(0, 1fr) !important;
-        gap: 24px !important;
-    }
-
-    body.student-portal .student-settings-menu {
-        top: calc(var(--header-height, 70px) + 20px);
-        padding: 16px 12px 10px;
-        border: 1px solid var(--student-border);
-        border-radius: 14px;
-        background: #201b18;
-        scrollbar-width: thin;
-        scrollbar-color: var(--student-border) transparent;
-    }
-
-    body.student-portal .student-settings-account {
-        gap: 10px;
-        margin: 0 0 18px;
-        padding: 0 4px 18px;
-        border-bottom: 1px solid var(--gold-border);
-        align-items: flex-start;
-    }
-
-    body.student-portal .student-settings-account img {
-        flex: 0 0 36px;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-    }
-
-    body.student-portal .student-settings-account strong {
-        font-size: .8rem;
-        line-height: 1.45;
-        font-weight: 600;
-    }
-
-    body.student-portal .student-settings-account span {
-        font-size: .7rem;
-        line-height: 1.5;
-    }
-
-    body.student-portal .sp.student-settings[data-student-settings] label.student-settings-search {
-        padding-inline: 11px !important;
-        margin-bottom: 22px !important;
-        min-height: 42px;
-    }
-
-    body.student-portal .sp.student-settings[data-student-settings] #studentSettingsFilter {
-        min-height: 42px;
-        font-size: .8rem;
-    }
-
-    body.student-portal .student-settings-menu-group {
-        margin-bottom: 22px;
-    }
-
-    body.student-portal .student-settings-menu-group:last-child {
-        margin-bottom: 4px;
-    }
-
-    body.student-portal .student-settings-menu-group h2 {
-        margin: 0 10px 8px;
-        font-size: .69rem;
-        font-weight: 600;
-        letter-spacing: .035em;
-        color: var(--text-muted);
-    }
-
-    body.student-portal .student-settings-link {
-        gap: 8px;
-        min-height: 46px;
-        padding: 9px 8px;
-        margin: 3px 0;
-        border-radius: 10px;
-    }
-
-    body.student-portal .student-settings-link[aria-current="page"] {
-        border-color: rgba(223, 184, 121, .32);
-        background: rgba(223, 184, 121, .11);
-        color: #edcc99;
-    }
-
-    body.student-portal .student-settings-link-copy strong {
-        font-size: .8rem;
-        line-height: 1.5;
-        font-weight: 550;
-    }
-
-    body.student-portal .student-settings-link-icon {
-        width: 25px;
-        height: 28px;
-        flex-basis: 25px;
-        font-size: 1rem;
-    }
-
-    body.student-portal .student-settings-link-arrow {
-        font-size: .6rem;
-        opacity: .6;
-    }
-
-    body.student-portal .sp.student-settings[data-student-view^="change-"] .student-settings-link[data-settings-page="credentials"] {
-        border-color: var(--gold-border);
-        background: var(--gold-subtle);
-        color: var(--gold-bright);
-    }
-
-    body.student-portal .sp.student-settings[data-student-view="change-phone"] .student-settings-link[data-settings-page="credentials"] {
-        border-color: transparent;
-        background: transparent;
-        color: var(--text-primary);
-    }
-
-    body.student-portal .sp.student-settings[data-student-view="change-phone"] .student-settings-link[data-settings-page="profile"] {
-        border-color: var(--gold-border);
-        background: var(--gold-subtle);
-        color: var(--gold-bright);
+        display: block !important;
+        width: 100%;
     }
 
     body.student-portal .student-settings-detail-heading {
@@ -409,17 +296,12 @@
     }
 }
 
-@media screen and (min-width: 1440px) {
-    body.student-portal .sp.student-settings[data-student-settings] .settings-layout-grid {
-        grid-template-columns: 236px minmax(0, 1fr) !important;
-        gap: 28px !important;
-    }
-
+@media screen and (min-width: 1024px) {
     body.student-portal .sp.student-settings[data-student-settings] #tab-profile.active {
         display: grid;
-        grid-template-columns: minmax(240px, .9fr) minmax(0, 1.3fr);
+        grid-template-columns: minmax(260px, .9fr) minmax(0, 1.35fr);
         align-items: start;
-        gap: 20px;
+        gap: 22px;
     }
 
     body.student-portal .sp.student-settings[data-student-settings] #tab-profile.active > .sc {
@@ -448,6 +330,7 @@
         grid-row: 1 / span 2;
     }
 
+    body.student-portal .sp.student-settings[data-student-settings] .student-account-shortcuts,
     body.student-portal .sp.student-settings[data-student-settings] #tab-family .sec-cards-grid,
     body.student-portal .sp.student-settings[data-student-settings] #sec-section-device .sec-cards-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;

@@ -200,4 +200,110 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertSee('Class section not assigned')
             ->assertSee('sd-notice-banner');
     }
+
+    public function test_student_settings_replaces_app_sidebar_with_single_settings_sidebar(): void
+    {
+        $student = $this->createStudent();
+
+        $settingsResponse = $this->actingAs($student)->get(route('settings'));
+        $settingsResponse->assertOk();
+
+        $html = $settingsResponse->getContent();
+        libxml_use_internal_errors(true);
+        $dom = new \DOMDocument();
+        $dom->loadHTML($html);
+        libxml_clear_errors();
+
+        $xpath = new \DOMXPath($dom);
+
+        // Only the primary sidebar container exists; no secondary sidebar inside main content
+        $sidebars = $xpath->query('//aside');
+        $this->assertSame(1, $sidebars->length);
+        $sidebarNode = $xpath->query('//aside[@id="sidebar"]')->item(0);
+        $this->assertNotNull($sidebarNode);
+        $this->assertSame(0, $xpath->query('//aside[contains(@class, "student-settings-menu")]')->length);
+        $this->assertSame(0, $xpath->query('//aside[contains(@class, "settings-sidebar")]')->length);
+
+        $sidebarText = preg_replace('/\s+/', ' ', $sidebarNode->textContent ?? '');
+        $sidebarHtml = $dom->saveHTML($sidebarNode);
+
+        // Back to Dashboard sits at top and links to student dashboard
+        $backLinks = $xpath->query('.//a[contains(@class, "settings-sidebar-back-btn")]', $sidebarNode);
+        $this->assertSame(1, $backLinks->length);
+        $this->assertSame(route('home'), $backLinks->item(0)->getAttribute('href'));
+        $this->assertStringContainsString('Back to Dashboard', $backLinks->item(0)->textContent ?? '');
+
+        // Exact Settings sidebar groups and items
+        foreach ([
+            'Account',
+            'Profile & school details',
+            'Guardians',
+            'Security & attendance',
+            'Password & email',
+            'Biometrics',
+            'Attendance device',
+            'Recovery codes',
+            'App',
+            'Notifications & app',
+        ] as $expectedText) {
+            $this->assertStringContainsString($expectedText, $sidebarText);
+        }
+
+        // Default application sidebar links are absent while on Settings
+        $this->assertStringNotContainsString('Classes & Schedule', $sidebarText);
+        $this->assertStringNotContainsString('Excuse Submissions', $sidebarText);
+        $this->assertStringContainsString('data-settings-page="profile"', $sidebarHtml);
+        $this->assertStringContainsString('data-settings-page="recovery"', $sidebarHtml);
+
+        // Navigating back to Dashboard restores the default student application sidebar
+        $dashboardResponse = $this->actingAs($student)->get(route('home'));
+        $dashboardResponse->assertOk();
+        $dashDom = new \DOMDocument();
+        libxml_use_internal_errors(true);
+        $dashDom->loadHTML($dashboardResponse->getContent());
+        libxml_clear_errors();
+        $dashXpath = new \DOMXPath($dashDom);
+        $dashSidebar = $dashXpath->query('//aside[@id="sidebar"]')->item(0);
+        $this->assertNotNull($dashSidebar);
+        $dashSidebarText = preg_replace('/\s+/', ' ', $dashSidebar->textContent ?? '');
+        $this->assertStringContainsString('Classes & Schedule', $dashSidebarText);
+        $this->assertStringContainsString('Excuse Submissions', $dashSidebarText);
+        $this->assertStringNotContainsString('Back to Dashboard', $dashSidebarText);
+    }
+
+    public function test_navigating_to_other_app_pages_keeps_default_sidebar_while_settings_middleware_stays_intact(): void
+    {
+        $student = $this->createStudent();
+
+        foreach ([route('student.classes'), route('student.calendar'), route('excuses')] as $url) {
+            $resp = $this->actingAs($student)->get($url);
+            $resp->assertOk();
+
+            $dom = new \DOMDocument();
+            libxml_use_internal_errors(true);
+            $dom->loadHTML($resp->getContent());
+            libxml_clear_errors();
+            $xpath = new \DOMXPath($dom);
+
+            $sidebars = $xpath->query('//aside');
+            $this->assertSame(1, $sidebars->length);
+            $sidebarNode = $xpath->query('//aside[@id="sidebar"]')->item(0);
+            $this->assertNotNull($sidebarNode);
+
+            $sidebarText = preg_replace('/\s+/', ' ', $sidebarNode->textContent ?? '');
+            $this->assertStringContainsString('Dashboard', $sidebarText);
+            $this->assertStringContainsString('Classes & Schedule', $sidebarText);
+            $this->assertStringNotContainsString('Back to Dashboard', $sidebarText);
+        }
+
+        // Preserve student-only route access control on /settings
+        $this->flushSession();
+        $teacher = $this->createStudent([
+            'role' => 'teacher',
+            'student_number' => null,
+            'employee_id' => 'TCH-99',
+            'email' => 'teacher.settings@gmail.com',
+        ]);
+        $this->actingAs($teacher)->get(route('settings'))->assertRedirect();
+    }
 }

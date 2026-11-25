@@ -4,6 +4,9 @@
 @extends($layout)
 
 @section('page-title', 'Settings')
+@section('role-sidebar')
+    @include('layouts.sidebars.settings', ['settingsUser' => Auth::user()])
+@endsection
 @section('content')
 @php
     $user = Auth::user();
@@ -98,52 +101,8 @@
 .student-settings .telemetry-val { font-size: 0.78rem; }
 
 .student-settings .settings-layout-grid {
-    display: grid;
-    grid-template-columns: minmax(250px, 280px) minmax(0, 1fr);
-    gap: 32px;
-    align-items: start;
+    display: block;
     margin-top: 2px;
-}
-.student-settings .settings-sidebar {
-    position: sticky;
-    top: 18px;
-    padding: 10px;
-    border: 1px solid var(--student-line);
-    border-radius: 20px;
-    background: linear-gradient(180deg, rgba(29, 19, 14, 0.94), rgba(15, 10, 8, 0.94));
-    box-shadow: 0 12px 28px rgba(0,0,0,.24);
-}
-.student-settings .settings-side-nav { gap: 8px; }
-.student-settings .snav-group { padding: 7px 0; }
-.student-settings .snav-group + .snav-group { border-top: 1px solid rgba(207, 164, 111, 0.12); }
-.student-settings .snav-group-header {
-    padding: 7px 9px 8px;
-    color: var(--gold-primary);
-    font-size: .67rem;
-    letter-spacing: .09em;
-}
-.student-settings .snav-item {
-    min-height: 58px;
-    margin: 2px 0;
-    padding: 9px 10px;
-    border-radius: 13px;
-    border: 1px solid transparent;
-}
-.student-settings .snav-item:hover { background: rgba(207, 164, 111, .08); border-color: rgba(207, 164, 111, .12); }
-.student-settings .snav-item.active {
-    background: linear-gradient(135deg, rgba(207, 164, 111, .18), rgba(143, 39, 31, .18));
-    border-color: rgba(207, 164, 111, .34);
-    box-shadow: inset 3px 0 var(--gold-primary);
-}
-.student-settings .snav-item-icon { width: 34px; height: 34px; border-radius: 10px; }
-.student-settings .snav-item-title { font-size: .84rem; }
-.student-settings .snav-item-desc { font-size: .68rem; line-height: 1.25; }
-.student-settings .snav-footer-card {
-    margin: 8px 2px 2px;
-    padding: 14px;
-    border-radius: 14px;
-    background: rgba(207, 164, 111, .08);
-    border: 1px solid rgba(207, 164, 111, .16);
 }
 .student-settings .settings-main-content { min-width: 0; }
 .student-settings .spanel { animation: studentPanelIn .25s ease-out; }
@@ -326,8 +285,7 @@
 @media (max-width: 1100px) {
     .student-settings .settings-command-header { align-items: flex-start; }
     .student-settings .settings-top-right { flex: 1 1 100%; }
-    .student-settings .settings-layout-grid { grid-template-columns: 200px minmax(0, 1fr); gap: 16px; }
-    .student-settings .settings-sidebar { top: 10px; }
+    .student-settings .settings-layout-grid { display: block; }
 }
 @media (max-width: 991.98px) {
     .student-settings { padding: 14px 14px calc(28px + env(safe-area-inset-bottom)); }
@@ -687,12 +645,20 @@
 }
 </style>
 
-<div class="sp {{ $user?->isStudent() ? 'student-settings' : '' }}" @if($user?->isStudent()) data-student-settings="{{ $user->id }}" data-student-view="overview" data-settings-feedback="{{ $errors->any() || session('success') ? 'true' : 'false' }}" data-settings-phone-error="{{ $errors->has('phone') ? 'true' : 'false' }}" data-settings-phone-error-message="{{ $errors->first('phone') }}" data-settings-email-error="{{ $errors->has('new_email') || $errors->has('otp') ? 'true' : 'false' }}" data-settings-email-address-error="{{ $errors->has('new_email') ? 'true' : 'false' }}" data-settings-email-error-message="{{ $errors->first('new_email') ?: $errors->first('otp') }}" data-settings-password-error="{{ $errors->has('password') || $errors->has('password_confirmation') || $errors->has('otp') ? 'true' : 'false' }}" data-settings-password-error-message="{{ $errors->first('password') ?: $errors->first('password_confirmation') ?: $errors->first('otp') }}" @endif>
+<div class="sp {{ $user?->isStudent() ? 'student-settings' : '' }}" @if($user?->isStudent()) data-student-settings="{{ $user->id }}" data-student-view="profile" data-settings-feedback="{{ $errors->any() || session('success') ? 'true' : 'false' }}" data-settings-phone-error="{{ $errors->has('phone') ? 'true' : 'false' }}" data-settings-phone-error-message="{{ $errors->first('phone') }}" data-settings-email-error="{{ $errors->has('new_email') || $errors->has('otp') ? 'true' : 'false' }}" data-settings-email-address-error="{{ $errors->has('new_email') ? 'true' : 'false' }}" data-settings-email-error-message="{{ $errors->first('new_email') ?: $errors->first('otp') }}" data-settings-password-error="{{ $errors->has('password') || $errors->has('password_confirmation') || $errors->has('otp') ? 'true' : 'false' }}" data-settings-password-error-message="{{ $errors->first('password') ?: $errors->first('password_confirmation') ?: $errors->first('otp') }}" @endif>
 
     @if($user->isStudent())
     <header class="student-settings-heading">
-        <h1>Your settings</h1>
-        <p>Manage your account and attendance access.</p>
+        <div class="settings-heading-row">
+            <div>
+                <h1>Your settings</h1>
+                <p>Manage your account and attendance access.</p>
+            </div>
+            <a href="{{ \App\Support\SettingsNavigation::dashboardUrl($user) }}" class="settings-mobile-back-chip d-md-none">
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                <span>Back to Dashboard</span>
+            </a>
+        </div>
     </header>
     @else
     <!-- Mobile Search Backdrop Overlay -->
@@ -781,124 +747,30 @@
     <div class="flash-err"><i class="bi bi-exclamation-circle-fill fs-5"></i><span>{{ $errors->first() }}</span></div>
     @endif
 
-    @unless($user->isStudent())
-    <!-- ── MOBILE / COMPACT HORIZONTAL TAB BAR (<992px) ── -->
-    <div class="stabs-wrapper">
-        <span id="stabsFloatingHint" class="stabs-floating-hint d-none" aria-hidden="true">Scrollable</span>
-        <button type="button" class="stabs-arrow stabs-arrow-left" id="stabsArrowLeft" onclick="scrollStabs('left')" aria-label="Scroll settings tabs left" aria-controls="stabsNav" style="display:none;">
-            <i class="bi bi-chevron-left"></i>
-        </button>
-        <div class="stabs" id="stabsNav">
-            <button class="stab active" data-tab="profile" onclick="switchTab('profile',this)"><i class="bi bi-person-circle me-1"></i> Account</button>
-            <button class="stab" data-tab="security" onclick="switchTab('security',this)"><i class="bi bi-shield-lock-fill me-1"></i> Security</button>
-            @if(Auth::user()->isStudent())
-            <button class="stab" data-tab="family" onclick="switchTab('family',this)"><i class="bi bi-people-fill me-1"></i> Guardians</button>
-            @endif
-            <button class="stab" data-tab="preferences" data-tab-id="preferences" onclick="switchTab('preferences',this)"><i class="bi bi-sliders me-1"></i> Preferences</button>
-        </div>
-        <button type="button" class="stabs-arrow stabs-arrow-right" id="stabsArrowRight" onclick="scrollStabs('right')" aria-label="Scroll settings tabs right" aria-controls="stabsNav">
-            <i class="bi bi-chevron-right"></i>
-        </button>
-    </div>
-
-    @endunless
-
-    <!-- ── MASTER-DETAIL LAYOUT GRID ── -->
+    <!-- ── SINGLE-COLUMN WORKSPACE (Sidebar handled by layout role-sidebar section) ── -->
     <div class="settings-layout-grid">
-        @if($user->isStudent())
-            @include('partials.student-settings-menu')
-        @else
-        <!-- ── MASTER SIDEBAR NAVIGATION (Desktop ≥992px) ── -->
-        <aside class="settings-sidebar">
-            <nav class="settings-side-nav" aria-label="Settings Categories">
-                <!-- Group 1: Account -->
-                <div class="snav-group">
-                    <div class="snav-group-header">
-                        <i class="bi bi-person-badge"></i>
-                        <span>Account</span>
-                    </div>
-                    <button type="button" class="snav-item active" data-tab="profile" onclick="switchTab('profile', this)">
-                        <span class="snav-item-icon"><i class="bi bi-person-circle"></i></span>
-                        <div class="snav-item-body">
-                            <span class="snav-item-title">Profile & identity</span>
-                            <span class="snav-item-desc">Photo, contact number, school details</span>
-                        </div>
-                    </button>
-                    @if(Auth::user()->isStudent())
-                    <button type="button" class="snav-item" data-tab="family" onclick="switchTab('family', this)">
-                        <span class="snav-item-icon"><i class="bi bi-people-fill"></i></span>
-                        <div class="snav-item-body">
-                            <span class="snav-item-title">Guardians</span>
-                            <span class="snav-item-desc">Parent attendance access</span>
-                        </div>
-                    </button>
-                    @endif
-                </div>
-
-                <!-- Group 2: Security & Authentication Controls -->
-                <div class="snav-group">
-                    <div class="snav-group-header">
-                        <i class="bi bi-shield-lock"></i>
-                        <span>Security &amp; Access</span>
-                    </div>
-                    <button type="button" class="snav-item" data-tab="security" onclick="switchTab('security', this)">
-                        <span class="snav-item-icon"><i class="bi bi-shield-lock-fill"></i></span>
-                        <div class="snav-item-body">
-                            <span class="snav-item-title">Account security</span>
-                            <span class="snav-item-desc">Password, email, and recovery</span>
-                        </div>
-                    </button>
-                    <button type="button" class="snav-item snav-sub-item" data-tab="fingerprint" data-sec-sub="biometrics" onclick="switchTab('fingerprint', this)">
-                        <span class="snav-item-icon"><i class="bi bi-fingerprint"></i></span>
-                        <div class="snav-item-body">
-                            <span class="snav-item-title">Face &amp; passkeys</span>
-                            <span class="snav-item-desc">Camera enrollment and device sign-in</span>
-                        </div>
-                        <span class="snav-badge snav-badge-emerald">FIDO2</span>
-                    </button>
-                    <button type="button" class="snav-item snav-sub-item" data-tab="device" data-sec-sub="device" onclick="switchTab('device', this)">
-                        <span class="snav-item-icon"><i class="bi bi-phone-fill"></i></span>
-                        <div class="snav-item-body">
-                            <span class="snav-item-title">Attendance device</span>
-                            <span class="snav-item-desc">Device used to scan attendance</span>
-                        </div>
-                        <span class="snav-badge {{ $deviceBinding ? 'snav-badge-emerald' : 'snav-badge-amber' }}">{{ $deviceBinding ? 'Bound' : 'Action Req' }}</span>
-                    </button>
-                </div>
-
-                <!-- Group 3: System Preferences -->
-                <div class="snav-group">
-                    <div class="snav-group-header">
-                        <i class="bi bi-sliders"></i>
-                        <span>System Preferences</span>
-                    </div>
-                    <button type="button" class="snav-item" data-tab="preferences" onclick="switchTab('preferences', this)">
-                        <span class="snav-item-icon"><i class="bi bi-sliders"></i></span>
-                        <div class="snav-item-body">
-                            <span class="snav-item-title">Notifications &amp; app</span>
-                            <span class="snav-item-desc">Alerts, display, and updates</span>
-                        </div>
-                    </button>
-                </div>
-            </nav>
-
-            <!-- Sidebar Trust & Quick Status Footer Card -->
-            <div class="snav-footer-card">
-                <div class="snav-footer-header">
-                    <span class="pulse-beacon"></span>
-                    <span class="snav-footer-title">Account Security</span>
-                </div>
-                <div class="snav-footer-sub">Your password, device credentials, and attendance access are protected.</div>
-            </div>
-        </aside>
-
-        @endif
-
         <!-- ── MAIN CONTENT WORKSPACE ── -->
         <section class="settings-main-content" id="studentSettingsContent" @if($user->isStudent()) aria-labelledby="studentSettingsPageTitle" @endif>
+        @php
+            $mobileNavGroups = \App\Support\SettingsNavigation::groups($user);
+        @endphp
+        <nav class="settings-mobile-nav d-md-none" aria-label="Settings sections">
+            @foreach($mobileNavGroups as $groupItems)
+                @foreach($groupItems as $item)
+                    <button type="button"
+                            class="settings-mobile-pill {{ $item['destination'] === 'profile' ? 'active' : '' }}"
+                            data-settings-page="{{ $item['destination'] }}"
+                            aria-controls="studentSettingsContent"
+                            @if($item['destination'] === 'profile') aria-current="page" @endif>
+                        <i class="bi {{ $item['icon'] }}" aria-hidden="true"></i>
+                        <span>{{ $item['label'] }}</span>
+                    </button>
+                @endforeach
+            @endforeach
+        </nav>
         @if($user->isStudent())
         <header class="student-settings-detail-heading">
-            <button type="button" class="student-settings-back" data-settings-back><i class="bi bi-arrow-left" aria-hidden="true"></i>All settings</button>
+            <button type="button" class="student-settings-back" data-account-back hidden><i class="bi bi-arrow-left" aria-hidden="true"></i><span data-account-back-label>Back</span></button>
             <h2 id="studentSettingsPageTitle" tabindex="-1">Profile &amp; school details</h2>
             <p id="studentSettingsPageDescription">Manage your photo, contact number, and student information.</p>
         </header>

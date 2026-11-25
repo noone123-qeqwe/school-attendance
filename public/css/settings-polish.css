@@ -53,16 +53,7 @@
 .sp .settings-search-box { position: relative !important; width: 100% !important; z-index: 1001 !important; }
 .sp .settings-search-dropdown { position: absolute !important; z-index: 99999 !important; background: #140d0a !important; }
 .sp .settings-search-input { min-height: 44px !important; font-size: 0.88rem !important; padding-left: 44px !important; padding-right: 42px !important; }
-.sp .settings-layout-grid { grid-template-columns: 244px minmax(0, 1fr) !important; gap: 20px !important; }
-.sp .settings-sidebar { top: 90px !important; padding: 12px !important; border-radius: 14px !important; box-shadow: none !important; background: rgba(24, 18, 14, 0.88) !important; }
-.sp .snav-group { margin-bottom: 12px !important; }
-.sp .snav-group-header { padding: 8px 10px 4px !important; font-size: 0.67rem !important; }
-.sp .snav-item { min-height: 44px; gap: 10px !important; padding: 8px 10px !important; border-radius: 10px !important; margin-bottom: 2px !important; }
-.sp .snav-item:hover { transform: none !important; }
-.sp .snav-item.active { box-shadow: none !important; background: rgba(207, 164, 111, 0.17) !important; }
-.sp .snav-item-icon { width: 32px !important; height: 32px !important; border-radius: 9px !important; box-shadow: none !important; }
-.sp .snav-item-title { font-size: 0.82rem !important; }
-.sp .snav-item-desc { font-size: 0.69rem !important; }
+.sp .settings-layout-grid { display: block !important; width: 100% !important; }
 .sp .sc { margin-bottom: 16px !important; border-radius: 14px !important; box-shadow: none !important; background: rgba(24, 18, 14, 0.88) !important; }
 .sp .sc::before { display: none !important; }
 .sp .sc:hover { transform: none !important; box-shadow: none !important; }
@@ -102,9 +93,6 @@
 
 @media (max-width: 991.98px) {
     .sp .settings-layout-grid { display: block !important; position: relative !important; z-index: 1 !important; }
-    .sp .settings-sidebar { display: none !important; }
-    .sp .stabs-wrapper { position: relative !important; z-index: 10 !important; margin: 0 0 16px !important; border-radius: 12px !important; box-shadow: none !important; }
-    .sp .stabs { padding-right: 42px !important; }
     .admin-settings-layout { grid-template-columns: 1fr !important; }
     .admin-settings-aside { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

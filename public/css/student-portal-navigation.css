@@ -7,6 +7,146 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     object-fit: contain;
 }
 
+.settings-sidebar-nav button.nav-link {
+    width: 100%;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.settings-sidebar-nav button.nav-link:not(.active):not([aria-current="page"]):not(:hover) {
+    background: transparent;
+    border-color: transparent;
+}
+
+.settings-sidebar-back-wrap {
+    padding: 10px 12px 6px;
+    flex-shrink: 0;
+}
+
+.settings-sidebar-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 42px;
+    padding: 9px 12px;
+    margin: 0;
+    border-radius: 10px;
+    border: 1px solid rgba(223, 184, 121, 0.24);
+    background: rgba(223, 184, 121, 0.08);
+    color: #f5dfa8;
+    font-size: 0.83rem;
+    font-weight: 650;
+    text-decoration: none;
+    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.settings-sidebar-back-btn:hover {
+    background: rgba(223, 184, 121, 0.16);
+    border-color: rgba(223, 184, 121, 0.44);
+    color: #fff8eb;
+}
+
+.settings-sidebar-back-btn i {
+    font-size: 0.96rem;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+    color: #dfb879;
+    transition: transform 0.16s ease;
+}
+
+.settings-sidebar-back-btn:hover i {
+    transform: translateX(-2px);
+}
+
+.sidebar.collapsed .settings-sidebar-back-wrap {
+    padding: 10px 0 6px;
+    display: flex;
+    justify-content: center;
+}
+
+.sidebar.collapsed .settings-sidebar-back-btn {
+    width: 44px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0;
+    justify-content: center;
+}
+
+.sidebar.collapsed .settings-sidebar-nav {
+    padding: 10px 10px 20px !important;
+    align-items: center;
+}
+
+.sidebar.collapsed .settings-sidebar-nav button.nav-link {
+    width: 44px;
+    height: 42px;
+    min-height: 42px;
+    padding: 0;
+    justify-content: center;
+}
+
+.sidebar.collapsed .nav-section-label {
+    height: 8px;
+    padding: 0;
+    margin: 2px 0;
+    overflow: hidden;
+    visibility: hidden;
+}
+
+@media (min-width: 768px) and (max-width: 1023.98px) {
+    body.student-portal .sidebar .student-sidebar-brand {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 11px;
+        min-height: 68px;
+        padding: 16px 16px 14px;
+        background: transparent;
+    }
+
+    body.student-portal .student-sidebar-brand .sidebar-logo {
+        width: 36px;
+        height: 36px;
+    }
+
+    body.student-portal .student-sidebar-brand .sidebar-text {
+        margin-top: 0;
+        text-align: left;
+    }
+
+    body.student-portal .student-sidebar-brand .sidebar-brand {
+        font-size: 0.82rem;
+        line-height: 1.25;
+        text-transform: none;
+        color: #f7efe4;
+    }
+
+    #sidebar .settings-sidebar-nav {
+        padding: 10px 12px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    #sidebar .settings-sidebar-nav .nav-section-label {
+        padding: 12px 10px 4px;
+        color: #9e9082;
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+    }
+
+    #sidebar .settings-sidebar-nav .nav-link:is(.active, [aria-current="page"]) {
+        background: linear-gradient(135deg, rgba(223, 184, 121, 0.14) 0%, rgba(122, 26, 26, 0.12) 100%);
+        border-color: rgba(223, 184, 121, 0.28);
+        color: #f7efe4;
+        font-weight: 700;
+        box-shadow: inset 3px 0 0 #dfb879;
+    }
+}
+
 @media screen and (min-width: 1024px) {
     body.student-portal {
         --student-nav-canvas: #14110f;

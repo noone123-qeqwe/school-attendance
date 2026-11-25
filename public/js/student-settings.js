@@ -20,10 +20,10 @@
         passkeys: 'fingerprint', 'security-biometrics': 'biometrics',
         'security-device': 'device', 'security-recovery': 'recovery', cameraFaceEnrollment: 'face',
     };
-    const mobile = window.matchMedia('(max-width: 991.98px)');
     const heading = document.getElementById('studentSettingsPageTitle');
     const description = document.getElementById('studentSettingsPageDescription');
-    const filter = document.getElementById('studentSettingsFilter');
+    const backBtn = document.querySelector('[data-account-back]');
+    const backLabel = document.querySelector('[data-account-back-label]');
     const returnKey = 'student_settings_return_' + root.dataset.studentSettings;
     let started = false;
 
@@ -56,24 +56,17 @@
 
     placeAccountEditForms();
 
-    function defaultPage() { return mobile.matches ? 'overview' : 'profile'; }
+    function defaultPage() { return 'profile'; }
+
+    function resolveActiveNavKey(page) {
+        if (page === 'change-email' || page === 'change-password') return 'credentials';
+        if (page === 'change-phone') return 'profile';
+        return page;
+    }
 
     window.studentSettingsRememberReturn = function() {
         try { sessionStorage.setItem(returnKey, root.dataset.studentView); } catch (e) {}
     };
-
-    function filterMenu() {
-        const query = filter.value.trim().toLocaleLowerCase();
-        let count = 0;
-        root.querySelectorAll('[data-settings-page]').forEach(button => {
-            button.hidden = !(button.textContent + ' ' + button.dataset.settingsKeywords).toLocaleLowerCase().includes(query);
-            if (!button.hidden) count++;
-        });
-        root.querySelectorAll('.student-settings-menu-group').forEach(group => {
-            group.hidden = !Array.from(group.querySelectorAll('[data-settings-page]')).some(button => !button.hidden);
-        });
-        document.getElementById('studentSettingsNoResults').hidden = count > 0;
-    }
 
     function navigate(requested, options = {}) {
         let page = aliases[requested] || requested;
@@ -86,30 +79,62 @@
             }
             page = 'biometrics';
         }
-        if (!pages[page] && page !== 'overview') page = defaultPage();
-        if (page === 'overview' && !mobile.matches) page = 'profile';
+        if (!pages[page]) page = defaultPage();
         if (options.fromHistory && started && root.dataset.studentView === page) return page;
         root.dataset.studentView = page;
-        root.querySelectorAll('[data-settings-page]').forEach(button => {
-            if (button.dataset.settingsPage === page) button.setAttribute('aria-current', 'page');
-            else button.removeAttribute('aria-current');
+
+        const activeNavKey = resolveActiveNavKey(page);
+        document.querySelectorAll('[data-settings-page]').forEach(button => {
+            const isMatch = button.dataset.settingsPage === activeNavKey;
+            button.classList.toggle('active', isMatch);
+            if (isMatch) {
+                button.setAttribute('aria-current', 'page');
+            } else {
+                button.removeAttribute('aria-current');
+            }
         });
+
         root.querySelectorAll('.spanel').forEach(panel => {
-            panel.classList.toggle('active', page !== 'overview' && panel.id === 'tab-' + pages[page][2]);
+            panel.classList.toggle('active', panel.id === 'tab-' + pages[page][2]);
         });
         root.querySelectorAll('.sec-group-panel').forEach(panel => {
             panel.style.display = pages[page]?.[3] && panel.id === 'sec-section-' + pages[page][3] ? 'block' : 'none';
         });
-        if (pages[page]) {
-            heading.textContent = pages[page][0];
-            description.textContent = pages[page][1];
+
+        if (backBtn) {
+            const isSubPage = page.startsWith('change-');
+            backBtn.hidden = !isSubPage;
+            if (backLabel && isSubPage) {
+                backLabel.textContent = page === 'change-phone'
+                    ? 'Back to Profile & school details'
+                    : 'Back to Password & email';
+            }
         }
-        if (page === 'device' && typeof window.checkDeviceBindingStatus === 'function') window.checkDeviceBindingStatus();
-        if (options.push) history.pushState(null, '', page === 'overview' ? location.pathname + location.search : '#tab-' + page);
-        else if (!options.fromHistory && started) history.replaceState(null, '', page === 'overview' ? location.pathname + location.search : '#tab-' + page);
-        if (options.focus) {
-            const target = page === 'overview' ? filter : heading;
-            target.focus({ preventScroll: true });
+
+        if (pages[page]) {
+            if (heading) heading.textContent = pages[page][0];
+            if (description) description.textContent = pages[page][1];
+        }
+
+        if (page === 'device' && typeof window.checkDeviceBindingStatus === 'function') {
+            window.checkDeviceBindingStatus();
+        }
+
+        const activeMobilePill = document.querySelector('.settings-mobile-pill.active');
+        if (activeMobilePill && typeof activeMobilePill.scrollIntoView === 'function') {
+            try {
+                activeMobilePill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            } catch (e) {}
+        }
+
+        if (options.push) {
+            history.pushState(null, '', '#tab-' + page);
+        } else if (!options.fromHistory && started) {
+            history.replaceState(null, '', '#tab-' + page);
+        }
+
+        if (options.focus && heading) {
+            heading.focus({ preventScroll: true });
             root.scrollIntoView({ block: 'start', behavior: 'instant' });
         }
         started = true;
@@ -117,23 +142,29 @@
     }
     window.studentSettingsNavigate = navigate;
 
-    root.addEventListener('click', event => {
+    document.addEventListener('click', event => {
         const accountLink = event.target.closest('[data-account-page]');
-        if (accountLink) {
+        if (accountLink && root.contains(accountLink)) {
             event.preventDefault();
             navigate(accountLink.dataset.accountPage, { push: true, focus: true });
             return;
         }
-        const link = event.target.closest('[data-settings-page], [data-settings-back]');
-        if (!link) return;
+        const accountBack = event.target.closest('[data-account-back]');
+        if (accountBack && root.contains(accountBack)) {
+            event.preventDefault();
+            const current = root.dataset.studentView || '';
+            navigate(current === 'change-phone' ? 'profile' : 'credentials', { push: true, focus: true });
+            return;
+        }
+        const navBtn = event.target.closest('[data-settings-page]');
+        if (!navBtn) return;
         event.preventDefault();
-        if (link.hasAttribute('data-settings-back')) {
-            filter.value = '';
-            filterMenu();
-            navigate('overview', { push: true, focus: true });
-        } else navigate(link.dataset.settingsPage, { push: true, focus: true });
+        navigate(navBtn.dataset.settingsPage, { push: true, focus: true });
+        if (typeof window.closeSidebar === 'function' && window.matchMedia('(max-width: 767.98px)').matches) {
+            window.closeSidebar();
+        }
     });
-    filter.addEventListener('input', filterMenu);
+
     root.addEventListener('submit', event => {
         if (event.target instanceof HTMLFormElement && event.target.checkValidity()) {
             window.studentSettingsRememberReturn();
@@ -150,12 +181,11 @@
             }
         }
     });
+
     function syncHistory() { navigate(location.hash.replace(/^#(?:tab-)?/, '') || defaultPage(), { fromHistory: true }); }
     window.addEventListener('popstate', syncHistory);
     window.addEventListener('hashchange', syncHistory);
-    mobile.addEventListener('change', () => {
-        if (!mobile.matches && root.dataset.studentView === 'overview') navigate('profile');
-    });
+
     document.addEventListener('DOMContentLoaded', () => {
         let returned = null;
         try { returned = sessionStorage.getItem(returnKey); sessionStorage.removeItem(returnKey); } catch (e) {}

@@ -122,6 +122,20 @@ window.scrollStabs = function(direction) {
     setTimeout(updateStabsScrollArrows, 200);
 };
 
+function syncUnifiedSettingsSidebar(activeKey) {
+    const map = {
+        security: 'credentials',
+        fingerprint: 'biometrics',
+    };
+    const key = map[activeKey] || activeKey || 'profile';
+    document.querySelectorAll('[data-settings-page]').forEach(btn => {
+        const isMatch = btn.dataset.settingsPage === key;
+        btn.classList.toggle('active', isMatch);
+        if (isMatch) btn.setAttribute('aria-current', 'page');
+        else btn.removeAttribute('aria-current');
+    });
+}
+
 window.switchSecuritySub = function(subKey, btn) {
     if (window.studentSettingsNavigate) return window.studentSettingsNavigate('security-' + (subKey === 'fingerprint' ? 'biometrics' : (subKey || 'all')));
     if (!subKey) subKey = 'all';
@@ -147,17 +161,7 @@ window.switchSecuritySub = function(subKey, btn) {
     });
 
     // 3. Update sidebar active status
-    document.querySelectorAll('.snav-item').forEach(b => b.classList.remove('active'));
-    if (subKey === 'biometrics') {
-        const item = document.querySelector('.snav-item[data-tab="fingerprint"]') || document.querySelector('.snav-item[data-sec-sub="biometrics"]');
-        if (item) item.classList.add('active');
-    } else if (subKey === 'device') {
-        const item = document.querySelector('.snav-item[data-tab="device"]') || document.querySelector('.snav-item[data-sec-sub="device"]');
-        if (item) item.classList.add('active');
-    } else {
-        const secNav = document.querySelector('.snav-item[data-tab="security"]');
-        if (secNav) secNav.classList.add('active');
-    }
+    syncUnifiedSettingsSidebar(subKey === 'all' ? 'credentials' : subKey);
 
     // 4. Show/hide security group panels
     const sections = {
@@ -172,11 +176,7 @@ window.switchSecuritySub = function(subKey, btn) {
     } else {
         Object.entries(sections).forEach(([key, section]) => {
             if (!section) return;
-            if (key === subKey) {
-                section.style.display = 'block';
-            } else {
-                section.style.display = 'none';
-            }
+            section.style.display = key === subKey ? 'block' : 'none';
         });
     }
 
@@ -219,8 +219,8 @@ window.switchTab = function(id, btn) {
     if (!id) return;
     if (id === 'biometrics') id = 'fingerprint';
 
-    // If target is biometric sensors or device binding, route into unified Security section
-    if (id === 'fingerprint' || id === 'device') {
+    // If target is biometric sensors, device binding, credentials, or recovery, route into unified Security section
+    if (id === 'fingerprint' || id === 'device' || id === 'credentials' || id === 'recovery') {
         document.querySelectorAll('.spanel').forEach(p => p.classList.remove('active'));
         const secPanel = document.getElementById('tab-security');
         if (secPanel) secPanel.classList.add('active');
@@ -234,7 +234,7 @@ window.switchTab = function(id, btn) {
             }
         }
 
-        const subKey = (id === 'fingerprint') ? 'biometrics' : 'device';
+        const subKey = (id === 'fingerprint') ? 'biometrics' : id;
         window.switchSecuritySub(subKey, btn);
         setTimeout(updateStabsScrollArrows, 300);
         return;
@@ -243,7 +243,6 @@ window.switchTab = function(id, btn) {
     // Standard primary tab switching (profile, security, family, preferences)
     document.querySelectorAll('.spanel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.snav-item').forEach(b => b.classList.remove('active'));
 
     const targetPanel = document.getElementById('tab-' + id);
     if (targetPanel) {
@@ -261,10 +260,7 @@ window.switchTab = function(id, btn) {
         }
     }
 
-    let targetNavItem = (btn && btn.classList && btn.classList.contains('snav-item')) ? btn : document.querySelector(`.snav-item[data-tab="${id}"]`);
-    if (targetNavItem) {
-        targetNavItem.classList.add('active');
-    }
+    syncUnifiedSettingsSidebar(id);
 
     if (id === 'security') {
         window.switchSecuritySub('all');
@@ -772,12 +768,25 @@ const ct = document.getElementById('compactToggle');
 if (ct) {
     ct.checked = localStorage.getItem('sidebarMini') === 'true';
     ct.addEventListener('change', function() {
-        localStorage.setItem('sidebarMini', this.checked);
-        location.reload();
+        localStorage.setItem('sidebarMini', String(this.checked));
+        if (typeof window.applyMini === 'function' && !window.matchMedia('(max-width: 767.98px)').matches) {
+            window.applyMini(this.checked, true);
+        } else {
+            location.reload();
+        }
     });
+    const burgerBtn = document.getElementById('burgerBtn');
+    const sidebarEl = document.getElementById('sidebar');
+    if (burgerBtn && sidebarEl) {
+        burgerBtn.addEventListener('click', function() {
+            setTimeout(() => {
+                ct.checked = sidebarEl.classList.contains('collapsed');
+            }, 0);
+        });
+    }
 }
 // Auto-open security tab on validation errors
-if ((window.__SETTINGS_CONFIG__ || {}).hasErrors && typeof switchTab === 'function') switchTab('security', document.querySelectorAll('.stab')[1]);
+if ((window.__SETTINGS_CONFIG__ || {}).hasErrors && typeof switchTab === 'function') switchTab('security');
 
 // ── In-app browser detection ──
 function isInAppBrowser() {
@@ -1356,16 +1365,21 @@ function initSettingsPage() {
         });
     });
 
-    // Attach direct click event listeners to all sidebar navigation items
-    document.querySelectorAll('.snav-item').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const tab = this.getAttribute('data-tab') || this.dataset.tab;
-            if (tab && window.switchTab) {
-                window.switchTab(tab, this);
-            }
+    // Attach direct click event listeners to unified Settings sidebar items for non-student roles
+    if (!studentSettings) {
+        document.querySelectorAll('[data-settings-page]').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = this.getAttribute('data-settings-page') || this.dataset.settingsPage;
+                if (page && window.switchTab) {
+                    window.switchTab(page, this);
+                }
+                if (typeof window.closeSidebar === 'function' && window.matchMedia('(max-width: 767.98px)').matches) {
+                    window.closeSidebar();
+                }
+            });
         });
-    });
+    }
 
     const nav = document.getElementById('stabsNav');
     if (nav) {
@@ -1387,7 +1401,7 @@ function initSettingsPage() {
     // Check if hash or localStorage requested a specific tab (e.g., #tab-fingerprint or #fingerprint)
     const rawHash = window.location.hash.replace('#tab-', '').replace('#', '');
     const storedTab = localStorage.getItem('active_settings_tab');
-    const targetTab = rawHash || storedTab || (studentSettings && window.matchMedia('(max-width: 991.98px)').matches ? 'overview' : 'profile');
+    const targetTab = rawHash || storedTab || 'profile';
     if (targetTab && window.switchTab) {
         localStorage.removeItem('active_settings_tab');
         if (targetTab.startsWith('security-')) {
