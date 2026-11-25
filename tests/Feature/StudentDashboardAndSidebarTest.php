@@ -409,7 +409,9 @@ class StudentDashboardAndSidebarTest extends TestCase
                 ->assertSee('All (3)', false)
                 ->assertSee('Remaining (2)', false)
                 ->assertSee('Done (1)', false)
-                ->assertSee('Read more', false);
+                ->assertSee('Read more', false)
+                ->assertSee('#cmdPaletteOverlay .cmd-palette-input:focus-visible', false)
+                ->assertSee('id="cmdPaletteCategories" role="group"', false);
         } finally {
             \Carbon\Carbon::setTestNow();
         }
