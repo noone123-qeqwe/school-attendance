@@ -164,9 +164,9 @@
 @endphp
 
 @if(blank($user->section))
-<div role="status" style="display:flex;gap:12px;align-items:flex-start;padding:14px 16px;margin:0 0 18px;border-radius:14px;border:1px solid rgba(207,164,111,.35);background:rgba(207,164,111,.08);color:#f3e7cd;">
-    <i class="bi bi-info-circle-fill" style="color:#dfb784;margin-top:2px;"></i>
-    <div><strong>Your section is not assigned yet.</strong><br><span style="color:#b39b82;">Section-based classes appear after the school assigns your section. Contact the registrar or school administrator to update your student profile.</span></div>
+<div role="status" class="mb-3" style="display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:14px;border:1px solid rgba(228,143,160,0.34);background:linear-gradient(135deg, rgba(90,24,39,0.52), rgba(27,9,15,0.96));color:#fcf9fa;">
+    <i class="bi bi-info-circle-fill" style="color:#e48fa0;margin-top:2px;" aria-hidden="true"></i>
+    <div><strong>Your section is not assigned yet.</strong><br><span style="color:#e3d5d9;">Section-based classes appear after the school assigns your section. Contact the registrar or school administrator to update your student profile.</span></div>
 </div>
 @endif
 
@@ -1264,8 +1264,8 @@
                     <i class="bi bi-award"></i> {{ number_format($totalUnits, 1) }} Total Units
                 </span>
                 @if($todayClassesCount > 0)
-                    <span class="cor-summary-chip" style="background: rgba(16,185,129,0.14); border-color: rgba(16,185,129,0.35); color: #34d399;">
-                        <i class="bi bi-clock-history"></i> {{ $todayClassesCount }} Meeting Today
+                    <span class="cor-summary-chip cor-chip-today">
+                        <i class="bi bi-clock-history" aria-hidden="true"></i> {{ $todayClassesCount }} Meeting Today
                     </span>
                 @endif
             </div>

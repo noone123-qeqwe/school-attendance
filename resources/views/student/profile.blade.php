@@ -210,15 +210,15 @@
         <div class="col-lg-7 d-flex flex-column gap-3">
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-header-icon" style="background:rgba(207,164,111,0.14);color:#cfa46f;border:1px solid rgba(207,164,111,0.28);">
-                        <i class="bi bi-mortarboard-fill"></i>
+                    <div class="info-card-header-icon">
+                        <i class="bi bi-mortarboard-fill" aria-hidden="true"></i>
                     </div>
                     <div class="info-card-title">Academic Information</div>
                 </div>
                 <div class="info-card-body">
 
                     <div class="info-row">
-                        <div class="info-row-icon"><i class="bi bi-person-fill"></i></div>
+                        <div class="info-row-icon"><i class="bi bi-person-fill" aria-hidden="true"></i></div>
                         <div>
                             <div class="info-row-label">Full Name</div>
                             <div class="info-row-value">{{ Auth::user()->name }}</div>
@@ -226,16 +226,16 @@
                     </div>
 
                     <div class="info-row">
-                        <div class="info-row-icon"><i class="bi bi-card-text"></i></div>
+                        <div class="info-row-icon"><i class="bi bi-card-text" aria-hidden="true"></i></div>
                         <div class="flex-grow-1">
                             <div class="info-row-label">Student ID Number</div>
                             <div class="info-row-value d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <span style="font-family: monospace; font-size: 1.05rem; letter-spacing: 0.5px; color: var(--gold, #CFA46F); font-weight: 700;">
+                                <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.02rem; letter-spacing: 0.04em; color: #fcf9fa; font-weight: 700;">
                                     {{ Auth::user()->student_number ?: 'Not Assigned' }}
                                 </span>
                                 @if(Auth::user()->student_number)
-                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 copy-student-id-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}'); this.innerHTML='<i class=\'bi bi-check2 me-1\'></i>Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-clipboard me-1\'></i>Copy'; }, 1500);" style="font-size:0.75rem; border-color:rgba(255,255,255,0.15); color:#d6c7b2;">
-                                        <i class="bi bi-clipboard me-1"></i>Copy
+                                    <button type="button" class="btn btn-sm py-1 px-2 copy-student-id-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}'); this.innerHTML='<i class=\'bi bi-check2 me-1\' aria-hidden=\'true\'></i>Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-clipboard me-1\' aria-hidden=\'true\'></i>Copy'; }, 1500);" style="font-size:0.75rem; background: rgba(255,255,255,0.06); border:1px solid rgba(236,224,228,0.2); color:#fcf9fa; border-radius: 8px;">
+                                        <i class="bi bi-clipboard me-1" aria-hidden="true"></i>Copy
                                     </button>
                                 @endif
                             </div>
@@ -243,7 +243,7 @@
                     </div>
 
                     <div class="info-row">
-                        <div class="info-row-icon"><i class="bi bi-book-fill"></i></div>
+                        <div class="info-row-icon"><i class="bi bi-book-fill" aria-hidden="true"></i></div>
                         <div>
                             <div class="info-row-label">Course</div>
                             <div class="info-row-value">{{ Auth::user()->course }}</div>
@@ -251,7 +251,7 @@
                     </div>
 
                     <div class="info-row">
-                        <div class="info-row-icon"><i class="bi bi-layers-fill"></i></div>
+                        <div class="info-row-icon"><i class="bi bi-layers-fill" aria-hidden="true"></i></div>
                         <div>
                             <div class="info-row-label">Year Level</div>
                             <div class="info-row-value">{{ Auth::user()->year_level }}{{ match((int)Auth::user()->year_level) { 1 => 'st', 2 => 'nd', 3 => 'rd', default => 'th' } }} Year</div>
@@ -259,7 +259,7 @@
                     </div>
 
                     <div class="info-row">
-                        <div class="info-row-icon"><i class="bi bi-calendar3"></i></div>
+                        <div class="info-row-icon"><i class="bi bi-calendar3" aria-hidden="true"></i></div>
                         <div>
                             <div class="info-row-label">Semester</div>
                             <div class="info-row-value">{{ Auth::user()->semester }}{{ match((int)Auth::user()->semester){1=>'st',2=>'nd',3=>'rd',default=>'th'} }} Semester</div>
@@ -267,7 +267,7 @@
                     </div>
 
                     <div class="info-row">
-                        <div class="info-row-icon"><i class="bi bi-envelope-fill"></i></div>
+                        <div class="info-row-icon"><i class="bi bi-envelope-fill" aria-hidden="true"></i></div>
                         <div>
                             <div class="info-row-label">Email Address</div>
                             <div class="info-row-value">{{ Auth::user()->email }}</div>
@@ -280,55 +280,39 @@
             <!-- Quick Actions -->
             <div class="info-card">
                 <div class="info-card-header">
-                    <div class="info-card-header-icon" style="background:rgba(96,165,250,0.14);color:#60a5fa;border:1px solid rgba(96,165,250,0.28);">
-                        <i class="bi bi-lightning-fill"></i>
+                    <div class="info-card-header-icon">
+                        <i class="bi bi-lightning-fill" aria-hidden="true"></i>
                     </div>
                     <div class="info-card-title">Quick Actions</div>
                 </div>
-                <div class="info-card-body" style="padding-top:14px;padding-bottom:14px;">
+                <div class="info-card-body" style="padding-top:16px;padding-bottom:16px;">
                     <div class="row g-2">
                         <div class="col-md-6">
-                            <a href="{{ route('home') }}" class="quick-action-btn" style="text-decoration:none;display:block;">
-                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
-                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(207,164,111,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold,#CFA46F);font-size:0.9rem;">
-                                        <i class="bi bi-grid-fill"></i>
-                                    </div>
-                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Go to Dashboard</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
-                                </div>
+                            <a href="{{ route('home') }}" class="sd-profile-quick-link">
+                                <span class="sd-profile-quick-icon"><i class="bi bi-grid-fill" aria-hidden="true"></i></span>
+                                <span class="fw-semibold" style="font-size:0.875rem;">Go to Dashboard</span>
+                                <i class="bi bi-chevron-right ms-auto" style="color:#baa3ab;font-size:0.75rem;" aria-hidden="true"></i>
                             </a>
                         </div>
                         <div class="col-md-6">
-                            <a href="{{ route('student.schedule') }}" style="text-decoration:none;display:block;">
-                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
-                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(207,164,111,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold,#CFA46F);font-size:0.9rem;">
-                                        <i class="bi bi-calendar2-week-fill"></i>
-                                    </div>
-                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">My Schedule</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
-                                </div>
+                            <a href="{{ route('student.schedule') }}" class="sd-profile-quick-link">
+                                <span class="sd-profile-quick-icon is-sky"><i class="bi bi-calendar2-week-fill" aria-hidden="true"></i></span>
+                                <span class="fw-semibold" style="font-size:0.875rem;">My Schedule</span>
+                                <i class="bi bi-chevron-right ms-auto" style="color:#baa3ab;font-size:0.75rem;" aria-hidden="true"></i>
                             </a>
                         </div>
                         <div class="col-md-6">
-                            <a href="{{ route('student.calendar') }}#attendance-records" style="text-decoration:none;display:block;">
-                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
-                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(74,222,128,0.12);display:flex;align-items:center;justify-content:center;color:#4ade80;font-size:0.9rem;">
-                                        <i class="bi bi-journal-check"></i>
-                                    </div>
-                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Attendance Log</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
-                                </div>
+                            <a href="{{ route('student.calendar') }}#attendance-records" class="sd-profile-quick-link">
+                                <span class="sd-profile-quick-icon is-emerald"><i class="bi bi-journal-check" aria-hidden="true"></i></span>
+                                <span class="fw-semibold" style="font-size:0.875rem;">Attendance Log</span>
+                                <i class="bi bi-chevron-right ms-auto" style="color:#baa3ab;font-size:0.75rem;" aria-hidden="true"></i>
                             </a>
                         </div>
                         <div class="col-md-6">
-                            <a href="{{ route('settings') }}" style="text-decoration:none;display:block;">
-                                <div style="display:flex;align-items:center;gap:12px;min-height:48px;padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;">
-                                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;color:#b39b82;font-size:0.9rem;">
-                                        <i class="bi bi-gear-fill"></i>
-                                    </div>
-                                    <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Account Settings</span>
-                                    <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
-                                </div>
+                            <a href="{{ route('settings') }}" class="sd-profile-quick-link">
+                                <span class="sd-profile-quick-icon"><i class="bi bi-gear-fill" aria-hidden="true"></i></span>
+                                <span class="fw-semibold" style="font-size:0.875rem;">Account Settings</span>
+                                <i class="bi bi-chevron-right ms-auto" style="color:#baa3ab;font-size:0.75rem;" aria-hidden="true"></i>
                             </a>
                         </div>
                     </div>
@@ -407,45 +391,43 @@
                         $binding = $user->deviceBinding;
                     @endphp
                     @if($binding)
-                    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(207,164,111,0.2);border-radius:12px;padding:16px;margin-bottom:14px;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                    <div style="background:rgba(15,4,7,0.52);border:1px solid rgba(236,224,228,0.16);border-radius:14px;padding:16px;margin-bottom:14px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap;">
                             <div style="display:flex;align-items:center;gap:10px;">
-                                <div style="width:40px;height:40px;border-radius:10px;background:rgba(74,222,128,0.12);color:#4ade80;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
-                                    <i class="bi {{ $binding->getDeviceIcon() }}"></i>
+                                <div style="width:40px;height:40px;border-radius:10px;background:rgba(52,211,153,0.14);color:#34d399;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
+                                    <i class="bi {{ $binding->getDeviceIcon() }}" aria-hidden="true"></i>
                                 </div>
                                 <div>
-                                    <div style="font-weight:700;font-size:0.95rem;color:#f3e7cd;">{{ $binding->device_name ?: 'Registered Mobile Device' }}</div>
-                                    <div style="font-size:0.75rem;color:#b39b82;">Bound on {{ $binding->created_at?->format('M d, Y') ?? 'N/A' }}</div>
+                                    <div style="font-weight:700;font-size:0.95rem;color:#fcf9fa;">{{ $binding->device_name ?: 'Registered Mobile Device' }}</div>
+                                    <div style="font-size:0.75rem;color:#baa3ab;">Bound on {{ $binding->created_at?->format('M d, Y') ?? 'N/A' }}</div>
                                 </div>
                             </div>
-                            <span class="badge" style="background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);font-size:0.72rem;padding:5px 9px;border-radius:8px;">
-                                <i class="bi bi-shield-check me-1"></i>Verified
-                            </span>
+                            <x-badge variant="success" size="sm" :dot="true">Verified</x-badge>
                         </div>
 
-                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:0.78rem;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:0.78rem;padding-top:10px;border-top:1px solid rgba(236,224,228,0.09);">
                             <div style="min-width:0;overflow-wrap:anywhere;">
-                                <span style="color:#b39b82;">Last Active:</span>
-                                <span style="color:#f3e7cd;font-weight:600;margin-left:4px;">{{ $binding->last_seen_at?->diffForHumans() ?? 'Just now' }}</span>
+                                <span style="color:#baa3ab;">Last Active:</span>
+                                <span style="color:#fcf9fa;font-weight:600;margin-left:4px;">{{ $binding->last_seen_at?->diffForHumans() ?? 'Just now' }}</span>
                             </div>
                             <div style="min-width:0;overflow-wrap:anywhere;">
-                                <span style="color:#b39b82;">IP Address:</span>
-                                <span style="color:#f3e7cd;font-weight:600;margin-left:4px;">{{ $binding->ip_address ?: 'Protected' }}</span>
+                                <span style="color:#baa3ab;">IP Address:</span>
+                                <span style="color:#fcf9fa;font-weight:600;margin-left:4px;">{{ $binding->ip_address ?: 'Protected' }}</span>
                             </div>
                         </div>
                     </div>
 
-                    <div style="display:flex;align-items:flex-start;gap:8px;background:rgba(207,164,111,0.06);border:1px solid rgba(207,164,111,0.18);border-radius:10px;padding:10px 14px;font-size:0.78rem;color:#b39b82;line-height:1.4;">
-                        <i class="bi bi-info-circle-fill" style="color:var(--gold,#CFA46F);margin-top:2px;flex-shrink:0;"></i>
+                    <div style="display:flex;align-items:flex-start;gap:8px;background:rgba(138,36,57,0.22);border:1px solid rgba(228,143,160,0.26);border-radius:12px;padding:10px 14px;font-size:0.78rem;color:#e3d5d9;line-height:1.45;">
+                        <i class="bi bi-info-circle-fill" style="color:#e48fa0;margin-top:2px;flex-shrink:0;" aria-hidden="true"></i>
                         <div>
                             Anti-proxy protection active. Your student account is strictly bound to this personal device for attendance clock-ins.
                         </div>
                     </div>
                     @else
-                    <div style="text-align:center;padding:18px 14px;background:rgba(255,255,255,0.02);border:1px dashed rgba(207,164,111,0.2);border-radius:12px;color:#b39b82;font-size:0.85rem;">
-                        <i class="bi bi-phone" style="font-size:2rem;opacity:0.4;display:block;margin-bottom:8px;color:var(--gold,#CFA46F);"></i>
-                        <div style="font-weight:600;color:#f3e7cd;margin-bottom:4px;">No Device Bound Yet</div>
-                        <div style="font-size:0.78rem;line-height:1.4;">Your personal device will be automatically and securely bound to your student account when you sign in or record attendance.</div>
+                    <div style="text-align:center;padding:18px 14px;background:rgba(15,4,7,0.45);border:1px dashed rgba(236,224,228,0.2);border-radius:14px;color:#baa3ab;font-size:0.85rem;">
+                        <i class="bi bi-phone" style="font-size:2rem;opacity:0.5;display:block;margin-bottom:8px;color:#e48fa0;" aria-hidden="true"></i>
+                        <div style="font-weight:700;color:#fcf9fa;margin-bottom:4px;">No Device Bound Yet</div>
+                        <div style="font-size:0.78rem;line-height:1.45;">Your personal device will be automatically and securely bound to your student account when you sign in or record attendance.</div>
                     </div>
                     @endif
                 </div>

@@ -9,11 +9,11 @@
         <span class="student-excuse-subject-heading">
             <span class="sub-code-badge">{{ $subject->code }}</span>
             @if($isPrimary)
-                <span style="font-size:.75rem;color:#fca5a5;">Current absence</span>
+                <span style="font-size:.75rem;color:#ff8e9b;font-weight:700;">Current absence</span>
             @elseif($hasOtherAbsence)
-                <span style="font-size:.75rem;color:#fcd34d;">Also absent</span>
+                <span style="font-size:.75rem;color:#fbbf24;font-weight:700;">Also absent</span>
             @elseif($subject->section)
-                <span style="font-size:.75rem;color:#b39b82;">Section {{ $subject->section }}</span>
+                <span style="font-size:.75rem;color:#baa3ab;">Section {{ $subject->section }}</span>
             @endif
         </span>
         <span class="student-excuse-subject-name">{{ $subject->name }}</span>

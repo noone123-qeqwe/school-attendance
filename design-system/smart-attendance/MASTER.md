@@ -67,3 +67,9 @@
 - **Focusable Error Summaries:** Multi-error forms use `<x-error-summary />` (`role="alert" tabindex="-1"`) linked to invalid fields while keeping inline `aria-describedby` errors.
 - **Progressive Loading:** Use layout-reserved skeleton shimmer cards instead of empty spinners inside async modals (`CLS < 0.1`).
 - **Tap & Keyboard Parity:** `touch-action: manipulation`, `cursor: pointer`, visible `:focus-visible` rings, Escape/Arrow keyboard controls for dialogs and day steppers.
+
+### Student Portal Implementation Architecture
+- **Master Stylesheet (`public/css/student-portal-master.css`):** Loaded on **every student route** across `layouts/app.blade.php`, `layouts/mobile-app.blade.php`, and `layouts/biometric-flow.blade.php`, wrapped in `@media screen` (preserving clean black-on-white `@media print` / PDF output) and strictly scoped to `body.student-portal`, `body.student-mobile-portal`, and `body.biometric-flow-page` so Admin, Teacher, and Parent portals remain untouched.
+- **Covered Student Surfaces (Desktop & Mobile):**
+  - Shell: Desktop sidebar, settings sidebar, top header, notification & account dropdowns, Command Palette (`Ctrl+K`), mobile header, slide-over drawer, floating bottom nav + pearl-silver Scan jewel, More sheet, modals, toasts.
+  - Pages: Dashboard (`/home`, `/mobile/home`), Classes & COR Sheet (`/classes`), Weekly Schedule (`/schedule`), Attendance & School Calendar + Records (`/calendar`, `/attendance-calendar`, `/attendance/records`, `/mobile/history`), QR Check-In Studio & Peer Snap (`/mobile/scan`, `/peer-snap`), Excuse Submissions & Forms (`/excuses`, `/excuses/create*`), Notifications (`/notifications`), Profile (`/profile`, `/mobile/profile`), Settings & Biometrics (`/settings`, `/settings/biometrics/*`), and Student Assistant (`/student-assistant*`).

@@ -1,124 +1,60 @@
 @extends('layouts.app')
 @section('page-title', 'Submit Excuse Letter')
+@section('page-sub', 'Submit explanation and supporting documents for an absence')
 
 @section('content')
-<style>
-.excuse-subject-card {
-    background: rgba(255, 235, 190, 0.03);
-    border: 1.5px solid rgba(255, 215, 145, 0.12);
-    border-radius: 12px;
-    padding: 12px 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    user-select: none;
-}
-.excuse-subject-card:hover {
-    background: rgba(255, 235, 190, 0.06);
-    border-color: rgba(207, 164, 111, 0.35);
-    transform: translateY(-1px);
-}
-.excuse-subject-card.selected {
-    background: rgba(207, 164, 111, 0.12);
-    border-color: #cfa46f;
-    box-shadow: 0 4px 16px rgba(207, 164, 111, 0.15);
-}
-.excuse-subject-card input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: #cfa46f;
-    cursor: pointer;
-}
-.sub-code-badge {
-    background: rgba(207, 164, 111, 0.15);
-    border: 1px solid rgba(207, 164, 111, 0.3);
-    color: #cfa46f;
-    padding: 2px 7px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-}
-.quick-sub-btn {
-    padding: 4px 12px;
-    background: rgba(255, 235, 190, 0.05);
-    border: 1px solid rgba(255, 215, 145, 0.15);
-    border-radius: 8px;
-    color: #b39b82;
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-.quick-sub-btn:hover {
-    background: rgba(207, 164, 111, 0.15);
-    border-color: #cfa46f;
-    color: #f3e7cd;
-}
-</style>
-
-<div class="ent-section ent-fade-up student-excuse-form" style="max-width:860px; margin: 0 auto;">
-    <header class="student-page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+<div class="ent-section ent-fade-up student-excuse-form" style="max-width: 880px; margin: 0 auto;">
+    <header class="sd-excuse-hero">
         <div>
-            <h1 style="font-size: 2rem; font-weight: 800; color: #f3e7cd; margin-bottom:4px; letter-spacing: -0.02em;">
-                <i class="bi bi-file-earmark-medical me-2" style="color: #cfa46f;"></i>Submit Excuse Letter
+            <h1>
+                <i class="bi bi-file-earmark-medical me-2" style="color: #e48fa0;" aria-hidden="true"></i>Submit Excuse Letter
             </h1>
-            <p style="color: #b39b82; font-size: 0.95rem; margin:0;">Provide details for your absence and choose which subject(s) this excuse letter covers.</p>
+            <p>Provide details for your absence and choose which subject(s) this excuse letter covers.</p>
         </div>
-        <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
-            <i class="bi bi-arrow-left"></i> Back to Excuses
+        <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary">
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i> Back to Excuses
         </a>
     </header>
 
-    @if($errors->any())
-    <div role="alert" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
-        <i class="bi bi-exclamation-triangle-fill" style="font-size:1.25rem;"></i>
-        <span style="font-size:0.875rem; font-weight:500;">{{ $errors->first() }}</span>
-    </div>
-    @endif
+    <x-error-summary title="Please review your excuse submission" />
 
-    <div style="background: rgba(30,21,21,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(212,175,55,0.15); border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);">
-        
+    <div class="sd-excuse-form-card">
         {{-- Absent Record Context Header --}}
-        <div style="padding: 24px 32px; border-bottom: 1px solid rgba(212,175,55,0.1); background: rgba(0,0,0,0.25); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div class="sd-excuse-context-bar">
             <div>
-                <div style="font-size: 0.75rem; font-weight: 700; color: #cfa46f; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                <div style="font-size: 0.72rem; font-weight: 800; color: #e48fa0; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">
                     Absence Record Details
                 </div>
-                <h3 style="font-size: 1.2rem; font-weight: 700; color: #f3e7cd; margin-bottom: 2px;">
+                <h2 style="font-size: 1.18rem; font-weight: 800; color: #fcf9fa; margin: 0 0 4px;">
                     {{ $attendance->subject->name ?? $attendance->subject_code }} ({{ $attendance->subject_code }})
-                </h3>
-                <div style="font-size:0.85rem; color: #b39b82; font-weight: 500;">
-                    <i class="bi bi-calendar-event me-1"></i> {{ \Carbon\Carbon::parse($attendance->date)->format('F j, Y (l)') }}
-                    <span style="margin:0 8px; opacity: 0.3;">|</span>
-                    <i class="bi bi-circle-fill" style="color: #f87171; font-size:0.45rem; vertical-align:middle; margin-right:4px;"></i> <span style="color: #fca5a5; font-weight: 600;">Unexcused Absent</span>
+                </h2>
+                <div style="font-size: 0.84rem; color: #e3d5d9; font-weight: 500;">
+                    <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>{{ \Carbon\Carbon::parse($attendance->date)->format('F j, Y (l)') }}
+                    <span class="mx-2 opacity-50" aria-hidden="true">|</span>
+                    <span style="color: #ff8e9b; font-weight: 700;">Unexcused Absent</span>
                 </div>
             </div>
-            <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; padding: 6px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 600;">
-                <i class="bi bi-clock-history me-1"></i> Awaiting Excuse
-            </div>
+            <x-badge variant="danger" size="sm" :dot="true">Awaiting Excuse</x-badge>
         </div>
 
         <form action="{{ route('excuses.store') }}" method="POST" enctype="multipart/form-data" id="excuseForm">
             @csrf
             <input type="hidden" name="attendance_id" value="{{ $attendance->id }}">
             <input type="hidden" name="date" value="{{ \Carbon\Carbon::parse($attendance->date)->format('Y-m-d') }}">
-            
-            <div style="padding: 32px;">
-                
+
+            <div class="sd-excuse-form-body">
                 {{-- STEP 1: CHOOSE SUBJECT(S) COVERED --}}
-                <div style="margin-bottom: 28px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <div>
-                            <label style="font-size: 0.8rem; font-weight: 700; color: #f3e7cd; text-transform: uppercase; letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 6px;">
-                                <i class="bi bi-journal-check" style="color: #cfa46f;"></i> Choose Subjects Covered By This Excuse <span style="color: #f87171;">*</span>
+                            <label class="sd-form-label mb-1">
+                                <i class="bi bi-journal-check" style="color: #e48fa0;" aria-hidden="true"></i>
+                                Choose Subjects Covered By This Excuse <span class="text-danger">*</span>
                             </label>
-                            <span style="font-size: 0.78rem; color: #b39b82;">Select this subject or check additional classes you missed on {{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}</span>
+                            <span style="font-size: 0.8rem; color: #baa3ab;">Select this subject or check additional classes you missed on {{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}</span>
                         </div>
-                        <div class="student-excuse-selection-actions">
-                            <span id="subjectCountBadge" style="background: rgba(207,164,111,0.15); border: 1px solid rgba(207,164,111,0.3); color: #cfa46f; padding: 3px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700;">
+                        <div class="student-excuse-selection-actions d-flex align-items-center gap-2 flex-wrap">
+                            <span id="subjectCountBadge" class="sub-code-badge" aria-live="polite" style="border-radius: 999px; padding: 4px 11px;">
                                 1 of {{ count($subjects) }} Selected
                             </span>
                             <button type="button" class="quick-sub-btn" onclick="selectAllSubjects(true)">Select All</button>
@@ -136,80 +72,80 @@
                         @endforeach
                     </div>
 
-                    <div id="subjectError" role="alert" style="display: none; color: #f87171; font-size: 0.78rem; margin-top: 8px; font-weight: 600;">
-                        <i class="bi bi-exclamation-circle me-1"></i> Please select at least one subject to submit your excuse letter.
+                    <div id="subjectError" role="alert" style="display: none; color: #ff8e9b; font-size: 0.8rem; margin-top: 10px; font-weight: 600;">
+                        <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i> Please select at least one subject to submit your excuse letter.
                     </div>
                 </div>
 
                 {{-- STEP 2: REASON FOR ABSENCE --}}
-                <div style="margin-bottom: 24px;">
-                    <label for="excuseReason" style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                        Reason for Absence <span style="color: #f87171;">*</span>
+                <div class="mb-4">
+                    <label for="excuseReason" class="sd-form-label">
+                        Reason for Absence <span class="text-danger">*</span>
                     </label>
-                    <select name="reason" id="excuseReason" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,215,145,0.12); border-radius: 10px; color: #f3e7cd; font-size: 0.95rem; outline: none; transition: all 0.2s;" required>
-                        <option value="" style="background: #16100c;">Select a reason</option>
-                        <option value="Medical/Health Issues" {{ old('reason') == 'Medical/Health Issues' ? 'selected' : '' }} style="background: #16100c;">Medical / Health Issues</option>
-                        <option value="Family Emergency" {{ old('reason') == 'Family Emergency' ? 'selected' : '' }} style="background: #16100c;">Family Emergency</option>
-                        <option value="Personal Emergency" {{ old('reason') == 'Personal Emergency' ? 'selected' : '' }} style="background: #16100c;">Personal Emergency</option>
-                        <option value="Transportation Issues" {{ old('reason') == 'Transportation Issues' ? 'selected' : '' }} style="background: #16100c;">Transportation Issues</option>
-                        <option value="Weather Conditions" {{ old('reason') == 'Weather Conditions' ? 'selected' : '' }} style="background: #16100c;">Weather Conditions / Calamity</option>
-                        <option value="Official School Activity / Event" {{ old('reason') == 'Official School Activity / Event' ? 'selected' : '' }} style="background: #16100c;">Official School Activity / Event</option>
-                        <option value="Academic Activity" {{ old('reason') == 'Academic Activity' ? 'selected' : '' }} style="background: #16100c;">Academic Activity</option>
-                        <option value="Other" {{ old('reason') == 'Other' ? 'selected' : '' }} style="background: #16100c;">Other</option>
+                    <select name="reason" id="excuseReason" class="sd-form-input" required>
+                        <option value="">Select a reason</option>
+                        <option value="Medical/Health Issues" {{ old('reason') == 'Medical/Health Issues' ? 'selected' : '' }}>Medical / Health Issues</option>
+                        <option value="Family Emergency" {{ old('reason') == 'Family Emergency' ? 'selected' : '' }}>Family Emergency</option>
+                        <option value="Personal Emergency" {{ old('reason') == 'Personal Emergency' ? 'selected' : '' }}>Personal Emergency</option>
+                        <option value="Transportation Issues" {{ old('reason') == 'Transportation Issues' ? 'selected' : '' }}>Transportation Issues</option>
+                        <option value="Weather Conditions" {{ old('reason') == 'Weather Conditions' ? 'selected' : '' }}>Weather Conditions / Calamity</option>
+                        <option value="Official School Activity / Event" {{ old('reason') == 'Official School Activity / Event' ? 'selected' : '' }}>Official School Activity / Event</option>
+                        <option value="Academic Activity" {{ old('reason') == 'Academic Activity' ? 'selected' : '' }}>Academic Activity</option>
+                        <option value="Other" {{ old('reason') == 'Other' ? 'selected' : '' }}>Other</option>
                     </select>
                     @error('reason')
-                        <div style="color: #f87171; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">{{ $message }}</div>
+                        <div class="mt-2 small fw-semibold" style="color: #ff8e9b;">{{ $message }}</div>
                     @enderror
                 </div>
 
                 {{-- STEP 3: DETAILED DESCRIPTION --}}
-                <div style="margin-bottom: 24px;">
-                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 8px;">
-                        <label for="descInput" style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin:0;">
-                            Detailed Explanation <span style="color: #f87171;">*</span>
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-baseline mb-2">
+                        <label for="descInput" class="sd-form-label mb-0">
+                            Detailed Explanation <span class="text-danger">*</span>
                         </label>
-                        <span id="charCount" style="font-size:0.75rem; color: #888;">0 / 500</span>
+                        <span id="charCount" class="sd-tabular" style="font-size: 0.76rem; color: #baa3ab;">0 / 500</span>
                     </div>
-                    <textarea name="description" id="descInput" rows="4" maxlength="500" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,215,145,0.12); border-radius: 10px; color: #f3e7cd; font-size: 0.95rem; resize: vertical; outline: none; transition: all 0.2s;" placeholder="Please provide a clear and respectful explanation for your absence..." required>{{ old('description') }}</textarea>
+                    <textarea name="description" id="descInput" rows="4" maxlength="500" class="sd-form-input" style="resize: vertical;" placeholder="Please provide a clear and respectful explanation for your absence..." required>{{ old('description') }}</textarea>
                     @error('description')
-                        <div style="color: #f87171; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">{{ $message }}</div>
+                        <div class="mt-2 small fw-semibold" style="color: #ff8e9b;">{{ $message }}</div>
                     @enderror
                 </div>
 
                 {{-- STEP 4: SUPPORTING DOCUMENTS --}}
-                <div style="margin-bottom: 16px;">
-                    <label for="attachments" style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                <div>
+                    <label for="attachments" class="sd-form-label">
                         Supporting Documents / Attachments (Optional)
                     </label>
-                    
-                    <div style="position:relative; width:100%;">
-                        <input type="file" name="attachments[]" id="attachments" multiple 
+
+                    <div class="position-relative w-100">
+                        <input type="file" name="attachments[]" id="attachments" multiple
                                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onchange="handleFileSelect(this)"
                                class="visually-hidden">
-                        
-                        <label for="attachments" id="dropZone" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px; border:1.5px dashed rgba(207,164,111,0.35); border-radius: 12px; background: rgba(0,0,0,0.2); cursor:pointer; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
-                            <i class="bi bi-cloud-arrow-up" style="font-size:2.2rem; color: #cfa46f; margin-bottom:8px;"></i>
-                            <span style="font-size: 0.95rem; font-weight: 600; color: #f3e7cd;">Click or drag & drop files here</span>
-                            <span style="font-size: 0.8rem; color: #b39b82; margin-top: 4px;">Medical certificates, letters, or receipts</span>
+
+                        <label for="attachments" id="dropZone" class="sd-dropzone">
+                            <i class="bi bi-cloud-arrow-up" style="font-size: 2.2rem; color: #e48fa0; margin-bottom: 8px;" aria-hidden="true"></i>
+                            <span style="font-size: 0.95rem; font-weight: 700; color: #fcf9fa;">Click or drag &amp; drop files here</span>
+                            <span style="font-size: 0.8rem; color: #baa3ab; margin-top: 4px;">Medical certificates, letters, or receipts</span>
                         </label>
                     </div>
-                    
-                    <div style="font-size: 0.75rem; color: #b39b82; margin-top: 8px;">
+
+                    <div style="font-size: 0.76rem; color: #baa3ab; margin-top: 8px;">
                         Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max 5MB each)
                     </div>
-                    
-                    <div id="fileList" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;"></div>
-                    
+
+                    <div id="fileList" class="mt-3 d-flex flex-column gap-2"></div>
+
                     @error('attachments.*')
-                        <div style="color: #f87171; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">{{ $message }}</div>
+                        <div class="mt-2 small fw-semibold" style="color: #ff8e9b;">{{ $message }}</div>
                     @enderror
                 </div>
             </div>
-            
-            <div style="padding: 20px 32px; border-top: 1px solid rgba(212,175,55,0.1); background: rgba(0,0,0,0.25); display: flex; justify-content: flex-end; gap: 16px;">
-                <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary" style="border: 1px solid rgba(255,255,255,0.1); background: transparent;">Cancel</a>
-                <button type="submit" id="submitBtn" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #16100c; font-weight: 700; border: none; padding: 10px 24px;">
-                    <i class="bi bi-send-fill" style="margin-right: 6px;"></i> <span>Submit Excuse Letter</span>
+
+            <div class="sd-excuse-form-footer">
+                <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary">Cancel</a>
+                <button type="submit" id="submitBtn" class="ent-btn ent-btn-primary" style="padding: 10px 24px;">
+                    <i class="bi bi-send-fill me-1" aria-hidden="true"></i> <span>Submit Excuse Letter</span>
                 </button>
             </div>
         </form>
@@ -221,18 +157,12 @@
 const primarySubjectCode = '{{ $attendance->subject_code }}';
 
 function selectAllSubjects(select) {
-    const checkboxes = document.querySelectorAll('.subject-checkbox');
-    checkboxes.forEach(cb => {
-        cb.checked = select;
-    });
+    document.querySelectorAll('.subject-checkbox').forEach(cb => { cb.checked = select; });
     updateSubjectSelectionState();
 }
 
 function selectOnlyCurrentSubject() {
-    const checkboxes = document.querySelectorAll('.subject-checkbox');
-    checkboxes.forEach(cb => {
-        cb.checked = (cb.value === primarySubjectCode);
-    });
+    document.querySelectorAll('.subject-checkbox').forEach(cb => { cb.checked = (cb.value === primarySubjectCode); });
     updateSubjectSelectionState();
 }
 
@@ -250,52 +180,34 @@ function updateSubjectSelectionState() {
     });
 
     const badge = document.getElementById('subjectCountBadge');
-    if (badge) {
-        badge.textContent = `${selectedCount} of ${cards.length} Selected`;
-    }
+    if (badge) badge.textContent = `${selectedCount} of ${cards.length} Selected`;
 
     const err = document.getElementById('subjectError');
-    if (err && selectedCount > 0) {
-        err.style.display = 'none';
-    }
+    if (err && selectedCount > 0) err.style.display = 'none';
 }
 
-// Character Counter
 const descInput = document.getElementById('descInput');
 const charCount = document.getElementById('charCount');
-if(descInput && charCount) {
+if (descInput && charCount) {
     const updateCount = () => {
         const len = descInput.value.length;
         charCount.textContent = `${len} / 500`;
-        charCount.style.color = len >= 490 ? '#f87171' : '#888';
+        charCount.style.color = len >= 490 ? '#ff6b7a' : '#baa3ab';
     };
     descInput.addEventListener('input', updateCount);
     updateCount();
 }
 
-// Drag and Drop styling
 const dropZone = document.getElementById('dropZone');
 if (dropZone) {
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, preventDefaults, false);
+        dropZone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
     });
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
     ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.style.borderColor = 'var(--gold)';
-            dropZone.style.background = 'rgba(212,175,55,0.08)';
-            dropZone.style.transform = 'scale(1.01)';
-        }, false);
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('is-dragover'), false);
     });
     ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => {
-            dropZone.style.borderColor = 'rgba(207,164,111,0.35)';
-            dropZone.style.background = 'rgba(0,0,0,0.2)';
-            dropZone.style.transform = 'scale(1)';
-        }, false);
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('is-dragover'), false);
     });
     dropZone.addEventListener('drop', (e) => {
         const input = document.getElementById('attachments');
@@ -310,31 +222,44 @@ function getFileIcon(filename) {
     const ext = filename.split('.').pop().toLowerCase();
     if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'bi-image text-success';
     if (ext === 'pdf') return 'bi-file-pdf text-danger';
-    if (['doc', 'docx'].includes(ext)) return 'bi-file-word text-primary';
+    if (['doc', 'docx'].includes(ext)) return 'bi-file-word text-info';
     return 'bi-file-earmark-text text-secondary';
 }
 
 function handleFileSelect(input) {
     const fileList = document.getElementById('fileList');
     fileList.innerHTML = '';
-    
+
     if (input.files.length > 0) {
         Array.from(input.files).forEach((file, index) => {
             const fileItem = document.createElement('div');
-            fileItem.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(0,0,0,0.3); border:1px solid rgba(212,175,55,0.2); border-radius:10px; font-size:0.875rem; color:#f3e7cd;';
+            fileItem.className = 'sd-file-chip';
             const iconClass = getFileIcon(file.name);
-            fileItem.innerHTML = `
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <i class="bi ${iconClass}" style="font-size:1.2rem;"></i>
-                    <div style="display:flex; flex-direction:column;">
-                        <span style="font-weight:600; line-height:1.2;">${file.name}</span>
-                        <span style="color:#b39b82; font-size:0.75rem; line-height:1.2;">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
-                    </div>
-                </div>
-                <button type="button" onclick="removeFile(${index})" style="background:none; border:none; color:#f87171; cursor:pointer; padding:6px; display:flex; align-items:center; justify-content:center; border-radius:6px; transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.15)'" onmouseout="this.style.background='none'" title="Remove File">
-                    <i class="bi bi-trash3"></i>
-                </button>
-            `;
+            const left = document.createElement('div');
+            left.style.cssText = 'display:flex;align-items:center;gap:12px;min-width:0;';
+            const icon = document.createElement('i');
+            icon.className = `bi ${iconClass}`;
+            icon.style.fontSize = '1.2rem';
+            icon.setAttribute('aria-hidden', 'true');
+            const info = document.createElement('div');
+            info.style.cssText = 'display:flex;flex-direction:column;min-width:0;';
+            const nameEl = document.createElement('span');
+            nameEl.style.cssText = 'font-weight:700;line-height:1.25;overflow-wrap:anywhere;';
+            nameEl.textContent = file.name;
+            const sizeEl = document.createElement('span');
+            sizeEl.style.cssText = 'color:#baa3ab;font-size:0.75rem;line-height:1.2;';
+            sizeEl.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+            info.append(nameEl, sizeEl);
+            left.append(icon, info);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
+            removeBtn.style.cssText = 'background:none;border:none;color:#ff8e9b;cursor:pointer;padding:6px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;min-width:36px;min-height:36px;';
+            removeBtn.innerHTML = '<i class="bi bi-trash3" aria-hidden="true"></i>';
+            removeBtn.addEventListener('click', () => removeFile(index));
+
+            fileItem.append(left, removeBtn);
             fileList.appendChild(fileItem);
         });
     }
@@ -343,18 +268,11 @@ function handleFileSelect(input) {
 function removeFile(index) {
     const input = document.getElementById('attachments');
     const dt = new DataTransfer();
-    
-    Array.from(input.files).forEach((file, i) => {
-        if (i !== index) {
-            dt.items.add(file);
-        }
-    });
-    
+    Array.from(input.files).forEach((file, i) => { if (i !== index) dt.items.add(file); });
     input.files = dt.files;
     handleFileSelect(input);
 }
 
-// Form Submission validation
 const form = document.getElementById('excuseForm');
 if (form) {
     form.addEventListener('submit', function(e) {
@@ -366,12 +284,11 @@ if (form) {
             document.getElementById('subjectsGrid')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return false;
         }
-
         const btn = document.getElementById('submitBtn');
         if (btn) {
             btn.disabled = true;
             btn.style.opacity = '0.8';
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="width: 1rem; height: 1rem; border-width: 0.15em;"></span> <span>Submitting...</span>';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> <span>Submitting...</span>';
         }
     });
 }

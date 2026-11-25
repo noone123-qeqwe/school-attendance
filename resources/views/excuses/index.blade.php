@@ -1,67 +1,97 @@
 @extends('layouts.app')
 @section('page-title', 'Excuse Submissions')
+@section('page-sub', 'Manage and track your absence excuse letters')
 
 @section('content')
-<div class="ent-section ent-fade-up student-excuse-page">
-    <header class="student-page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+@php
+    $pendingCount = $excuseSubmissions->where('status', 'pending')->count();
+    $approvedCount = $excuseSubmissions->where('status', 'approved')->count();
+    $rejectedCount = $excuseSubmissions->where('status', 'rejected')->count();
+@endphp
+<div class="ent-section ent-fade-up student-excuse-page sd-excuse-page">
+    <header class="sd-excuse-hero">
         <div>
-            <h1 style="font-size: clamp(1.4rem, 3.5vw, 1.9rem); font-weight: 800; color: #f3e7cd; margin-bottom:4px; letter-spacing: -0.02em;">Excuse Submissions</h1>
-            <p style="color: #b39b82; font-size: 0.92rem; margin:0;">Manage and track your absence excuses</p>
+            <h1>Excuse Submissions</h1>
+            <p>Submit supporting documentation for absences and track reviewer decisions in real time.</p>
         </div>
-        <a href="{{ route('excuses.create_general') }}" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #140f0a; border: none; font-weight: 700;">
-            <i class="bi bi-plus-circle-fill" style="margin-right: 6px;"></i> Submit Excuse Letter
+        <a href="{{ route('excuses.create_general') }}" class="ent-btn ent-btn-primary">
+            <i class="bi bi-plus-circle-fill me-1" aria-hidden="true"></i> Submit Excuse Letter
         </a>
     </header>
 
     @if(session('success'))
-    <div style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: #4ade80; border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
-        <i class="bi bi-check-circle-fill" style="font-size:1.25rem;"></i>
-        <span style="font-size:0.875rem; font-weight:500;">{{ session('success') }}</span>
+    <div role="status" class="mb-4" style="background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.32); color: #6ee7b7; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+        <i class="bi bi-check-circle-fill fs-5" aria-hidden="true"></i>
+        <span class="small fw-semibold">{{ session('success') }}</span>
     </div>
     @endif
 
     @if(session('error'))
-    <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
-        <i class="bi bi-exclamation-triangle-fill" style="font-size:1.25rem;"></i>
-        <span style="font-size:0.875rem; font-weight:500;">{{ session('error') }}</span>
+    <div role="alert" class="mb-4" style="background: rgba(255,107,122,0.12); border: 1px solid rgba(255,107,122,0.34); color: #ffb3bc; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+        <i class="bi bi-exclamation-triangle-fill fs-5" aria-hidden="true"></i>
+        <span class="small fw-semibold">{{ session('error') }}</span>
     </div>
     @endif
 
-    <div class="student-view-switcher" role="group" aria-label="Excuse views">
-        <button type="button" class="d-none d-lg-inline-flex" data-excuse-view="all" aria-controls="excuseNeedsPanel excuseHistoryPanel" aria-pressed="false">Side by side</button>
-        <button type="button" data-excuse-view="needs" aria-controls="excuseNeedsPanel" aria-pressed="true">Needs an excuse ({{ $absentRecords->count() }})</button>
-        <button type="button" data-excuse-view="history" aria-controls="excuseHistoryPanel" aria-pressed="false">My submissions ({{ $excuseSubmissions->count() }})</button>
+    <section class="sd-excuse-kpis" aria-label="Excuse summary">
+        <div class="sd-excuse-kpi {{ $absentRecords->count() > 0 ? 'is-danger' : '' }}">
+            <span class="sd-excuse-kpi-val">{{ $absentRecords->count() }}</span>
+            <span class="sd-excuse-kpi-lbl">Needs Excuse</span>
+        </div>
+        <div class="sd-excuse-kpi is-warning">
+            <span class="sd-excuse-kpi-val">{{ $pendingCount }}</span>
+            <span class="sd-excuse-kpi-lbl">Pending Review</span>
+        </div>
+        <div class="sd-excuse-kpi is-success">
+            <span class="sd-excuse-kpi-val">{{ $approvedCount }}</span>
+            <span class="sd-excuse-kpi-lbl">Approved</span>
+        </div>
+        <div class="sd-excuse-kpi {{ $rejectedCount > 0 ? 'is-danger' : '' }}">
+            <span class="sd-excuse-kpi-val">{{ $rejectedCount }}</span>
+            <span class="sd-excuse-kpi-lbl">Rejected</span>
+        </div>
+    </section>
+
+    <div class="mb-3">
+        <div class="student-view-switcher" role="group" aria-label="Excuse views">
+            <button type="button" class="d-none d-lg-inline-flex" data-excuse-view="all" aria-controls="excuseNeedsPanel excuseHistoryPanel" aria-pressed="false">Side by side</button>
+            <button type="button" data-excuse-view="needs" aria-controls="excuseNeedsPanel" aria-pressed="true">Needs an excuse ({{ $absentRecords->count() }})</button>
+            <button type="button" data-excuse-view="history" aria-controls="excuseHistoryPanel" aria-pressed="false">My submissions ({{ $excuseSubmissions->count() }})</button>
+        </div>
     </div>
+
     <div class="row g-4">
         <!-- Absent Records Requiring Excuses -->
         <div class="col-12 col-lg-5" id="excuseNeedsPanel" data-excuse-panel="needs">
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.2); height: 100%;">
-                <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.2);">
-                    <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--gold); margin:0; display:flex; align-items:center; gap:8px;">
-                        <i class="bi bi-person-x" style="color: #f87171;"></i> Action Required: Absences
+            <div class="sd-excuse-panel">
+                <div class="sd-excuse-panel-head">
+                    <h2>
+                        <i class="bi bi-person-x-fill text-danger" aria-hidden="true"></i>
+                        Action Required: Absences
                     </h2>
+                    <x-badge :variant="$absentRecords->count() > 0 ? 'danger' : 'success'" size="sm">
+                        {{ $absentRecords->count() }} {{ \Illuminate\Support\Str::plural('item', $absentRecords->count()) }}
+                    </x-badge>
                 </div>
-                
-                <div style="padding: 0;">
+
+                <div>
                     @forelse($absentRecords as $record)
-                        <div style="padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; transition: background 0.2s ease;">
-                            <div>
-                                <h3 style="font-size: 1rem; font-weight: 700; color: #f3e7cd; margin-bottom: 4px;">{{ $record->subject->name ?? $record->subject_code }}</h3>
-                                <div style="font-size: 0.85rem; color: #b39b82;">
-                                    <i class="bi bi-calendar3 me-1"></i> {{ \Carbon\Carbon::parse($record->date)->format('F j, Y') }}
+                        <div class="sd-excuse-row d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div class="min-w-0">
+                                <h3 class="sd-excuse-row-title">{{ $record->subject->name ?? $record->subject_code }}</h3>
+                                <div class="sd-excuse-row-meta">
+                                    <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>{{ \Carbon\Carbon::parse($record->date)->format('F j, Y') }}
                                 </div>
                             </div>
-                            <div>
-                                <a href="{{ route('excuses.create', $record) }}" class="ent-btn ent-btn-primary" style="padding: 8px 16px; font-size: 0.85rem; background: linear-gradient(135deg, var(--gold), #b88a44); color: #140f0a; border: none; font-weight: 700;">
-                                    <i class="bi bi-plus-circle-fill" style="margin-right: 4px;"></i> Submit Excuse
-                                </a>
-                            </div>
+                            <a href="{{ route('excuses.create', $record) }}" class="ent-btn ent-btn-primary" style="padding: 8px 15px; font-size: 0.82rem;">
+                                <i class="bi bi-plus-circle-fill me-1" aria-hidden="true"></i> Submit Excuse
+                            </a>
                         </div>
                     @empty
-                        <div style="padding: 48px 24px; text-align: center;">
-                            <i class="bi bi-check2-circle" style="font-size: 3.5rem; color: #4ade80; opacity: 0.8; margin-bottom: 16px; display: block;"></i>
-                            <h4 style="font-size: 1.25rem; font-weight: 700; color: #f3e7cd; margin-bottom: 8px;">All caught up!</h4>
-                            <p style="color: #b39b82; margin: 0; font-size: 0.95rem;">You don't have any unexcused absences.</p>
+                        <div class="sd-excuse-empty">
+                            <i class="bi bi-check2-circle" style="font-size: 3rem; color: #34d399;" aria-hidden="true"></i>
+                            <h4>All caught up!</h4>
+                            <p>You don't have any unexcused absences right now.</p>
                         </div>
                     @endforelse
                 </div>
@@ -70,44 +100,46 @@
 
         <!-- Submitted Excuses History -->
         <div class="col-12 col-lg-7" id="excuseHistoryPanel" data-excuse-panel="history">
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.2); height: 100%;">
-                <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.2);">
-                    <h2 style="font-size: 1.25rem; font-weight: 700; color: #60a5fa; margin:0; display:flex; align-items:center; gap:8px;">
-                        <i class="bi bi-file-text-fill"></i> Submission History
+            <div class="sd-excuse-panel">
+                <div class="sd-excuse-panel-head">
+                    <h2>
+                        <i class="bi bi-file-earmark-text-fill" style="color: #7dd3fc;" aria-hidden="true"></i>
+                        Submission History
                     </h2>
+                    <x-badge variant="info" size="sm">{{ $excuseSubmissions->count() }} total</x-badge>
                 </div>
-                
-                <div class="excuse-history-scroll" style="padding: 0; max-height: 600px; overflow-y: auto;">
+
+                <div class="excuse-history-scroll" style="max-height: 620px; overflow-y: auto;">
                     @forelse($excuseSubmissions as $excuse)
-                        <div style="padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                                <div>
-                                    <h3 style="font-size: 1rem; font-weight: 700; color: #f3e7cd; margin-bottom: 4px;">{{ $excuse->attendance->subject->name ?? $excuse->attendance->subject_code }}</h3>
-                                    <div style="font-size: 0.8rem; color: #b39b82;">
-                                        <span style="color: #fca5a5; font-weight: 600;">Absent:</span> {{ \Carbon\Carbon::parse($excuse->attendance->date)->format('M d, Y') }} 
-                                        <span style="margin:0 6px; opacity: 0.4;">•</span> 
+                        <div class="sd-excuse-row">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                <div class="min-w-0">
+                                    <h3 class="sd-excuse-row-title">{{ $excuse->attendance->subject->name ?? $excuse->attendance->subject_code }}</h3>
+                                    <div class="sd-excuse-row-meta">
+                                        <span style="color: #ff8e9b; font-weight: 700;">Absent:</span> {{ \Carbon\Carbon::parse($excuse->attendance->date)->format('M d, Y') }}
+                                        <span class="mx-1 opacity-50" aria-hidden="true">&bull;</span>
                                         Submitted {{ $excuse->created_at->diffForHumans() }}
                                     </div>
                                 </div>
-                                
+
                                 @if($excuse->status === 'pending')
-                                    <span style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); color: #fbbf24; padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700;">Pending</span>
+                                    <x-badge variant="warning" size="sm" :dot="true">Pending</x-badge>
                                 @elseif($excuse->status === 'approved')
-                                    <span style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: #4ade80; padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700;">Approved</span>
+                                    <x-badge variant="success" size="sm" :dot="true">Approved</x-badge>
                                 @else
-                                    <span style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700;">Rejected</span>
+                                    <x-badge variant="danger" size="sm" :dot="true">Rejected</x-badge>
                                 @endif
                             </div>
-                            
-                            <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; border: 1px solid rgba(255,255,255,0.03);">
-                                <div style="font-size: 0.85rem; font-weight: 700; color: var(--gold); margin-bottom: 4px;">Reason: {{ $excuse->reason }}</div>
-                                <div style="font-size: 0.9rem; color: #d6b67b; line-height: 1.5;">{{ $excuse->description }}</div>
+
+                            <div class="sd-excuse-reason-box">
+                                <div class="sd-excuse-reason-title">Reason: {{ $excuse->reason }}</div>
+                                <div class="sd-excuse-reason-body">{{ $excuse->description }}</div>
                             </div>
-                            
+
                             @if($excuse->attachments)
-                                <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                                <div class="mt-3 d-flex gap-2 flex-wrap">
                                     @foreach($excuse->attachments ?? [] as $index => $attachment)
-                                        <a href="{{ route('excuse-attachments.show', [$excuse->id, $index]) }}" target="_blank" rel="noopener noreferrer" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #f3e7cd; min-height: 40px; padding: 8px 14px; border-radius: 10px; font-size: 0.78rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                                        <a href="{{ route('excuse-attachments.show', [$excuse->id, $index]) }}" target="_blank" rel="noopener noreferrer" class="sd-excuse-attachment">
                                             <i class="bi bi-paperclip" aria-hidden="true"></i> View Attachment
                                         </a>
                                     @endforeach
@@ -115,16 +147,17 @@
                             @endif
 
                             @if($excuse->status === 'rejected' && $excuse->admin_notes)
-                                <div style="margin-top: 12px; padding:10px 12px; background:rgba(239,68,68,0.05); border-left:3px solid #f87171; border-radius: 0 8px 8px 0;">
-                                    <div style="font-size:0.75rem; font-weight:700; color: #f87171; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Reviewer Note</div>
-                                    <p style="font-size:0.8rem; color:rgba(248,231,211,0.9); margin:0;">{{ $excuse->admin_notes }}</p>
+                                <div class="sd-excuse-reviewer-note">
+                                    <div style="font-size:0.74rem;font-weight:800;color:#ff8e9b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Reviewer Note</div>
+                                    <p style="font-size:0.84rem;color:#fcf9fa;margin:0;">{{ $excuse->admin_notes }}</p>
                                 </div>
                             @endif
                         </div>
                     @empty
-                        <div style="padding: 48px 24px; text-align: center;">
-                            <i class="bi bi-inbox" style="font-size: 3.5rem; color: rgba(255,255,255,0.1); margin-bottom: 16px; display: block;"></i>
-                            <h4 style="font-size: 1.1rem; font-weight: 600; color: #b39b82;">No Submissions Yet</h4>
+                        <div class="sd-excuse-empty">
+                            <i class="bi bi-inbox" style="font-size: 3rem; color: rgba(236,224,228,0.22);" aria-hidden="true"></i>
+                            <h4>No Submissions Yet</h4>
+                            <p>Submitted excuse letters and reviewer decisions will appear here.</p>
                         </div>
                     @endforelse
                 </div>

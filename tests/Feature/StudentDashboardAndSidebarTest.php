@@ -555,4 +555,85 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertFileExists(base_path('design-system/smart-attendance/MASTER.md'));
         $this->assertFileExists(base_path('design-system/smart-attendance/pages/student-dashboard.md'));
     }
+
+    public function test_reinvented_student_frontend_master_stylesheet_loads_across_all_desktop_and_mobile_pages(): void
+    {
+        $student = $this->createStudent([
+            'email' => 'student.fullfrontend@gmail.com',
+            'student_number' => '2310777',
+        ]);
+
+        $subject = Subject::create([
+            'code' => 'CS410',
+            'name' => 'Software Architecture',
+            'year_level' => 3,
+            'semester' => 1,
+            'course' => 'BSCS',
+            'section' => 'A',
+        ]);
+        $student->enrolledSubjects()->attach([$subject->id]);
+
+        $studentRoutes = [
+            route('home'),
+            route('mobile.home'),
+            route('student.classes'),
+            route('student.schedule'),
+            route('student.calendar'),
+            route('excuses'),
+            route('excuses.create_general'),
+            route('notifications'),
+            route('profile'),
+            route('mobile.profile'),
+            route('mobile.scan'),
+            route('settings'),
+            route('settings.biometrics.face'),
+            route('settings.biometrics.fingerprint'),
+        ];
+
+        foreach ($studentRoutes as $url) {
+            $this->actingAs($student)
+                ->get($url)
+                ->assertOk()
+                ->assertSee('student-portal-master.css', false);
+        }
+
+        // mobile.history redirects cleanly to the unified calendar & records view
+        $this->actingAs($student)
+            ->get(route('mobile.history'))
+            ->assertRedirect(route('student.calendar').'#attendance-records');
+
+        // Verify reinvented semantic classes render on key subpages
+        $this->actingAs($student)
+            ->get(route('excuses'))
+            ->assertOk()
+            ->assertSee('sd-excuse-hero', false)
+            ->assertSee('sd-excuse-kpis', false);
+
+        $this->actingAs($student)
+            ->get(route('excuses.create_general'))
+            ->assertOk()
+            ->assertSee('sd-excuse-form-card', false)
+            ->assertSee('sd-dropzone', false);
+
+        $this->actingAs($student)
+            ->get(route('profile'))
+            ->assertOk()
+            ->assertSee('sd-profile-quick-link', false);
+
+        // Verify non-student portals (Teacher) do NOT load the student portal master stylesheet
+        $this->flushSession();
+        $teacher = User::create([
+            'name' => 'Portal Scope Teacher',
+            'employee_id' => 'TCH-SCOPE-01',
+            'email' => 'teacher.scope@gmail.com',
+            'password' => Hash::make('StrongPass#12345'),
+            'role' => 'teacher',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($teacher)
+            ->get(route('teacher.dashboard'))
+            ->assertOk()
+            ->assertDontSee('student-portal-master.css', false);
+    }
 }

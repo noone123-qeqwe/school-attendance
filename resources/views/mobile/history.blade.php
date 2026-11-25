@@ -8,11 +8,11 @@
     <div class="history-top-bar">
         <div class="d-flex align-items-center gap-2">
             <a href="{{ route('mobile.home') }}" class="back-link" aria-label="Back to Home">
-                <i class="bi bi-chevron-left"></i>
+                <i class="bi bi-chevron-left" aria-hidden="true"></i>
             </a>
             <div>
                 <h1 class="page-title">Attendance History</h1>
-                <p class="page-subtitle">{{ $stats['total'] }} total recorded classes</p>
+                <p class="page-subtitle" role="status" aria-live="polite">{{ $stats['total'] }} total recorded classes</p>
             </div>
         </div>
         <button type="button" class="scan-shortcut-btn" data-action="open-scanner" aria-label="Scan QR Code">

@@ -15,7 +15,7 @@
             @if($user->isStudent())
                 <span class="d-inline-flex align-items-center gap-2 flex-wrap justify-content-center">
                     <span class="d-inline-flex align-items-center gap-1">
-                        <i class="bi bi-person-badge text-warning" aria-hidden="true"></i>
+                        <i class="bi bi-person-badge" style="color:#e48fa0;" aria-hidden="true"></i>
                         <span>Student ID: <strong class="mobile-id-strong">{{ $user->student_number ?? 'Not Assigned' }}</strong></span>
                     </span>
                     @if($user->student_number)
@@ -39,7 +39,7 @@
                 @elseif($user->isParent())
                     <i class="bi bi-people-fill text-info me-1"></i> Parent
                 @else
-                    <i class="bi bi-mortarboard-fill text-warning me-1"></i> Student
+                    <i class="bi bi-mortarboard-fill me-1" style="color:#ece4e7;" aria-hidden="true"></i> Student
                 @endif
             </span>
 
@@ -82,7 +82,7 @@
                 <div class="mobile-info-icon"><i class="bi bi-card-text" aria-hidden="true"></i></div>
                 <div class="flex-grow-1 min-w-0">
                     <div class="mobile-info-label">Student ID</div>
-                    <div class="mobile-info-val text-warning fw-bold font-monospace">{{ $user->student_number ?? 'Not Assigned' }}</div>
+                    <div class="mobile-info-val fw-bold font-monospace">{{ $user->student_number ?? 'Not Assigned' }}</div>
                 </div>
             </div>
             @endif
@@ -116,7 +116,7 @@
         <h3 class="mobile-section-title">QUICK LINKS</h3>
         <div class="mobile-card p-2">
             <a href="{{ route('mobile.home') }}" class="mobile-menu-item">
-                <div class="mobile-menu-icon" style="background: rgba(207,164,111,0.15); color: #cfa46f;">
+                <div class="mobile-menu-icon" style="background: rgba(138,36,57,0.34); color: #fcf9fa;">
                     <i class="bi bi-house-door-fill" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">Home Dashboard</span>
@@ -125,7 +125,7 @@
 
             @if($user->isStudent())
             <a href="{{ route('mobile.scan') }}" class="mobile-menu-item">
-                <div class="mobile-menu-icon" style="background: rgba(34,197,94,0.15); color: #4ade80;">
+                <div class="mobile-menu-icon" style="background: rgba(52,211,153,0.16); color: #34d399;">
                     <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">Scan QR Code</span>
@@ -133,7 +133,7 @@
             </a>
 
             <a href="{{ route('student.classes') }}" class="mobile-menu-item">
-                <div class="mobile-menu-icon" style="background: rgba(207,164,111,0.15); color: #f5dfa8;">
+                <div class="mobile-menu-icon" style="background: rgba(228,143,160,0.16); color: #f8d5dd;">
                     <i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">My Classes &amp; COR</span>
@@ -141,7 +141,7 @@
             </a>
 
             <a href="{{ route('student.schedule') }}" class="mobile-menu-item">
-                <div class="mobile-menu-icon" style="background: rgba(245,158,11,0.15); color: #fbbf24;">
+                <div class="mobile-menu-icon" style="background: rgba(251,191,36,0.15); color: #fbbf24;">
                     <i class="bi bi-calendar2-week-fill" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">Weekly Schedule</span>
@@ -149,7 +149,7 @@
             </a>
 
             <a href="{{ route('mobile.history') }}" class="mobile-menu-item">
-                <div class="mobile-menu-icon" style="background: rgba(59,130,246,0.15); color: #60a5fa;">
+                <div class="mobile-menu-icon" style="background: rgba(125,211,252,0.15); color: #7dd3fc;">
                     <i class="bi bi-clock-history" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">Attendance History</span>
@@ -157,7 +157,7 @@
             </a>
 
             <a href="{{ route('excuses') }}" class="mobile-menu-item">
-                <div class="mobile-menu-icon" style="background: rgba(239,68,68,0.15); color: #f87171;">
+                <div class="mobile-menu-icon" style="background: rgba(255,107,122,0.16); color: #ff8e9b;">
                     <i class="bi bi-file-earmark-text-fill" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">Excuses</span>
@@ -165,7 +165,7 @@
             </a>
 
             <a href="{{ route('settings') }}" class="mobile-menu-item">
-                <div class="mobile-menu-icon" style="background: rgba(167,139,250,0.15); color: #a78bfa;">
+                <div class="mobile-menu-icon" style="background: rgba(196,181,253,0.15); color: #c4b5fd;">
                     <i class="bi bi-gear-fill" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">Settings &amp; Biometrics</span>

@@ -31,8 +31,8 @@
 </nav>
 <div class="mobile-scan-page">
     <div class="scan-hero">
-        <div class="scan-hero-icon">
-            <i class="bi bi-qr-code-scan"></i>
+        <div class="scan-hero-icon" aria-hidden="true">
+            <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
         </div>
         <h2 class="scan-hero-title">Scan Attendance QR</h2>
         <p class="scan-hero-subtitle">Tap the button below to open the camera<br>and scan your instructor's QR code.</p>
@@ -65,15 +65,15 @@
 
     <div class="scan-info-card">
         <div class="scan-info-row">
-            <i class="bi bi-shield-check text-success"></i>
+            <i class="bi bi-shield-check text-success" aria-hidden="true"></i>
             <span>Your GPS location is used to verify you're inside the classroom</span>
         </div>
         <div class="scan-info-row">
-            <i class="bi bi-camera text-info"></i>
+            <i class="bi bi-camera text-info" aria-hidden="true"></i>
             <span>Camera access is required to scan the QR code</span>
         </div>
         <div class="scan-info-row">
-            <i class="bi bi-clock text-warning"></i>
+            <i class="bi bi-clock text-warning" aria-hidden="true"></i>
             <span>QR codes expire quickly — scan within the session window</span>
         </div>
     </div>
