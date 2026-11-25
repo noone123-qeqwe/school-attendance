@@ -10,7 +10,7 @@
         'change-email': ['Change email address', 'Verify the new address before it becomes your account email.', 'account-email'],
         'change-password': ['Change password', 'Confirm your email and choose a new password.', 'account-password'],
         'change-phone': ['Change phone number', 'Update the phone number listed on your school account.', 'account-phone'],
-        biometrics: ['Biometrics', 'Register your face for attendance and manage the secure ways you sign in to your account.', 'security', 'biometrics'],
+        biometrics: ['Biometrics', 'Manage face registration for attendance and fingerprint registration for sign-in.', 'security', 'biometrics'],
         device: ['Attendance device', 'Manage the phone or computer you use to record attendance.', 'security', 'device'],
         recovery: ['Recovery codes', 'Save backup codes somewhere safe in case you lose access to your account.', 'security', 'recovery'],
         preferences: ['Notifications & app', 'Choose how you receive alerts, adjust your display, and check for updates.', 'preferences'],
