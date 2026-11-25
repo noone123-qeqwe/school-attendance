@@ -1,11 +1,11 @@
 {
-    "version": "9.1.43",
-    "build": "20261125.009",
-    "commit": "e8f1a84",
+    "version": "9.1.44",
+    "build": "20261125.010",
+    "commit": "0b8e439",
     "release_date": "2026-11-25",
     "channel": "stable",
     "name": "Smart Classroom Attendance System",
-    "installed_version": "9.1.43",
+    "installed_version": "9.1.44",
     "update": {
         "version": "9.1.6",
         "mode": "silent"
