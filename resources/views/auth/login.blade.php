@@ -2550,6 +2550,17 @@ async function performBiometricLogin(studentNumber, opts) {
             throw createWebAuthnError('NotFoundError', 'No fingerprint passkey was found on this device for your account.');
         }
 
+        // Native app: if this phone holds no fingerprint passkey the server accepts for this
+        // account (e.g. it was registered on another device), fail clearly instead of opening
+        // a system prompt that can only be cancelled.
+        var nativeDevice = window.AndroidDeviceBridge;
+        if (inNativeApk && androidBridge
+            && typeof nativeDevice?.matchesLocalPasskey === 'function'
+            && nativeDevice.isBiometricAvailable?.() === true
+            && !nativeDevice.matchesLocalPasskey(JSON.stringify(serverAllow.map(function(c) { return { id: c.id }; })))) {
+            throw createWebAuthnError('NotFoundError', 'No fingerprint passkey is registered on this phone for this account.');
+        }
+
         var effectiveTimeout = androidBridge ? promptTimeout : browserTimeout;
         var publicKeyOptions = {
             challenge: opts.challenge,
@@ -2753,12 +2764,14 @@ function handleBiometricSignInError(err, studentNumber, opts) {
                 accentClass: 'bio-method-icon-box--password'
             });
 
-            var noLocalTitle = hasAccountCredentials
-                ? 'No fingerprint verified on this device'
-                : 'No local fingerprint passkey found';
+            var noLocalTitle = err.name === 'NotFoundError'
+                ? 'No fingerprint registered on this device'
+                : (hasAccountCredentials
+                    ? 'No fingerprint verified on this device'
+                    : 'No local fingerprint passkey found');
             var noLocalMsg = err.name === 'NotFoundError'
                 ? (studentNumber
-                    ? 'This device does not have a saved fingerprint passkey for this account. Use Face verification or sign in with your password and register this device in Settings.'
+                    ? 'This device does not have a saved fingerprint for this account. Fingerprints are saved per device, so logging out on your other device does not move it here. Sign in with your password once, then register this device\u2019s fingerprint in Settings.'
                     : 'No local fingerprint passkey was found on this device. Use Face verification or sign in with your password.')
                 : 'Fingerprint verification was cancelled or did not complete on this device. If you registered on another browser or device, sign in with your password and register this device in Settings.';
             openBiometricModal({

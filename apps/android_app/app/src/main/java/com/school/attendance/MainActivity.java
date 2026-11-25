@@ -1402,9 +1402,28 @@ public class MainActivity extends AppCompatActivity {
             return host != null && findLatestKeystoreEntry(host) != null;
         }
 
+        /**
+         * True when this phone holds a fingerprint passkey that the server will accept for the
+         * given allowCredentials list (JSON array of {"id": "..."}). An empty list means the
+         * server accepts any discoverable passkey, so any local passkey matches.
+         */
+        @android.webkit.JavascriptInterface
+        public boolean matchesLocalPasskey(String allowCredentialsJson) {
+            String host = APP_ORIGIN.getHost();
+            if (host == null) return false;
+            try {
+                JSONArray allow = (allowCredentialsJson == null || allowCredentialsJson.isEmpty())
+                        ? new JSONArray() : new JSONArray(allowCredentialsJson);
+                if (allow.length() == 0) return findLatestKeystoreEntry(host) != null;
+                return findMatchingKeystoreEntry(host, allow) != null;
+            } catch (JSONException ex) {
+                return false;
+            }
+        }
+
         @android.webkit.JavascriptInterface
         public int getAppVersionCode() {
-            return 20925;
+            return 20926;
         }
 
         @android.webkit.JavascriptInterface

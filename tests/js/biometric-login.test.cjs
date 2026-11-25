@@ -294,3 +294,38 @@ test('native Android APK does not fall back to WebView WebAuthn on NotSupportedE
     assert.equal(login.browserRequests.length, 0);
     assert.equal(login.modal.title, 'Fingerprint verification unavailable');
 });
+
+test('native app with no matching local passkey fails clearly without opening the system prompt', async () => {
+    const login = createLogin({
+        androidBridgeExtra: {
+            isNativeApp: () => true,
+            hasLocalPasskey: () => false,
+            isBiometricAvailable: () => true,
+            matchesLocalPasskey: () => false
+        }
+    });
+    await login.context.handleBiometricLogin();
+    login.select('fingerprint');
+    await settle();
+
+    assert.equal(login.nativeRequests.length, 0);
+    assert.equal(login.modal.title, 'No fingerprint registered on this device');
+    assert.ok(login.modal.message.includes('register this device'));
+});
+
+test('native app with a matching local passkey still opens the system prompt', async () => {
+    const login = createLogin({
+        androidBridgeExtra: {
+            isNativeApp: () => true,
+            hasLocalPasskey: () => true,
+            isBiometricAvailable: () => true,
+            matchesLocalPasskey: () => true
+        }
+    });
+    await login.context.handleBiometricLogin();
+    login.select('fingerprint');
+    await settle();
+
+    assert.equal(login.nativeRequests.length, 1);
+    assert.equal(login.nativeRequests[0].type, 'get');
+});
