@@ -1,7 +1,7 @@
 {
   "name": "Smart Attendance",
   "short_name": "Smart Attendance",
-  "version": "9.1.67",
+  "version": "9.1.68",
   "description": "Real-time School Attendance, QR Clock-in, and Classroom Monitoring System",
   "id": "/app/v2",
   "start_url": "/",
