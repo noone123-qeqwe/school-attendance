@@ -78,12 +78,12 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertMatchesRegularExpression('/\.student-sidebar-brand\s+\.sidebar-logo\s*\{[^}]*border:\s*none;/s', $navCss);
         $this->assertStringNotContainsString('border: 1px solid rgba(223, 184, 121, 0.28);', $navCss);
 
-        // Top header still keeps notifications and account dropdown links
+        // Top header keeps notifications and Settings in the account dropdown, without My Profile
         $headerNode = $xpath->query('//header[@id="topHeader"]')->item(0);
         $this->assertNotNull($headerNode);
         $headerHtml = $dom->saveHTML($headerNode);
         $this->assertStringContainsString('topNavNotifBtn', $headerHtml);
-        $this->assertStringContainsString(route('profile'), $headerHtml);
+        $this->assertStringNotContainsString('My Profile', $headerHtml);
         $this->assertStringContainsString(route('settings'), $headerHtml);
     }
 
