@@ -198,7 +198,8 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->get(route('home'))
             ->assertOk()
             ->assertSee('Class section not assigned')
-            ->assertSee('sd-notice-banner');
+            ->assertSee('sd-notice-banner')
+            ->assertSee('Free schedule today');
     }
 
     public function test_student_settings_replaces_app_sidebar_with_single_settings_sidebar(): void

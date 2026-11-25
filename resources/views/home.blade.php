@@ -159,7 +159,7 @@
                 </div>
 
                 <h2 id="dashboardClassHeading" class="sd-spotlight-text">
-                    {{ $featuredClass?->subject?->name ?? ($todayClassCount ? 'All classes completed today' : 'No classes scheduled today') }}
+                    {{ $featuredClass?->subject?->name ?? ($todayClassCount ? 'All classes completed today' : 'Free schedule today') }}
                 </h2>
 
                 @if($featuredClass)
@@ -187,7 +187,7 @@
                     @endif
                 @else
                     <p class="sd-spotlight-empty-note">
-                        {{ $todayClassCount ? 'You have wrapped up all scheduled sessions for today.' : 'Use your free block to review records or submit any pending excuses.' }}
+                        {{ $todayClassCount ? 'You have wrapped up all scheduled sessions for today.' : 'Review upcoming subjects, attendance logs, or excuse requests at your pace.' }}
                     </p>
                 @endif
 
