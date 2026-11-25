@@ -9,1713 +9,528 @@
     $today     = now()->day;
     $isCurrentMonth = (now()->year == $calYear && now()->month == $calMonth);
     $totalRecords = (int) ($attendanceRecordCount ?? 0);
-    $todayClassCount = isset($todaySchedule) ? $todaySchedule->count() : 0;
+    $todaySchedCollection = collect($todaySchedule ?? []);
+    $todayClassCount = $todaySchedCollection->count();
+    $liveClassItem = $todaySchedCollection->firstWhere('status', 'ongoing');
+    $nextClassItem = $todaySchedCollection->firstWhere('status', 'upcoming');
+    $featuredClass = $liveClassItem ?? $nextClassItem;
+    $featuredRoom = trim((string) ($featuredClass?->schedule?->room ?? ''));
+    $featuredInstructor = trim((string) ($featuredClass?->subject?->instructorUser?->name ?? $featuredClass?->subject?->instructor ?? ''));
     $greetHour = now()->hour;
     $greeting = $greetHour < 12 ? 'Good Morning' : ($greetHour < 17 ? 'Good Afternoon' : 'Good Evening');
+    $rateVal = $attendanceRate;
+    $rateTone = $rateVal === null ? 'rate-empty' : ($rateVal >= 85 ? 'rate-good' : ($rateVal >= 75 ? 'rate-warning' : 'rate-danger'));
+    $rateIcon = $rateVal === null ? 'bi-dash-circle' : ($rateVal >= 85 ? 'bi-shield-check' : ($rateVal >= 75 ? 'bi-shield-exclamation' : 'bi-exclamation-triangle-fill'));
+    $subjectCount = isset($subjects) ? count($subjects) : 0;
+    $computedTotalAll = ($totalPresent ?? 0) + ($totalLate ?? 0) + ($totalAbsent ?? 0);
 @endphp
 
 @if(blank(auth()->user()->section))
-<div role="status" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:16px;border-radius:12px;border:1px solid rgba(207,164,111,.35);background:rgba(207,164,111,.08);color:#f3e7cd;">
-    <i class="bi bi-info-circle-fill" style="color:#dfb784;margin-top:2px;"></i>
-    <div><strong>Class section not assigned</strong><br><span style="color:#b39b82;">Your section timetable will appear after the school assigns your section. Contact the registrar or school administrator to update your profile.</span></div>
+<div role="status" class="sd-notice-banner">
+    <span class="sd-notice-icon" aria-hidden="true"><i class="bi bi-info-circle-fill"></i></span>
+    <div class="sd-notice-copy">
+        <strong>Class section not assigned</strong>
+        <span>Your section timetable will appear after the school assigns your section. Contact the registrar or school administrator to update your profile.</span>
+    </div>
 </div>
 @endif
 
 @if(session('error'))
-<div class="mobile-error-toast" style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:12px;padding:10px 14px;font-size:.82rem;margin-bottom:16px;display:flex;align-items:center;gap:8px;word-break:break-word;">
-    <i class="bi bi-exclamation-circle-fill" style="flex-shrink:0;"></i><span>{{ session('error') }}</span>
+<div class="sd-error-banner" role="alert">
+    <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+    <span>{{ session('error') }}</span>
 </div>
 @endif
 
-<!-- Active Warnings -->
 @if(isset($activeWarnings) && $activeWarnings->count() > 0)
-<div class="ent-alert ent-fade-up mobile-warning-section">
-    <div class="warning-header d-flex align-items-center gap-3 mb-3">
-        <div class="ent-alert-icon warning-icon-box" style="flex-shrink: 0;">
+<div class="ent-alert ent-fade-up mobile-warning-section" role="region" aria-label="Attendance Warnings">
+    <div class="warning-header">
+        <div class="ent-alert-icon warning-icon-box" aria-hidden="true">
             <i class="bi bi-exclamation-triangle-fill"></i>
         </div>
-        <div class="ent-alert-body warning-header-body" style="flex: 1; min-width: 0;">
+        <div class="ent-alert-body warning-header-body">
             <div class="ent-alert-title warning-title">Action Required: Attendance Warning</div>
-            <div class="ent-alert-text warning-subtitle">You have {{ $activeWarnings->count() }} active warning(s). Please review your attendance immediately.</div>
+            <div class="ent-alert-text warning-subtitle">You have {{ $activeWarnings->count() }} active {{ \Illuminate\Support\Str::plural('warning', $activeWarnings->count()) }}. Please review your attendance immediately.</div>
         </div>
     </div>
-    
-    <div class="warning-cards-list d-flex flex-column gap-3 mb-3">
+
+    <div class="warning-cards-list">
         @foreach($activeWarnings as $warning)
         <div class="warning-card-item">
             <div class="warning-card-header">
-                <span class="warning-card-code"><i class="bi bi-exclamation-triangle-fill me-1" style="opacity: 0.85;"></i>{{ $warning->subject_code }}</span>
-                <span class="warning-card-time"><i class="bi bi-clock me-1"></i>{{ $warning->created_at->diffForHumans() }}</span>
+                <span class="warning-card-code"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> {{ $warning->subject_code }}</span>
+                <span class="warning-card-time"><i class="bi bi-clock" aria-hidden="true"></i> {{ $warning->created_at->diffForHumans() }}</span>
             </div>
             <div class="warning-card-message">{{ $warning->message }}</div>
         </div>
         @endforeach
     </div>
-    
-    <div class="warning-action-btns d-flex gap-2 flex-wrap">
+
+    <div class="warning-action-btns">
         <a href="{{ route('excuses') }}" class="ent-btn ent-btn-primary warning-btn-submit">
-            <i class="bi bi-file-text-fill me-1"></i> Submit Excuse
+            <i class="bi bi-file-text-fill" aria-hidden="true"></i> Submit Excuse
         </a>
         <a href="{{ route('student.calendar') }}#attendance-records" class="ent-btn ent-btn-secondary warning-btn-records">
-            <i class="bi bi-journal-text me-1"></i> View Records
+            <i class="bi bi-journal-text" aria-hidden="true"></i> View Records
         </a>
     </div>
 </div>
 @endif
 
-<style>
-    /* ══════════════════════════════════════════════════════════════
-       ATTENDANCE WARNING SECTION (Responsive Mobile & Desktop)
-       ══════════════════════════════════════════════════════════════ */
-    .mobile-warning-section {
-        background: linear-gradient(145deg, rgba(239, 68, 68, 0.12) 0%, rgba(20, 10, 8, 0.9) 100%) !important;
-        border: 1.5px solid rgba(239, 68, 68, 0.32) !important;
-        border-radius: 18px !important;
-        margin-bottom: 20px !important;
-        padding: 20px !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 20px rgba(239, 68, 68, 0.08) !important;
-        box-sizing: border-box !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        overflow: hidden !important;
-    }
-
-    .mobile-warning-section .warning-icon-box {
-        background: rgba(239, 68, 68, 0.18) !important;
-        color: #f87171 !important;
-        border: 1px solid rgba(239, 68, 68, 0.25) !important;
-        border-radius: 12px !important;
-    }
-
-    .mobile-warning-section .warning-title {
-        color: #fca5a5 !important;
-        font-weight: 700 !important;
-        font-size: 1.05rem !important;
-        letter-spacing: -0.01em !important;
-        margin-bottom: 4px !important;
-        overflow-wrap: break-word !important;
-        word-wrap: break-word !important;
-        word-break: normal !important;
-    }
-
-    .mobile-warning-section .warning-subtitle {
-        color: #b39b82 !important;
-        font-size: 0.82rem !important;
-        line-height: 1.45 !important;
-        margin: 0 !important;
-        overflow-wrap: break-word !important;
-        word-wrap: break-word !important;
-        word-break: normal !important;
-    }
-
-    .mobile-warning-section .warning-card-item {
-        background: rgba(0, 0, 0, 0.45) !important;
-        padding: 14px !important;
-        border-radius: 12px !important;
-        border: 1px solid rgba(239, 68, 68, 0.22) !important;
-        box-sizing: border-box !important;
-        width: 100% !important;
-        transition: all 0.2s ease !important;
-    }
-
-    .mobile-warning-section .warning-card-header {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        flex-wrap: wrap !important;
-        gap: 6px !important;
-        margin-bottom: 8px !important;
-        width: 100% !important;
-    }
-
-    .mobile-warning-section .warning-card-code {
-        color: #fca5a5 !important;
-        font-weight: 700 !important;
-        font-size: 0.84rem !important;
-        background: rgba(239, 68, 68, 0.15) !important;
-        border: 1px solid rgba(239, 68, 68, 0.3) !important;
-        padding: 2px 8px !important;
-        border-radius: 6px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-    }
-
-    .mobile-warning-section .warning-card-time {
-        color: #b39b82 !important;
-        font-size: 0.72rem !important;
-        font-weight: 500 !important;
-    }
-
-    .mobile-warning-section .warning-card-message {
-        font-size: 0.85rem !important;
-        color: #f3e7cd !important;
-        line-height: 1.55 !important;
-        margin: 0 !important;
-        overflow-wrap: break-word !important;
-        word-wrap: break-word !important;
-        word-break: normal !important;
-        hyphens: none !important;
-    }
-
-    .mobile-warning-section .warning-btn-submit {
-        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(239, 68, 68, 0.5) !important;
-        border-radius: 12px !important;
-        font-weight: 700 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-decoration: none !important;
-        touch-action: manipulation !important;
-        box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35) !important;
-        transition: all 0.2s ease !important;
-    }
-
-    .mobile-warning-section .warning-btn-records {
-        background: rgba(239, 68, 68, 0.08) !important;
-        color: #fca5a5 !important;
-        border: 1px solid rgba(239, 68, 68, 0.32) !important;
-        border-radius: 12px !important;
-        font-weight: 700 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-decoration: none !important;
-        touch-action: manipulation !important;
-        transition: all 0.2s ease !important;
-    }
-
-    /* Desktop layout (>= 992px): Multi-column with ample space */
-    @media (min-width: 992px) {
-        .mobile-warning-section {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: flex-start !important;
-            gap: 20px !important;
-            padding: 22px 24px !important;
-        }
-        .mobile-warning-section .warning-header {
-            flex: 0 0 280px !important;
-            max-width: 320px !important;
-            margin-bottom: 0 !important;
-        }
-        .mobile-warning-section .warning-cards-list {
-            flex: 1 1 auto !important;
-            min-width: 0 !important;
-            margin-bottom: 0 !important;
-        }
-        .mobile-warning-section .warning-action-btns {
-            flex: 0 0 170px !important;
-            flex-direction: column !important;
-            gap: 10px !important;
-            margin-top: 0 !important;
-        }
-        .mobile-warning-section .warning-action-btns > a {
-            width: 100% !important;
-            min-height: 42px !important;
-            padding: 10px 14px !important;
-        }
-    }
-
-    /* Mobile & Tablet layout (< 992px): Single-column full-width stacked */
-    @media (max-width: 991.98px) {
-        .mobile-warning-section {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 14px !important;
-            padding: 16px 14px !important;
-            margin-bottom: 16px !important;
-            border-radius: 16px !important;
-        }
-        .mobile-warning-section .warning-header {
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: flex-start !important;
-            gap: 12px !important;
-            width: 100% !important;
-            margin-bottom: 0 !important;
-        }
-        .mobile-warning-section .warning-icon-box {
-            width: 42px !important;
-            height: 42px !important;
-            min-width: 42px !important;
-            font-size: 1.2rem !important;
-            flex-shrink: 0 !important;
-        }
-        .mobile-warning-section .warning-header-body {
-            flex: 1 1 auto !important;
-            min-width: 0 !important;
-        }
-        .mobile-warning-section .warning-title {
-            font-size: 0.98rem !important;
-            line-height: 1.35 !important;
-        }
-        .mobile-warning-section .warning-subtitle {
-            font-size: 0.78rem !important;
-            line-height: 1.45 !important;
-        }
-        .mobile-warning-section .warning-cards-list {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 10px !important;
-            width: 100% !important;
-            margin-bottom: 0 !important;
-        }
-        .mobile-warning-section .warning-card-item {
-            width: 100% !important;
-            padding: 13px 14px !important;
-            border-radius: 12px !important;
-        }
-        .mobile-warning-section .warning-card-message {
-            font-size: 0.85rem !important;
-            line-height: 1.55 !important;
-        }
-        .mobile-warning-section .warning-action-btns {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 8px !important;
-            width: 100% !important;
-            margin-top: 2px !important;
-        }
-        .mobile-warning-section .warning-action-btns > a {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            width: 100% !important;
-            min-width: 0 !important;
-            min-height: 44px !important;
-            padding: 11px 16px !important;
-            font-size: 0.85rem !important;
-            font-weight: 700 !important;
-            border-radius: 12px !important;
-            box-sizing: border-box !important;
-            text-align: center !important;
-            white-space: normal !important;
-        }
-    }
-
-    @media (max-width: 768px) {
-        /* Hero banner */
-        .hero-banner { padding: 18px 16px !important; border-radius: 18px !important; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important; }
-        .hero-banner h1 { font-size: 1.25rem !important; margin-bottom: 6px !important; }
-
-        /* Subject stat cards */
-        .subject-stat-card { padding: 16px 18px !important; border-radius: 16px !important; }
-        .subject-stat-card .rate-text { font-size: 1.45rem !important; }
-        .subject-stat-card .bg-glow { display: none !important; }
-
-        /* Calendar */
-        .att-cal-wrap { border-radius: 16px !important; border: 1px solid rgba(255,255,255,0.06) !important; background: rgba(0,0,0,0.18) !important; }
-        .att-cal-grid { padding: 0 10px 14px !important; gap: 6px !important; }
-        .att-cal-cell { border-radius: 10px !important; }
-        .att-cal-stats { padding: 12px 10px !important; }
-        .att-cal-stat { border: none !important; padding: 6px 10px !important; background: transparent !important; }
-
-        /* Hero card CTA */
-        .premium-hero-card .d-md-none.d-flex { flex-direction: column !important; gap: 10px !important; }
-        .premium-hero-card .d-md-none .btn-modern-primary,
-        .premium-hero-card .d-md-none .btn-modern-glass {
-            width: 100% !important;
-            justify-content: center !important;
-            padding: 12px 16px !important;
-            font-size: 0.88rem !important;
-            min-height: 48px !important;
-            border-radius: 14px !important;
-        }
-
-        /* Error toast */
-        .mobile-error-toast { font-size: 0.82rem !important; padding: 12px 16px !important; margin-bottom: 14px !important; border-radius: 12px !important; }
-    }
-
-    /* Small screens (<= 360px) */
-    @media (max-width: 360px) {
-        .mobile-warning-section { padding: 12px 10px !important; border-radius: 14px !important; }
-        .mobile-warning-section .warning-title { font-size: 0.9rem !important; }
-        .mobile-warning-section .warning-subtitle { font-size: 0.74rem !important; }
-        .mobile-warning-section .warning-card-item { padding: 10px 10px !important; }
-        .mobile-warning-section .warning-card-message { font-size: 0.8rem !important; }
-    }
-
-    /* ══════════════════════════════════════════════════════════════
-       STUDENT HERO DASHBOARD & QUICK NAV (Modern & Minimalist)
-       ══════════════════════════════════════════════════════════════ */
-    html {
-        scroll-behavior: smooth;
-    }
-
-    .student-hero-banner {
-        background: radial-gradient(120% 120% at 0% 0%, rgba(42, 20, 14, 0.95) 0%, rgba(18, 10, 8, 0.98) 55%, rgba(12, 7, 5, 0.98) 100%) !important;
-        border: 1px solid rgba(207, 164, 111, 0.24) !important;
-        border-radius: 20px !important;
-        padding: 20px 24px !important;
-        position: relative !important;
-        overflow: hidden !important;
-        box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-        margin-bottom: 20px !important;
-    }
-
-    .student-hero-banner::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, transparent 0%, rgba(255, 209, 102, 0.6) 20%, rgba(207, 164, 111, 1) 50%, rgba(255, 209, 102, 0.6) 80%, transparent 100%);
-    }
-
-    .student-hero-banner::after {
-        content: '';
-        position: absolute;
-        top: -40px;
-        left: -40px;
-        width: 180px;
-        height: 180px;
-        background: radial-gradient(circle, rgba(207, 164, 111, 0.15) 0%, transparent 70%);
-        pointer-events: none;
-        z-index: 1;
-    }
-
-    .student-hero-inner {
-        position: relative;
-        z-index: 2;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-
-    /* ── Top Bar: Greeting & Status ── */
-    .student-hero-topbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .student-greeting-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 3px 11px;
-        border-radius: 99px;
-        background: rgba(207, 164, 111, 0.1);
-        border: 1px solid rgba(207, 164, 111, 0.24);
-        color: #f3d18e;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-    }
-
-    .student-greeting-badge i {
-        font-size: 0.82rem;
-    }
-
-    .student-status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 3px 10px;
-        border-radius: 99px;
-        background: rgba(16, 185, 129, 0.1);
-        border: 1px solid rgba(16, 185, 129, 0.26);
-        color: #6ee7b7;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.03em;
-    }
-
-    .student-status-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #10b981;
-        box-shadow: 0 0 8px rgba(16, 185, 129, 0.85);
-        display: inline-block;
-    }
-
-    /* ── Middle: Student Profile (Avatar + Name & Meta) ── */
-    .student-hero-profile {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .student-avatar-box {
-        position: relative;
-        width: 58px;
-        height: 58px;
-        min-width: 58px;
-        border-radius: 17px;
-        padding: 2px;
-        background: linear-gradient(135deg, rgba(212, 175, 55, 0.65) 0%, rgba(139, 90, 43, 0.35) 100%);
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
-        flex-shrink: 0;
-    }
-
-    .student-avatar-img {
-        width: 100%;
-        height: 100%;
-        border-radius: 15px;
-        object-fit: cover;
-        background: #1a0f0a;
-        display: block;
-    }
-
-    .student-profile-info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .student-hero-name {
-        color: #ffffff;
-        font-weight: 800;
-        margin: 0 0 6px 0;
-        font-size: clamp(1.2rem, 2.2vw, 1.65rem);
-        line-height: 1.15;
-        letter-spacing: -0.02em;
-        overflow-wrap: break-word;
-    }
-
-    .student-meta-strip {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-
-    .student-meta-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 3px 8px;
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: #d6c7b2;
-        font-size: 0.75rem;
-        font-weight: 600;
-        line-height: 1.3;
-    }
-
-    .student-meta-chip.chip-gold {
-        background: rgba(207, 164, 111, 0.12);
-        border-color: rgba(207, 164, 111, 0.28);
-        color: #ffd166;
-    }
-
-    .student-meta-chip i {
-        font-size: 0.8rem;
-        opacity: 0.9;
-    }
-
-    /* ── Bottom: Symmetrical Metrics Deck ── */
-    .student-hero-deck {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        padding-top: 14px;
-        border-top: 1px solid rgba(207, 164, 111, 0.12);
-    }
-
-    .hero-deck-card {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 9px 12px;
-        border-radius: 12px;
-        background: rgba(0, 0, 0, 0.35);
-        border: 1px solid rgba(207, 164, 111, 0.14);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        min-width: 0;
-    }
-
-    .hero-deck-card:hover {
-        background: rgba(0, 0, 0, 0.48);
-        border-color: rgba(207, 164, 111, 0.28);
-        transform: translateY(-1px);
-    }
-
-    .hero-deck-icon {
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
-        border-radius: 9px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.95rem;
-        flex-shrink: 0;
-    }
-
-    .hero-deck-icon.icon-time {
-        background: rgba(207, 164, 111, 0.12);
-        border: 1px solid rgba(207, 164, 111, 0.22);
-        color: #ffd166;
-    }
-
-    .hero-deck-icon.icon-rate-good {
-        background: rgba(16, 185, 129, 0.12);
-        border: 1px solid rgba(16, 185, 129, 0.28);
-        color: #4ade80;
-    }
-
-    .hero-deck-icon.icon-rate-warning {
-        background: rgba(245, 158, 11, 0.12);
-        border: 1px solid rgba(245, 158, 11, 0.28);
-        color: #fbbf24;
-    }
-
-    .hero-deck-icon.icon-rate-danger {
-        background: rgba(239, 68, 68, 0.12);
-        border: 1px solid rgba(239, 68, 68, 0.28);
-        color: #f87171;
-    }
-
-    .hero-deck-icon.icon-rate-empty {
-        background: rgba(148, 163, 184, 0.12);
-        border: 1px solid rgba(148, 163, 184, 0.28);
-        color: #cbd5e1;
-    }
-
-    .hero-deck-icon.icon-streak {
-        background: rgba(249, 115, 22, 0.12);
-        border: 1px solid rgba(249, 115, 22, 0.28);
-        font-size: 1rem;
-    }
-
-    .hero-deck-icon.icon-classes {
-        background: rgba(96, 165, 250, 0.12);
-        border: 1px solid rgba(96, 165, 250, 0.25);
-        color: #60a5fa;
-    }
-
-    .hero-deck-body {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-    }
-
-    .hero-deck-value {
-        color: #ffffff;
-        font-size: 0.98rem;
-        font-weight: 700;
-        line-height: 1.2;
-        letter-spacing: -0.01em;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .hero-deck-value.val-rate-good { color: #4ade80; }
-    .hero-deck-value.val-rate-warning { color: #fbbf24; }
-    .hero-deck-value.val-rate-danger { color: #f87171; }
-    .hero-deck-value.val-rate-empty { color: #cbd5e1; }
-
-    .hero-deck-label {
-        color: #9c8b78;
-        font-size: 0.68rem;
-        font-weight: 600;
-        line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-
-
-    /* ══════════════════════════════════════════════════════════════
-       TODAY'S SCHEDULE (Modern Minimalist Timeline Cards)
-       ══════════════════════════════════════════════════════════════ */
-    .schedule-items-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .schedule-modern-card {
-        background: rgba(0, 0, 0, 0.28);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 14px;
-        padding: 14px 18px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 16px;
-        transition: all 0.2s ease;
-    }
-    .schedule-modern-card:hover {
-        background: rgba(255, 255, 255, 0.02);
-        border-color: rgba(207, 164, 111, 0.2);
-        transform: translateX(2px);
-    }
-    .schedule-main-info {
-        flex: 1;
-        min-width: 0;
-    }
-    .schedule-subject-title {
-        font-weight: 800;
-        color: #f3ede4;
-        font-size: 1.05rem;
-        line-height: 1.3;
-        overflow-wrap: break-word;
-        word-break: normal;
-    }
-    .schedule-meta-row {
-        color: #b39b82;
-        font-size: 0.82rem;
-        margin-top: 5px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .schedule-time-badge {
-        color: #f3ede4;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-    }
-    .schedule-code-badge {
-        background: rgba(207, 164, 111, 0.1);
-        border: 1px solid rgba(207, 164, 111, 0.2);
-        color: #ffd166;
-        padding: 2px 7px;
-        border-radius: 6px;
-        font-size: 0.74rem;
-        font-weight: 700;
-    }
-    .schedule-instructor-badge {
-        color: #8f826f;
-        font-size: 0.78rem;
-    }
-    .schedule-status-col {
-        flex-shrink: 0;
-    }
-    .schedule-empty-state {
-        text-align: center;
-        padding: 36px 16px;
-    }
-
-    /* ══════════════════════════════════════════════════════════════
-       SUBJECT BREAKDOWN (Minimalist 2-Column Modern Grid)
-       ══════════════════════════════════════════════════════════════ */
-    .subject-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 14px;
-    }
-    .subject-minimal-card {
-        background: rgba(17, 9, 6, 0.65);
-        border: 1px solid rgba(207, 164, 111, 0.16);
-        border-radius: 16px;
-        padding: 16px 18px;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    }
-    .subject-minimal-card:hover {
-        transform: translateY(-2px);
-        border-color: rgba(207, 164, 111, 0.38);
-        background: rgba(22, 12, 8, 0.85);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-    }
-    .subject-minimal-title {
-        font-weight: 800;
-        color: #f3ede4;
-        font-size: 1.02rem;
-        line-height: 1.25;
-        overflow-wrap: break-word;
-        word-break: normal;
-    }
-    .subject-minimal-meta {
-        font-size: 0.78rem;
-        color: #b39b82;
-        margin-top: 4px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .subject-minimal-code {
-        background: rgba(207, 164, 111, 0.12);
-        border: 1px solid rgba(207, 164, 111, 0.25);
-        color: #ffd166;
-        padding: 2px 7px;
-        border-radius: 6px;
-        font-weight: 700;
-    }
-    .subject-minimal-rate {
-        font-size: 1.5rem;
-        font-weight: 900;
-        line-height: 1;
-    }
-    .subject-at-risk-tag {
-        font-size: 0.68rem;
-        color: #f87171;
-        font-weight: 700;
-        margin-top: 4px;
-        display: inline-flex;
-        align-items: center;
-        background: rgba(248, 113, 113, 0.14);
-        border: 1px solid rgba(248, 113, 113, 0.3);
-        padding: 2px 8px;
-        border-radius: 99px;
-    }
-    .subject-minimal-progress-track {
-        height: 5px;
-        background: rgba(255, 255, 255, 0.06);
-        border-radius: 99px;
-        overflow: hidden;
-        margin: 12px 0;
-    }
-    .subject-minimal-progress-fill {
-        height: 100%;
-        border-radius: 99px;
-        transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .subject-minimal-pills {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-    .sub-pill {
-        font-size: 0.72rem;
-        font-weight: 600;
-        padding: 3px 9px;
-        border-radius: 99px;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .sub-pill.pill-present {
-        color: #4ade80;
-        background: rgba(74, 222, 128, 0.1);
-        border: 1px solid rgba(74, 222, 128, 0.22);
-    }
-    .sub-pill.pill-late {
-        color: #fbbf24;
-        background: rgba(251, 191, 36, 0.1);
-        border: 1px solid rgba(251, 191, 36, 0.22);
-    }
-    .sub-pill.pill-absent {
-        color: #f87171;
-        background: rgba(248, 113, 113, 0.1);
-        border: 1px solid rgba(248, 113, 113, 0.22);
-    }
-    .sub-pill.pill-excused {
-        color: #60a5fa;
-        background: rgba(96, 165, 250, 0.1);
-        border: 1px solid rgba(96, 165, 250, 0.22);
-    }
-
-    /* ══════════════════════════════════════════════════════════════
-       CALENDAR MINIMALIST LEGEND STRIP
-       ══════════════════════════════════════════════════════════════ */
-    .scal-legend-strip {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 14px;
-        padding: 14px 18px;
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 16px;
-    }
-    .scal-legend-items {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-wrap: wrap;
-    }
-    .scal-legend-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #f3ede4;
-    }
-    .scal-legend-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        display: inline-block;
-        flex-shrink: 0;
-    }
-    .scal-legend-tip {
-        font-size: 0.78rem;
-        color: #b39b82;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 767.98px) {
-        /* Container and spacing flow */
-        .page-enter {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        /* Hero banner: modern, spacious, luxurious */
-        .student-hero-banner {
-            padding: 20px 18px !important;
-            border-radius: 20px !important;
-            margin-bottom: 20px !important;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
-        }
-        .student-hero-inner {
-            gap: 16px !important;
-        }
-        .student-greeting-badge {
-            font-size: 0.76rem !important;
-            padding: 4px 10px !important;
-            border-radius: 8px !important;
-        }
-        .student-status-badge {
-            font-size: 0.76rem !important;
-            padding: 4px 10px !important;
-            border-radius: 8px !important;
-        }
-        .student-hero-profile {
-            gap: 14px !important;
-        }
-        .student-avatar-box {
-            width: 56px !important;
-            height: 56px !important;
-            min-width: 56px !important;
-            border-radius: 16px !important;
-        }
-        .student-avatar-img {
-            border-radius: 14px !important;
-        }
-        .student-hero-name {
-            font-size: 1.35rem !important;
-            font-weight: 800 !important;
-            margin-bottom: 4px !important;
-        }
-        .student-meta-strip {
-            gap: 6px !important;
-            flex-wrap: wrap !important;
-        }
-        .student-meta-chip {
-            font-size: 0.76rem !important;
-            padding: 3px 8px !important;
-            border-radius: 8px !important;
-        }
-
-        /* Hero Deck: Comfortable 2-column + full-width clock layout */
-        .student-hero-deck {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px !important;
-            padding-top: 14px !important;
-            margin-top: 4px !important;
-        }
-        .hero-deck-card {
-            flex-direction: column !important;
-            align-items: center !important;
-            text-align: center !important;
-            padding: 12px 10px !important;
-            gap: 6px !important;
-            border-radius: 14px !important;
-            background: rgba(255, 255, 255, 0.035) !important;
-            border: 1px solid rgba(255, 255, 255, 0.06) !important;
-            min-height: 82px !important;
-        }
-        /* Campus Clock pill spans both columns on mobile */
-        .hero-deck-card:first-child {
-            grid-column: span 2 !important;
-            flex-direction: row !important;
-            justify-content: flex-start !important;
-            text-align: left !important;
-            padding: 12px 16px !important;
-            gap: 12px !important;
-        }
-        .hero-deck-card:first-child .hero-deck-body {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-        }
-        .hero-deck-icon {
-            width: 36px !important;
-            height: 36px !important;
-            min-width: 36px !important;
-            font-size: 1rem !important;
-            border-radius: 10px !important;
-        }
-        .hero-deck-value {
-            font-size: 1.05rem !important;
-            font-weight: 800 !important;
-        }
-        .hero-deck-label {
-            font-size: 0.74rem !important;
-            font-weight: 600 !important;
-            opacity: 0.8 !important;
-        }
-
-        /* Quick Stats KPI Grid */
-        #realStats {
-            gap: 12px !important;
-            margin-bottom: 20px !important;
-        }
-        #realStats .ent-kpi-card {
-            padding: 16px !important;
-            border-radius: 16px !important;
-            min-height: 98px !important;
-        }
-        #realStats .ent-kpi-icon {
-            width: 40px !important;
-            height: 40px !important;
-            font-size: 1.15rem !important;
-            margin-bottom: 10px !important;
-            border-radius: 11px !important;
-        }
-        #realStats .ent-kpi-label {
-            font-size: 0.78rem !important;
-            font-weight: 600 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.4px !important;
-            margin-bottom: 4px !important;
-            white-space: normal !important;
-        }
-        #realStats .ent-kpi-value {
-            font-size: 1.55rem !important;
-            font-weight: 800 !important;
-            line-height: 1.15 !important;
-        }
-
-        /* Today's Schedule Card */
-        #todayScheduleSection {
-            margin-bottom: 20px !important;
-        }
-        #todayScheduleSection .adm-card,
-        #todayScheduleSection article {
-            border-radius: 20px !important;
-            padding: 18px 16px !important;
-        }
-        #todayScheduleSection .adm-card-head {
-            padding: 0 0 14px 0 !important;
-            margin-bottom: 14px !important;
-        }
-        #todayScheduleSection .adm-card-title {
-            font-size: 1.1rem !important;
-            font-weight: 800 !important;
-            gap: 10px !important;
-        }
-        #todayScheduleSection .adm-card-icon {
-            width: 36px !important;
-            height: 36px !important;
-            border-radius: 10px !important;
-            font-size: 1rem !important;
-        }
-        #todayScheduleSection div[style*="padding: 22px 24px"],
-        #todayScheduleSection div[style*="padding: 28px 32px"] {
-            padding: 16px !important;
-        }
-        #todayScheduleSection .schedule-items-grid {
-            gap: 12px !important;
-        }
-        #todayScheduleSection .schedule-modern-card {
-            padding: 16px !important;
-            border-radius: 16px !important;
-            gap: 14px !important;
-            background: rgba(255, 255, 255, 0.035) !important;
-            border: 1px solid rgba(255, 255, 255, 0.06) !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
-        }
-        #todayScheduleSection .schedule-subject-title {
-            font-size: 1.05rem !important;
-            font-weight: 700 !important;
-            line-height: 1.3 !important;
-        }
-        #todayScheduleSection .schedule-meta-row {
-            font-size: 0.82rem !important;
-            gap: 8px !important;
-            margin-top: 6px !important;
-            flex-wrap: wrap !important;
-        }
-        #todayScheduleSection .schedule-time-badge {
-            font-size: 0.8rem !important;
-            padding: 3px 8px !important;
-            border-radius: 6px !important;
-            background: rgba(207, 164, 111, 0.08) !important;
-            color: #e6c89a !important;
-        }
-        #todayScheduleSection .schedule-code-badge {
-            font-size: 0.76rem !important;
-            padding: 3px 8px !important;
-            border-radius: 6px !important;
-            font-weight: 600 !important;
-        }
-        #todayScheduleSection .schedule-instructor-badge {
-            font-size: 0.8rem !important;
-        }
-        #todayScheduleSection .schedule-empty-state {
-            padding: 32px 16px !important;
-        }
-
-        /* Calendar (when loaded in modals or pages) */
-        .scal-card {
-            padding: 18px 16px !important;
-            border-radius: 20px !important;
-        }
-        .scal-legend-strip {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 10px !important;
-            padding: 14px 16px !important;
-        }
-        .scal-legend-items {
-            gap: 10px 14px !important;
-        }
-
-        /* Bootstrap utility overrides on mobile */
-        .row.g-4 {
-            --bs-gutter-y: 1rem !important;
-            --bs-gutter-x: 0.875rem !important;
-        }
-        .mb-4 {
-            margin-bottom: 1.25rem !important;
-        }
-    }
-</style>
-
-<!-- Hero Banner -->
 <div class="student-desktop-dashboard">
-<div class="student-hero-banner premium-hero-card mb-4">
-    <div class="student-hero-inner">
-        <!-- Top Bar: Greeting & Status -->
-        <div class="student-hero-topbar">
-            <div class="student-hero-context">
-            <div class="student-greeting-badge">
-                @if(now()->hour < 12)
-                    <i class="bi bi-brightness-alt-high-fill text-warning"></i>
-                @elseif(now()->hour < 17)
-                    <i class="bi bi-sun-fill text-warning"></i>
-                @else
-                    <i class="bi bi-moon-stars-fill text-warning"></i>
-                @endif
-                <span>{{ $greeting }}</span>
-            </div>
-            <div class="student-status-badge" title="Enrollment Status: Active">
-                <span class="student-status-dot"></span>
-                <span>Active Student</span>
-            </div>
-            </div>
-            <div class="student-hero-cta-group">
-                <a class="student-desktop-check-in" href="{{ route('mobile.scan', ['open_scanner' => 1]) }}">
-                    <i class="bi bi-qr-code-scan" aria-hidden="true"></i> Scan attendance
-                </a>
-                <a class="student-desktop-check-in is-secondary d-none d-lg-inline-flex" href="{{ route('mobile.scan', ['open_code' => 1]) }}">
-                    <i class="bi bi-123" aria-hidden="true"></i> Enter 6-digit code
-                </a>
-            </div>
-        </div>
-
-        @php
-            $todaySchedCollection = collect($todaySchedule ?? []);
-            $liveClassItem = $todaySchedCollection->firstWhere('status', 'ongoing');
-            $nextClassItem = $todaySchedCollection->firstWhere('status', 'upcoming');
-        @endphp
-        <!-- Middle Profile: Avatar & Details -->
-        <div class="student-hero-profile">
-            <div class="student-avatar-box">
-                <img src="{{ Auth::user()->profile_photo_url_with_version }}" alt="{{ Auth::user()->name }}" class="student-avatar-img">
-            </div>
-            <div class="student-profile-info">
-                <h1 class="student-hero-name">{{ Auth::user()->name }}</h1>
-                <div class="student-meta-strip">
-                    @if(!empty(Auth::user()->student_number))
-                        <span class="student-meta-chip chip-gold" title="Student Identification Number">
-                            <i class="bi bi-person-badge"></i>
-                            <span>ID: {{ Auth::user()->student_number }}</span>
-                        </span>
-                    @endif
-                    <span class="student-meta-chip" title="Enrolled Degree Program">
-                        <i class="bi bi-mortarboard" style="color: #60a5fa;"></i>
-                        <span>{{ Auth::user()->course ?? 'BSCS' }}</span>
-                    </span>
-                    <span class="student-meta-chip" title="Academic Standing">
-                        <i class="bi bi-layers" style="color: #a78bfa;"></i>
-                        <span>Year {{ Auth::user()->year_level ?? '1' }} • Sem {{ Auth::user()->semester ?? '1' }}</span>
-                    </span>
-                    @if(!empty(Auth::user()->section))
-                        <span class="student-meta-chip" title="Class Section">
-                            <i class="bi bi-people" style="color: #34d399;"></i>
-                            <span>Sec {{ Auth::user()->section }}</span>
-                        </span>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        @php
-            $featuredClass = $liveClassItem ?? $nextClassItem;
-            $featuredRoom = trim($featuredClass?->schedule?->room ?? '');
-        @endphp
-        <section class="sd-hero-spotlight d-none d-lg-flex" aria-labelledby="dashboardClassHeading">
-            <div class="sd-spotlight-label">
-                <i class="bi {{ $liveClassItem ? 'bi-broadcast' : 'bi-calendar-event' }}" aria-hidden="true"></i>
-                {{ $liveClassItem ? 'Class in progress' : ($nextClassItem ? 'Next class' : 'Today’s classes') }}
-            </div>
-            <h2 id="dashboardClassHeading" class="sd-spotlight-text">
-                {{ $featuredClass?->subject?->name ?? ($todayClassCount ? 'No more classes scheduled' : 'No classes scheduled today') }}
-            </h2>
-            @if($featuredClass)
-                <p class="sd-spotlight-meta">
-                    <span>{{ $featuredClass->subject->code }}</span>
-                    <span>{{ $featuredClass->start_time->format('g:i A') }} – {{ $featuredClass->end_time->format('g:i A') }}</span>
-                    @if($featuredRoom !== '' && strtoupper($featuredRoom) !== 'TBA')
-                        <span>{{ $featuredRoom }}</span>
-                    @endif
-                </p>
-            @endif
-            <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-spotlight-link">
-                View timetable <i class="bi bi-arrow-right" aria-hidden="true"></i>
-            </a>
-        </section>
-
-        <!-- Bottom: Symmetrical Metrics Deck -->
-        @php
-            $rateVal = $attendanceRate;
-            $rateTone = $rateVal === null ? 'rate-empty' : ($rateVal >= 85 ? 'rate-good' : ($rateVal >= 75 ? 'rate-warning' : 'rate-danger'));
-            $rateIcon = $rateVal === null ? 'bi-dash-circle' : ($rateVal >= 85 ? 'bi-shield-check' : ($rateVal >= 75 ? 'bi-shield-exclamation' : 'bi-exclamation-triangle-fill'));
-        @endphp
-        <div class="student-hero-deck">
-            <!-- Metric 1: Campus Time -->
-            <div class="hero-deck-card" title="Campus Local Time">
-                <div class="hero-deck-icon icon-time">
-                    <i class="bi bi-clock-fill"></i>
-                </div>
-                <div class="hero-deck-body">
-                    <div class="hero-deck-value" id="studentClock">{{ now()->format('h:i A') }}</div>
-                    <div class="hero-deck-label">{{ now()->format('D, M j, Y') }}</div>
-                </div>
-            </div>
-
-            <!-- Metric 2: Attendance Rate -->
-            <div class="hero-deck-card" title="{{ $attendanceRate === null ? 'Attendance rate available after your first recorded class' : 'Overall Attendance Rate: '.$attendanceRate.'%' }}">
-                <div class="hero-deck-icon icon-{{ $rateTone }}">
-                    <i class="bi {{ $rateIcon }}"></i>
-                </div>
-                <div class="hero-deck-body">
-                    <div class="hero-deck-value val-{{ $rateTone }}">{{ $attendanceRate === null ? '—' : $attendanceRate.'%' }}</div>
-                    <div class="hero-deck-label">{{ $attendanceRate === null ? 'No records yet' : 'Attendance' }}</div>
-                </div>
-            </div>
-
-            <!-- Metric 3: Streak or Today's Classes -->
-            @if(isset($streakCount) && $streakCount > 0)
-                <div class="hero-deck-card" title="Consecutive Attendance Streak">
-                    <div class="hero-deck-icon icon-streak">
-                        <span>🔥</span>
+    {{-- ── Hero Command Center ────────────────────────────────────── --}}
+    <section class="student-hero-banner premium-hero-card" aria-label="Student overview">
+        <div class="student-hero-inner">
+            <div class="sd-hero-primary">
+                <div class="student-hero-context">
+                    <div class="student-greeting-badge">
+                        @if($greetHour < 12)
+                            <i class="bi bi-brightness-alt-high-fill" aria-hidden="true"></i>
+                        @elseif($greetHour < 17)
+                            <i class="bi bi-sun-fill" aria-hidden="true"></i>
+                        @else
+                            <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+                        @endif
+                        <span>{{ $greeting }}</span>
                     </div>
-                    <div class="hero-deck-body">
-                        <div class="hero-deck-value">{{ $streakCount }} {{ $streakCount == 1 ? 'Day' : 'Days' }}</div>
-                        <div class="hero-deck-label">Streak</div>
+                    <div class="student-status-badge" title="Enrollment Status: Active">
+                        <span class="student-status-dot" aria-hidden="true"></span>
+                        <span>Active Student</span>
                     </div>
+                    <span class="sd-hero-date-pill d-md-none">{{ now()->format('D, M j') }}</span>
                 </div>
-            @else
-                <div class="hero-deck-card" title="Today's Scheduled Classes">
-                    <div class="hero-deck-icon icon-classes">
-                        <i class="bi bi-calendar3"></i>
+
+                <div class="student-hero-profile">
+                    <div class="student-avatar-box">
+                        <img src="{{ Auth::user()->profile_photo_url_with_version }}" alt="{{ Auth::user()->name }}" class="student-avatar-img">
                     </div>
-                    <div class="hero-deck-body">
-                        <div class="hero-deck-value">{{ $todayClassCount }} {{ \Illuminate\Support\Str::plural('Class', $todayClassCount) }}</div>
-                        <div class="hero-deck-label">Today's Load</div>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-</div>
-
-<nav class="student-quick-links" aria-label="Student shortcuts">
-    <button type="button" class="d-md-none student-quick-scan-link" data-action="open-scanner">
-        <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
-        <span>Scan QR</span>
-        <i class="bi bi-chevron-right" aria-hidden="true"></i>
-    </button>
-    <a href="{{ route('student.schedule') }}" class="d-md-none">
-        <i class="bi bi-clock-history" aria-hidden="true"></i>
-        <span>Schedule</span>
-        <i class="bi bi-chevron-right" aria-hidden="true"></i>
-    </a>
-    <a href="{{ route('mobile.scan', ['open_code' => 1]) }}" class="d-none d-lg-flex quick-link-pill sd-code-shortcut">
-        <span class="sd-quick-icon" aria-hidden="true"><i class="bi bi-123"></i></span>
-        <span class="sd-quick-text">
-            <strong>Code Check-In</strong>
-            <small class="d-none d-lg-block">Type 6-digit session PIN</small>
-        </span>
-    </a>
-    <a href="{{ route('student.classes') }}" class="d-none d-md-flex quick-link-pill" data-bottom-nav-duplicate>
-        <span class="sd-quick-icon d-none d-lg-grid" aria-hidden="true"><i class="bi bi-journal-bookmark"></i></span>
-        <i class="bi bi-journal-bookmark d-lg-none" aria-hidden="true"></i>
-        <span class="sd-quick-text">
-            <strong>My Classes</strong>
-            <small class="d-none d-lg-block">Subjects, units &amp; rooms</small>
-        </span>
-        <i class="bi bi-chevron-right d-lg-none" aria-hidden="true"></i>
-    </a>
-    <a href="{{ route('student.calendar') }}#attendance-records" class="quick-link-pill">
-        <span class="sd-quick-icon d-none d-lg-grid" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
-        <i class="bi bi-clipboard-check d-lg-none" aria-hidden="true"></i>
-        <span class="sd-quick-text">
-            <strong>Attendance Log</strong>
-            <small class="d-none d-lg-block">History, calendar &amp; appeals</small>
-        </span>
-        <i class="bi bi-chevron-right d-lg-none" aria-hidden="true"></i>
-    </a>
-    <a href="{{ route('excuses.create_general') }}" class="quick-link-pill">
-        <span class="sd-quick-icon d-none d-lg-grid" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></span>
-        <i class="bi bi-file-earmark-text d-lg-none" aria-hidden="true"></i>
-        <span class="sd-quick-text">
-            <strong>Submit Excuse</strong>
-            <small class="d-none d-lg-block">File absence documentation</small>
-        </span>
-        <i class="bi bi-chevron-right d-lg-none" aria-hidden="true"></i>
-    </a>
-</nav>
-
-<!-- Quick Stats -->
-<div class="sd-overview-head d-none">
-    <h2>Attendance overview</h2>
-    <a href="{{ route('student.calendar') }}#attendance-records">View records <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-</div>
-<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:grid; gap:16px; margin-bottom:20px;">
-    <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Present']) }}#attendance-records" title="View present attendance records">
-        <x-card type="kpi" accent="success" label="Present" value="{{ $totalPresent ?? 0 }}" icon="bi bi-check-circle-fill" />
-    </a>
-    <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Late']) }}#attendance-records" title="View late attendance records">
-        <x-card type="kpi" accent="warning" label="Late" value="{{ $totalLate ?? 0 }}" icon="bi bi-clock-fill" />
-    </a>
-    <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Absent']) }}#attendance-records" title="View absent records & excuses">
-        <x-card type="kpi" accent="danger" label="Absent" value="{{ $totalAbsent ?? 0 }}" icon="bi bi-x-circle-fill" />
-    </a>
-    <a class="sd-kpi-link" href="{{ route('student.classes') }}" title="View enrolled subjects">
-        <x-card type="kpi" accent="gold" label="Subjects" value="{{ isset($subjects) ? count($subjects) : 0 }}" icon="bi bi-book-fill" />
-    </a>
-</div>
-
-
-<div class="sd-dash-workspace">
-    <div class="sd-dash-main">
-<!-- Today's Schedule -->
-<div class="row g-4 mb-4" id="todayScheduleSection">
-    <div class="col-12">
-        <x-card title="Today's Schedule" icon="bi bi-clock-history">
-            <x-slot name="headerActions">
-                <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="btn btn-outline btn-sm" style="border-radius:10px; font-size:0.78rem; font-weight:700; color:#ffd166; border-color:rgba(255,209,102,0.35);">
-                    <i class="bi bi-calendar3 me-1"></i> Full Schedule
-                </a>
-            </x-slot>
-            @if(isset($todaySchedule) && $todaySchedule->count() > 0)
-                <div class="schedule-items-grid sd-timeline-list">
-                @foreach($todaySchedule as $item)
-                    @php
-                        $statusColor = $item->status === 'completed' ? '#4ade80' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#f87171' : ($item->status === 'past' ? '#9ca3af' : 'var(--gold)')));
-                        $roomName = $item->schedule?->room;
-                        $timeInText = $item->attendance?->time_in ? \Carbon\Carbon::parse($item->attendance->time_in)->format('g:i A') : null;
-                        $excuseHref = $item->attendance?->id ? route('excuses.create', $item->attendance->id) : route('excuses.create_general');
-                    @endphp
-                    <div class="schedule-modern-card sd-timeline-item is-status-{{ $item->status }}" style="border-left: 3.5px solid {{ $statusColor }};">
-                        <div class="sd-timeline-time d-none d-lg-flex" aria-hidden="true">
-                            <strong>{{ $item->start_time->format('g:i A') }}</strong>
-                            <span>{{ $item->end_time->format('g:i A') }}</span>
-                        </div>
-                        <div class="sd-timeline-rail d-none d-lg-flex" aria-hidden="true">
-                            <span class="sd-timeline-node" style="background: {{ $statusColor }};"></span>
-                        </div>
-                        <div class="schedule-main-info">
-                            <div class="schedule-subject-title">{{ $item->subject->name }}</div>
-                            <div class="schedule-meta-row">
-                                <span class="schedule-time-badge">
-                                    <i class="bi bi-clock-fill me-1" style="color: #cfa46f; font-size: 0.75rem;"></i>
-                                    {{ $item->start_time->format('g:i A') }} – {{ $item->end_time->format('g:i A') }}
+                    <div class="student-profile-info">
+                        <h1 class="student-hero-name">{{ Auth::user()->name }}</h1>
+                        <div class="student-meta-strip">
+                            @if(!empty(Auth::user()->student_number))
+                                <span class="student-meta-chip chip-gold" title="Student Identification Number">
+                                    <i class="bi bi-person-badge" aria-hidden="true"></i>
+                                    <span>ID {{ Auth::user()->student_number }}</span>
                                 </span>
-                                <span class="schedule-code-badge">{{ $item->subject->code }}</span>
-                                @if(!empty($item->subject->instructorUser?->name ?? $item->subject->instructor))
-                                    <span class="schedule-instructor-badge">
-                                        <i class="bi bi-person-fill text-gold-muted me-1"></i>{{ $item->subject->instructorUser?->name ?? $item->subject->instructor }}
-                                    </span>
-                                @endif
-                            </div>
-                            <div class="sd-sched-meta-pills d-none d-lg-flex">
-                                @if(!empty($roomName) && strtoupper(trim($roomName)) !== 'TBA')
-                                    <span class="sd-sched-chip"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i> {{ $roomName }}</span>
-                                @endif
-                                @if($timeInText)
-                                    <span class="sd-sched-chip"><i class="bi bi-check2-circle" aria-hidden="true"></i> Checked in {{ $timeInText }}</span>
-                                @elseif($item->status === 'missed')
-                                    <a href="{{ $excuseHref }}" class="sd-sched-chip is-excuse-cta"><i class="bi bi-file-earmark-plus" aria-hidden="true"></i> Submit excuse</a>
-                                @endif
-                            </div>
-                        </div>
-                        <div class="schedule-status-col">
-                            @if($item->status === 'completed')
-                                @if(strtolower((string) ($item->attendance?->status ?? '')) === 'late')
-                                    <x-badge type="late">Late</x-badge>
-                                @else
-                                    <x-badge type="present">Present</x-badge>
-                                @endif
-                            @elseif($item->status === 'ongoing') <x-badge type="late">Live Now</x-badge>
-                            @elseif($item->status === 'missed') <x-badge type="absent">Missed</x-badge>
-                            @elseif($item->status === 'past') <x-badge type="secondary">Past</x-badge>
-                            @else <x-badge type="info">Upcoming</x-badge>
+                            @endif
+                            <span class="student-meta-chip" title="Enrolled Degree Program">
+                                <i class="bi bi-mortarboard" aria-hidden="true"></i>
+                                <span>{{ Auth::user()->course ?? 'BSCS' }}</span>
+                            </span>
+                            <span class="student-meta-chip" title="Academic Standing">
+                                <i class="bi bi-layers" aria-hidden="true"></i>
+                                <span>Year {{ Auth::user()->year_level ?? '1' }} &middot; Sem {{ Auth::user()->semester ?? '1' }}</span>
+                            </span>
+                            @if(!empty(Auth::user()->section))
+                                <span class="student-meta-chip" title="Class Section">
+                                    <i class="bi bi-people" aria-hidden="true"></i>
+                                    <span>Sec {{ Auth::user()->section }}</span>
+                                </span>
                             @endif
                         </div>
                     </div>
-                @endforeach
                 </div>
-            @else
-                <div class="schedule-empty-state">
-                    <i class="bi bi-calendar-x" style="font-size: 2.4rem; color: #b39b82; opacity: 0.45;"></i>
-                    <p style="color: #b39b82; font-size: 0.95rem; margin-top: 12px; font-weight: 600;">No classes scheduled today</p>
-                </div>
-            @endif
-        </x-card>
-    </div>
-</div>
-    </div>
 
-    <div class="sd-dash-aside">
-        <section class="sd-subject-breakdown-card d-none d-lg-block" aria-labelledby="sdSubjectBreakdownHeading">
-            <div class="sd-section-head">
-                <h2 id="sdSubjectBreakdownHeading">
-                    <i class="bi bi-bar-chart-line-fill" style="color: #cfa46f;" aria-hidden="true"></i>
-                    Subject Attendance
-                </h2>
-                @if(!empty($subjectStats) && count($subjectStats) > 0)
-                    <button type="button" class="sd-header-pill" style="padding: 6px 12px !important; font-size: 0.76rem !important;" data-bs-toggle="modal" data-bs-target="#subjectBreakdownModal">
-                        View all
-                    </button>
-                @else
-                    <a href="{{ route('student.classes') }}" class="sd-header-pill" style="padding: 6px 12px !important; font-size: 0.76rem !important;">
-                        My Classes
+                <div class="student-hero-cta-group">
+                    <a class="student-desktop-check-in" href="{{ route('mobile.scan', ['open_scanner' => 1]) }}">
+                        <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
+                        <span>Scan Attendance QR</span>
                     </a>
-                @endif
+                    <a class="student-desktop-check-in is-secondary" href="{{ route('mobile.scan', ['open_code' => 1]) }}">
+                        <i class="bi bi-123" aria-hidden="true"></i>
+                        <span>Enter 6-Digit PIN</span>
+                    </a>
+                </div>
             </div>
-            @if(!empty($subjectStats) && count($subjectStats) > 0)
-                <div class="sd-subject-list">
-                    @foreach(collect($subjectStats)->take(5) as $sub)
-                        @php
-                            $hasSubjectRecords = $sub->total > 0;
-                            $rateClass = !$hasSubjectRecords ? '' : ($sub->rate >= 85 ? 'is-good' : ($sub->rate >= 75 ? 'is-warn' : 'is-risk'));
-                            $barColor = $sub->rate >= 85 ? '#34d399' : ($sub->rate >= 75 ? '#fbbf24' : '#f87171');
-                        @endphp
-                        <div class="sd-subject-item">
-                            <div class="sd-subject-item-top">
-                                <div style="min-width: 0; display: flex; align-items: baseline; gap: 8px;">
-                                    <span class="sd-subject-code">{{ $sub->code }}</span>
-                                    <span class="sd-subject-name" title="{{ $sub->name }}">{{ $sub->name }}</span>
-                                </div>
-                                <span class="sd-subject-rate {{ $rateClass }}">{{ $hasSubjectRecords ? $sub->rate.'%' : 'No records' }}</span>
-                            </div>
-                            <div class="sd-progress-track" aria-hidden="true">
-                                <div class="sd-progress-fill" style="width: {{ min(100, max(0, $sub->rate)) }}%; background: {{ $barColor }};"></div>
-                            </div>
-                            <div class="sd-subject-counts">
-                                <span><strong style="color:#34d399;">{{ $sub->present }}</strong> present</span>
-                                <span><strong style="color:#fbbf24;">{{ $sub->late }}</strong> late</span>
-                                <span><strong style="color:#f87171;">{{ $sub->absent }}</strong> absent</span>
-                                @if($hasSubjectRecords && $sub->rate < 75)
-                                    <span class="ms-auto" style="color:#fca5a5; font-weight:700;">Below 75%</span>
-                                @endif
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <div class="schedule-empty-state" style="padding: 26px 16px;">
-                    <i class="bi bi-journal-check" style="font-size: 2rem; color: #cfa46f; opacity: 0.6;"></i>
-                    <p style="color: #b39b82; font-size: 0.88rem; margin: 10px 0 0; font-weight: 600;">Subject metrics appear once sessions are recorded.</p>
-                </div>
-            @endif
-        </section>
 
-@if(isset($announcements) && $announcements->isNotEmpty())
-<div class="row g-4 mb-4" id="studentAnnouncementsSection">
-    <div class="col-12">
-        <x-card title="Campus &amp; Class Announcements" icon="bi bi-megaphone-fill">
-            <div class="schedule-items-grid">
-                @foreach($announcements as $announcement)
-                    <div class="schedule-modern-card" style="border-left: 3.5px solid #cfa46f; flex-direction: column; align-items: stretch; gap: 8px;">
-                        <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
-                            <div class="schedule-subject-title" style="margin:0;">{{ $announcement->title }}</div>
-                            <span class="schedule-code-badge">{{ $announcement->target_audience ?? 'All' }}</span>
+            {{-- Right Spotlight: Live or Next Class --}}
+            <aside class="sd-hero-spotlight {{ $liveClassItem ? 'is-live' : ($nextClassItem ? 'is-next' : 'is-idle') }}" aria-labelledby="dashboardClassHeading">
+                <div class="sd-spotlight-top">
+                    <span class="sd-spotlight-label">
+                        <span class="sd-spotlight-dot {{ $liveClassItem ? 'is-live' : ($nextClassItem ? 'is-next' : 'is-done') }}" aria-hidden="true"></span>
+                        {{ $liveClassItem ? 'Class in Progress' : ($nextClassItem ? 'Up Next Today' : "Today's Status") }}
+                    </span>
+                    @if($featuredClass)
+                        <span class="sd-spotlight-code">{{ $featuredClass->subject->code }}</span>
+                    @endif
+                </div>
+
+                <h2 id="dashboardClassHeading" class="sd-spotlight-text">
+                    {{ $featuredClass?->subject?->name ?? ($todayClassCount ? 'All classes completed today' : 'No classes scheduled today') }}
+                </h2>
+
+                @if($featuredClass)
+                    <div class="sd-spotlight-meta">
+                        <span><i class="bi bi-clock" aria-hidden="true"></i> {{ $featuredClass->start_time->format('g:i A') }} &ndash; {{ $featuredClass->end_time->format('g:i A') }}</span>
+                        @if($featuredRoom !== '' && strtoupper($featuredRoom) !== 'TBA')
+                            <span><i class="bi bi-geo-alt" aria-hidden="true"></i> {{ $featuredRoom }}</span>
+                        @endif
+                        @if($featuredInstructor !== '')
+                            <span><i class="bi bi-person" aria-hidden="true"></i> {{ $featuredInstructor }}</span>
+                        @endif
+                    </div>
+                @else
+                    <p class="sd-spotlight-empty-note">
+                        {{ $todayClassCount ? 'You have wrapped up all scheduled sessions for today.' : 'Use your free block to review records or submit any pending excuses.' }}
+                    </p>
+                @endif
+
+                <div class="sd-spotlight-actions">
+                    @if($liveClassItem && empty($alreadyClockedIn))
+                        <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sd-spotlight-link is-check-in">
+                            <i class="bi bi-qr-code-scan" aria-hidden="true"></i> Check in now
+                        </a>
+                    @endif
+                    <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-spotlight-link">
+                        View timetable <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                    </a>
+                </div>
+            </aside>
+
+            {{-- Bottom Telemetry Bar --}}
+            <div class="student-hero-deck">
+                <div class="hero-deck-card" title="Campus Local Time">
+                    <div class="hero-deck-icon icon-time" aria-hidden="true">
+                        <i class="bi bi-clock-fill"></i>
+                    </div>
+                    <div class="hero-deck-body">
+                        <div class="hero-deck-value" id="studentClock">{{ now()->format('h:i A') }}</div>
+                        <div class="hero-deck-label">{{ now()->format('D, M j, Y') }}</div>
+                    </div>
+                </div>
+
+                <div class="hero-deck-card" title="{{ $attendanceRate === null ? 'Attendance rate available after your first recorded class' : 'Overall Attendance Rate: '.$attendanceRate.'%' }}">
+                    <div class="hero-deck-icon icon-{{ $rateTone }}" aria-hidden="true">
+                        <i class="bi {{ $rateIcon }}"></i>
+                    </div>
+                    <div class="hero-deck-body">
+                        <div class="hero-deck-value-row">
+                            <div class="hero-deck-value val-{{ $rateTone }}">{{ $attendanceRate === null ? '—' : $attendanceRate.'%' }}</div>
+                            @if($attendanceRate !== null)
+                                <span class="sd-rate-chip is-{{ $rateTone }}">{{ $attendanceRate >= 85 ? 'Good' : ($attendanceRate >= 75 ? 'Fair' : 'At Risk') }}</span>
+                            @endif
                         </div>
-                        <p style="margin:0; font-size:0.86rem; line-height:1.55; color:#d8cbb8; white-space:pre-line;">{{ $announcement->content }}</p>
-                        <div class="schedule-meta-row" style="margin-top:2px;">
-                            <span class="schedule-instructor-badge">
-                                <i class="bi bi-person-fill text-gold-muted me-1"></i>{{ $announcement->author->name ?? 'Administration' }}
-                            </span>
-                            <span class="schedule-time-badge">
-                                <i class="bi bi-clock me-1" style="color:#cfa46f; font-size:0.75rem;"></i>{{ ($announcement->scheduled_for ?? $announcement->created_at)->diffForHumans() }}
-                            </span>
+                        <div class="hero-deck-label">{{ $attendanceRate === null ? 'No records yet' : 'Overall attendance' }}</div>
+                        @if($attendanceRate !== null)
+                            <div class="sd-deck-progress" aria-hidden="true">
+                                <span class="sd-deck-progress-fill is-{{ $rateTone }}" style="width: {{ min(100, max(0, $attendanceRate)) }}%;"></span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                @if(isset($streakCount) && $streakCount > 0)
+                    <div class="hero-deck-card" title="Consecutive Attendance Streak">
+                        <div class="hero-deck-icon icon-streak" aria-hidden="true">
+                            <i class="bi bi-fire"></i>
+                        </div>
+                        <div class="hero-deck-body">
+                            <div class="hero-deck-value">{{ $streakCount }} {{ $streakCount == 1 ? 'Day' : 'Days' }}</div>
+                            <div class="hero-deck-label">Active streak</div>
                         </div>
                     </div>
-                @endforeach
+                @else
+                    <div class="hero-deck-card" title="Today's Scheduled Classes">
+                        <div class="hero-deck-icon icon-classes" aria-hidden="true">
+                            <i class="bi bi-calendar3"></i>
+                        </div>
+                        <div class="hero-deck-body">
+                            <div class="hero-deck-value">{{ $todayClassCount }} {{ \Illuminate\Support\Str::plural('Class', $todayClassCount) }}</div>
+                            <div class="hero-deck-label">Today's schedule</div>
+                        </div>
+                    </div>
+                @endif
             </div>
-        </x-card>
-    </div>
-</div>
-@endif
-    </div>
-</div>
+        </div>
+    </section>
 
+    {{-- ── Quick Actions Strip ────────────────────────────────────── --}}
+    <nav class="student-quick-links" aria-label="Student quick shortcuts">
+        <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="quick-link-pill">
+            <span class="sd-quick-icon" aria-hidden="true"><i class="bi bi-calendar-week"></i></span>
+            <span class="sd-quick-text">
+                <strong>Weekly Schedule</strong>
+                <small>Full class timetable</small>
+            </span>
+            <i class="bi bi-chevron-right sd-quick-arrow" aria-hidden="true"></i>
+        </a>
+        <a href="{{ route('student.classes') }}" class="quick-link-pill">
+            <span class="sd-quick-icon" aria-hidden="true"><i class="bi bi-journal-bookmark"></i></span>
+            <span class="sd-quick-text">
+                <strong>My Classes</strong>
+                <small>Subjects, units &amp; rooms</small>
+            </span>
+            <i class="bi bi-chevron-right sd-quick-arrow" aria-hidden="true"></i>
+        </a>
+        <a href="{{ route('student.calendar') }}#attendance-records" class="quick-link-pill">
+            <span class="sd-quick-icon" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
+            <span class="sd-quick-text">
+                <strong>Attendance Log</strong>
+                <small>History, calendar &amp; appeals</small>
+            </span>
+            <i class="bi bi-chevron-right sd-quick-arrow" aria-hidden="true"></i>
+        </a>
+        <a href="{{ route('excuses.create_general') }}" class="quick-link-pill">
+            <span class="sd-quick-icon" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></span>
+            <span class="sd-quick-text">
+                <strong>Submit Excuse</strong>
+                <small>Upload documentation</small>
+            </span>
+            <i class="bi bi-chevron-right sd-quick-arrow" aria-hidden="true"></i>
+        </a>
+    </nav>
+
+    {{-- ── Attendance Overview KPIs ─────────────────────────────────── --}}
+    <section aria-labelledby="attendanceOverviewHeading">
+        <div class="sd-overview-head">
+            <h2 id="attendanceOverviewHeading">Attendance Overview</h2>
+            <a href="{{ route('student.calendar') }}#attendance-records">Open full records <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        </div>
+        <div class="ent-grid ent-grid-4" id="realStats">
+            <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Present']) }}#attendance-records" title="View present attendance records">
+                <div class="ent-kpi-card sd-kpi-card" data-accent="success">
+                    <div class="ent-kpi-icon" aria-hidden="true"><i class="bi bi-check-circle-fill"></i></div>
+                    <div class="ent-kpi-body">
+                        <div class="ent-kpi-label">Present</div>
+                        <div class="ent-kpi-value">{{ $totalPresent ?? 0 }}</div>
+                        <div class="sd-kpi-sub">On-time check-ins</div>
+                    </div>
+                    <i class="bi bi-arrow-up-right sd-kpi-chevron" aria-hidden="true"></i>
+                </div>
+            </a>
+            <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Late']) }}#attendance-records" title="View late attendance records">
+                <div class="ent-kpi-card sd-kpi-card" data-accent="warning">
+                    <div class="ent-kpi-icon" aria-hidden="true"><i class="bi bi-clock-fill"></i></div>
+                    <div class="ent-kpi-body">
+                        <div class="ent-kpi-label">Late</div>
+                        <div class="ent-kpi-value">{{ $totalLate ?? 0 }}</div>
+                        <div class="sd-kpi-sub">Late arrivals</div>
+                    </div>
+                    <i class="bi bi-arrow-up-right sd-kpi-chevron" aria-hidden="true"></i>
+                </div>
+            </a>
+            <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Absent']) }}#attendance-records" title="View absent records & excuses">
+                <div class="ent-kpi-card sd-kpi-card" data-accent="danger">
+                    <div class="ent-kpi-icon" aria-hidden="true"><i class="bi bi-x-circle-fill"></i></div>
+                    <div class="ent-kpi-body">
+                        <div class="ent-kpi-label">Absent</div>
+                        <div class="ent-kpi-value">{{ $totalAbsent ?? 0 }}</div>
+                        <div class="sd-kpi-sub">Missed sessions</div>
+                    </div>
+                    <i class="bi bi-arrow-up-right sd-kpi-chevron" aria-hidden="true"></i>
+                </div>
+            </a>
+            <a class="sd-kpi-link" href="{{ route('student.classes') }}" title="View enrolled subjects">
+                <div class="ent-kpi-card sd-kpi-card" data-accent="gold">
+                    <div class="ent-kpi-icon" aria-hidden="true"><i class="bi bi-book-fill"></i></div>
+                    <div class="ent-kpi-body">
+                        <div class="ent-kpi-label">Subjects</div>
+                        <div class="ent-kpi-value">{{ $subjectCount }}</div>
+                        <div class="sd-kpi-sub">{{ $computedTotalAll }} total {{ \Illuminate\Support\Str::plural('session', $computedTotalAll) }}</div>
+                    </div>
+                    <i class="bi bi-arrow-up-right sd-kpi-chevron" aria-hidden="true"></i>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    {{-- ── Main Two-Column Workspace ──────────────────────────────── --}}
+    <div class="sd-dash-workspace">
+        {{-- Left Column: Today's Schedule --}}
+        <div class="sd-dash-main">
+            <section class="sd-panel" id="todayScheduleSection" aria-labelledby="todayScheduleHeading">
+                <header class="sd-panel-head">
+                    <div class="sd-panel-title-wrap">
+                        <span class="sd-panel-icon" aria-hidden="true"><i class="bi bi-clock-history"></i></span>
+                        <div>
+                            <h2 id="todayScheduleHeading" class="sd-panel-title">Today's Schedule</h2>
+                            <p class="sd-panel-sub">{{ now()->format('l, F j') }} &middot; {{ $todayClassCount }} {{ \Illuminate\Support\Str::plural('class', $todayClassCount) }}</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-header-pill">
+                        <i class="bi bi-calendar3" aria-hidden="true"></i>
+                        <span>Full Schedule</span>
+                    </a>
+                </header>
+
+                <div class="sd-panel-body">
+                    @if($todaySchedCollection->isNotEmpty())
+                        <div class="schedule-items-grid sd-timeline-list">
+                        @foreach($todaySchedCollection as $item)
+                            @php
+                                $statusColor = $item->status === 'completed' ? '#34d399' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#f87171' : ($item->status === 'past' ? '#9ca3af' : '#dfb879')));
+                                $roomName = trim((string) ($item->schedule?->room ?? ''));
+                                $instructorName = trim((string) ($item->subject->instructorUser?->name ?? $item->subject->instructor ?? ''));
+                                $timeInText = $item->attendance?->time_in ? \Carbon\Carbon::parse($item->attendance->time_in)->format('g:i A') : null;
+                                $excuseHref = $item->attendance?->id ? route('excuses.create', $item->attendance->id) : route('excuses.create_general');
+                            @endphp
+                            <div class="schedule-modern-card sd-timeline-item is-status-{{ $item->status }}" style="--tl-color: {{ $statusColor }};">
+                                <div class="sd-timeline-time d-none d-md-flex" aria-hidden="true">
+                                    <strong>{{ $item->start_time->format('g:i A') }}</strong>
+                                    <span>{{ $item->end_time->format('g:i A') }}</span>
+                                </div>
+                                <div class="sd-timeline-rail d-none d-md-flex" aria-hidden="true">
+                                    <span class="sd-timeline-node"></span>
+                                </div>
+                                <div class="schedule-main-info">
+                                    <div class="schedule-subject-title">{{ $item->subject->name }}</div>
+                                    <div class="schedule-meta-row">
+                                        <span class="schedule-time-badge d-md-none">
+                                            <i class="bi bi-clock-fill" aria-hidden="true"></i>
+                                            {{ $item->start_time->format('g:i A') }} &ndash; {{ $item->end_time->format('g:i A') }}
+                                        </span>
+                                        <span class="schedule-code-badge">{{ $item->subject->code }}</span>
+                                        @if($instructorName !== '')
+                                            <span class="schedule-instructor-badge">
+                                                <i class="bi bi-person-fill" aria-hidden="true"></i> {{ $instructorName }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    @if(($roomName !== '' && strtoupper($roomName) !== 'TBA') || $timeInText || $item->status === 'missed' || $item->status === 'ongoing')
+                                        <div class="sd-sched-meta-pills">
+                                            @if($roomName !== '' && strtoupper($roomName) !== 'TBA')
+                                                <span class="sd-sched-chip"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i> {{ $roomName }}</span>
+                                            @endif
+                                            @if($timeInText)
+                                                <span class="sd-sched-chip is-checked-in"><i class="bi bi-check2-circle" aria-hidden="true"></i> Checked in {{ $timeInText }}</span>
+                                            @elseif($item->status === 'ongoing')
+                                                <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sd-sched-chip is-check-in-cta"><i class="bi bi-qr-code-scan" aria-hidden="true"></i> Check in now</a>
+                                            @elseif($item->status === 'missed')
+                                                <a href="{{ $excuseHref }}" class="sd-sched-chip is-excuse-cta"><i class="bi bi-file-earmark-plus" aria-hidden="true"></i> Submit excuse</a>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="schedule-status-col">
+                                    @if($item->status === 'completed')
+                                        @if(strtolower((string) ($item->attendance?->status ?? '')) === 'late')
+                                            <x-badge type="late">Late</x-badge>
+                                        @else
+                                            <x-badge type="present">Present</x-badge>
+                                        @endif
+                                    @elseif($item->status === 'ongoing') <x-badge type="late" pulse>Live Now</x-badge>
+                                    @elseif($item->status === 'missed') <x-badge type="absent">Missed</x-badge>
+                                    @elseif($item->status === 'past') <x-badge type="neutral">Past</x-badge>
+                                    @else <x-badge type="info">Upcoming</x-badge>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                        </div>
+                    @else
+                        <div class="schedule-empty-state">
+                            <span class="sd-empty-badge" aria-hidden="true"><i class="bi bi-calendar2-check"></i></span>
+                            <p class="sd-empty-title">No classes scheduled today</p>
+                            <p class="sd-empty-sub">Your timetable is clear for {{ now()->format('l') }}.</p>
+                            <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-header-pill mt-2">
+                                <i class="bi bi-calendar3" aria-hidden="true"></i> Open Weekly Timetable
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </section>
+        </div>
+
+        {{-- Right Column: Subject Attendance & Campus Announcements --}}
+        <div class="sd-dash-aside">
+            <section class="sd-panel sd-subject-breakdown-card" aria-labelledby="sdSubjectBreakdownHeading">
+                <header class="sd-panel-head">
+                    <div class="sd-panel-title-wrap">
+                        <span class="sd-panel-icon" aria-hidden="true"><i class="bi bi-bar-chart-line-fill"></i></span>
+                        <div>
+                            <h2 id="sdSubjectBreakdownHeading" class="sd-panel-title">Subject Attendance</h2>
+                            <p class="sd-panel-sub">Standing across {{ count($subjectStats ?? []) }} {{ \Illuminate\Support\Str::plural('subject', count($subjectStats ?? [])) }}</p>
+                        </div>
+                    </div>
+                    @if(!empty($subjectStats) && count($subjectStats) > 0)
+                        <button type="button" class="sd-header-pill" onclick="openSubjectBreakdownModal()">
+                            <span>View all</span>
+                        </button>
+                    @else
+                        <a href="{{ route('student.classes') }}" class="sd-header-pill">
+                            <span>My Classes</span>
+                        </a>
+                    @endif
+                </header>
+
+                <div class="sd-panel-body">
+                    @if(!empty($subjectStats) && count($subjectStats) > 0)
+                        <div class="sd-subject-list">
+                            @foreach(collect($subjectStats)->take(5) as $sub)
+                                @php
+                                    $hasSubjectRecords = $sub->total > 0;
+                                    $rateClass = !$hasSubjectRecords ? '' : ($sub->rate >= 85 ? 'is-good' : ($sub->rate >= 75 ? 'is-warn' : 'is-risk'));
+                                    $barColor = !$hasSubjectRecords ? 'rgba(255,255,255,0.14)' : ($sub->rate >= 85 ? '#34d399' : ($sub->rate >= 75 ? '#fbbf24' : '#f87171'));
+                                    $barWidth = $hasSubjectRecords ? min(100, max(0, $sub->rate)) : 0;
+                                @endphp
+                                <div class="sd-subject-item">
+                                    <div class="sd-subject-item-top">
+                                        <div class="sd-subject-id-group">
+                                            <span class="sd-subject-code">{{ $sub->code }}</span>
+                                            <span class="sd-subject-name" title="{{ $sub->name }}">{{ $sub->name }}</span>
+                                        </div>
+                                        <span class="sd-subject-rate {{ $rateClass }}">{{ $hasSubjectRecords ? $sub->rate.'%' : 'No records' }}</span>
+                                    </div>
+                                    <div class="sd-progress-track" aria-hidden="true">
+                                        <div class="sd-progress-fill" style="width: {{ $barWidth }}%; background: {{ $barColor }};"></div>
+                                    </div>
+                                    <div class="sd-subject-counts">
+                                        <span><strong class="text-count-present">{{ $sub->present }}</strong> present</span>
+                                        <span><strong class="text-count-late">{{ $sub->late }}</strong> late</span>
+                                        <span><strong class="text-count-absent">{{ $sub->absent }}</strong> absent</span>
+                                        @if($hasSubjectRecords && $sub->rate < 75)
+                                            <span class="sd-risk-pill">Below 75%</span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="schedule-empty-state is-compact">
+                            <span class="sd-empty-badge" aria-hidden="true"><i class="bi bi-journal-check"></i></span>
+                            <p class="sd-empty-title">No session records yet</p>
+                            <p class="sd-empty-sub">Subject metrics appear once sessions are recorded.</p>
+                        </div>
+                    @endif
+                </div>
+            </section>
+
+            @if(isset($announcements) && $announcements->isNotEmpty())
+            <section class="sd-panel" id="studentAnnouncementsSection" aria-labelledby="studentAnnouncementsHeading">
+                <header class="sd-panel-head">
+                    <div class="sd-panel-title-wrap">
+                        <span class="sd-panel-icon" aria-hidden="true"><i class="bi bi-megaphone-fill"></i></span>
+                        <div>
+                            <h2 id="studentAnnouncementsHeading" class="sd-panel-title">Campus &amp; Class Announcements</h2>
+                            <p class="sd-panel-sub">Latest notices from administration &amp; instructors</p>
+                        </div>
+                    </div>
+                </header>
+                <div class="sd-panel-body">
+                    <div class="sd-announcements-list">
+                        @foreach($announcements as $announcement)
+                            <article class="sd-announcement-item">
+                                <div class="sd-announcement-head">
+                                    <h3 class="sd-announcement-title">{{ $announcement->title }}</h3>
+                                    <span class="schedule-code-badge">{{ $announcement->target_audience ?? 'All' }}</span>
+                                </div>
+                                <p class="sd-announcement-copy">{{ $announcement->content }}</p>
+                                <div class="sd-announcement-meta">
+                                    <span><i class="bi bi-person-fill" aria-hidden="true"></i> {{ $announcement->author->name ?? 'Administration' }}</span>
+                                    <span><i class="bi bi-clock" aria-hidden="true"></i> {{ ($announcement->scheduled_for ?? $announcement->created_at)->diffForHumans() }}</span>
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+                </div>
+            </section>
+            @endif
+        </div>
+    </div>
 </div>
 
 <style>
-    /* ─── Squircle Attendance Calendar ─────────────────────────── */
-    .scal-card {
-        background: #0f0a08;
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        border-radius: 28px;
-        padding: 28px 30px;
-        width: 100%;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
-    }
-    .scal-nav {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
-    }
-    .scal-nav-btn {
-        width: 44px;
-        height: 44px;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: #cfa46f;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.15rem;
-        cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        text-decoration: none;
-    }
-    .scal-nav-btn:hover {
-        background: rgba(207, 164, 111, 0.15);
-        border-color: rgba(207, 164, 111, 0.4);
-        color: #fff;
-        transform: translateY(-2px);
-    }
-    .scal-nav-title {
-        font-size: 1.35rem;
-        font-weight: 800;
-        color: #fdfbf7;
-        letter-spacing: -0.02em;
-    }
-    .scal-weekdays {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 8px;
-        margin-bottom: 12px;
-        background: rgba(255, 255, 255, 0.025);
-        border: 1px solid rgba(255, 255, 255, 0.04);
-        border-radius: 14px;
-        padding: 12px 0;
-    }
-    .scal-wd {
-        text-align: center;
-        font-size: 0.78rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: #cfa46f;
-    }
-    .scal-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 8px;
-    }
-    .scal-tile {
-        height: 56px;
-        min-height: 56px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        border-radius: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        background: rgba(255, 255, 255, 0.025);
-        position: relative;
-        cursor: pointer !important;
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: rgba(255, 209, 102, 0.2);
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        gap: 4px;
-        user-select: none;
-        -webkit-user-select: none;
-    }
-    .scal-tile:hover {
-        background: rgba(255, 255, 255, 0.07);
-        border-color: rgba(207, 164, 111, 0.3);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-    }
-    .scal-tile:active {
-        transform: scale(0.95);
-        background: rgba(255, 209, 102, 0.12);
-    }
-    .scal-tile.empty {
-        visibility: hidden;
-        background: transparent !important;
-        border-color: transparent !important;
-        cursor: default;
-        pointer-events: none;
-    }
-    .scal-num {
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #f3ede4;
-        line-height: 1;
-    }
-    .scal-tile.sunday .scal-num { color: #f87171; }
-    .scal-dot {
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        opacity: 0.9;
-    }
-    .scal-dots-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 3px;
-        height: 6px;
-    }
-    .scal-dot.dot-present { background: #10b981; }
-    .scal-dot.dot-late    { background: #f59e0b; }
-    .scal-dot.dot-absent  { background: #ef4444; }
-    .scal-dot.dot-exam    { background: #ec4899; }
-    .scal-dot.dot-event   { background: #8b5cf6; }
-    .scal-dot.dot-holiday { background: #4ade80; }
-
-    /* Selected Tile: Rounded glowing gold border matching reference screenshot tile 14 */
-    .scal-tile.selected {
-        border: 2px solid #ffd166 !important;
-        box-shadow: 0 0 16px rgba(255, 209, 102, 0.35), inset 0 0 10px rgba(255, 209, 102, 0.08) !important;
-        background: rgba(255, 209, 102, 0.07) !important;
-    }
-    .scal-tile.selected .scal-num {
-        color: #ffd166 !important;
-        font-weight: 800;
-    }
-    .scal-tile.today:not(.selected) {
-        border: 1px dashed rgba(255, 209, 102, 0.5) !important;
-    }
-    .scal-tile.today:not(.selected) .scal-num {
-        color: #ffd166;
-    }
-
-    .scal-tile.status-present {
-        background: rgba(6, 78, 59, 0.4) !important;
-        border-color: rgba(16, 185, 129, 0.3) !important;
-    }
-    .scal-tile.status-late {
-        background: rgba(120, 80, 20, 0.4) !important;
-        border-color: rgba(245, 158, 11, 0.3) !important;
-    }
-    .scal-tile.status-absent {
-        background: rgba(100, 15, 15, 0.5) !important;
-        border-color: rgba(239, 68, 68, 0.35) !important;
-    }
-    .scal-tile.status-mixed {
-        background: rgba(255, 255, 255, 0.04) !important;
-        border-color: rgba(207, 164, 111, 0.25) !important;
-    }
-    .scal-tile.status-event {
-        background: rgba(60, 25, 120, 0.45) !important;
-        border-color: rgba(139, 92, 246, 0.35) !important;
-    }
-    .scal-tile.status-holiday {
-        background: rgba(5, 60, 50, 0.45) !important;
-        border-color: rgba(74, 222, 128, 0.35) !important;
-    }
-    .scal-tile.status-exam {
-        background: rgba(100, 20, 60, 0.5) !important;
-        border-color: rgba(236, 72, 153, 0.35) !important;
-    }
-
-    .scal-view-records-btn {
-        border-radius: 12px;
-        padding: 6px 14px;
-        font-weight: 700;
-        font-size: 0.82rem;
-        color: #ffd166;
-        border: 1px solid rgba(255, 209, 102, 0.35);
-        background: rgba(255, 209, 102, 0.06);
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        text-decoration: none;
-    }
-    .scal-view-records-btn:hover {
-        background: rgba(255, 209, 102, 0.16);
-        border-color: #ffd166;
-        color: #fff;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 14px rgba(255, 209, 102, 0.2);
-    }
-
-    .scal-modal-nav-btn {
-        width: 32px;
-        height: 32px;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #cfa46f;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.85rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    .scal-modal-nav-btn:hover {
-        background: rgba(207, 164, 111, 0.2);
-        color: #ffd166;
-        border-color: rgba(207, 164, 111, 0.4);
-    }
-
-    /* ═══════════════════════════════════════════════════════════
-       LUXURY DAY SUMMARY INSPECTOR MODAL & CARDS
-       ═══════════════════════════════════════════════════════════ */
-    #daySummaryModal,
-    #attendanceRecordsModal,
-    #subjectBreakdownModal {
-        z-index: 10060 !important;
-    }
-    .modal-backdrop {
-        z-index: 10050 !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
-        background: rgba(0, 0, 0, 0.72) !important;
-    }
-
-    #daySummaryModal .modal-dialog {
-        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    }
-    #daySummaryModal .modal-content {
-        background: linear-gradient(180deg, #18120d 0%, #0d0806 100%) !important;
-        border: 1px solid rgba(212, 175, 55, 0.2) !important;
-        border-radius: 26px !important;
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.85), 0 0 40px rgba(207, 164, 111, 0.08) !important;
-        position: relative;
-    }
-    #daySummaryModal .modal-content::before {
-        display: none !important;
-    }
-
+    /* ─── Modal & Inspector Styling (Subject Breakdown, Day Summary, Records) ── */
     .scal-sheet-handle,
     .day-modal-sheet-handle {
         width: 42px;
@@ -1727,348 +542,74 @@
         flex-shrink: 0;
     }
 
-    /* Top Action Bar */
-    .day-modal-action-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 20px 8px 20px;
+    #daySummaryModal,
+    #attendanceRecordsModal,
+    #subjectBreakdownModal {
+        z-index: 10060 !important;
     }
-    .day-nav-stepper {
-        display: inline-flex;
-        align-items: center;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        padding: 3px;
-        gap: 2px;
+    .modal-backdrop {
+        z-index: 10050 !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        background: rgba(0, 0, 0, 0.72) !important;
     }
-    .day-nav-step-btn {
-        width: 30px;
-        height: 30px;
-        border-radius: 8px;
-        background: transparent;
-        border: none;
-        color: #cfa46f;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.85rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
+    #daySummaryModal .modal-dialog {
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
-    .day-nav-step-btn:hover {
-        background: rgba(207, 164, 111, 0.15);
-        color: #ffd166;
-    }
-    .day-nav-step-btn:active {
-        transform: scale(0.92);
-    }
-    .day-nav-today-btn {
-        height: 30px;
-        padding: 0 10px;
-        border-radius: 8px;
-        background: rgba(207, 164, 111, 0.12);
-        border: 1px solid rgba(207, 164, 111, 0.25);
-        color: #ffd166;
-        font-size: 0.75rem;
-        font-weight: 700;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-    }
-    .day-nav-today-btn:hover {
-        background: rgba(207, 164, 111, 0.25);
-        border-color: #ffd166;
-        color: #fff;
-    }
-    .day-modal-close-btn {
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #cfa46f;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.82rem;
-        cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .day-modal-close-btn:hover {
-        background: rgba(239, 68, 68, 0.15);
-        border-color: rgba(239, 68, 68, 0.35);
-        color: #f87171;
-        transform: rotate(90deg);
-    }
-
-    /* Date & Badges Title Row */
-    .day-modal-header-content {
-        padding: 4px 20px 14px 20px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    .day-modal-date {
-        font-size: 1.24rem;
-        font-weight: 800;
-        color: #f8fafc;
-        letter-spacing: -0.015em;
-        margin: 0 0 8px 0;
-        line-height: 1.25;
-    }
-    .day-summary-badges {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-    .day-summary-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 0.74rem;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-    }
-    .day-summary-chip.chip-count {
-        background: rgba(207, 164, 111, 0.12);
-        color: #f3ede4;
-        border: 1px solid rgba(207, 164, 111, 0.25);
-    }
-    .day-summary-chip.chip-present {
-        background: rgba(16, 185, 129, 0.12);
-        color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-    .day-summary-chip.chip-late {
-        background: rgba(245, 158, 11, 0.12);
-        color: #fbbf24;
-        border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-    .day-summary-chip.chip-absent {
-        background: rgba(239, 68, 68, 0.12);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.3);
-    }
-    .day-summary-chip.chip-empty {
-        background: rgba(255, 255, 255, 0.04);
-        color: #a8937e;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    /* Section Header */
-    .day-section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin: 16px 0 12px 0;
-    }
-    .day-section-label {
-        font-size: 0.74rem;
-        font-weight: 800;
-        color: #cfa46f;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-    }
-    .day-section-icon {
-        color: #cfa46f;
-        font-size: 0.8rem;
-    }
-    .day-section-badge {
-        font-size: 0.72rem;
-        font-weight: 700;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: #b39b82;
-        padding: 2px 8px;
-        border-radius: 6px;
-    }
-
-    /* Subject Detail Cards */
-    .att-detail-card {
-        background: linear-gradient(145deg, rgba(32, 24, 20, 0.9) 0%, rgba(18, 13, 11, 0.95) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 18px;
-        padding: 16px 18px;
+    #daySummaryModal .modal-content {
+        background: linear-gradient(180deg, #18120d 0%, #0d0806 100%) !important;
+        border: 1px solid rgba(212, 175, 55, 0.2) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.85), 0 0 40px rgba(207, 164, 111, 0.08) !important;
         position: relative;
-        overflow: hidden;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        backdrop-filter: blur(12px);
     }
-    .att-detail-card.status-border-present {
-        border-left: 4px solid #10b981 !important;
-        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.06);
-    }
-    .att-detail-card.status-border-late {
-        border-left: 4px solid #f59e0b !important;
-        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.06);
-    }
-    .att-detail-card.status-border-absent {
-        border-left: 4px solid #ef4444 !important;
-        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.06);
-    }
+    #daySummaryModal .modal-content::before { display: none !important; }
 
-    .att-card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 12px;
-        margin-bottom: 12px;
-        flex-wrap: wrap;
-    }
-    .att-card-subject-title {
-        font-weight: 800;
-        font-size: 1.05rem;
-        color: #f8fafc;
-        line-height: 1.32;
-        margin-bottom: 6px;
-    }
-    .att-card-meta {
-        font-size: 0.8rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .att-code-pill {
-        background: rgba(207, 164, 111, 0.15);
-        color: #ffd166;
-        border: 1px solid rgba(207, 164, 111, 0.35);
-        font-weight: 800;
-        font-size: 0.74rem;
-        padding: 2px 8px;
-        border-radius: 6px;
-        letter-spacing: 0.04em;
-    }
-    .att-instructor-pill {
-        color: #c5b3a1;
-        font-size: 0.78rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .att-status-badge {
-        padding: 5px 12px;
-        border-radius: 10px;
-        font-size: 0.74rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        flex-shrink: 0;
-    }
-    .att-status-badge.present {
-        background: rgba(16, 185, 129, 0.12);
-        color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.35);
-        box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
-    }
-    .att-status-badge.late {
-        background: rgba(245, 158, 11, 0.12);
-        color: #fbbf24;
-        border: 1px solid rgba(245, 158, 11, 0.35);
-        box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
-    }
-    .att-status-badge.absent {
-        background: rgba(239, 68, 68, 0.12);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.35);
-        box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
-    }
-
-    /* Grid for Schedule & Clock-in */
-    .att-info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-        gap: 10px;
-        background: rgba(0, 0, 0, 0.35);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 14px;
-        padding: 12px 14px;
-    }
-    .att-grid-col-label {
-        font-size: 0.68rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: #cfa46f;
-        margin-bottom: 4px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .att-grid-col-val {
-        font-size: 0.88rem;
-        font-weight: 700;
-        color: #f1f5f9;
-    }
-
-    /* Excuse Request Button for Absent Classes */
-    .day-card-excuse-btn {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-top: 10px;
-        padding: 8px 12px;
-        border-radius: 10px;
-        background: rgba(207, 164, 111, 0.08);
-        border: 1px dashed rgba(207, 164, 111, 0.3);
-        color: #ffd166;
-        font-size: 0.76rem;
-        font-weight: 700;
-        text-decoration: none;
-        transition: all 0.2s ease;
-    }
-    .day-card-excuse-btn:hover {
-        background: rgba(207, 164, 111, 0.18);
-        border-color: #ffd166;
-        color: #fff;
-    }
-
-    /* Empty state */
-    .day-empty-card {
-        text-align: center;
-        padding: 38px 20px;
-        background: rgba(255, 255, 255, 0.02);
-        border-radius: 20px;
-        border: 1px dashed rgba(255, 255, 255, 0.08);
-    }
-    .day-empty-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 18px;
-        background: rgba(207, 164, 111, 0.1);
-        border: 1px solid rgba(207, 164, 111, 0.22);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 14px;
-        color: #ffd166;
-        font-size: 1.6rem;
-    }
+    .day-modal-action-bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 8px; }
+    .day-nav-stepper { display: inline-flex; align-items: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 3px; gap: 2px; }
+    .day-nav-step-btn { width: 30px; height: 30px; border-radius: 8px; background: transparent; border: none; color: #cfa46f; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; }
+    .day-nav-step-btn:hover { background: rgba(207,164,111,0.15); color: #ffd166; }
+    .day-nav-today-btn { height: 30px; padding: 0 10px; border-radius: 8px; background: rgba(207,164,111,0.12); border: 1px solid rgba(207,164,111,0.25); color: #ffd166; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+    .day-nav-today-btn:hover { background: rgba(207,164,111,0.25); border-color: #ffd166; color: #fff; }
+    .day-modal-close-btn { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #cfa46f; display: inline-flex; align-items: center; justify-content: center; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; }
+    .day-modal-close-btn:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.35); color: #f87171; }
+    .day-modal-header-content { padding: 4px 20px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .day-modal-date { font-size: 1.24rem; font-weight: 800; color: #f8fafc; margin: 0 0 8px; line-height: 1.25; }
+    .day-summary-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .day-summary-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 0.74rem; font-weight: 700; }
+    .day-summary-chip.chip-count { background: rgba(207,164,111,0.12); color: #f3ede4; border: 1px solid rgba(207,164,111,0.25); }
+    .day-summary-chip.chip-present { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+    .day-summary-chip.chip-late { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+    .day-summary-chip.chip-absent { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .day-summary-chip.chip-empty { background: rgba(255,255,255,0.04); color: #a8937e; border: 1px solid rgba(255,255,255,0.08); }
+    .day-section-header { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 12px; }
+    .day-section-label { font-size: 0.74rem; font-weight: 800; color: #cfa46f; text-transform: uppercase; letter-spacing: 0.08em; }
+    .day-section-icon { color: #cfa46f; font-size: 0.8rem; }
+    .day-section-badge { font-size: 0.72rem; font-weight: 700; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #b39b82; padding: 2px 8px; border-radius: 6px; }
+    .att-detail-card { background: linear-gradient(145deg, rgba(32,24,20,0.9), rgba(18,13,11,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 16px 18px; position: relative; overflow: hidden; }
+    .att-detail-card.status-border-present { border-left: 4px solid #10b981 !important; }
+    .att-detail-card.status-border-late { border-left: 4px solid #f59e0b !important; }
+    .att-detail-card.status-border-absent { border-left: 4px solid #ef4444 !important; }
+    .att-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .att-card-subject-title { font-weight: 800; font-size: 1.05rem; color: #f8fafc; line-height: 1.32; margin-bottom: 6px; }
+    .att-card-meta { font-size: 0.8rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .att-code-pill { background: rgba(207,164,111,0.15); color: #ffd166; border: 1px solid rgba(207,164,111,0.35); font-weight: 800; font-size: 0.74rem; padding: 2px 8px; border-radius: 6px; }
+    .att-instructor-pill { color: #c5b3a1; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px; }
+    .att-status-badge { padding: 5px 12px; border-radius: 10px; font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .att-status-badge.present { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.35); }
+    .att-status-badge.late { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.35); }
+    .att-status-badge.absent { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.35); }
+    .att-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 12px 14px; }
+    .att-grid-col-label { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #cfa46f; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+    .att-grid-col-val { font-size: 0.88rem; font-weight: 700; color: #f1f5f9; }
+    .day-card-excuse-btn { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding: 8px 12px; border-radius: 10px; background: rgba(207,164,111,0.08); border: 1px dashed rgba(207,164,111,0.3); color: #ffd166; font-size: 0.76rem; font-weight: 700; text-decoration: none; }
+    .day-empty-card { text-align: center; padding: 38px 20px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.08); }
+    .day-empty-icon { width: 56px; height: 56px; border-radius: 18px; background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.22); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; color: #ffd166; font-size: 1.6rem; }
 
     @media (max-width: 768px) {
-        .scal-card { padding: 18px 14px; border-radius: 20px; }
-        .scal-nav { margin-bottom: 14px; }
-        .scal-nav-btn { width: 38px; height: 38px; font-size: 1rem; border-radius: 10px; }
-        .scal-nav-title { font-size: 1.15rem; }
-        .scal-weekdays { gap: 4px; padding: 10px 0; border-radius: 10px; margin-bottom: 8px; }
-        .scal-wd { font-size: 0.72rem; }
-        .scal-grid { gap: 5px; }
-        .scal-tile { height: 48px; min-height: 48px; border-radius: 10px; }
-        .scal-num { font-size: 0.95rem; }
-        .scal-dot { width: 4px; height: 4px; }
-
-        /* Responsive Mobile Bottom Sheet for Modals */
         #daySummaryModal .modal-dialog,
-        #attendanceRecordsModal .modal-dialog {
+        #attendanceRecordsModal .modal-dialog,
+        #subjectBreakdownModal .modal-dialog {
             margin: 0 !important;
             position: fixed !important;
             bottom: 0 !important;
@@ -2082,7 +623,8 @@
             transform: translateY(0) !important;
         }
         #daySummaryModal .modal-content,
-        #attendanceRecordsModal .modal-content {
+        #attendanceRecordsModal .modal-content,
+        #subjectBreakdownModal .modal-content {
             border-bottom-left-radius: 0 !important;
             border-bottom-right-radius: 0 !important;
             border-top-left-radius: 28px !important;
@@ -2094,97 +636,94 @@
             border-bottom: none !important;
             width: 100% !important;
         }
-        .day-modal-sheet-handle {
+        .day-modal-sheet-handle,
+        .scal-sheet-handle {
             display: block !important;
         }
     }
 
-    .subject-minimal-card {
-        border-color: rgba(255, 255, 255, 0.06);
-    }
-    .subject-minimal-card:hover {
-        background: rgba(255, 255, 255, 0.035) !important;
-        border-color: rgba(207, 164, 111, 0.3) !important;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
-    }
+    .subject-minimal-card { border-color: rgba(255, 255, 255, 0.06); }
+    .subject-minimal-card:hover { background: rgba(255, 255, 255, 0.035) !important; border-color: rgba(207, 164, 111, 0.3) !important; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45); }
 </style>
-
 
 {{-- ── Subject Attendance Breakdown Modal ─────────────────────────────── --}}
 <div class="modal fade" id="subjectBreakdownModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="background:#0f0a08; border:1px solid rgba(255,255,255,0.1); border-radius:24px; box-shadow:0 30px 80px rgba(0,0,0,0.85);">
-            {{-- Mobile sheet handle --}}
-            <div class="scal-sheet-handle" style="display:none; width:42px; height:4.5px; background:rgba(255,255,255,0.22); border-radius:99px; margin:12px auto 4px auto;"></div>
-            {{-- Header --}}
-            <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 border-bottom" style="border-color:rgba(255,255,255,0.06)!important;">
+        <div class="modal-content" style="background:#14100e; border:1px solid rgba(223,184,121,0.2); border-radius:22px; box-shadow:0 30px 80px rgba(0,0,0,0.85);">
+            <div class="scal-sheet-handle"></div>
+            <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 border-bottom" style="border-color:rgba(255,255,255,0.07)!important;">
                 <div class="d-flex align-items-center gap-3">
-                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.3); display:flex; align-items:center; justify-content:center; color:#a78bfa; font-size:1.2rem;">
+                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(223,184,121,0.14); border:1px solid rgba(223,184,121,0.28); display:flex; align-items:center; justify-content:center; color:#dfb879; font-size:1.15rem;">
                         <i class="bi bi-pie-chart-fill"></i>
                     </div>
                     <div>
-                        <h3 style="font-weight:800; font-size:1.2rem; color:#f3ede4; margin:0;">Subject Breakdown</h3>
-                        <div style="font-size:0.78rem; color:#b39b82; margin-top:2px;">Attendance rate &amp; records per enrolled subject</div>
+                        <h3 style="font-weight:800; font-size:1.15rem; color:#f5efe6; margin:0;">Subject Breakdown</h3>
+                        <div style="font-size:0.78rem; color:#b5a89a; margin-top:2px;">Attendance rate &amp; records per enrolled subject</div>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-3">
-                    <span class="badge" style="background:rgba(207,164,111,0.12); color:#ffd166; border:1px solid rgba(207,164,111,0.25); font-size:0.78rem; font-weight:700; padding:6px 12px; border-radius:10px;">
-                        {{ count($subjectStats ?? []) }} Subjects
+                    <span class="badge" style="background:rgba(223,184,121,0.12); color:#dfb879; border:1px solid rgba(223,184,121,0.25); font-size:0.76rem; font-weight:700; padding:6px 12px; border-radius:10px;">
+                        {{ count($subjectStats ?? []) }} {{ \Illuminate\Support\Str::plural('Subject', count($subjectStats ?? [])) }}
                     </span>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
             </div>
-            {{-- Body --}}
             <div class="px-4 py-4" style="max-height:72vh; overflow-y:auto;">
                 @if(empty($subjectStats) || count($subjectStats) === 0)
                     <div style="text-align:center; padding:42px 20px; background:rgba(255,255,255,0.02); border-radius:18px; border:1px dashed rgba(255,255,255,0.08);">
-                        <div style="width:52px; height:52px; border-radius:14px; background:rgba(207,164,111,0.1); border:1px solid rgba(207,164,111,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; color:#ffd166; font-size:1.4rem;">
+                        <div style="width:52px; height:52px; border-radius:14px; background:rgba(223,184,121,0.1); border:1px solid rgba(223,184,121,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; color:#dfb879; font-size:1.4rem;">
                             <i class="bi bi-journal-x"></i>
                         </div>
-                        <p style="color:#b39b82; font-size:0.9rem; font-weight:600; margin:0;">No enrolled subject records found</p>
+                        <p style="color:#b5a89a; font-size:0.9rem; font-weight:600; margin:0;">No enrolled subject records found</p>
                     </div>
                 @else
                     <div class="row g-3">
                         @foreach($subjectStats as $sub)
                             @php
-                                $brkRateColor = '#10b981';
-                                $brkRateBg    = 'rgba(16,185,129,0.12)';
-                                $brkRateBorder= 'rgba(16,185,129,0.3)';
-                                if ($sub->rate < 75) {
-                                    $brkRateColor  = '#ef4444';
-                                    $brkRateBg     = 'rgba(239,68,68,0.12)';
-                                    $brkRateBorder = 'rgba(239,68,68,0.3)';
-                                } elseif ($sub->rate < 90) {
-                                    $brkRateColor  = '#f59e0b';
-                                    $brkRateBg     = 'rgba(245,158,11,0.12)';
-                                    $brkRateBorder = 'rgba(245,158,11,0.3)';
+                                $hasRecords = $sub->total > 0;
+                                $brkRateColor = '#94a3b8';
+                                $brkRateBg    = 'rgba(148,163,184,0.12)';
+                                $brkRateBorder= 'rgba(148,163,184,0.26)';
+                                if ($hasRecords) {
+                                    if ($sub->rate < 75) {
+                                        $brkRateColor  = '#f87171';
+                                        $brkRateBg     = 'rgba(239,68,68,0.12)';
+                                        $brkRateBorder = 'rgba(239,68,68,0.3)';
+                                    } elseif ($sub->rate < 85) {
+                                        $brkRateColor  = '#fbbf24';
+                                        $brkRateBg     = 'rgba(245,158,11,0.12)';
+                                        $brkRateBorder = 'rgba(245,158,11,0.3)';
+                                    } else {
+                                        $brkRateColor  = '#34d399';
+                                        $brkRateBg     = 'rgba(16,185,129,0.12)';
+                                        $brkRateBorder = 'rgba(16,185,129,0.3)';
+                                    }
                                 }
                             @endphp
                             <div class="col-12 col-md-6">
-                                <div class="subject-minimal-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:18px 20px; height:100%; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.25s cubic-bezier(0.16,1,0.3,1);">
+                                <div class="subject-minimal-card" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:16px 18px; height:100%; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.22s ease;">
                                     <div>
                                         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;">
                                             <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-                                                <span style="background:rgba(207,164,111,0.15); color:#ffd166; border:1px solid rgba(207,164,111,0.25); font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:7px; flex-shrink:0;">{{ $sub->code }}</span>
-                                                <span style="font-size:0.92rem; font-weight:700; color:#f3ede4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ $sub->name }}">{{ $sub->name }}</span>
+                                                <span style="background:rgba(223,184,121,0.14); color:#dfb879; border:1px solid rgba(223,184,121,0.26); font-size:0.74rem; font-weight:800; padding:3px 8px; border-radius:7px; flex-shrink:0;">{{ $sub->code }}</span>
+                                                <span style="font-size:0.9rem; font-weight:700; color:#f5efe6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ $sub->name }}">{{ $sub->name }}</span>
                                             </div>
-                                            <span class="badge" style="background:{{ $brkRateBg }}; color:{{ $brkRateColor }}; border:1px solid {{ $brkRateBorder }}; font-size:0.82rem; font-weight:800; padding:4px 10px; border-radius:8px; flex-shrink:0;">{{ $sub->rate }}%</span>
+                                            <span class="badge" style="background:{{ $brkRateBg }}; color:{{ $brkRateColor }}; border:1px solid {{ $brkRateBorder }}; font-size:0.8rem; font-weight:800; padding:4px 9px; border-radius:8px; flex-shrink:0;">{{ $hasRecords ? $sub->rate.'%' : 'No records' }}</span>
                                         </div>
-                                        <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden; margin-bottom:14px;">
-                                            <div style="width:{{ min(100, $sub->rate) }}%; height:100%; background:{{ $brkRateColor }}; border-radius:99px; transition:width 0.6s cubic-bezier(0.16,1,0.3,1);"></div>
+                                        <div style="height:5px; background:rgba(255,255,255,0.07); border-radius:99px; overflow:hidden; margin-bottom:13px;">
+                                            <div style="width:{{ $hasRecords ? min(100, max(0, $sub->rate)) : 0 }}%; height:100%; background:{{ $brkRateColor }}; border-radius:99px;"></div>
                                         </div>
                                     </div>
-                                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.04);">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05);">
                                         <div style="display:flex; align-items:center; gap:10px;">
-                                            <span style="font-size:0.76rem; color:#b39b82;"><strong style="color:#10b981;">{{ $sub->present }}</strong> Present</span>
-                                            <span style="font-size:0.76rem; color:#b39b82;"><strong style="color:#f59e0b;">{{ $sub->late }}</strong> Late</span>
-                                            <span style="font-size:0.76rem; color:#b39b82;"><strong style="color:#ef4444;">{{ $sub->absent }}</strong> Absent</span>
+                                            <span style="font-size:0.75rem; color:#b5a89a;"><strong style="color:#34d399;">{{ $sub->present }}</strong> Present</span>
+                                            <span style="font-size:0.75rem; color:#b5a89a;"><strong style="color:#fbbf24;">{{ $sub->late }}</strong> Late</span>
+                                            <span style="font-size:0.75rem; color:#b5a89a;"><strong style="color:#f87171;">{{ $sub->absent }}</strong> Absent</span>
                                             @if($sub->excused > 0)
-                                                <span style="font-size:0.76rem; color:#b39b82;"><strong style="color:#8b5cf6;">{{ $sub->excused }}</strong> Excused</span>
+                                                <span style="font-size:0.75rem; color:#b5a89a;"><strong style="color:#60a5fa;">{{ $sub->excused }}</strong> Excused</span>
                                             @endif
                                         </div>
-                                        <span style="font-size:0.72rem; color:#8f826f; font-weight:600;">{{ $sub->total }} Sessions</span>
+                                        <span style="font-size:0.72rem; color:#948678; font-weight:600;">{{ $sub->total }} {{ \Illuminate\Support\Str::plural('Session', $sub->total) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -2192,12 +731,11 @@
                     </div>
                 @endif
             </div>
-            {{-- Footer --}}
-            <div class="px-4 py-3 border-top d-flex justify-content-between align-items-center" style="border-color:rgba(255,255,255,0.06)!important; background:rgba(255,255,255,0.01);">
-                <a href="{{ route('student.classes') }}" class="btn btn-sm" style="background:rgba(207,164,111,0.1); border:1px solid rgba(207,164,111,0.3); color:#ffd166; font-weight:700; font-size:0.82rem; border-radius:12px; padding:7px 16px;">
+            <div class="px-4 py-3 border-top d-flex justify-content-between align-items-center" style="border-color:rgba(255,255,255,0.07)!important; background:rgba(255,255,255,0.015);">
+                <a href="{{ route('student.classes') }}" class="btn btn-sm" style="background:rgba(223,184,121,0.12); border:1px solid rgba(223,184,121,0.3); color:#dfb879; font-weight:700; font-size:0.82rem; border-radius:10px; padding:7px 16px;">
                     <i class="bi bi-book-fill me-1"></i> My Classes
                 </a>
-                <button type="button" class="btn btn-sm" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); color:#f3ede4; font-weight:700; font-size:0.82rem; border-radius:12px; padding:7px 18px;">
+                <button type="button" class="btn btn-sm" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#f5efe6; font-weight:700; font-size:0.82rem; border-radius:10px; padding:7px 18px;">
                     Close
                 </button>
             </div>
@@ -2205,12 +743,11 @@
     </div>
 </div>
 
-{{-- ── Day Summary Inspector Modal (Subject-by-Subject Attendance Details) ───────────────── --}}
+{{-- ── Day Summary Inspector Modal ────────────────────────────────────── --}}
 <div class="modal fade" id="daySummaryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="scal-sheet-handle day-modal-sheet-handle"></div>
-            <!-- Action bar with Stepper & Close -->
             <div class="day-modal-action-bar">
                 <div class="day-nav-stepper">
                     <button type="button" class="day-nav-step-btn" onclick="navigateDayModal(-1)" title="Previous Day" aria-label="Previous Day">
@@ -2227,7 +764,6 @@
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
-            <!-- Header Content: Date & Dynamic Micro-badges -->
             <div class="day-modal-header-content">
                 <h3 class="day-modal-date" id="daySummaryTitle">Date</h3>
                 <div class="day-summary-badges" id="daySummarySubtitle">
@@ -2237,11 +773,8 @@
                     </span>
                 </div>
             </div>
-            <!-- Body Content -->
             <div class="px-4 pb-4 pt-1">
-                <div id="daySummaryContent" class="d-flex flex-column gap-3">
-                    <!-- dynamically populated with ATTENDANCE and EVENTS / IMPORTANT DATES sections -->
-                </div>
+                <div id="daySummaryContent" class="d-flex flex-column gap-3"></div>
                 <div style="font-size:0.75rem; color:#8f826f; text-align:center; margin-top:20px; display:flex; align-items:center; justify-content:center; gap:6px;">
                     <i class="bi bi-shield-check text-gold" style="color:#cfa46f;"></i>
                     <span>Real-time records, events, and schedules for this date.</span>
@@ -2251,41 +784,39 @@
     </div>
 </div>
 
-{{-- ── Attendance Records Modal (Triggered by "View Records" button) ─────────────────────── --}}
+{{-- ── Attendance Records Modal ───────────────────────────────────────── --}}
 <div class="modal fade" id="attendanceRecordsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="background:#0f0a08; border:1px solid rgba(255,255,255,0.1); border-radius:24px; box-shadow:0 30px 80px rgba(0,0,0,0.85);">
+        <div class="modal-content" style="background:#14100e; border:1px solid rgba(223,184,121,0.2); border-radius:22px; box-shadow:0 30px 80px rgba(0,0,0,0.85);">
+            <div class="scal-sheet-handle"></div>
             <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 border-bottom" style="border-color:rgba(255,255,255,0.06)!important;">
                 <div class="d-flex align-items-center gap-3">
-                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(207,164,111,0.15); border:1px solid rgba(207,164,111,0.3); display:flex; align-items:center; justify-content:center; color:#ffd166; font-size:1.2rem;">
+                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(223,184,121,0.14); border:1px solid rgba(223,184,121,0.28); display:flex; align-items:center; justify-content:center; color:#dfb879; font-size:1.15rem;">
                         <i class="bi bi-clock-history"></i>
                     </div>
                     <div>
-                        <h3 style="font-weight:800; font-size:1.25rem; color:#f3ede4; margin:0;">Attendance Records</h3>
-                        <div style="font-size:0.8rem; color:#b39b82; margin-top:2px;">
-                            Complete attendance history per subject and date
-                        </div>
+                        <h3 style="font-weight:800; font-size:1.2rem; color:#f5efe6; margin:0;">Attendance Records</h3>
+                        <div style="font-size:0.8rem; color:#b5a89a; margin-top:2px;">Complete attendance history per subject and date</div>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-3">
-                    <span id="recordsModalCount" class="badge" style="background:rgba(255,209,102,0.12); color:#ffd166; border:1px solid rgba(255,209,102,0.25); font-size:0.8rem; padding:6px 12px; border-radius:10px;">
+                    <span id="recordsModalCount" class="badge" style="background:rgba(223,184,121,0.12); color:#dfb879; border:1px solid rgba(223,184,121,0.25); font-size:0.78rem; padding:6px 12px; border-radius:10px;">
                         {{ $totalRecords }} Records
                     </span>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
             </div>
 
-            {{-- Filter Toolbar --}}
             <div class="px-4 py-3 border-bottom" style="background:rgba(255,255,255,0.015); border-color:rgba(255,255,255,0.05)!important;">
                 <div class="row g-2">
                     <div class="col-12 col-md-6">
                         <div style="position:relative;">
                             <i class="bi bi-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#8f826f; font-size:0.85rem;"></i>
-                            <input type="text" id="recordsSearchInput" oninput="filterAttendanceRecords()" class="form-control form-control-sm" placeholder="Search subject, code, or instructor..." style="background:#140e0c; border:1px solid rgba(255,255,255,0.1); color:#f3ede4; border-radius:12px; padding-left:34px; font-size:0.82rem; height:38px;">
+                            <input type="text" id="recordsSearchInput" oninput="filterAttendanceRecords()" class="form-control form-control-sm" placeholder="Search subject, code, or instructor..." style="background:#0f0c0a; border:1px solid rgba(255,255,255,0.1); color:#f5efe6; border-radius:10px; padding-left:34px; font-size:0.82rem; height:38px;">
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <select id="recordsStatusFilter" onchange="filterAttendanceRecords()" class="form-select form-select-sm" style="background:#140e0c; border:1px solid rgba(255,255,255,0.1); color:#f3ede4; border-radius:12px; font-size:0.82rem; height:38px;">
+                        <select id="recordsStatusFilter" onchange="filterAttendanceRecords()" class="form-select form-select-sm" style="background:#0f0c0a; border:1px solid rgba(255,255,255,0.1); color:#f5efe6; border-radius:10px; font-size:0.82rem; height:38px;">
                             <option value="all">All Statuses</option>
                             <option value="present">Present</option>
                             <option value="late">Late</option>
@@ -2294,26 +825,22 @@
                         </select>
                     </div>
                     <div class="col-6 col-md-3">
-                        <select id="recordsMonthFilter" onchange="filterAttendanceRecords()" class="form-select form-select-sm" style="background:#140e0c; border:1px solid rgba(255,255,255,0.1); color:#f3ede4; border-radius:12px; font-size:0.82rem; height:38px;">
+                        <select id="recordsMonthFilter" onchange="filterAttendanceRecords()" class="form-select form-select-sm" style="background:#0f0c0a; border:1px solid rgba(255,255,255,0.1); color:#f5efe6; border-radius:10px; font-size:0.82rem; height:38px;">
                             <option value="all">All Months</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            {{-- Records List Container --}}
             <div class="px-4 py-3" style="min-height:280px; max-height:60vh; overflow-y:auto;">
-                <div id="recordsModalList" class="d-flex flex-column gap-2">
-                    <!-- Populated via JavaScript -->
-                </div>
+                <div id="recordsModalList" class="d-flex flex-column gap-2"></div>
             </div>
 
-            {{-- Modal Footer --}}
             <div class="px-4 py-3 border-top d-flex justify-content-between align-items-center" style="border-color:rgba(255,255,255,0.06)!important; background:rgba(255,255,255,0.01);">
-                <a href="{{ route('student.calendar') }}#attendance-records" class="btn btn-outline-warning btn-sm" style="border-radius:12px; font-weight:700; font-size:0.82rem; padding:7px 16px; border-color:rgba(255,209,102,0.4); color:#ffd166;">
+                <a href="{{ route('student.calendar') }}#attendance-records" class="btn btn-outline-warning btn-sm" style="border-radius:10px; font-weight:700; font-size:0.82rem; padding:7px 16px; border-color:rgba(223,184,121,0.4); color:#dfb879;">
                     <i class="bi bi-box-arrow-up-right me-1"></i> Open Full History Page
                 </a>
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:12px; font-weight:700; font-size:0.82rem; padding:7px 18px; background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.1);">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:10px; font-weight:700; font-size:0.82rem; padding:7px 18px; background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.1);">
                     Close
                 </button>
             </div>
@@ -2322,7 +849,6 @@
 </div>
 
 <script nonce="{{ csp_nonce() }}">
-// Calendar details load only when opened, keeping the first dashboard request light.
 var attCalendarData = {};
 var eventsCalendarData = {};
 var dashboardCalendarDataLoaded = false;
@@ -2464,7 +990,6 @@ function showAttDetail(dateKey, day) {
                 </div>`;
         }
     } else {
-        // Dynamic summary badges in modal header
         let badgesHtml = '';
         if (records.length > 0) {
             const presentCount = records.filter(r => r.status_lower === 'present').length;
@@ -2502,7 +1027,6 @@ function showAttDetail(dateKey, day) {
 
         let fullHtml = '';
 
-        // 1. ATTENDANCE SECTION
         if (records.length > 0) {
             fullHtml += `
                 <div class="day-section-header mb-3">
@@ -2594,7 +1118,6 @@ function showAttDetail(dateKey, day) {
             fullHtml += `</div>`;
         }
 
-        // 2. EVENTS / IMPORTANT DATES SECTION
         if (dayEvents.length > 0) {
             fullHtml += `
                 <div class="day-section-header mb-3">
@@ -2633,8 +1156,6 @@ function showAttDetail(dateKey, day) {
                 }
 
                 let metaRows = '';
-
-                // Subject row (e.g. Mathematics for Exam)
                 if (evt.subject) {
                     metaRows += `
                         <div style="font-size: 0.95rem; font-weight: 700; color: #ffd166; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
@@ -2643,8 +1164,6 @@ function showAttDetail(dateKey, day) {
                         </div>
                     `;
                 }
-
-                // Time row (e.g. 9:00 AM – 4:00 PM or 8:00 AM – 10:00 AM)
                 if (evt.time) {
                     metaRows += `
                         <div style="font-size: 0.85rem; font-weight: 600; color: #f3ede4; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
@@ -2653,8 +1172,6 @@ function showAttDetail(dateKey, day) {
                         </div>
                     `;
                 }
-
-                // Location row (e.g. School Gym)
                 if (evt.location) {
                     metaRows += `
                         <div style="font-size: 0.85rem; font-weight: 600; color: #b39b82; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
@@ -2663,8 +1180,6 @@ function showAttDetail(dateKey, day) {
                         </div>
                     `;
                 }
-
-                // Description row (e.g. No classes)
                 if (evt.description && evt.description.trim() !== '') {
                     metaRows += `
                         <div style="font-size: 0.82rem; color: #8f826f; margin-top: 6px; line-height: 1.45;">
@@ -2717,7 +1232,6 @@ function openDaySummaryInspector() {
                 throw new Error('Bootstrap Modal not available');
             }
         } catch (err) {
-            console.warn('Day summary modal fallback invoked:', err);
             modalEl.classList.add('show');
             modalEl.style.display = 'block';
             modalEl.setAttribute('aria-modal', 'true');
@@ -2811,7 +1325,6 @@ function openAttendanceRecordsModal() {
                 throw new Error('Bootstrap Modal not available');
             }
         } catch (err) {
-            console.warn('Records modal fallback invoked:', err);
             modalEl.classList.add('show');
             modalEl.style.display = 'block';
             modalEl.setAttribute('aria-modal', 'true');
@@ -2845,7 +1358,6 @@ function openSubjectBreakdownModal() {
     if (window.triggerHaptic) window.triggerHaptic('light');
 }
 
-// Auto-open Breakdown modal when ?open_breakdown=1 is present in URL
 (function() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('open_breakdown') === '1') {
@@ -2918,14 +1430,14 @@ function renderAttendanceRecordsList(items) {
         const isNoClockIn = clockInText.toLowerCase().includes('no clock-in');
 
         html += `
-            <div class="record-modal-item" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:16px 18px; transition:all 0.2s cubic-bezier(0.16,1,0.3,1); margin-bottom:12px;">
+            <div class="record-modal-item" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:16px 18px; margin-bottom:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
                     <div>
                         <div style="font-size:0.8rem; font-weight:700; color:#ffd166; display:flex; align-items:center; gap:6px;">
                             <i class="bi bi-calendar-event"></i> ${escapeHtml(r.date_formatted)}
                             <span style="color:rgba(255,255,255,0.3); font-weight:400;">(${escapeHtml(r.day_name)})</span>
                         </div>
-                        <h4 style="margin:4px 0 0; font-size:1.05rem; font-weight:800; color:#f3ede4; line-height:1.3;">
+                        <h4 style="margin:4px 0 0; font-size:1.02rem; font-weight:800; color:#f3ede4; line-height:1.3;">
                             ${escapeHtml(r.subject)}
                         </h4>
                     </div>
@@ -2989,24 +1501,26 @@ function escapeHtml(str) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Relocate modals directly to document.body to escape any CSS transform/stacking context on mobile
     const dModal = document.getElementById('daySummaryModal');
     if (dModal) {
         dModal.addEventListener('hide.bs.modal', function() {
             currentSelectedDateKey = null;
         });
-    }
-    if (dModal && dModal.parentNode !== document.body) {
-        document.body.appendChild(dModal);
+        if (dModal.parentNode !== document.body) {
+            document.body.appendChild(dModal);
+        }
     }
     const rModal = document.getElementById('attendanceRecordsModal');
     if (rModal && rModal.parentNode !== document.body) {
         document.body.appendChild(rModal);
     }
+    const sModal = document.getElementById('subjectBreakdownModal');
+    if (sModal && sModal.parentNode !== document.body) {
+        document.body.appendChild(sModal);
+    }
 
-    // Direct event listener binding for all non-empty calendar tiles
     document.querySelectorAll('.scal-tile:not(.empty)').forEach(tile => {
-        tile.addEventListener('click', function(e) {
+        tile.addEventListener('click', function() {
             const dKey = this.getAttribute('data-date');
             const dNum = parseInt(this.getAttribute('data-day'), 10);
             if (dKey) {
@@ -3024,12 +1538,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-
 });
 </script>
 
 <script nonce="{{ csp_nonce() }}">
-// ── Real-time Clock ──
 (function() {
     function tick() {
         const now = new Date();

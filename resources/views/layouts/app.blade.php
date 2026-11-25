@@ -360,6 +360,10 @@
                                 <span>Settings</span>
                             </a>
                             @elseif(Auth::user()->isStudent())
+                            <a class="fb-dropdown-item" href="{{ route('profile') }}">
+                                <div class="fb-icon-circle fb-icon-settings"><i class="bi bi-person-fill"></i></div>
+                                <span>My Profile</span>
+                            </a>
                             <a class="fb-dropdown-item" href="{{ route('settings') }}">
                                 <div class="fb-icon-circle fb-icon-settings"><i class="bi bi-gear-fill"></i></div>
                                 <span>Settings</span>
