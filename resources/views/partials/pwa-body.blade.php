@@ -1340,6 +1340,19 @@
                 }
 
                 if (isUpdateAvailable) {
+                    const targetKey = getLatestReleaseKey();
+                    const alreadyAutoReloaded = sessionStorage.getItem('pwa_auto_reloaded_key') === targetKey;
+                    const alreadyUpdating = sessionStorage.getItem('pwa_updating') === 'true';
+
+                    if (!isManualCheck && !alreadyAutoReloaded && !alreadyUpdating) {
+                        const blockedReason = await updateBlockReason();
+                        if (!blockedReason) {
+                            try { sessionStorage.setItem('pwa_auto_reloaded_key', targetKey); } catch(e) {}
+                            await applySystemUpdate();
+                            return { upToDate: false, updateAvailable: true, autoApplied: true, version: latestVer };
+                        }
+                    }
+
                     await showUpdateReadyPrompt(latestVer, isManualCheck, updateChangelog, isManualCheck);
                     return { upToDate: false, updateAvailable: true, version: latestVer };
                 } else {

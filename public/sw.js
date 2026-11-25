@@ -47,12 +47,9 @@ async function trimCache(cacheName, maxItems) {
     }
 }
 
-// Install: precache essential offline assets
+// Install: precache essential offline assets and activate immediately
 self.addEventListener('install', (event) => {
-    // If there is no active controller, activate immediately; otherwise preserve active session
-    if (!self.registration || !self.registration.active) {
-        self.skipWaiting();
-    }
+    self.skipWaiting();
 
     event.waitUntil(
         caches.open(STATIC_CACHE_NAME).then((cache) => {
