@@ -256,14 +256,14 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertStringContainsString('data-settings-page="profile"', $sidebarHtml);
         $this->assertStringContainsString('data-settings-page="recovery"', $sidebarHtml);
 
-        // Biometrics options show Face registration and Fingerprint registration
+        // The settings identify attendance face enrollment and device passkey registration.
         $settingsResponse->assertSee('id="studentBiometricChoices"', false);
         $biometricChoices = $xpath->query('//*[@id="studentBiometricChoices"]//strong');
         $choiceTitles = [];
         foreach ($biometricChoices as $choice) {
             $choiceTitles[] = trim($choice->textContent ?? '');
         }
-        $this->assertSame(['Face registration', 'Fingerprint registration'], $choiceTitles);
+        $this->assertSame(['Face registration', 'Device passkey registration'], $choiceTitles);
 
         // Navigating back to Dashboard restores the default student application sidebar
         $dashboardResponse = $this->actingAs($student)->get(route('home'));

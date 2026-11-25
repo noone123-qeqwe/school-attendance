@@ -16,8 +16,11 @@ class PasskeySignInTest extends TestCase
     #[TestWith(['fingerprint', 'face', false])]
     #[TestWith(['face', 'fingerprint', false])]
     #[TestWith(['device_lock', 'fingerprint', true])]
+    #[TestWith(['device_lock', 'device_lock', false, 'teacher', 'teacher.dashboard'])]
+    #[TestWith(['device_lock', 'device_lock', false, 'parent', 'parent.dashboard'])]
+    #[TestWith(['device_lock', 'device_lock', false, 'admin', 'admin.2fa.form'])]
     public function test_registered_passkey_signs_in_independently_of_enrollment_label(
-        string $method, string $storedLabel, bool $android
+        string $method, string $storedLabel, bool $android, string $role = 'student', string $redirect = 'home'
     ): void {
         $webauthn = app(WebauthnService::class);
         $webOrigin = 'https://attendance.example';
@@ -40,7 +43,7 @@ class PasskeySignInTest extends TestCase
             'year_level' => '1',
             'email' => 'passkey-owner@example.test',
             'password' => Hash::make('SyntheticPasskeyPassword!'),
-            'role' => 'student',
+            'role' => $role,
             'is_active' => true,
         ]);
         $opensslConfig = tempnam(sys_get_temp_dir(), 'attendance-passkey-');
@@ -93,7 +96,7 @@ class PasskeySignInTest extends TestCase
             OPENSSL_ALGO_SHA256
         ));
 
-        $this->postJson(route('webauthn.login'), [
+        $this->withSession(['admin_2fa_verified' => true])->postJson(route('webauthn.login'), [
             'identifier' => $owner->email,
             'credential_id' => $id,
             'biometric_method' => $method,
@@ -107,7 +110,9 @@ class PasskeySignInTest extends TestCase
             ],
         ])->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('user.id', $owner->id);
+            ->assertJsonPath('user.id', $owner->id)
+            ->assertJsonPath('redirect', route($redirect))
+            ->assertSessionMissing('admin_2fa_verified');
 
         $this->assertAuthenticatedAs($owner);
     }

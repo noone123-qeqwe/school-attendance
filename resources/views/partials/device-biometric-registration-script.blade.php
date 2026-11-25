@@ -59,6 +59,7 @@ function showRegistrationView(id) {
 function cancelBiometricRegistration() {
     bioAbortController?.abort();
     bioAbortController = null;
+    document.getElementById('confirmBioBtn').hidden = true;
     document.getElementById('devicePasskeyFrame')?.classList.remove('bio-detected');
     showRegistrationView('bioIdleView');
     setBioRegistrationStage(1);
@@ -268,6 +269,7 @@ async function beginDevicePasskeyRegistration() {
     const statusTitle = document.getElementById('fpScanningTitle');
     const statusText = document.getElementById('fpStatusSub');
     const frame = document.getElementById('devicePasskeyFrame');
+    const confirmButton = document.getElementById('confirmBioBtn');
 
     function showError(title, message) {
         frame?.classList.remove('bio-detected');
@@ -311,7 +313,7 @@ async function beginDevicePasskeyRegistration() {
         const rp = { name: options.rp?.name || 'School Attendance' };
         const serverRp = (options.rp?.id || '').toLowerCase().trim();
         if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) && !hostname.includes(':')) {
-            rp.id = serverRp && (hostname === serverRp || hostname.endsWith('.' + serverRp)) ? serverRp : hostname;
+            rp.id = serverRp || hostname;
         }
 
         const publicKey = {
@@ -342,35 +344,16 @@ async function beginDevicePasskeyRegistration() {
         };
 
         statusTitle.textContent = 'Confirm on your device';
-        statusText.textContent = 'Follow your device’s biometric or screen lock prompt.';
-        const strategies = [
-            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required', requireResidentKey: true },
-            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred', requireResidentKey: false },
-            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged', requireResidentKey: false }
-        ];
-        let credential = null;
-        let lastCreateError = null;
-        for (const selection of strategies) {
-            if (controller.signal.aborted) return;
-            try {
-                credential = await navigator.credentials.create({
-                    publicKey: { ...publicKey, authenticatorSelection: selection },
-                    signal: controller.signal
-                });
-                break;
-            } catch (error) {
-                lastCreateError = error;
-                if (controller.signal.aborted
-                    || error.name === 'AbortError'
-                    || error.name === 'NotAllowedError'
-                    || error.name === 'InvalidStateError'
-                    || error.name === 'SecurityError') {
-                    throw error;
-                }
-            }
-        }
+        statusText.textContent = 'Continue to open your device’s passkey prompt.';
+        confirmButton.hidden = false;
+        const credential = await window.DevicePasskeys.confirmOnClick(confirmButton, async () => {
+            confirmButton.hidden = true;
+            statusText.textContent = 'Follow your device’s biometric or screen lock prompt.';
+            focusBiometricHeading(statusTitle);
+            return navigator.credentials.create({ publicKey, signal: controller.signal });
+        }, controller.signal);
         if (controller.signal.aborted) return;
-        if (!credential) throw (lastCreateError || new Error('The passkey request ended before registration finished.'));
+        if (!credential) throw new Error('The passkey request ended before registration finished.');
 
         setBioRegistrationStage(3);
         frame?.classList.add('bio-detected');
@@ -380,8 +363,7 @@ async function beginDevicePasskeyRegistration() {
         const credentialId = bufferToBase64Url(credential.rawId);
         const transports = (credential.response && typeof credential.response.getTransports === 'function')
             ? credential.response.getTransports()
-            : ['internal'];
-        const normalizedTransports = Array.isArray(transports) && transports.length ? transports : ['internal'];
+            : [];
 
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
             method: 'POST',
@@ -394,11 +376,11 @@ async function beginDevicePasskeyRegistration() {
             },
             body: JSON.stringify({
                 credential_id: credentialId,
-                transports: normalizedTransports,
+                transports,
                 credential: {
                     id: credential.id,
                     type: credential.type,
-                    transports: normalizedTransports,
+                    transports,
                     response: {
                         attestationObject: bufferToBase64Url(credential.response.attestationObject),
                         clientDataJSON: bufferToBase64Url(credential.response.clientDataJSON)
@@ -436,6 +418,9 @@ async function beginDevicePasskeyRegistration() {
             showError('Registration could not finish', error.message || 'Try registering the device again.');
         }
     } finally {
-        if (bioAbortController === controller) bioAbortController = null;
+        if (bioAbortController === controller) {
+            confirmButton.hidden = true;
+            bioAbortController = null;
+        }
     }
 }

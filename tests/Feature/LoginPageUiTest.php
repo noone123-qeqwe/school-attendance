@@ -34,7 +34,7 @@ class LoginPageUiTest extends TestCase
 
         $response->assertSee('id="bioModalMethodsWrap"', false);
         $response->assertSee('id="bioModalMethodsList"', false);
-        $response->assertSee("name: 'Use a device passkey'", false);
+        $response->assertSee("'Use a device passkey'", false);
         $response->assertDontSee("name: 'Fingerprint'", false);
         $response->assertDontSee("name: 'Face verification'", false);
         $response->assertSee("name: 'Enter password'", false);

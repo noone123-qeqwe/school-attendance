@@ -59,5 +59,30 @@
         return settingUp ? explanation : explanation + ' Sign in with your password.';
     }
 
-    window.DevicePasskeys = { check, message };
+    function confirmOnClick(button, request, signal) {
+        return new Promise((resolve, reject) => {
+            if (signal?.aborted) return resolve(null);
+            const cancel = () => {
+                button.removeEventListener('click', confirm, true);
+                resolve(null);
+            };
+            const confirm = event => {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                signal?.removeEventListener('abort', cancel);
+                button.disabled = true;
+                try {
+                    Promise.resolve(request()).then(resolve, reject);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            button.addEventListener('click', confirm, { once: true, capture: true });
+            signal?.addEventListener('abort', cancel, { once: true });
+            button.disabled = false;
+            button.focus({ preventScroll: true });
+        });
+    }
+
+    window.DevicePasskeys = { check, message, confirmOnClick };
 })();

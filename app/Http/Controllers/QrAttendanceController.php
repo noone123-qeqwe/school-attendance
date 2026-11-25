@@ -2972,12 +2972,7 @@ class QrAttendanceController extends Controller
             throw new RuntimeException('The biometric challenge expired. Please scan the QR code again.');
         }
 
-        session(['webauthn.auth_challenge' => $challenge]);
-        try {
-            $webauthn->verifyAssertion($user, $credential);
-        } finally {
-            session()->forget('webauthn.auth_challenge');
-        }
+        $webauthn->verifyAssertion($user, $credential, $challenge);
     }
 
     private function scheduleMismatchReason(Subject $subject, User $student): ?string

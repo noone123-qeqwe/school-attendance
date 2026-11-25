@@ -13,7 +13,11 @@ class WebauthnService
     public function registrationOptions(User $user): array
     {
         $challenge = random_bytes(32);
-        session(['webauthn.register_challenge' => $this->base64UrlEncode($challenge)]);
+        session(['webauthn.register_challenge' => [
+            'value' => $this->base64UrlEncode($challenge),
+            'user_id' => $user->id,
+            'expires_at' => now()->addMinutes(5)->timestamp,
+        ]]);
 
         $userIdentifier = $user->email ?: ($user->student_number ?: ($user->employee_id ?: 'user_' . $user->id));
         $displayName = $user->name ?: $userIdentifier;
@@ -54,7 +58,11 @@ class WebauthnService
     public function storeCredential(User $user, array $credential): WebauthnCredential
     {
         $clientData = $this->decodeJson($credential['response']['clientDataJSON'] ?? null);
-        $this->assertClientData($clientData, 'webauthn.create', session('webauthn.register_challenge'));
+        $challenge = session()->pull('webauthn.register_challenge');
+        if (!is_array($challenge) || $challenge['user_id'] !== $user->id || $challenge['expires_at'] <= now()->timestamp) {
+            throw new RuntimeException('Passkey registration expired. Start device setup again.');
+        }
+        $this->assertClientData($clientData, 'webauthn.create', $challenge['value']);
 
         $attestation = $this->decodeCbor($this->base64UrlDecode($credential['response']['attestationObject'] ?? ''));
         $authData = $attestation['authData'] ?? null;
@@ -76,7 +84,6 @@ class WebauthnService
         }
         $publicKey = $this->coseKeyToPem($parsed['credential_public_key']);
 
-        session()->forget('webauthn.register_challenge');
 
         $normalizedCredentialId = $this->normalizeCredentialId($credentialId);
 
@@ -110,7 +117,7 @@ class WebauthnService
             'public_key' => $publicKey,
             'sign_count' => $parsed['sign_count'],
             'device_name' => 'Biometric Device',
-            'biometric_type' => 'fingerprint',
+            'biometric_type' => 'device_lock',
             'transports' => $transports,
             'last_used_at' => now(),
         ]);
@@ -119,18 +126,16 @@ class WebauthnService
     public function authenticationOptions(?User $user = null): array
     {
         $challenge = random_bytes(32);
-        session(['webauthn.auth_challenge' => $this->base64UrlEncode($challenge)]);
-
         $allowCredentials = [];
         if ($user) {
             $allowCredentials = $user->webauthnCredentials()
                 ->where('public_key', 'like', '%BEGIN PUBLIC KEY%')
                 ->get()
-                ->map(fn ($credential) => [
+                ->map(fn ($credential) => array_filter([
                     'type' => 'public-key',
                     'id' => $this->normalizeCredentialId($credential->credential_id),
-                    'transports' => $this->credentialTransports($credential),
-                ])
+                    'transports' => $this->sanitizeTransports($credential->transports),
+                ], fn ($value) => $value !== null))
                 ->values()
                 ->toArray();
         }
@@ -177,18 +182,7 @@ class WebauthnService
         return $filtered;
     }
 
-    /**
-     * Resolve stored transports for a credential, defaulting legacy platform keys to internal.
-     *
-     * @return array<int, string>
-     */
-    private function credentialTransports(WebauthnCredential $credential): array
-    {
-        return $this->sanitizeTransports(is_array($credential->transports) ? $credential->transports : null)
-            ?? ['internal'];
-    }
-
-    public function verifyAssertion(User $user, array $assertion, ?WebauthnCredential $credential = null): WebauthnCredential
+    public function verifyAssertion(User $user, array $assertion, string $challenge, ?WebauthnCredential $credential = null): WebauthnCredential
     {
         $credentialId = $assertion['id'] ?? null;
         $normalizedCredentialId = $this->normalizeCredentialId($credentialId);
@@ -196,7 +190,6 @@ class WebauthnService
         Log::debug('WebAuthn verifyAssertion starting', [
             'user_id' => $user->id,
             'credential_id_present' => is_string($credentialId) && $credentialId !== '',
-            'session_challenge' => session('webauthn.auth_challenge') ? 'present' : 'missing',
         ]);
         
         if (!$credential) {
@@ -247,7 +240,7 @@ class WebauthnService
 
         $clientDataJson = $this->base64UrlDecode($assertion['response']['clientDataJSON'] ?? '');
         $clientData = $this->decodeJson($assertion['response']['clientDataJSON'] ?? null);
-        $this->assertClientData($clientData, 'webauthn.get', session('webauthn.auth_challenge'));
+        $this->assertClientData($clientData, 'webauthn.get', $challenge);
 
         $authenticatorData = $this->base64UrlDecode($assertion['response']['authenticatorData'] ?? '');
         $parsed = $this->parseAuthenticatorData($authenticatorData, false);
@@ -271,7 +264,7 @@ class WebauthnService
 
         $publicKey = openssl_pkey_get_public($credential->public_key);
         if ($publicKey === false) {
-            throw new RuntimeException('Stored biometric public key is invalid. Please re-register your fingerprint.');
+            throw new RuntimeException('Stored passkey public key is invalid. Please register a new passkey.');
         }
 
         $verification = openssl_verify($signedData, $signature, $publicKey, OPENSSL_ALGO_SHA256);
@@ -289,8 +282,6 @@ class WebauthnService
             'sign_count' => max($credential->sign_count, $parsed['sign_count']),
             'last_used_at' => now(),
         ])->save();
-
-        session()->forget('webauthn.auth_challenge');
 
         return $credential;
     }

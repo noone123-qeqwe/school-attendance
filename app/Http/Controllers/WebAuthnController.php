@@ -13,25 +13,24 @@ use Illuminate\Support\Str;
 
 class WebAuthnController extends Controller
 {
+    private const LOGIN_CHALLENGE_LIFETIME_SECONDS = 120;
+
     public function registerOptions(Request $request, WebauthnService $webauthn)
     {
         $user = Auth::user();
         $options = $webauthn->registrationOptions($user);
         $options['publicKey']['excludeCredentials'] = [];
 
-        return response()->json($options['publicKey']);
+        return response()->json($options['publicKey'])->header('Cache-Control', 'no-store');
     }
 
     public function register(Request $request, WebauthnService $webauthn)
     {
         $user = Auth::user();
         
-        $biometricType = $request->input('biometric_type', 'fingerprint');
-        if (!in_array($biometricType, ['fingerprint', 'face'])) {
-            $biometricType = 'fingerprint';
-        }
-
-        $typeLabel = $biometricType === 'face' ? 'Face sign-in' : 'Fingerprint';
+        $biometricType = $request->validate([
+            'biometric_type' => ['nullable', 'in:fingerprint,face,device_lock'],
+        ])['biometric_type'] ?? 'device_lock';
 
         // Accept both nested credential format and flattened credential payload
         $credentialId = $request->input('credential_id') ?? $request->input('id') ?? $request->input('rawId');
@@ -62,7 +61,7 @@ class WebAuthnController extends Controller
             ], 409);
         }
 
-        if ($biometricType === 'face' && ($request->has('face_descriptor') || $request->has('face_data'))) {
+        if ($request->has('face_descriptor') || $request->has('face_data')) {
             return response()->json([
                 'success' => false,
                 'code' => 'SECURE_FACE_CREDENTIAL_REQUIRED',
@@ -123,13 +122,9 @@ class WebAuthnController extends Controller
             return response()->json(["success" => false, "message" => $isConflict ? 'This biometric credential is already registered.' : 'Biometric registration could not be completed. Please try again.'], $isConflict ? 409 : 422);
         }
 
-        $successMsg = $biometricType === 'face'
-            ? 'Face sign-in device passkey registered successfully.'
-            : "{$typeLabel} registered successfully!";
-
         return response()->json([
             "success" => true, 
-            "message" => $successMsg,
+            "message" => 'Device passkey registered successfully.',
             "biometric_type" => $biometricType,
             "recovery_codes" => $recoveryCodes
         ]);
@@ -137,6 +132,7 @@ class WebAuthnController extends Controller
 
     public function loginOptions(Request $request, WebauthnService $webauthn)
     {
+        $request->session()->forget('webauthn.login');
         $request->validate([
             'student_number' => ['nullable', 'string', 'max:255'],
             'identifier' => ['nullable', 'string', 'max:255'],
@@ -159,6 +155,12 @@ class WebAuthnController extends Controller
         if ($user && !$options['allowCredentials']) {
             return $this->biometricUnavailableResponse();
         }
+
+        $request->session()->put('webauthn.login', [
+            'challenge' => $options['challenge'],
+            'user_id' => $user?->id,
+            'expires_at' => now()->timestamp + self::LOGIN_CHALLENGE_LIFETIME_SECONDS,
+        ]);
 
         return response()->json($options + [
             'success' => true,
@@ -222,6 +224,14 @@ class WebAuthnController extends Controller
         }
 
         $lockout->clear($identifier, null);
+        if ($user->ensurePasswordChangeRequired()) {
+            return response()->json([
+                'success' => false,
+                'code' => 'password_reset_required',
+                'message' => 'Use Forgot Password to set a new password before registering a passkey.',
+            ], 403);
+        }
+
         session(['webauthn.setup_user_id' => $user->id]);
         $options = $webauthn->registrationOptions($user);
         // Clear excludeCredentials so users can re-enroll or update their biometric passkey on this device
@@ -241,7 +251,7 @@ class WebAuthnController extends Controller
             'id' => ['nullable', 'string', 'max:2048'],
             'rawId' => ['nullable', 'string', 'max:2048'],
             'credential' => ['nullable', 'array'],
-            'biometric_type' => ['nullable', 'in:fingerprint,face'],
+            'biometric_type' => ['nullable', 'in:fingerprint,face,device_lock'],
             'device_name' => ['nullable', 'string', 'max:120'],
         ]);
         $userId = session('webauthn.setup_user_id');
@@ -261,11 +271,7 @@ class WebAuthnController extends Controller
             'type' => $request->input('type') ?? 'public-key',
             'response' => $request->input('response') ?? [],
         ];
-        $biometricType = $request->input('biometric_type', 'fingerprint');
-        if (!in_array($biometricType, ['fingerprint', 'face'])) {
-            $biometricType = 'fingerprint';
-        }
-        $typeLabel = $biometricType === 'face' ? 'Face sign-in' : 'Fingerprint';
+        $biometricType = $request->input('biometric_type') ?? 'device_lock';
 
         $defaultDevice = $this->defaultDeviceName($request);
         $deviceName = $request->input('device_name') ?? $defaultDevice;
@@ -292,6 +298,7 @@ class WebAuthnController extends Controller
 
             Auth::login($user, true);
             $request->session()->regenerate();
+            $request->session()->forget('admin_2fa_verified');
             $request->session()->put('user_role', $user->role);
             $request->session()->put('login_timestamp', now()->toString());
 
@@ -302,7 +309,7 @@ class WebAuthnController extends Controller
 
             $redirectUrl = route('home');
             if ($user->isAdmin()) {
-                $redirectUrl = route('admin.dashboard');
+                $redirectUrl = route('admin.2fa.form');
             } elseif ($user->isTeacher()) {
                 $redirectUrl = route('teacher.dashboard');
             } elseif ($user->isParent()) {
@@ -311,7 +318,7 @@ class WebAuthnController extends Controller
 
             return response()->json([
                 "success" => true,
-                "message" => "{$typeLabel} sign-in successfully enabled for your account.",
+                "message" => 'Passkey sign-in enabled for your account.',
                 "biometric_type" => $biometricType,
                 "redirect" => $redirectUrl
             ]);
@@ -348,7 +355,7 @@ class WebAuthnController extends Controller
         return response()->json([
             'success' => false,
             'code' => 'BIOMETRIC_UNAVAILABLE',
-            'message' => 'Biometric sign-in could not be started. Check your details or use your password.',
+            'message' => 'No passkey was found for those sign-in details. Check your account details or use your password.',
         ], 404);
     }
 
@@ -367,7 +374,21 @@ class WebAuthnController extends Controller
             ], 422);
         }
 
-        $request->validate(["credential_id" => "required|string", "assertion" => "required|array"]);
+        $request->validate([
+            'credential_id' => ['required', 'string', 'max:2048'],
+            'assertion' => ['required', 'array'],
+            'assertion.id' => ['required', 'string', 'max:2048'],
+            'assertion.response.userHandle' => ['nullable', 'string', 'max:128'],
+        ]);
+        $ceremony = $request->session()->pull('webauthn.login');
+        if (!$ceremony || $ceremony['expires_at'] <= now()->timestamp) {
+            return response()->json([
+                'success' => false,
+                'code' => 'PASSKEY_CHALLENGE_EXPIRED',
+                'message' => 'This passkey request expired. Start biometric sign-in again.',
+            ], 401);
+        }
+
         $credentialId = $request->input('credential_id');
         $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
         $paddedId = $normalizedCredentialId . str_repeat('=', (4 - strlen($normalizedCredentialId) % 4) % 4);
@@ -376,23 +397,11 @@ class WebAuthnController extends Controller
             strtr($normalizedCredentialId, '-_', '+/'), strtr($paddedId, '-_', '+/'),
         ]);
 
-        // 1. Check if an account was targeted via session or request input
-        $isSwitchUser = $request->boolean('switch_user') || $request->boolean('allow_detected_user');
         $rawIdentifier = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
         $hasExplicitIdentifier = is_string($rawIdentifier) && trim($rawIdentifier) !== '';
-
-        // Never trust a cached account selection from an earlier options request;
-        // bind this assertion to the identifier on this exact request instead.
-        session()->forget('webauthn_login_user_id');
-        $sessionUserId = null;
-        $expectedUser = $hasExplicitIdentifier && !$isSwitchUser
-            ? $this->findUserByIdentifier(trim($rawIdentifier))
-            : null;
-
-        // An explicitly entered but unknown account must never fall through to
-        // a different credential owner. Discoverable sign-in remains available
-        // only when the user deliberately chooses account switching.
-        if ($hasExplicitIdentifier && !$expectedUser && !$isSwitchUser) {
+        $submittedUser = $hasExplicitIdentifier ? $this->findUserByIdentifier(trim($rawIdentifier)) : null;
+        $expectedUserId = $ceremony['user_id'] ?? $submittedUser?->id;
+        if ($hasExplicitIdentifier && (!$submittedUser || $submittedUser->id !== $expectedUserId)) {
             return response()->json([
                 'success' => false,
                 'code' => 'BIOMETRIC_UNAVAILABLE',
@@ -405,14 +414,12 @@ class WebAuthnController extends Controller
         $dbCredential = null;
         $userHandle = $request->input('assertion.response.userHandle');
 
-        if ($expectedUser) {
-            $dbCredential = $expectedUser->webauthnCredentials()
+        if ($expectedUserId !== null) {
+            $dbCredential = \App\Models\WebauthnCredential::with('user')
+                ->where('user_id', $expectedUserId)
                 ->whereIn('credential_id', $credentialIds)
                 ->first();
-
-            if ($dbCredential) {
-                $user = $expectedUser;
-            }
+            $user = $dbCredential?->user;
         }
 
         // If userHandle is provided (from WebAuthn assertion response), use it to identify user
@@ -445,9 +452,9 @@ class WebAuthnController extends Controller
         }
 
         // 3. Handle account mismatch
-        if ($expectedUser && $user && $expectedUser->id !== $user->id) {
+        if ($expectedUserId !== null && $user && $expectedUserId !== $user->id) {
             \Illuminate\Support\Facades\Log::warning('WebAuthn account mismatch attempt', [
-                'expected_user_id' => $expectedUser->id,
+                'expected_user_id' => $expectedUserId,
                 'credential_user_id' => $user->id,
                 'credential_fingerprint' => hash('sha256', $credentialId),
             ]);
@@ -467,7 +474,6 @@ class WebAuthnController extends Controller
         if (!$user) {
             \Illuminate\Support\Facades\Log::error('WebAuthn login - unrecognized credential', [
                 'credential_fingerprint' => hash('sha256', $credentialId),
-                'session_user_id' => $sessionUserId,
             ]);
             return response()->json([
                 "success" => false,
@@ -485,7 +491,7 @@ class WebAuthnController extends Controller
         }
 
         try {
-            $webauthn->verifyAssertion($user, $request->assertion, $dbCredential);
+            $webauthn->verifyAssertion($user, $request->assertion, $ceremony['challenge'], $dbCredential);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('WebAuthn verification failed', [
                 'user_id' => $user->id,
@@ -496,7 +502,7 @@ class WebAuthnController extends Controller
 
         Auth::login($user, true);
         $request->session()->regenerate();
-        session()->forget(["webauthn_login_user_id"]);
+        $request->session()->forget('admin_2fa_verified');
         $request->session()->put('user_role', $user->role);
         $request->session()->put('login_timestamp', now()->toString());
 
@@ -508,7 +514,7 @@ class WebAuthnController extends Controller
 
         $redirectUrl = route('home');
         if ($user->isAdmin()) {
-            $redirectUrl = route('admin.dashboard');
+            $redirectUrl = route('admin.2fa.form');
         } elseif ($user->isTeacher()) {
             $redirectUrl = route('teacher.dashboard');
         } elseif ($user->isParent()) {
@@ -584,8 +590,8 @@ class WebAuthnController extends Controller
                     'credential_id' => $d->credential_id,
                     'name' => $d->device_name ?? 'My Device',
                     'device_name' => $d->device_name ?? 'My Device',
-                    'biometric_type' => in_array($d->biometric_type, ['face', 'fingerprint']) ? $d->biometric_type : 'fingerprint',
-                    'transports' => is_array($transports) && $transports !== [] ? array_values($transports) : ['internal'],
+                    'biometric_type' => in_array($d->biometric_type, ['face', 'fingerprint', 'device_lock']) ? $d->biometric_type : 'device_lock',
+                    'transports' => is_array($transports) ? array_values($transports) : [],
                     'is_secure_face_credential' => $d->biometric_type === 'face'
                         ? str_contains((string) $d->public_key, 'BEGIN PUBLIC KEY')
                         : null,

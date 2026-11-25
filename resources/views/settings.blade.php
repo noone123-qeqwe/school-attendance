@@ -1199,7 +1199,7 @@
                     @if($user->isStudent())
                     <div id="studentBiometricChoices" class="student-biometric-choices">
                         <a id="studentFaceRegistrationLink" href="{{ route('settings.biometrics.face') }}"><i class="bi bi-camera-video" aria-hidden="true"></i><span><strong>Face registration</strong><small>Use the camera to register your face for attendance checks.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-                        <a id="studentFingerprintRegistrationLink" href="{{ route('settings.biometrics.fingerprint') }}"><i class="bi bi-fingerprint" aria-hidden="true"></i><span><strong>Fingerprint registration</strong><small>Register your fingerprint or device biometrics for secure sign-in.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                        <a id="studentFingerprintRegistrationLink" href="{{ route('settings.biometrics.fingerprint') }}"><i class="bi bi-shield-lock" aria-hidden="true"></i><span><strong>Device passkey registration</strong><small>Use your device’s supported verification for secure sign-in.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
                     </div>
                     @else
                     <div id="studentPasskeySettings">
@@ -1241,6 +1241,7 @@
                                     </div>
                                 </div>
                                 <div class="bio-cancel-row">
+                                    <button type="button" id="confirmBioBtn" class="cancel-btn bio-cancel-btn" hidden>Continue to device prompt</button>
                                     <button type="button" id="cancelBioBtn" class="cancel-btn bio-cancel-btn">
                                         <i class="bi bi-x-circle me-1"></i>Cancel Registration
                                     </button>

@@ -642,7 +642,7 @@ async function registerDevicePasskey() {
 
     const btn = document.getElementById('registerFpBtn');
     const msg = document.getElementById('fpMessage');
-    if (!btn || btn.disabled) return;
+    if (!btn || btn.disabled || profilePasskeyRegistrationPending) return;
     profilePasskeyRegistrationPending = true;
     btn.disabled = true;
     msg.style.display = 'none';
@@ -652,7 +652,7 @@ async function registerDevicePasskey() {
         available = await refreshProfilePasskeyCapability();
         if (!available) return;
 
-        btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Waiting for your device...';
+        btn.textContent = 'Preparing passkey setup…';
         const optRes = await fetch('{{ route("webauthn.register.options") }}', {
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
         });
@@ -669,8 +669,7 @@ async function registerDevicePasskey() {
         const rp = { name: opts.rp?.name || 'School Attendance' };
         if (!isIp) {
             const sRp = (opts.rp?.id || '').toLowerCase().trim();
-            const h = hostname.toLowerCase().trim();
-            rp.id = (sRp && (h === sRp || h.endsWith('.' + sRp))) ? sRp : hostname;
+            rp.id = sRp || hostname;
         }
 
         const excludeCredentials = (opts.excludeCredentials || []).map(c => ({
@@ -692,42 +691,24 @@ async function registerDevicePasskey() {
             hints: ['client-device']
         };
 
-        // Require device verification with the local platform authenticator.
-        const strategies = [
-            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required', requireResidentKey: true },
-            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred', requireResidentKey: false },
-            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged', requireResidentKey: false }
-        ];
-        let credential = null;
-        let lastCreateErr = null;
-        for (const selection of strategies) {
-            try {
-                credential = await navigator.credentials.create({
-                    publicKey: Object.assign({}, basePublicKey, { authenticatorSelection: selection })
-                });
-                break;
-            } catch (createErr) {
-                lastCreateErr = createErr;
-                if (createErr.name === 'AbortError'
-                    || createErr.name === 'NotAllowedError'
-                    || createErr.name === 'InvalidStateError'
-                    || createErr.name === 'SecurityError') {
-                    throw createErr;
-                }
-            }
-        }
-
+        basePublicKey.authenticatorSelection = {
+            authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred'
+        };
+        btn.textContent = 'Continue to device prompt';
+        const credential = await window.DevicePasskeys.confirmOnClick(btn, async () => {
+            btn.textContent = 'Waiting for your device…';
+            return navigator.credentials.create({ publicKey: basePublicKey });
+        });
         if (!credential) {
-            throw (lastCreateErr || new Error('Passkey setup was canceled.'));
+            throw new Error('Passkey setup was canceled.');
         }
 
         const rawId = bufferToBase64Url(credential.rawId);
         const clientDataJSON = bufferToBase64Url(credential.response.clientDataJSON);
         const attestationObject = bufferToBase64Url(credential.response.attestationObject);
-        const rawTransports = (credential.response && typeof credential.response.getTransports === 'function')
+        const transports = (credential.response && typeof credential.response.getTransports === 'function')
             ? credential.response.getTransports()
-            : ['internal'];
-        const transports = Array.isArray(rawTransports) && rawTransports.length ? rawTransports : ['internal'];
+            : [];
 
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
             method: 'POST',

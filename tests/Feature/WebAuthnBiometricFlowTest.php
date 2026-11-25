@@ -136,6 +136,7 @@ class WebAuthnBiometricFlowTest extends TestCase
 
         $stored = $student->webauthnCredentials()->firstOrFail();
         $this->assertSame($credIdB64Url, $stored->credential_id);
+        $this->assertSame('device_lock', $stored->biometric_type);
         $this->assertSame(['internal', 'hybrid'], $stored->transports);
         $this->assertSame('Android Device', $stored->device_name);
         $this->assertSame(1, (int) $stored->sign_count);
@@ -193,7 +194,7 @@ class WebAuthnBiometricFlowTest extends TestCase
         $this->assertNotNull($stored->last_used_at);
     }
 
-    public function test_legacy_credentials_without_transports_default_to_internal_and_discoverable_options_include_hints(): void
+    public function test_legacy_credentials_leave_unknown_transports_to_the_browser_and_discoverable_options_include_hints(): void
     {
         $webauthn = app(WebauthnService::class);
         config(['webauthn.rp_id' => 'attendance.example']);
@@ -216,7 +217,7 @@ class WebAuthnBiometricFlowTest extends TestCase
             ->assertJsonPath('has_account_credentials', true)
             ->assertJsonPath('hints.0', 'client-device')
             ->assertJsonPath('allowCredentials.0.id', $b64UrlId)
-            ->assertJsonPath('allowCredentials.0.transports', ['internal']);
+            ->assertJsonMissingPath('allowCredentials.0.transports');
 
         $this->postJson(route('webauthn.login.options'), [])
             ->assertOk()
@@ -224,6 +225,20 @@ class WebAuthnBiometricFlowTest extends TestCase
             ->assertJsonPath('has_account_credentials', false)
             ->assertJsonPath('hints.0', 'client-device')
             ->assertJsonCount(0, 'allowCredentials');
+    }
+
+    public function test_passkey_setup_respects_required_password_rotation(): void
+    {
+        $student = $this->createStudent();
+        $student->forceFill(['must_change_password' => true])->save();
+
+        $this->postJson(route('webauthn.setup.options'), [
+            'identifier' => $student->email,
+            'password' => 'StrongStudentPass123!',
+        ])->assertForbidden()
+            ->assertJsonPath('code', 'password_reset_required')
+            ->assertSessionMissing('webauthn.register_challenge');
+        $this->assertGuest();
     }
 
     public function test_assertion_rejects_replayed_sign_count_expired_challenge_missing_uv_and_untrusted_origin(): void
@@ -300,8 +315,23 @@ class WebAuthnBiometricFlowTest extends TestCase
 
         // 5. Cross-user mismatch -> rejected
         $otherStudent = $this->createStudent('2026-8805', 'other-student@example.test');
+        $opts = $this->postJson(route('webauthn.login.options'), ['identifier' => $student->email])->assertOk()->json();
         $this->postJson(route('webauthn.login'), $signAssertion($opts['challenge'], $origin, 0x05, 6) + ['identifier' => $otherStudent->email])
             ->assertStatus(401)
+            ->assertJsonPath('code', 'BIOMETRIC_UNAVAILABLE');
+        $this->assertGuest();
+
+        // A rejected ceremony cannot be submitted again, even with correct account details.
+        $this->postJson(route('webauthn.login'), $signAssertion($opts['challenge'], $origin, 0x05, 6))
+            ->assertStatus(401)
+            ->assertJsonPath('code', 'PASSKEY_CHALLENGE_EXPIRED');
+        $this->assertGuest();
+
+        $opts = $this->postJson(route('webauthn.login.options'), ['identifier' => $student->email])->assertOk()->json();
+        $this->travel(121)->seconds();
+        $this->postJson(route('webauthn.login'), $signAssertion($opts['challenge'], $origin, 0x05, 6))
+            ->assertStatus(401)
+            ->assertJsonPath('code', 'PASSKEY_CHALLENGE_EXPIRED')
             ->assertJsonPath('success', false);
         $this->assertGuest();
     }
