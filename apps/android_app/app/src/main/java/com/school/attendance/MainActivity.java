@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
+import android.provider.Settings;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.security.keystore.KeyProperties;
@@ -28,15 +29,19 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -69,8 +74,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -100,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 1001;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 1002;
     private static final int FILE_CHOOSER_REQUEST_CODE = 1003;
+    private static final int INSTALL_UNKNOWN_APPS_REQUEST_CODE = 1004;
 
     private WebView webView;
     private ProgressBar progressBar;
@@ -109,6 +123,11 @@ public class MainActivity extends AppCompatActivity {
     private CancellationSignal passkeyCancellation;
     private String passkeyRequestId;
     private BiometricPrompt activeBiometricPrompt;
+    private volatile boolean apkUpdateCheckInFlight = false;
+    private volatile boolean apkDownloadInFlight = false;
+    private long dismissedApkVersionCode = -1L;
+    private File pendingUpdateApkFile;
+    private AlertDialog activeUpdateDialog;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -133,6 +152,7 @@ public class MainActivity extends AppCompatActivity {
 
         setupWebView();
         checkAndRequestPermissions();
+        checkForApkUpdate(false);
 
         // Modern back button navigation handling
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -459,6 +479,16 @@ public class MainActivity extends AppCompatActivity {
                 fileUploadCallback.onReceiveValue(results);
                 fileUploadCallback = null;
             }
+        } else if (requestCode == INSTALL_UNKNOWN_APPS_REQUEST_CODE) {
+            File apk = pendingUpdateApkFile;
+            pendingUpdateApkFile = null;
+            if (apk != null && apk.exists()) {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || getPackageManager().canRequestPackageInstalls()) {
+                    launchApkInstallerIntent(apk);
+                } else {
+                    Toast.makeText(this, "Enable \"Allow from this source\" to install the update.", Toast.LENGTH_LONG).show();
+                }
+            }
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
@@ -479,6 +509,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         cancelPasskeyRequest();
+        if (activeUpdateDialog != null && activeUpdateDialog.isShowing()) {
+            activeUpdateDialog.dismiss();
+            activeUpdateDialog = null;
+        }
         super.onDestroy();
     }
 
@@ -1299,6 +1333,267 @@ public class MainActivity extends AppCompatActivity {
         if (cancellation != null) cancellation.cancel();
     }
 
+    // ── IN-APP APK UPDATER ────────────────────────────────────────────────────
+
+    private long getInstalledVersionCode() {
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                return info.getLongVersionCode();
+            }
+            @SuppressWarnings("deprecation")
+            long legacy = info.versionCode;
+            return legacy;
+        } catch (Exception ignored) {
+            return 20927L;
+        }
+    }
+
+    private void cleanupCachedApkUpdates() {
+        try {
+            File dir = new File(getCacheDir(), "updates");
+            if (!dir.exists()) return;
+            File[] files = dir.listFiles();
+            if (files == null) return;
+            for (File f : files) {
+                //noinspection ResultOfMethodCallIgnored
+                f.delete();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void checkForApkUpdate(boolean userInitiated) {
+        if (apkUpdateCheckInFlight || apkDownloadInFlight) return;
+        apkUpdateCheckInFlight = true;
+
+        new Thread(() -> {
+            HttpURLConnection conn = null;
+            try {
+                URL url = new URL(APP_URL + "/pwa/version?_apk_check=" + System.currentTimeMillis());
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(8000);
+                conn.setReadTimeout(8000);
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setUseCaches(false);
+
+                if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) return;
+
+                StringBuilder sb = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        sb.append(line);
+                    }
+                }
+
+                JSONObject json = new JSONObject(sb.toString());
+                long remoteCode = json.optLong("apk_version_code", -1L);
+                String remoteName = json.optString("apk_version_name", "");
+                String downloadUrl = json.optString("apk_download_url", "");
+                if (downloadUrl.isEmpty()) {
+                    downloadUrl = APP_URL + "/download/apk";
+                }
+
+                long installedCode = getInstalledVersionCode();
+                if (remoteCode <= installedCode) {
+                    cleanupCachedApkUpdates();
+                    if (userInitiated) {
+                        runOnUiThread(() -> {
+                            if (!isFinishing() && !isDestroyed()) {
+                                Toast.makeText(MainActivity.this, "Smart Attendance is up to date.", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                    return;
+                }
+
+                if (!isAttendanceUrl(Uri.parse(downloadUrl))) return;
+                if (!userInitiated && dismissedApkVersionCode == remoteCode) return;
+
+                final String finalDownloadUrl = downloadUrl;
+                final String versionLabel = remoteName.isEmpty() ? ("build " + remoteCode) : ("v" + remoteName);
+                runOnUiThread(() -> promptApkUpdate(finalDownloadUrl, remoteCode, versionLabel));
+            } catch (Exception ignored) {
+                if (userInitiated) {
+                    runOnUiThread(() -> {
+                        if (!isFinishing() && !isDestroyed()) {
+                            Toast.makeText(MainActivity.this, "Couldn't check for updates right now.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            } finally {
+                if (conn != null) conn.disconnect();
+                apkUpdateCheckInFlight = false;
+            }
+        }, "apk-update-check").start();
+    }
+
+    private void promptApkUpdate(@NonNull String downloadUrl, long remoteVersionCode, @NonNull String versionLabel) {
+        if (isFinishing() || isDestroyed() || apkDownloadInFlight) return;
+        if (activeUpdateDialog != null && activeUpdateDialog.isShowing()) return;
+
+        activeUpdateDialog = new AlertDialog.Builder(this)
+                .setTitle("App Update Available")
+                .setMessage("Smart Attendance " + versionLabel + " is ready. Update in-place now — your saved login and fingerprint will be kept.")
+                .setCancelable(true)
+                .setPositiveButton("Update now", (dialog, which) -> startInAppApkUpdate(downloadUrl))
+                .setNegativeButton("Later", (dialog, which) -> dismissedApkVersionCode = remoteVersionCode)
+                .show();
+    }
+
+    private void startInAppApkUpdate(@NonNull String downloadUrl) {
+        if (apkDownloadInFlight || isFinishing() || isDestroyed()) return;
+        apkDownloadInFlight = true;
+
+        int pad = Math.round(20 * getResources().getDisplayMetrics().density);
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(pad, pad, pad, pad / 2);
+
+        TextView statusText = new TextView(this);
+        statusText.setText("Downloading update…");
+        container.addView(statusText);
+
+        ProgressBar bar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        bar.setIndeterminate(true);
+        bar.setMax(100);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.topMargin = pad / 2;
+        container.addView(bar, lp);
+
+        if (activeUpdateDialog != null && activeUpdateDialog.isShowing()) {
+            activeUpdateDialog.dismiss();
+        }
+        AlertDialog progressDialog = new AlertDialog.Builder(this)
+                .setTitle("Updating Smart Attendance")
+                .setView(container)
+                .setCancelable(false)
+                .show();
+        activeUpdateDialog = progressDialog;
+
+        new Thread(() -> {
+            HttpURLConnection conn = null;
+            File tmpFile = null;
+            try {
+                File updatesDir = new File(getCacheDir(), "updates");
+                if (!updatesDir.exists() && !updatesDir.mkdirs()) {
+                    throw new IllegalStateException("Unable to create update cache directory");
+                }
+                tmpFile = new File(updatesDir, "SmartAttendance-update.apk.tmp");
+                File finalFile = new File(updatesDir, "SmartAttendance-update.apk");
+                if (tmpFile.exists()) //noinspection ResultOfMethodCallIgnored
+                    tmpFile.delete();
+
+                URL url = new URL(downloadUrl);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setInstanceFollowRedirects(true);
+                conn.setConnectTimeout(15000);
+                conn.setReadTimeout(60000);
+                conn.connect();
+
+                if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                    throw new IllegalStateException("HTTP " + conn.getResponseCode());
+                }
+
+                long totalBytes = conn.getContentLengthLong();
+                byte[] buffer = new byte[16384];
+                long downloaded = 0L;
+                int lastPct = -1;
+
+                try (InputStream in = new BufferedInputStream(conn.getInputStream());
+                     FileOutputStream out = new FileOutputStream(tmpFile)) {
+                    int read;
+                    while ((read = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, read);
+                        downloaded += read;
+                        if (totalBytes > 0) {
+                            int pct = (int) Math.min(100L, (downloaded * 100L) / totalBytes);
+                            if (pct != lastPct) {
+                                lastPct = pct;
+                                final int displayPct = pct;
+                                runOnUiThread(() -> {
+                                    bar.setIndeterminate(false);
+                                    bar.setProgress(displayPct);
+                                    statusText.setText("Downloading update… " + displayPct + "%");
+                                });
+                            }
+                        }
+                    }
+                    out.flush();
+                }
+
+                if (downloaded <= 0) {
+                    throw new IllegalStateException("Empty APK download");
+                }
+                if (finalFile.exists()) //noinspection ResultOfMethodCallIgnored
+                    finalFile.delete();
+                if (!tmpFile.renameTo(finalFile)) {
+                    throw new IllegalStateException("Could not finalize update file");
+                }
+
+                final File readyApk = finalFile;
+                runOnUiThread(() -> {
+                    if (progressDialog.isShowing()) progressDialog.dismiss();
+                    if (activeUpdateDialog == progressDialog) activeUpdateDialog = null;
+                    installDownloadedApk(readyApk);
+                });
+            } catch (Exception ex) {
+                if (tmpFile != null && tmpFile.exists()) //noinspection ResultOfMethodCallIgnored
+                    tmpFile.delete();
+                runOnUiThread(() -> {
+                    if (progressDialog.isShowing()) progressDialog.dismiss();
+                    if (activeUpdateDialog == progressDialog) activeUpdateDialog = null;
+                    if (!isFinishing() && !isDestroyed()) {
+                        Toast.makeText(MainActivity.this, "Update download failed. Please try again later.", Toast.LENGTH_LONG).show();
+                    }
+                });
+            } finally {
+                if (conn != null) conn.disconnect();
+                apkDownloadInFlight = false;
+            }
+        }, "apk-update-download").start();
+    }
+
+    private void installDownloadedApk(@NonNull File apkFile) {
+        if (isFinishing() || isDestroyed() || !apkFile.exists()) return;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getPackageManager().canRequestPackageInstalls()) {
+            pendingUpdateApkFile = apkFile;
+            activeUpdateDialog = new AlertDialog.Builder(this)
+                    .setTitle("Allow App Updates")
+                    .setMessage("To install updates directly inside Smart Attendance, allow \"Install unknown apps\" for Smart Attendance on the next screen.")
+                    .setPositiveButton("Open settings", (dialog, which) -> {
+                        Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                Uri.parse("package:" + getPackageName()));
+                        @SuppressWarnings("deprecation")
+                        int reqCode = INSTALL_UNKNOWN_APPS_REQUEST_CODE;
+                        startActivityForResult(intent, reqCode);
+                    })
+                    .setNegativeButton("Cancel", (dialog, which) -> pendingUpdateApkFile = null)
+                    .show();
+            return;
+        }
+
+        launchApkInstallerIntent(apkFile);
+    }
+
+    private void launchApkInstallerIntent(@NonNull File apkFile) {
+        try {
+            Uri contentUri = FileProvider.getUriForFile(
+                    this, getPackageName() + ".fileprovider", apkFile);
+            Intent installIntent = new Intent(Intent.ACTION_VIEW);
+            installIntent.setDataAndType(contentUri, "application/vnd.android.package-archive");
+            installIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            installIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(installIntent);
+        } catch (Exception ex) {
+            Toast.makeText(this, "Could not open installer. Please try again.", Toast.LENGTH_LONG).show();
+        }
+    }
+
     private static void sendPasskeyReply(JavaScriptReplyProxy reply, String id,
                                          @Nullable JSONObject assertion, @Nullable String error) {
         try {
@@ -1423,7 +1718,12 @@ public class MainActivity extends AppCompatActivity {
 
         @android.webkit.JavascriptInterface
         public int getAppVersionCode() {
-            return 20926;
+            return (int) getInstalledVersionCode();
+        }
+
+        @android.webkit.JavascriptInterface
+        public void checkForAppUpdate() {
+            checkForApkUpdate(true);
         }
 
         @android.webkit.JavascriptInterface

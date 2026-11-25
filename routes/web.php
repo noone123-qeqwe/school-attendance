@@ -152,23 +152,39 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
     $swMtime = file_exists($swPath) ? filemtime($swPath) : time();
     $versionPath = base_path('version.json');
     $versionFingerprint = file_exists($versionPath) ? (@hash_file('sha256', $versionPath) ?: 'unreadable') : 'missing';
+    $apkGradlePath = base_path('apps/android_app/app/build.gradle');
+    $apkFilePath = public_path('downloads/SmartAttendance.apk');
+    $apkMtime = (file_exists($apkGradlePath) ? filemtime($apkGradlePath) : 0) . ':' . (file_exists($apkFilePath) ? filemtime($apkFilePath) : 0);
     $cachedSwVersion = (string) Cache::get('pwa_sw_version', '');
     $requestedVer = $request->query('v');
     $requestedVer = is_string($requestedVer) && trim($requestedVer) !== '' ? trim($requestedVer) : null;
     $cacheKey = 'pwa_version_response_' . hash('sha256', implode("\0", [
         (string) $swMtime,
         $versionFingerprint,
+        $apkMtime,
         $cachedSwVersion,
         $requestedVer !== null ? 'query:' . $requestedVer : 'default',
     ]));
 
-    $resolver = function () use ($swMtime, $requestedVer, $changelogService, $versionService) {
+    $resolver = function () use ($swMtime, $requestedVer, $changelogService, $versionService, $apkGradlePath, $apkFilePath) {
         $latestVersion = $versionService->getLatestVersion();
         $installedVersion = $versionService->getInstalledVersion();
         $ver = $versionService->getSwVersion();
         $versionTag = 'v' . $latestVersion;
         $targetVer = $requestedVer ?: $latestVersion;
         $changelog = $changelogService->getRelease($targetVer);
+
+        $apkVersionCode = null;
+        $apkVersionName = null;
+        if (file_exists($apkFilePath) && file_exists($apkGradlePath)) {
+            $gradle = @file_get_contents($apkGradlePath) ?: '';
+            if (preg_match('/\bversionCode\s+(\d+)/', $gradle, $m)) {
+                $apkVersionCode = (int) $m[1];
+            }
+            if (preg_match('/\bversionName\s+["\']([^"\']+)["\']/', $gradle, $m)) {
+                $apkVersionName = $m[1];
+            }
+        }
 
         return [
             'success'               => true,
@@ -187,6 +203,9 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
             'timestamp'             => $swMtime,
             'changelog'             => $changelog,
             'update'                => $versionService->getUpdatePolicy(),
+            'apk_version_code'      => $apkVersionCode,
+            'apk_version_name'      => $apkVersionName,
+            'apk_download_url'      => file_exists($apkFilePath) ? url('/download/apk') : null,
         ];
     };
 
