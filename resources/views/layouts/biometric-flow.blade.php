@@ -16,7 +16,16 @@
 </head>
 <body class="biometric-flow-page @yield('pageClass')">
     <main class="biometric-flow">
-        <a class="biometric-flow-back" href="{{ route('settings') }}#tab-biometrics"><span aria-hidden="true">←</span> Back to Biometrics</a>
+        <div class="biometric-flow-topbar">
+            <a class="biometric-flow-back" href="{{ route('settings') }}#tab-biometrics">
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                <span>Back to Biometrics</span>
+            </a>
+            <span class="biometric-flow-brand-chip">
+                <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
+                <span>Encrypted Biometric Studio</span>
+            </span>
+        </div>
         <header class="biometric-flow-heading">
             <h1>@yield('title')</h1>
             <p>@yield('description')</p>

@@ -81,12 +81,10 @@ async function loadDevices() {
     list.setAttribute('aria-busy', 'true');
     list.innerHTML = '';
     const loadingState = document.createElement('div');
-    loadingState.className = 'device-list-loading';
+    loadingState.className = 'device-list-loading bio-device-loading';
     loadingState.setAttribute('role', 'status');
-    loadingState.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:10px;min-height:72px;padding:16px;border:1px solid rgba(207,164,111,.18);border-radius:12px;background:rgba(207,164,111,.04);color:#b39b82;font-size:.86rem;';
     const loadingIcon = document.createElement('span');
     loadingIcon.className = 'biometric-spinner';
-    loadingIcon.style.cssText = 'flex:none;width:16px;height:16px;border:2px solid rgba(207,164,111,.3);border-top-color:#cfa46f;border-radius:50%;';
     loadingIcon.setAttribute('aria-hidden', 'true');
     const loadingText = document.createElement('span');
     loadingText.textContent = 'Checking your registered devices…';
@@ -108,21 +106,16 @@ async function loadDevices() {
         if (devices.length > 0) {
             if (badge) {
                 badge.textContent = `${devices.length} Registered`;
-                badge.style.color = '#4ade80';
-                badge.style.borderColor = 'rgba(74,222,128,0.3)';
-                badge.style.background = 'rgba(74,222,128,0.1)';
+                badge.classList.remove('is-error');
+                badge.classList.add('is-active');
             }
 
             const activeSummary = document.createElement('div');
             const hasUsableCredential = devices.some(device => device.biometric_type !== 'face' || device.is_secure_face_credential);
-            activeSummary.style.cssText = hasUsableCredential
-                ? 'padding:14px 18px;color:#4ade80;font-size:.875rem;background:rgba(22,163,74,0.12);border-radius:12px;border:1px solid rgba(22,163,74,0.25);margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;'
-                : 'padding:14px 18px;color:#fbbf24;font-size:.875rem;background:rgba(245,158,11,0.12);border-radius:12px;border:1px solid rgba(245,158,11,0.25);margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;';
+            activeSummary.className = `bio-device-banner ${hasUsableCredential ? 'is-active' : 'is-warn'}`;
             activeSummary.innerHTML = `
-                <i class="bi ${hasUsableCredential ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'}" style="font-size:1.2rem;color:${hasUsableCredential ? '#22c55e' : '#f59e0b'};"></i>
-                <div>
-                    <div>${hasUsableCredential ? 'Device sign-in is <strong>active</strong> on your account.' : 'Register a device passkey to enable sign-in.'}</div>
-                </div>`;
+                <i class="bi ${hasUsableCredential ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'}" aria-hidden="true" style="font-size:1.15rem;"></i>
+                <div>${hasUsableCredential ? 'Device sign-in is <strong>active</strong> on your account.' : 'Register a device passkey to enable sign-in.'}</div>`;
             list.appendChild(activeSummary);
 
             devices.forEach(d => {
@@ -139,14 +132,14 @@ async function loadDevices() {
                                 <span data-device-name></span>
                             </div>
                             <div class="device-item-meta">
-                                <span class="device-meta-verified"><i class="bi ${isLegacyFace ? 'bi-exclamation-triangle' : 'bi-shield-check'} me-1"></i>${isLegacyFace ? 'Camera-only legacy profile · re-enroll' : 'Device-protected credential'}</span>
-                                <span class="device-meta-dot">•</span>
+                                <span class="device-meta-verified"><i class="bi ${isLegacyFace ? 'bi-exclamation-triangle' : 'bi-shield-check'} me-1" aria-hidden="true"></i>${isLegacyFace ? 'Camera-only legacy profile · re-enroll' : 'Device-protected credential'}</span>
+                                <span class="device-meta-dot" aria-hidden="true">•</span>
                                 <span class="device-meta-date">${d.created_at ? new Date(d.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Registered'}</span>
                             </div>
                         </div>
                     </div>
                     <button class="device-remove-btn" type="button" title="Remove sign-in method">
-                        <i class="bi bi-trash3 me-1"></i>Remove
+                        <i class="bi bi-trash3 me-1" aria-hidden="true"></i>Remove
                     </button>`;
                 div.querySelector('[data-device-name]').textContent = d.name || d.device_name || 'Device passkey';
                 const removeButton = div.querySelector('.device-remove-btn');
@@ -157,17 +150,15 @@ async function loadDevices() {
         } else {
             if (badge) {
                 badge.textContent = '0 Registered';
-                badge.style.color = '#b39b82';
-                badge.style.borderColor = 'rgba(207,164,111,0.2)';
-                badge.style.background = 'rgba(207,164,111,0.12)';
+                badge.classList.remove('is-active', 'is-error');
             }
             const emptyDiv = document.createElement('div');
             emptyDiv.id = 'noDevices';
-            emptyDiv.style.cssText = 'text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);';
+            emptyDiv.className = 'bio-device-empty';
             emptyDiv.innerHTML = `
-                <i class="bi bi-shield-lock" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
-                <div style="font-weight:700;color:#f3e7cd;margin-bottom:4px;">No passkeys registered on this account yet</div>
-                <div style="font-size:.78rem;color:#b39b82;">Use the registration button above to add a passkey for this device to your account.</div>
+                <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                <strong>No passkeys registered on this account yet</strong>
+                <div style="font-size:.82rem;">Use the registration button above to link this device’s fingerprint or passkey.</div>
             `;
             list.appendChild(emptyDiv);
         }
@@ -177,20 +168,17 @@ async function loadDevices() {
         list.removeAttribute('aria-busy');
         if (badge) {
             badge.textContent = 'Could not load devices';
-            badge.style.color = '#fca5a5';
-            badge.style.borderColor = 'rgba(248,113,113,.3)';
-            badge.style.background = 'rgba(248,113,113,.08)';
+            badge.classList.remove('is-active');
+            badge.classList.add('is-error');
         }
         const errorState = document.createElement('div');
-        errorState.className = 'device-list-error';
+        errorState.className = 'device-list-error bio-device-error';
         errorState.setAttribute('role', 'alert');
-        errorState.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 14px;text-align:center;border:1px solid rgba(248,113,113,.25);border-radius:12px;background:rgba(248,113,113,.06);color:#f3e7cd;';
         const errorText = document.createElement('span');
         errorText.textContent = 'We couldn’t load your registered devices. Check your connection and try again.';
         const retryButton = document.createElement('button');
         retryButton.type = 'button';
-        retryButton.className = 'device-load-retry';
-        retryButton.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:8px 14px;border:1px solid rgba(207,164,111,.38);border-radius:9px;background:rgba(207,164,111,.12);color:#f3e7cd;font:inherit;font-weight:650;cursor:pointer;';
+        retryButton.className = 'device-load-retry flow-button';
         retryButton.innerHTML = '<i class="bi bi-arrow-repeat" aria-hidden="true"></i> Try again';
         retryButton.addEventListener('click', function() {
             retryButton.disabled = true;

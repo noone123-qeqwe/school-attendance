@@ -11,23 +11,23 @@
     @include('partials.pwa-tags')
     <style>
         :root {
-            --primary: #800000;
-            --primary-dark: #500000;
-            --gold: #d97706;
-            --dark-bg: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.75);
-            --border: rgba(255, 255, 255, 0.1);
+            --primary: #5a1827;
+            --primary-dark: #300810;
+            --gold: #ece4e7;
+            --dark-bg: #0f0407;
+            --card-bg: rgba(27, 9, 15, 0.94);
+            --border: rgba(236, 224, 228, 0.18);
         }
         * {
             box-sizing: border-box;
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
         body {
-            background: radial-gradient(circle at top right, rgba(128, 0, 0, 0.18), transparent 50%),
-                        radial-gradient(circle at bottom left, rgba(217, 119, 6, 0.12), transparent 50%),
+            background: radial-gradient(ellipse 65% 45% at 88% -6%, rgba(120, 30, 48, 0.4) 0%, transparent 66%),
+                        radial-gradient(ellipse 48% 42% at 10% 10%, rgba(72, 24, 32, 0.34) 0%, transparent 64%),
                         var(--dark-bg);
             min-height: 100vh;
-            color: #f8fafc;
+            color: #fcf9fa;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -37,42 +37,43 @@
             background: var(--card-bg);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            border-radius: 28px;
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5);
+            border-radius: 26px;
+            box-shadow: 0 26px 68px rgba(0, 0, 0, 0.6);
             border: 1px solid var(--border);
-            max-width: 420px;
+            max-width: 440px;
             width: 100%;
-            padding: 40px 32px;
-            animation: cardFadeIn 0.4s ease;
+            padding: 36px 30px;
+            animation: cardFadeIn 0.35s ease;
         }
         @keyframes cardFadeIn {
             from { opacity: 0; transform: translateY(12px) scale(0.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .qr-badge-icon {
-            width: 72px;
-            height: 72px;
+            width: 70px;
+            height: 70px;
             border-radius: 20px;
-            background: linear-gradient(135deg, var(--primary), #991b1b);
+            background: linear-gradient(135deg, #8a2439, #381018);
+            border: 1px solid rgba(236, 224, 228, 0.28);
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 16px;
             font-size: 2rem;
-            color: white;
-            box-shadow: 0 10px 25px rgba(128, 0, 0, 0.4);
+            color: #ffffff;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
         }
         .form-label {
-            font-size: 0.82rem;
-            font-weight: 700;
+            font-size: 0.78rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #94a3b8;
+            letter-spacing: 0.06em;
+            color: #baa3ab;
             margin-bottom: 8px;
         }
         .input-group-custom {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: #14060a;
+            border: 1.5px solid rgba(236, 224, 228, 0.18);
             border-radius: 14px;
             overflow: hidden;
             display: flex;
@@ -80,44 +81,45 @@
             transition: all 0.2s ease;
         }
         .input-group-custom:focus-within {
-            border-color: var(--gold);
-            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.2);
+            border-color: #ece4e7;
+            box-shadow: 0 0 0 3px rgba(228, 143, 160, 0.22);
         }
         .input-icon {
             padding: 0 16px;
-            color: #64748b;
+            color: #e48fa0;
             font-size: 1.1rem;
         }
         .custom-input {
             background: transparent;
             border: none;
-            color: #f8fafc;
+            color: #fcf9fa;
             padding: 14px 16px 14px 0;
             width: 100%;
             outline: none;
-            font-size: 0.95rem;
+            font-size: 1rem;
         }
         .custom-input::placeholder {
-            color: #475569;
+            color: #9e848d;
         }
         .submit-btn {
-            background: linear-gradient(135deg, var(--primary), #991b1b);
-            color: white;
-            border: none;
+            background: linear-gradient(135deg, #ffffff 0%, #eae0e3 55%, #d7c7cc 100%);
+            color: #300810;
+            border: 1px solid rgba(255, 255, 255, 0.6);
             border-radius: 14px;
+            min-height: 50px;
             padding: 14px;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 0.95rem;
             width: 100%;
-            box-shadow: 0 6px 20px rgba(128, 0, 0, 0.4);
-            transition: all 0.25s ease;
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            transition: transform 0.16s ease, filter 0.16s ease;
             cursor: pointer;
             margin-top: 8px;
         }
         .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 28px rgba(128, 0, 0, 0.55);
-            color: white;
+            transform: translateY(-1px);
+            filter: brightness(1.04);
+            color: #24050b;
         }
         .qr-banner-pill {
             background: rgba(217, 119, 6, 0.1);

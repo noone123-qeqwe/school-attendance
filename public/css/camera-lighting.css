@@ -1,11 +1,98 @@
-.camera-light-controls { margin: 14px 0; padding: 14px; border: 1px solid var(--gold-border, #cfa46f55); border-radius: 12px; background: var(--surface-card, #241b15); color: var(--text-primary, #f3e7cd); text-align: left; min-width: 0; }
-.camera-light-controls[hidden], .camera-light-controls [hidden], .camera-light-fill[hidden] { display: none !important; }
-.camera-light-controls button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--gold-primary, #cfa46f); border-radius: 9px; background: transparent; color: inherit; font: inherit; font-weight: 650; cursor: pointer; }
-.camera-light-controls button[aria-pressed="true"] { background: var(--gold-primary, #cfa46f); color: #20130c; }
-.camera-light-controls button:disabled { opacity: .55; cursor: default; }
-.camera-light-controls label { display: flex !important; flex-direction: row !important; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 4px !important; font-size: .85rem; color: inherit; }
-.camera-light-controls input[type="range"] { display: block; width: 100%; min-width: 0; min-height: 44px; margin: 0; padding: 0 !important; accent-color: var(--gold-primary, #cfa46f); }
-.camera-light-controls output { font-variant-numeric: tabular-nums; flex-shrink: 0; }
-.camera-light-controls p { margin: 8px 0 0; color: var(--text-muted, #c4b19a); line-height: 1.5; font-size: .8rem; overflow-wrap: anywhere; }
-.camera-light-controls :is(button, input):focus-visible { outline: 2px solid var(--gold-primary, #cfa46f); outline-offset: 3px; }
-.camera-light-fill { position: fixed; inset: 0; pointer-events: none; z-index: 1090; box-sizing: border-box; border: clamp(8px, 3vw, 18px) solid rgba(255, 255, 255, var(--camera-fill-opacity, .6)); }
+.camera-light-controls {
+    margin: 14px 0;
+    padding: 14px 16px;
+    border: 1px solid rgba(236, 224, 228, 0.16);
+    border-radius: 14px;
+    background: rgba(15, 4, 7, 0.56);
+    color: #fcf9fa;
+    text-align: left;
+    min-width: 0;
+}
+
+.camera-light-controls[hidden],
+.camera-light-controls [hidden],
+.camera-light-fill[hidden] {
+    display: none !important;
+}
+
+.camera-light-controls button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 9px 16px;
+    border: 1px solid rgba(236, 224, 228, 0.24);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fcf9fa;
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.camera-light-controls button[aria-pressed="true"] {
+    background: linear-gradient(135deg, #ffffff 0%, #eae0e3 55%, #d7c7cc 100%);
+    border-color: rgba(255, 255, 255, 0.6);
+    color: #300810;
+    font-weight: 800;
+}
+
+.camera-light-controls button:disabled {
+    opacity: 0.52;
+    cursor: default;
+}
+
+.camera-light-controls label {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 12px 0 4px !important;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #e3d5d9;
+}
+
+.camera-light-controls input[type="range"] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 !important;
+    accent-color: #e48fa0;
+}
+
+.camera-light-controls output {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    color: #fcf9fa;
+    flex-shrink: 0;
+}
+
+.camera-light-controls p {
+    margin: 6px 0 0;
+    color: #baa3ab;
+    line-height: 1.5;
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+}
+
+.camera-light-controls :is(button, input):focus-visible {
+    outline: 2px solid #ece4e7;
+    outline-offset: 3px;
+}
+
+.camera-light-fill {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1090;
+    box-sizing: border-box;
+    border: clamp(8px, 3vw, 18px) solid rgba(255, 255, 255, var(--camera-fill-opacity, 0.6));
+}

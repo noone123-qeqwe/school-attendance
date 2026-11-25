@@ -636,4 +636,41 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertOk()
             ->assertDontSee('student-portal-master.css', false);
     }
+
+    public function test_reinvented_face_and_fingerprint_registration_and_verification_studios_render(): void
+    {
+        $student = $this->createStudent([
+            'email' => 'student.biometric.studio@gmail.com',
+            'student_number' => '2310999',
+        ]);
+
+        // Face registration studio
+        $this->actingAs($student)
+            ->get(route('settings.biometrics.face'))
+            ->assertOk()
+            ->assertSee('Encrypted Biometric Studio', false)
+            ->assertSee('bio-face-studio-grid', false)
+            ->assertSee('bio-viewfinder-corner', false)
+            ->assertSee('bio-consent-card', false)
+            ->assertSee('id="cameraFaceStartBtn"', false)
+            ->assertSee('id="cameraFaceConsentCheckbox"', false);
+
+        // Fingerprint registration studio
+        $this->actingAs($student)
+            ->get(route('settings.biometrics.fingerprint'))
+            ->assertOk()
+            ->assertSee('Encrypted Biometric Studio', false)
+            ->assertSee('bio-sensor-stage', false)
+            ->assertSee('bio-sensor-pad', false)
+            ->assertSee('id="startBioBtn"', false)
+            ->assertSee('id="deviceList"', false);
+
+        // Biometric studio CSS + Login verification modal harmonization
+        $bioCss = file_get_contents(public_path('css/biometric-flow.css'));
+        $this->assertNotFalse($bioCss);
+        $this->assertStringContainsString('--bio-canvas: #0f0407;', $bioCss);
+        $this->assertStringContainsString('.bio-sensor-pad', $bioCss);
+        $this->assertStringContainsString('#biometricModal .bio-modal-card', $bioCss);
+        $this->assertStringNotContainsString('#251b16', $bioCss);
+    }
 }
