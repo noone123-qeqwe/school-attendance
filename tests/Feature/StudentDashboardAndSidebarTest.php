@@ -70,6 +70,13 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertStringNotContainsString('student-sidebar-account', $sidebarHtml);
         $this->assertStringNotContainsString('student-nav-account', $sidebarHtml);
         $this->assertStringNotContainsString('studentSidebarNotifBadge', $sidebarHtml);
+        $this->assertStringNotContainsString('sidebar-subtitle', $sidebarHtml);
+        $this->assertStringNotContainsString('QR, GPS, and Biometric-Based Attendance Monitoring', $sidebarText);
+
+        $navCss = file_get_contents(public_path('css/student-portal-navigation.css'));
+        $this->assertNotFalse($navCss);
+        $this->assertMatchesRegularExpression('/\.student-sidebar-brand\s+\.sidebar-logo\s*\{[^}]*border:\s*none;/s', $navCss);
+        $this->assertStringNotContainsString('border: 1px solid rgba(223, 184, 121, 0.28);', $navCss);
 
         // Top header still keeps notifications and account dropdown links
         $headerNode = $xpath->query('//header[@id="topHeader"]')->item(0);

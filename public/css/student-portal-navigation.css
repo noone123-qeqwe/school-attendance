@@ -1,4 +1,12 @@
-/* Shared student navigation at desktop widths. */
+/* Shared student navigation styles */
+body.student-portal .student-sidebar-brand .sidebar-logo {
+    border: none;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+    object-fit: contain;
+}
+
 @media screen and (min-width: 1024px) {
     body.student-portal {
         --student-nav-canvas: #14110f;
@@ -24,11 +32,12 @@
     body.student-portal .student-sidebar-brand .sidebar-logo {
         width: 36px;
         height: 36px;
-        background: var(--student-nav-surface);
-        border: 1px solid rgba(223, 184, 121, 0.28);
-        border-radius: 10px;
+        background: transparent;
+        border: none;
+        border-radius: 50%;
+        box-shadow: none;
         object-fit: contain;
-        padding: 3px;
+        padding: 0;
     }
 
     body.student-portal .student-sidebar-brand .sidebar-brand {
@@ -37,14 +46,6 @@
         line-height: 1.25 !important;
         color: var(--student-nav-ivory) !important;
         text-transform: none;
-    }
-
-    body.student-portal .student-sidebar-brand .sidebar-subtitle {
-        display: block !important;
-        font-size: .71rem !important;
-        font-weight: 500;
-        color: var(--student-nav-muted) !important;
-        margin-top: 2px;
     }
 
     body.student-portal .sidebar .sidebar-divider {

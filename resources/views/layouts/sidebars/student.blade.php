@@ -2,7 +2,6 @@
     <img src="{{ asset('images/logo.png') }}" class="sidebar-logo" alt="School logo">
     <div class="sidebar-text">
         <div class="sidebar-brand">{{ config('app.name') }}</div>
-        <div class="sidebar-subtitle">{{ config('app.subtitle') ?: 'Student Workspace' }}</div>
     </div>
 </div>
 
