@@ -16,7 +16,7 @@ jobs:
           echo "Pinging production health check..."
           HTTP_CODE=$(curl --fail --silent --show-error --output /dev/null --write-out "%{http_code}" \
             --connect-timeout 10 --max-time 90 --retry 2 --retry-all-errors --retry-delay 5 \
-            "https://school-attendance-cj18.onrender.com/up")
+            "https://school-attendance-oxk7.onrender.com/up")
           echo "Response code: $HTTP_CODE"
           if [ "$HTTP_CODE" != "200" ]; then
             echo "Health check failed; expected HTTP 200, received $HTTP_CODE." >&2

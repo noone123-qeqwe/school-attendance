@@ -40,7 +40,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="school-attendance-cj18.onrender.com" />
+                <data android:scheme="https" android:host="school-attendance-oxk7.onrender.com" />
             </intent-filter>
         </activity>
 
