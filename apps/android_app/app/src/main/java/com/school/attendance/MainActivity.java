@@ -741,13 +741,25 @@ public class MainActivity extends AppCompatActivity {
     private boolean canUseBiometricPrompt() {
         try {
             BiometricManager manager = BiometricManager.from(this);
-            return manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS
-                    || manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS;
+            int strong = manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG);
+            int weak = manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK);
+            if (strong == BiometricManager.BIOMETRIC_SUCCESS || weak == BiometricManager.BIOMETRIC_SUCCESS) {
+                return true;
+            }
+            // Only refuse when we know there is no usable fingerprint. Odd/unknown statuses
+            // (e.g. STATUS_UNKNOWN on Android 9-10, UNSUPPORTED, security update pending)
+            // are let through so BiometricPrompt itself decides and reports a real error.
+            return !isDefinitelyNoBiometric(strong) || !isDefinitelyNoBiometric(weak);
         } catch (Exception ignored) {
             return false;
         }
     }
 
+    private static boolean isDefinitelyNoBiometric(int status) {
+        return status == BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE
+                || status == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED
+                || status == BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE;
+    }
     private void createWithAndroidKeystoreBiometric(@NonNull CancellationSignal cancellation,
                                                      @NonNull JavaScriptReplyProxy reply,
                                                      @NonNull String id,
@@ -1373,8 +1385,7 @@ public class MainActivity extends AppCompatActivity {
         public boolean isBiometricAvailable() {
             try {
                 BiometricManager bm = BiometricManager.from(MainActivity.this);
-                int canAuth = bm.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG | BiometricManager.Authenticators.BIOMETRIC_WEAK);
-                return canAuth == BiometricManager.BIOMETRIC_SUCCESS;
+                return canUseBiometricPrompt();
             } catch (Exception e) {
                 return false;
             }
@@ -1393,7 +1404,7 @@ public class MainActivity extends AppCompatActivity {
 
         @android.webkit.JavascriptInterface
         public int getAppVersionCode() {
-            return 20924;
+            return 20925;
         }
 
         @android.webkit.JavascriptInterface
