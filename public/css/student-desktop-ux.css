@@ -4,6 +4,23 @@
    (<= 767.98px), print sheets (@media print), and other roles stay intact.
    ========================================================================== */
 
+/* Keep the small-screen greeting and enrollment badge in the original row. */
+.student-hero-context { display: contents; }
+
+@media screen and (min-width: 992px) and (max-width: 1023.98px) {
+    .sd-hero-spotlight {
+        flex-direction: column;
+        gap: 6px;
+        padding: 12px 16px;
+        border: 1px solid #3c332c;
+        border-radius: 10px;
+        color: #f5f2eb;
+    }
+    .sd-spotlight-label, .sd-spotlight-link { color: #dfb879; }
+    .sd-spotlight-text { margin: 0; font-size: 1rem; }
+    .sd-spotlight-meta { display: flex; gap: 6px 12px; flex-wrap: wrap; margin: 0; }
+}
+
 @media screen and (min-width: 992px) {
     /* ── Dedicated Check-In Studio (/mobile/scan) ── */
     body.student-portal.scanner-page-layout {
@@ -666,380 +683,427 @@
         color: var(--sd-gold-bright);
     }
 
-    /* ── 2. Dashboard Redesign (/home) ── */
-    body.student-portal .student-hero-banner {
-        border-radius: 16px !important;
-        background:
-            radial-gradient(ellipse 45% 80% at 96% 10%, rgba(226, 184, 123, 0.11) 0%, transparent 72%),
-            var(--sd-surface) !important;
-        border: 1px solid var(--sd-border) !important;
-        box-shadow: var(--sd-shadow) !important;
-        padding: 22px 26px !important;
+    /* Dashboard */
+    body.student-portal[data-student-layout] {
+        --sd-canvas: #131110;
+        --sd-surface: #201b18;
+        --sd-surface-2: #27211d;
+        --sd-surface-hover: #2c2520;
+        --sd-border: #3c332c;
+        --sd-gold: #dfb879;
+        --sd-muted: #b9ada1;
+    }
+
+    #mainContent .student-desktop-dashboard {
+        display: block;
+        color: var(--sd-text);
+    }
+
+    #mainContent .student-desktop-dashboard :is(a, button):focus-visible {
+        outline: 2px solid var(--sd-gold);
+        outline-offset: 3px;
+    }
+
+    body.student-portal #mainContent .student-hero-banner {
+        padding: 0 !important;
         margin-bottom: 16px !important;
-    }
-
-    body.student-portal .student-hero-inner {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1.35fr) auto !important;
-        gap: 18px 28px !important;
-        align-items: center;
-    }
-
-    body.student-portal .student-hero-topbar {
-        grid-column: 1 / -1;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    body.student-portal .student-hero-cta-group {
-        margin-left: auto;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    body.student-portal .student-desktop-check-in {
-        display: inline-flex !important;
-        align-items: center;
-        gap: 7px;
-        padding: 8px 14px !important;
-        border-radius: 9px !important;
-        background: var(--sd-gold) !important;
-        color: #140f0a !important;
-        font-size: 0.82rem !important;
-        font-weight: 700 !important;
-        border: 0 !important;
-        box-shadow: none !important;
-        text-decoration: none;
-        transition: filter 0.16s ease, transform 0.16s ease !important;
-    }
-
-    body.student-portal .student-desktop-check-in:hover {
-        filter: brightness(1.06);
-        transform: translateY(-1px) !important;
-    }
-
-    body.student-portal .student-desktop-check-in.is-secondary {
-        background: var(--sd-surface-2) !important;
+        border-radius: 18px !important;
+        background: var(--sd-surface) !important;
         border: 1px solid var(--sd-border) !important;
-        color: var(--sd-gold-bright) !important;
+        box-shadow: none !important;
     }
 
-    body.student-portal .student-desktop-check-in.is-secondary:hover {
-        background: var(--sd-surface-hover) !important;
-        border-color: var(--sd-border-hover) !important;
-        filter: none;
-    }
-
-    body.student-portal .student-hero-profile {
-        gap: 18px !important;
+    body.student-portal #mainContent .student-hero-inner {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(215px, 0.62fr) !important;
+        grid-template-areas:
+            "context class"
+            "profile class"
+            "actions class"
+            "facts facts";
         align-items: center;
+        gap: 13px clamp(20px, 3vw, 40px) !important;
+        padding: clamp(18px, 2vw, 27px) !important;
     }
 
-    body.student-portal .student-avatar-box {
-        width: 64px !important;
-        height: 64px !important;
-        border-radius: 14px !important;
-        border: 1px solid rgba(226, 184, 123, 0.28) !important;
+    #mainContent .student-hero-topbar { display: contents !important; }
+
+    #mainContent .student-hero-context {
+        grid-area: context;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
     }
 
-    body.student-portal .student-hero-name {
-        font-size: clamp(1.5rem, 2.2vw, 1.9rem) !important;
+    body.student-portal #mainContent .student-greeting-badge {
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        color: var(--sd-gold) !important;
+        font-size: 0.87rem !important;
+        letter-spacing: 0 !important;
+        text-transform: none;
+    }
+
+    #mainContent .student-greeting-badge > i { color: inherit !important; }
+
+    body.student-portal #mainContent .student-status-badge {
+        padding: 2px 7px !important;
+        font-size: 0.69rem !important;
+        letter-spacing: 0;
+    }
+
+    body.student-portal #mainContent .student-hero-profile {
+        grid-area: profile;
+        align-items: center;
+        min-width: 0;
+        gap: 14px !important;
+    }
+
+    body.student-portal #mainContent .student-avatar-box {
+        width: 56px !important;
+        height: 56px !important;
+        min-width: 56px;
+        border-radius: 13px !important;
+        background: var(--sd-surface-2);
+        box-shadow: none;
+    }
+
+    #mainContent .student-avatar-img { border-radius: 10px; }
+
+    body.student-portal #mainContent .student-hero-name {
+        margin: 0 0 7px !important;
+        color: var(--sd-text) !important;
+        font-size: clamp(1.7rem, 3.05vw, 2.6rem) !important;
         font-weight: 800 !important;
-        letter-spacing: -0.028em !important;
-        margin: 0 0 8px !important;
-        color: #fcfbf8 !important;
+        line-height: 1.08;
+        letter-spacing: -0.045em !important;
     }
 
-    body.student-portal .student-meta-strip {
-        gap: 7px !important;
-    }
+    body.student-portal #mainContent .student-meta-strip { gap: 5px 11px !important; }
 
-    body.student-portal .student-meta-chip {
-        padding: 4px 10px !important;
-        border-radius: 7px !important;
-        background: rgba(255, 255, 255, 0.04) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    body.student-portal #mainContent .student-meta-chip {
+        border: 0 !important;
+        background: transparent !important;
+        padding: 0 !important;
+        color: var(--sd-muted) !important;
         font-size: 0.76rem !important;
     }
 
-    /* Live Class Spotlight Pill */
-    body.student-portal .sd-hero-spotlight {
-        display: inline-flex;
-        align-items: center;
+    #mainContent .student-meta-chip i { color: var(--sd-muted) !important; }
+
+    body.student-portal #mainContent .student-hero-cta-group {
+        grid-area: actions;
+        display: flex !important;
+        flex-wrap: wrap;
         gap: 9px;
-        margin-top: 12px;
-        padding: 7px 12px;
-        border-radius: 9px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.075);
-        font-size: 0.8rem;
-        max-width: 100%;
+        justify-content: flex-start;
+        margin: 3px 0 0;
     }
 
-    body.student-portal .sd-spotlight-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: var(--sd-muted);
-        flex-shrink: 0;
-    }
-
-    body.student-portal .sd-spotlight-dot.is-live {
-        background: #34d399;
-        box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.16);
-    }
-
-    body.student-portal .sd-spotlight-dot.is-next {
-        background: var(--sd-gold);
-    }
-
-    body.student-portal .sd-spotlight-dot.is-done {
-        background: #4ade80;
-    }
-
-    body.student-portal .sd-spotlight-label {
-        font-weight: 700;
-        color: var(--sd-gold-bright);
-        white-space: nowrap;
-    }
-
-    body.student-portal .sd-spotlight-text {
-        color: #cfc6ba;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    body.student-portal .sd-spotlight-link {
-        color: var(--sd-gold);
-        font-weight: 700;
-        text-decoration: none;
-        white-space: nowrap;
-        margin-left: 4px;
-    }
-
-    body.student-portal .sd-spotlight-link:hover {
-        text-decoration: underline;
-    }
-
-    /* Single-frame Divided Standing Strip replacing 3 separate deck boxes */
-    body.student-portal .student-hero-deck {
-        display: grid !important;
-        grid-template-columns: repeat(3, minmax(112px, auto)) !important;
-        gap: 0 !important;
-        border-radius: 12px !important;
-        background: #0e0c0a !important;
-        border: 1px solid var(--sd-border) !important;
-        overflow: hidden;
-    }
-
-    body.student-portal .student-hero-deck .hero-deck-card {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        justify-content: center !important;
-        gap: 6px !important;
-        padding: 14px 18px !important;
-        border-radius: 0 !important;
-        background: transparent !important;
-        border: 0 !important;
-        border-right: 1px solid var(--sd-border) !important;
-        box-shadow: none !important;
-        transform: none !important;
-    }
-
-    body.student-portal .student-hero-deck .hero-deck-card:last-child {
-        border-right: 0 !important;
-    }
-
-    body.student-portal .student-hero-deck .hero-deck-icon {
-        display: none !important;
-    }
-
-    body.student-portal .student-hero-deck .hero-deck-value {
-        font-size: 1.24rem !important;
-        font-weight: 800 !important;
-        letter-spacing: -0.02em;
-        line-height: 1.15;
-    }
-
-    body.student-portal .student-hero-deck .hero-deck-label {
-        font-size: 0.72rem !important;
-        color: var(--sd-muted) !important;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    /* Quick Action Strip */
-    body.student-portal .student-quick-links {
-        display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 10px !important;
-        margin-bottom: 16px !important;
-    }
-
-    body.student-portal .student-quick-links .quick-link-pill {
-        display: flex !important;
-        align-items: center !important;
-        gap: 12px !important;
-        padding: 11px 14px !important;
-        border-radius: 11px !important;
-        background: var(--sd-surface) !important;
-        border: 1px solid var(--sd-border) !important;
-        box-shadow: none !important;
-        text-decoration: none;
-        transition: background 0.16s ease, border-color 0.16s ease !important;
-    }
-
-    body.student-portal .student-quick-links .quick-link-pill:hover {
-        background: var(--sd-surface-hover) !important;
-        border-color: var(--sd-border-hover) !important;
-        transform: none !important;
-    }
-
-    body.student-portal .student-quick-links .sd-quick-icon {
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        display: grid;
-        place-items: center;
-        background: rgba(226, 184, 123, 0.1);
-        color: var(--sd-gold);
-        font-size: 0.94rem;
-        flex-shrink: 0;
-    }
-
-    body.student-portal .student-quick-links .sd-quick-text strong {
-        display: block;
-        color: var(--sd-text);
-        font-size: 0.85rem;
-        font-weight: 700;
-        line-height: 1.25;
-    }
-
-    body.student-portal .student-quick-links .sd-quick-text small {
-        display: block;
-        color: var(--sd-muted);
-        font-size: 0.74rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    /* Flat Actionable KPI Metrics */
-    body.student-portal #realStats {
-        gap: 12px !important;
-        margin-bottom: 20px !important;
-    }
-
-    body.student-portal #realStats .sd-kpi-link {
-        display: block;
-        text-decoration: none;
-        border-radius: 13px;
-    }
-
-    body.student-portal #realStats .ent-kpi-card {
-        border-radius: 13px !important;
-        background: var(--sd-surface) !important;
-        border: 1px solid var(--sd-border) !important;
-        box-shadow: none !important;
-        padding: 16px 18px !important;
-        display: flex;
+    body.student-portal #mainContent .student-desktop-check-in {
+        display: inline-flex !important;
         align-items: center;
-        gap: 14px;
-        transition: background 0.16s ease, border-color 0.16s ease !important;
-    }
-
-    body.student-portal #realStats .sd-kpi-link:hover .ent-kpi-card {
-        background: var(--sd-surface-hover) !important;
-        border-color: var(--sd-border-hover) !important;
-        transform: none !important;
-    }
-
-    body.student-portal #realStats .ent-kpi-icon {
-        width: 40px !important;
-        height: 40px !important;
-        border-radius: 10px !important;
-        margin-bottom: 0 !important;
-        font-size: 1.1rem !important;
+        justify-content: center;
+        gap: 8px;
+        min-height: 43px;
+        padding: 9px 13px !important;
+        border: 1px solid transparent !important;
+        border-radius: 9px !important;
+        background: var(--sd-gold) !important;
+        color: #1d140c !important;
+        font-size: 0.83rem !important;
+        font-weight: 750 !important;
+        text-decoration: none;
         box-shadow: none !important;
     }
 
-    body.student-portal #realStats .ent-kpi-label {
-        font-size: 0.71rem !important;
-        margin-bottom: 2px !important;
-    }
+    body.student-portal #mainContent .student-desktop-check-in:hover { background: #f1ce96 !important; }
 
-    body.student-portal #realStats .ent-kpi-value {
-        font-size: 1.65rem !important;
-    }
-
-    /* 2-Column Dashboard Grid & Vertical Timeline */
-    body.student-portal .sd-dash-workspace {
-        display: grid;
-        grid-template-columns: minmax(0, 1.42fr) minmax(320px, 0.92fr);
-        gap: 20px;
-        align-items: start;
-        margin-top: 0;
-    }
-
-    body.student-portal .sd-dash-main,
-    body.student-portal .sd-dash-aside {
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-        min-width: 0;
-    }
-
-    body.student-portal .sd-dash-workspace .adm-card,
-    body.student-portal .sd-subject-breakdown-card {
-        border-radius: var(--sd-radius) !important;
-        background: var(--sd-surface) !important;
-        border: 1px solid var(--sd-border) !important;
-        box-shadow: var(--sd-shadow) !important;
-        margin: 0 !important;
-    }
-
-    body.student-portal .sd-dash-workspace .adm-card-head {
-        background: transparent !important;
-        border-bottom: 1px solid var(--sd-border) !important;
-        padding: 16px 20px !important;
-        flex-wrap: nowrap !important;
-    }
-
-    body.student-portal .sd-dash-workspace .adm-card-head a {
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
-    body.student-portal .sd-subject-breakdown-card {
-        padding: 18px 20px !important;
-    }
-
-    body.student-portal .sd-section-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 14px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid var(--sd-border);
-    }
-
-    body.student-portal .sd-section-head h2 {
-        margin: 0 !important;
-        font-size: 0.98rem !important;
-        font-weight: 700 !important;
+    body.student-portal #mainContent .student-desktop-check-in.is-secondary {
+        background: var(--sd-surface-2) !important;
         color: var(--sd-text) !important;
+        border-color: var(--sd-border) !important;
+    }
+
+    body.student-portal #mainContent .student-desktop-check-in.is-secondary:hover { border-color: var(--sd-gold) !important; }
+
+    #mainContent .sd-hero-spotlight {
+        grid-area: class;
+        min-width: 0;
+        align-self: stretch;
+        justify-content: center;
+        flex-direction: column;
+        gap: 10px;
+        padding: clamp(15px, 1.65vw, 23px);
+        border: 1px solid var(--sd-border);
+        border-radius: 13px;
+        background: var(--sd-surface-2);
+    }
+
+    #mainContent .sd-spotlight-label {
         display: flex;
         align-items: center;
         gap: 8px;
+        color: var(--sd-gold);
+        font-size: 0.76rem;
+        font-weight: 700;
     }
+
+    #mainContent .sd-spotlight-text {
+        margin: 0;
+        color: var(--sd-text);
+        font-size: clamp(1rem, 1.55vw, 1.28rem);
+        font-weight: 750;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    #mainContent .sd-spotlight-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        margin: 0;
+        color: var(--sd-muted);
+        font-size: 0.76rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    #mainContent :is(.sd-spotlight-link, .sd-overview-head a) {
+        display: inline-flex;
+        align-items: center;
+        align-self: flex-start;
+        gap: 7px;
+        min-height: 30px;
+        color: var(--sd-gold);
+        font-size: 0.79rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    #mainContent :is(.sd-spotlight-link, .sd-overview-head a):hover { text-decoration: underline; }
+
+    body.student-portal #mainContent .student-hero-deck {
+        grid-area: facts;
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 0 !important;
+        margin: 6px 0 0 !important;
+        padding-top: 13px !important;
+        border: 0 !important;
+        border-top: 1px solid var(--sd-border) !important;
+        border-radius: 0 !important;
+    }
+
+    body.student-portal #mainContent .student-hero-deck .hero-deck-card {
+        display: flex !important;
+        align-items: center;
+        justify-content: flex-start;
+        min-width: 0;
+        min-height: 42px !important;
+        gap: 10px;
+        padding: 0 13px !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    body.student-portal #mainContent .student-hero-deck .hero-deck-card:first-child { padding-left: 0 !important; }
+    body.student-portal #mainContent .student-hero-deck .hero-deck-card + .hero-deck-card { border-left: 1px solid var(--sd-border) !important; }
+
+    body.student-portal #mainContent .hero-deck-icon {
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 9px !important;
+        box-shadow: none;
+    }
+
+    body.student-portal #mainContent .hero-deck-value {
+        font-size: 1rem !important;
+        font-weight: 750 !important;
+        line-height: 1.25;
+    }
+
+    body.student-portal #mainContent .hero-deck-label {
+        color: var(--sd-muted) !important;
+        font-size: 0.7rem !important;
+        line-height: 1.35;
+        letter-spacing: 0 !important;
+        text-transform: none;
+    }
+
+    body.student-portal #mainContent .student-quick-links {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 12px;
+        margin: 0 0 21px !important;
+    }
+
+    body.student-portal #mainContent .student-quick-links .sd-code-shortcut { display: none !important; }
+
+    body.student-portal #mainContent .student-quick-links .quick-link-pill {
+        min-width: 0;
+        min-height: 59px;
+        gap: 10px;
+        padding: 10px 13px !important;
+        background: var(--sd-surface) !important;
+        color: var(--sd-text);
+        border-color: var(--sd-border) !important;
+        border-radius: 11px !important;
+        box-shadow: none !important;
+    }
+
+    #mainContent .student-quick-links .quick-link-pill:hover {
+        background: var(--sd-surface-hover) !important;
+        border-color: var(--sd-gold) !important;
+    }
+
+    #mainContent .sd-quick-icon {
+        display: grid;
+        place-items: center;
+        flex: 0 0 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #dfb87918;
+        color: var(--sd-gold);
+    }
+
+    #mainContent .sd-quick-text { min-width: 0; }
+    #mainContent .sd-quick-text strong { display: block; font-size: 0.83rem; }
+    #mainContent .sd-quick-text small { color: var(--sd-muted); font-size: 0.7rem; }
+
+    #mainContent .sd-overview-head {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 9px;
+    }
+
+    #mainContent .sd-overview-head h2 {
+        margin: 0;
+        color: var(--sd-text);
+        font-size: 1.09rem;
+        font-weight: 750;
+        letter-spacing: -0.02em;
+    }
+
+    body.student-portal #mainContent #realStats {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+        margin-bottom: 18px !important;
+    }
+
+    #mainContent #realStats .sd-kpi-link {
+        display: block;
+        min-width: 0;
+        color: inherit;
+        text-decoration: none;
+        border-radius: 12px;
+    }
+
+    body.student-portal #mainContent #realStats .ent-kpi-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 76px;
+        height: 100%;
+        padding: 13px !important;
+        border: 1px solid var(--sd-border) !important;
+        border-radius: 12px !important;
+        background: var(--sd-surface) !important;
+        box-shadow: none !important;
+    }
+
+    body.student-portal #mainContent #realStats .sd-kpi-link:hover .ent-kpi-card {
+        background: var(--sd-surface-hover) !important;
+        border-color: var(--sd-gold) !important;
+        transform: none !important;
+    }
+
+    #mainContent #realStats .ent-kpi-accent { display: none; }
+
+    body.student-portal #mainContent #realStats .ent-kpi-icon {
+        width: 34px !important;
+        height: 34px !important;
+        margin-bottom: 0 !important;
+        border-radius: 9px !important;
+        box-shadow: none !important;
+        font-size: 0.95rem !important;
+    }
+
+    body.student-portal #mainContent #realStats .ent-kpi-label {
+        color: var(--sd-muted) !important;
+        margin-bottom: 2px !important;
+        font-size: 0.72rem !important;
+        letter-spacing: 0 !important;
+        text-transform: none;
+    }
+
+    body.student-portal #mainContent #realStats .ent-kpi-value { font-size: 1.42rem !important; }
+
+    body.student-portal .sd-dash-workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(265px, 1fr);
+        gap: 16px;
+        align-items: start;
+        width: 100%;
+    }
+
+    body.student-portal :is(.sd-dash-main, .sd-dash-aside) {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    #mainContent .sd-dash-workspace :is(#todayScheduleSection, #studentAnnouncementsSection) {
+        margin: 0 !important;
+        --bs-gutter-x: 0;
+        --bs-gutter-y: 0;
+    }
+
+    body.student-portal #mainContent .sd-dash-workspace :is(.adm-card, .sd-subject-breakdown-card) {
+        border: 1px solid var(--sd-border) !important;
+        border-radius: 14px !important;
+        background: var(--sd-surface) !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+    }
+
+    body.student-portal #mainContent .sd-dash-workspace .adm-card-head {
+        flex-wrap: wrap !important;
+        gap: 8px;
+        padding: 14px 16px !important;
+        border-bottom: 1px solid var(--sd-border) !important;
+        background: transparent !important;
+    }
+
+    body.student-portal #mainContent .sd-subject-breakdown-card { padding: 14px 16px !important; }
+
+    #mainContent .sd-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 9px;
+        padding-bottom: 10px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid var(--sd-border);
+    }
+
+    #mainContent .sd-section-head h2 {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 0;
+        color: var(--sd-text);
+        font-size: 0.95rem;
+        font-weight: 750;
+    }
+
+    #mainContent .sd-subject-rate:not(.is-good, .is-warn, .is-risk) { color: var(--sd-muted); }
 
     /* Architectural Timeline (replaces boxy cards inside Today's Schedule) */
     body.student-portal #todayScheduleSection .sd-timeline-list {
@@ -1993,10 +2057,6 @@
 }
 
 @media screen and (min-width: 1280px) {
-    body.student-portal .student-quick-links {
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    }
-
     body.student-portal .sd-cor-weekly-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
@@ -2014,11 +2074,6 @@
 
     body.student-portal #headerSearchBar .header-search-shortcut {
         display: none !important;
-    }
-
-    body.student-portal .student-hero-inner {
-        grid-template-columns: minmax(0, 1fr) !important;
-        gap: 16px !important;
     }
 
     body.student-portal[data-student-layout] .cor-mobile-cards-view {

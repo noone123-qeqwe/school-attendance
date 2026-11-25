@@ -1090,6 +1090,7 @@
     <div class="student-hero-inner">
         <!-- Top Bar: Greeting & Status -->
         <div class="student-hero-topbar">
+            <div class="student-hero-context">
             <div class="student-greeting-badge">
                 @if(now()->hour < 12)
                     <i class="bi bi-brightness-alt-high-fill text-warning"></i>
@@ -1103,6 +1104,7 @@
             <div class="student-status-badge" title="Enrollment Status: Active">
                 <span class="student-status-dot"></span>
                 <span>Active Student</span>
+            </div>
             </div>
             <div class="student-hero-cta-group">
                 <a class="student-desktop-check-in" href="{{ route('mobile.scan', ['open_scanner' => 1]) }}">
@@ -1148,31 +1150,34 @@
                         </span>
                     @endif
                 </div>
-                <div class="sd-hero-spotlight d-none d-lg-flex">
-                    @if($liveClassItem)
-                        <span class="sd-spotlight-dot is-live" aria-hidden="true"></span>
-                        <span class="sd-spotlight-label">Live now</span>
-                        <span class="sd-spotlight-text">{{ $liveClassItem->subject->code }} &middot; {{ $liveClassItem->subject->name }}@if(!empty($liveClassItem->schedule?->room) && strtoupper(trim($liveClassItem->schedule->room)) !== 'TBA') &middot; {{ $liveClassItem->schedule->room }}@endif</span>
-                        <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sd-spotlight-link">Check in <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                    @elseif($nextClassItem)
-                        <span class="sd-spotlight-dot is-next" aria-hidden="true"></span>
-                        <span class="sd-spotlight-label">Up next &middot; {{ $nextClassItem->start_time->format('g:i A') }}</span>
-                        <span class="sd-spotlight-text">{{ $nextClassItem->subject->code }} &middot; {{ $nextClassItem->subject->name }}@if(!empty($nextClassItem->schedule?->room) && strtoupper(trim($nextClassItem->schedule->room)) !== 'TBA') &middot; {{ $nextClassItem->schedule->room }}@endif</span>
-                        <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-spotlight-link">Timetable <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                    @elseif($todaySchedCollection->isNotEmpty())
-                        <span class="sd-spotlight-dot is-done" aria-hidden="true"></span>
-                        <span class="sd-spotlight-label">Today</span>
-                        <span class="sd-spotlight-text">{{ $todaySchedCollection->count() }} {{ \Illuminate\Support\Str::plural('class', $todaySchedCollection->count()) }} completed or past for today</span>
-                        <a href="{{ route('student.calendar') }}#attendance-records" class="sd-spotlight-link">View log <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                    @else
-                        <span class="sd-spotlight-dot" aria-hidden="true"></span>
-                        <span class="sd-spotlight-label">Today</span>
-                        <span class="sd-spotlight-text">No classes scheduled today</span>
-                        <a href="{{ route('student.classes') }}" class="sd-spotlight-link">My classes <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                    @endif
-                </div>
             </div>
         </div>
+
+        @php
+            $featuredClass = $liveClassItem ?? $nextClassItem;
+            $featuredRoom = trim($featuredClass?->schedule?->room ?? '');
+        @endphp
+        <section class="sd-hero-spotlight d-none d-lg-flex" aria-labelledby="dashboardClassHeading">
+            <div class="sd-spotlight-label">
+                <i class="bi {{ $liveClassItem ? 'bi-broadcast' : 'bi-calendar-event' }}" aria-hidden="true"></i>
+                {{ $liveClassItem ? 'Class in progress' : ($nextClassItem ? 'Next class' : 'Today’s classes') }}
+            </div>
+            <h2 id="dashboardClassHeading" class="sd-spotlight-text">
+                {{ $featuredClass?->subject?->name ?? ($todayClassCount ? 'No more classes scheduled' : 'No classes scheduled today') }}
+            </h2>
+            @if($featuredClass)
+                <p class="sd-spotlight-meta">
+                    <span>{{ $featuredClass->subject->code }}</span>
+                    <span>{{ $featuredClass->start_time->format('g:i A') }} – {{ $featuredClass->end_time->format('g:i A') }}</span>
+                    @if($featuredRoom !== '' && strtoupper($featuredRoom) !== 'TBA')
+                        <span>{{ $featuredRoom }}</span>
+                    @endif
+                </p>
+            @endif
+            <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-spotlight-link">
+                View timetable <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            </a>
+        </section>
 
         <!-- Bottom: Symmetrical Metrics Deck -->
         @php
@@ -1240,7 +1245,7 @@
         <span>Schedule</span>
         <i class="bi bi-chevron-right" aria-hidden="true"></i>
     </a>
-    <a href="{{ route('mobile.scan', ['open_code' => 1]) }}" class="d-none d-lg-flex quick-link-pill">
+    <a href="{{ route('mobile.scan', ['open_code' => 1]) }}" class="d-none d-lg-flex quick-link-pill sd-code-shortcut">
         <span class="sd-quick-icon" aria-hidden="true"><i class="bi bi-123"></i></span>
         <span class="sd-quick-text">
             <strong>Code Check-In</strong>
@@ -1277,6 +1282,10 @@
 </nav>
 
 <!-- Quick Stats -->
+<div class="sd-overview-head d-none">
+    <h2>Attendance overview</h2>
+    <a href="{{ route('student.calendar') }}#attendance-records">View records <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+</div>
 <div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:grid; gap:16px; margin-bottom:20px;">
     <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Present']) }}#attendance-records" title="View present attendance records">
         <x-card type="kpi" accent="success" label="Present" value="{{ $totalPresent ?? 0 }}" icon="bi bi-check-circle-fill" />
@@ -1382,7 +1391,7 @@
                 </h2>
                 @if(!empty($subjectStats) && count($subjectStats) > 0)
                     <button type="button" class="sd-header-pill" style="padding: 6px 12px !important; font-size: 0.76rem !important;" data-bs-toggle="modal" data-bs-target="#subjectBreakdownModal">
-                        All {{ count($subjectStats) }}
+                        View all
                     </button>
                 @else
                     <a href="{{ route('student.classes') }}" class="sd-header-pill" style="padding: 6px 12px !important; font-size: 0.76rem !important;">
@@ -1394,7 +1403,8 @@
                 <div class="sd-subject-list">
                     @foreach(collect($subjectStats)->take(5) as $sub)
                         @php
-                            $rateClass = $sub->rate >= 85 ? 'is-good' : ($sub->rate >= 75 ? 'is-warn' : 'is-risk');
+                            $hasSubjectRecords = $sub->total > 0;
+                            $rateClass = !$hasSubjectRecords ? '' : ($sub->rate >= 85 ? 'is-good' : ($sub->rate >= 75 ? 'is-warn' : 'is-risk'));
                             $barColor = $sub->rate >= 85 ? '#34d399' : ($sub->rate >= 75 ? '#fbbf24' : '#f87171');
                         @endphp
                         <div class="sd-subject-item">
@@ -1403,7 +1413,7 @@
                                     <span class="sd-subject-code">{{ $sub->code }}</span>
                                     <span class="sd-subject-name" title="{{ $sub->name }}">{{ $sub->name }}</span>
                                 </div>
-                                <span class="sd-subject-rate {{ $rateClass }}">{{ $sub->rate }}%</span>
+                                <span class="sd-subject-rate {{ $rateClass }}">{{ $hasSubjectRecords ? $sub->rate.'%' : 'No records' }}</span>
                             </div>
                             <div class="sd-progress-track" aria-hidden="true">
                                 <div class="sd-progress-fill" style="width: {{ min(100, max(0, $sub->rate)) }}%; background: {{ $barColor }};"></div>
@@ -1412,7 +1422,7 @@
                                 <span><strong style="color:#34d399;">{{ $sub->present }}</strong> present</span>
                                 <span><strong style="color:#fbbf24;">{{ $sub->late }}</strong> late</span>
                                 <span><strong style="color:#f87171;">{{ $sub->absent }}</strong> absent</span>
-                                @if($sub->rate < 75)
+                                @if($hasSubjectRecords && $sub->rate < 75)
                                     <span class="ms-auto" style="color:#fca5a5; font-weight:700;">Below 75%</span>
                                 @endif
                             </div>

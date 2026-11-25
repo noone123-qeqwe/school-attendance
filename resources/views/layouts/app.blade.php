@@ -71,6 +71,7 @@
             <link rel="stylesheet" href="{{ asset('css/student-desktop-settings.css') }}?v={{ filemtime(public_path('css/student-desktop-settings.css')) }}">
         @endif
         <link rel="stylesheet" href="{{ asset('css/student-desktop-ux.css') }}?v={{ filemtime(public_path('css/student-desktop-ux.css')) }}">
+        <link rel="stylesheet" href="{{ asset('css/student-portal-navigation.css') }}?v={{ filemtime(public_path('css/student-portal-navigation.css')) }}">
     @endif
 </head>
 

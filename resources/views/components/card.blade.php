@@ -87,8 +87,8 @@
 
 @if($type === 'kpi')
     <div class="ent-kpi-card {{ $class }}" data-accent="{{ $accent }}" style="position: relative; background: linear-gradient(145deg, rgba(32, 22, 18, 0.88) 0%, rgba(18, 11, 9, 0.95) 100%); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--ds-radius-lg, 18px); padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.38), 0 0 24px {{ $kpiAccent['ambientGlow'] }}; overflow: hidden; backdrop-filter: blur(16px); transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);">
-        <div style="position: absolute; top: 0; left: 0; right: 0; height: 3.5px; background: {{ $kpiAccent['topGrad'] }}; box-shadow: 0 0 12px {{ $kpiAccent['ambientGlow'] }};"></div>
-        <div style="position: absolute; top: -30px; right: -30px; width: 90px; height: 90px; border-radius: 50%; background: {{ $kpiAccent['color'] }}; filter: blur(40px); opacity: 0.14; pointer-events: none;"></div>
+        <div class="ent-kpi-accent" aria-hidden="true" style="position: absolute; top: 0; left: 0; right: 0; height: 3.5px; background: {{ $kpiAccent['topGrad'] }}; box-shadow: 0 0 12px {{ $kpiAccent['ambientGlow'] }};"></div>
+        <div class="ent-kpi-accent" aria-hidden="true" style="position: absolute; top: -30px; right: -30px; width: 90px; height: 90px; border-radius: 50%; background: {{ $kpiAccent['color'] }}; filter: blur(40px); opacity: 0.14; pointer-events: none;"></div>
         @if($icon)
             <div class="ent-kpi-icon" style="width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: {{ $kpiAccent['iconBg'] }}; color: {{ $kpiAccent['iconColor'] }}; font-size: 1.25rem; margin-bottom: 12px; border: 1px solid {{ $kpiAccent['iconBorder'] }}; box-shadow: 0 0 14px {{ $kpiAccent['ambientGlow'] }}; flex-shrink: 0;">
                 <i class="{{ $cleanIcon }}"></i>

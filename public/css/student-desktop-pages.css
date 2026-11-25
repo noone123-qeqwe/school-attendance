@@ -34,18 +34,6 @@
         font-weight: 650;
     }
 
-    /* Dashboard uses the available width for a calm overview and a clear check-in action. */
-    body.student-portal[data-student-layout] .student-desktop-dashboard {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: 24px;
-    }
-
-    body.student-portal[data-student-layout] .student-desktop-dashboard > :is(.student-hero-banner, .student-quick-links, #realStats, #todayScheduleSection, #studentAnnouncementsSection) {
-        margin: 0 !important;
-        min-width: 0;
-    }
-
     body.student-portal[data-student-layout] .student-hero-banner {
         background: var(--student-surface-strong) !important;
         border: 1px solid var(--student-border) !important;
@@ -585,13 +573,6 @@
     body.student-portal[data-student-layout] .hero-deck-icon {
         display: none;
     }
-    body.student-portal[data-student-layout] .student-desktop-dashboard:has(#studentAnnouncementsSection) {
-        grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
-        align-items: start;
-    }
-    body.student-portal[data-student-layout] .student-desktop-dashboard > :is(.student-hero-banner, .student-quick-links, #realStats) {
-        grid-column: 1 / -1;
-    }
 }
 
 @media screen and (min-width: 1440px) {
@@ -616,5 +597,183 @@
         display: flex;
         flex-direction: column;
         padding: 22px !important;
+    }
+}
+
+@media screen and (min-width: 1024px) {
+    /* Shared desktop content styling for student workspace pages. */
+    body.student-portal[data-student-layout] #mainContent :is(.student-page-header, .cor-actions-bar, .notif-hero) {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        padding: 0 0 22px !important;
+        margin-bottom: 24px !important;
+        border-bottom: 1px solid var(--student-border) !important;
+    }
+
+    body.student-portal[data-student-layout] #mainContent :is(.student-page-header, .cor-page-title-group, .notif-hero-text) h1 {
+        color: #f5f0e8 !important;
+        font-size: clamp(1.65rem, 2.4vw, 2.2rem) !important;
+        font-weight: 700 !important;
+        line-height: 1.17;
+        letter-spacing: -.045em !important;
+    }
+
+    body.student-portal[data-student-layout] #mainContent :is(.student-page-header, .cor-page-title-group, .notif-hero-text) p {
+        color: #b9ada1 !important;
+        margin-top: 7px !important;
+        font-size: .9rem !important;
+        line-height: 1.6;
+    }
+
+    body.student-portal[data-student-layout] #mainContent :is(.student-page-link, .cor-btn-action, .student-view-switcher button) {
+        min-height: 42px;
+    }
+
+    body.student-portal[data-student-layout] #mainContent :is(.cor-toolbar, .notif-controls-card, .calendar-record-filters) {
+        background: #1c1815 !important;
+        border: 1px solid var(--student-border);
+        border-radius: 12px;
+        padding: 14px 16px !important;
+    }
+
+    body.student-portal[data-student-layout] #mainContent :is(.student-filter-field .cor-search-input, .cor-toolbar select, .calendar-record-filters :is(input:not([type=hidden]), select), .notif-search-input) {
+        min-height: 42px !important;
+        background: #151210 !important;
+        border-color: rgba(243, 225, 206, .17) !important;
+        color: #f5f0e8;
+    }
+
+    body.student-portal[data-student-layout] #mainContent :is(.cor-card-item, .sd-cor-week-day, .cor-table-wrap, .scal-card, .scal-legend-card, .scal-tips-card, .sd-day-inspector, .notif-stat-card, .notif-item-card, .profile-page .info-card, .student-profile-summary) {
+        background: #201b18 !important;
+        border: 1px solid var(--student-border) !important;
+        border-radius: 14px !important;
+        box-shadow: none !important;
+    }
+
+    /* Class filters and layout controls remain aligned when the sidebar is expanded. */
+    body.student-portal[data-student-layout] #mainContent .cor-toolbar .student-filter-field {
+        flex: 1 1 215px;
+        max-width: none;
+    }
+
+    body.student-portal[data-student-layout] #mainContent .cor-toolbar .student-filter-field[for="scheduleDayFilter"] {
+        flex: 0 1 160px;
+        min-width: 110px;
+    }
+
+    body.student-portal[data-student-layout] #mainContent .cor-card-item {
+        min-width: 0;
+        padding: 20px !important;
+    }
+
+    body.student-portal[data-student-layout] #mainContent .cor-card-item.is-today,
+    body.student-portal[data-student-layout] #mainContent .sd-cor-week-day.is-today-day {
+        border-inline-start: 3px solid #dfb879 !important;
+    }
+
+    body.student-portal[data-student-layout] #mainContent .record-subject :is(h4, .record-meta),
+    body.student-portal[data-student-layout] #mainContent :is(.cor-card-subj-title, .notif-card-main, .info-row-value) {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    /* Keep date inspection in reach without compressing the seven-day grid. */
+    body.student-portal[data-student-layout] #mainContent .scal-outer {
+        grid-template-columns: minmax(0, 1fr) minmax(206px, 25%) !important;
+        gap: 20px !important;
+    }
+
+    body.student-portal[data-student-layout] #mainContent .scal-side {
+        width: 100%;
+        min-width: 0;
+        top: calc(var(--header-height, 70px) + 20px);
+    }
+
+    body.student-portal[data-student-layout] #mainContent .scal-legend-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 14px;
+    }
+
+    body.student-portal[data-student-layout] #mainContent .scal-nav-btn,
+    body.student-portal[data-student-layout] #mainContent .att-cal-nav-btn {
+        width: 42px !important;
+        height: 42px !important;
+        flex: 0 0 42px;
+    }
+
+    body.student-portal[data-student-layout] #mainContent .student-attendance-page > .col-lg-10 {
+        width: 100%;
+        min-width: 0;
+    }
+
+    body.student-portal[data-student-layout] #mainContent #attendance-records {
+        max-width: none;
+    }
+
+    body.student-portal[data-student-layout] #mainContent #attendance-records :is(.record-card, .sd-records-thead) {
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.65fr) minmax(68px, .45fr) minmax(104px, .8fr) !important;
+        gap: clamp(9px, 1.2vw, 18px) !important;
+    }
+
+    body.student-portal[data-student-layout] #mainContent #attendance-records .table-card {
+        background: #201b18 !important;
+    }
+
+    body.student-portal[data-student-layout] #mainContent #attendance-records .calendar-record-filters {
+        margin: 12px 16px;
+    }
+
+    body.student-portal[data-student-layout] #mainContent #attendance-records .record-actions {
+        justify-content: flex-start !important;
+    }
+
+    body.student-portal[data-student-layout] #mainContent #attendance-records .record-actions :is(.excuse-btn, .excuse-status) {
+        max-width: 100%;
+        white-space: normal;
+        text-align: left;
+    }
+
+    /* Preserve the existing panels and actions while simplifying their visual hierarchy. */
+    body.student-portal[data-student-layout] #mainContent .student-excuse-page [data-excuse-panel] > div {
+        background: #201b18 !important;
+        border-color: var(--student-border) !important;
+        border-radius: 14px !important;
+    }
+
+    body.student-portal[data-student-layout] #mainContent .student-excuse-page [data-excuse-panel] > div > div:first-child h2 {
+        color: #f5f0e8 !important;
+        font-size: 1rem !important;
+        line-height: 1.4;
+    }
+
+    body.student-portal[data-student-layout] #mainContent .student-view-switcher button[aria-pressed="true"],
+    body.student-portal[data-student-layout] #mainContent .notif-wrapper :is(.notif-stat-card.active, .notif-tab.active, .notif-pill.active) {
+        border-color: rgba(223, 184, 121, .38) !important;
+        background: rgba(223, 184, 121, .1) !important;
+        color: #edcc99 !important;
+    }
+
+    body.student-portal[data-student-layout] #mainContent .notif-tabs-row {
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    body.student-portal[data-student-layout] #mainContent :is(.notif-status-tabs, .notif-cat-pills) {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    body.student-portal[data-student-layout] #mainContent .notif-wrapper .notif-item-card.unread {
+        border-color: rgba(223, 184, 121, .25) !important;
+    }
+}
+
+@media screen and (min-width: 1024px) and (max-width: 1199.98px) {
+    body.student-portal[data-student-layout] #mainContent #attendance-records .calendar-record-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.student-portal[data-student-layout] #mainContent #attendance-records .record-details {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 }
