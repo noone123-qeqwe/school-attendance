@@ -263,7 +263,7 @@ class HomeController extends Controller
     // 8c. Attendance streak (consecutive days present/late, not absent - optimized query)
     $streakCount = 0;
     $streakRecords = Attendance::where('user_id', $user->id)
-        ->where('date', '>=', now()->subDays(60)->toDateString())
+        ->where('date', '>=', $now->copy()->subDays(60)->toDateString())
         ->select('date', 'status')
         ->orderBy('date', 'desc')
         ->get()
@@ -277,6 +277,48 @@ class HomeController extends Controller
             break;
         }
     }
+
+    // 8c-ii. 7-day attendance pulse derived from already-loaded streak records (zero extra queries)
+    $weeklyPulse = collect();
+    for ($dayOffset = 6; $dayOffset >= 0; $dayOffset--) {
+        $pulseDate = $now->copy()->subDays($dayOffset);
+        $pulseKey = $pulseDate->toDateString();
+        $dayRows = $streakRecords->get($pulseKey, collect());
+
+        $pulseStatus = 'empty';
+        if ($dayRows->isNotEmpty()) {
+            if ($dayRows->contains(fn($r) => $r->status === 'Absent')) {
+                $pulseStatus = 'absent';
+            } elseif ($dayRows->contains(fn($r) => $r->status === 'Late')) {
+                $pulseStatus = 'late';
+            } else {
+                $pulseStatus = 'present';
+            }
+        }
+
+        $weeklyPulse->push((object) [
+            'date_key'   => $pulseKey,
+            'day_num'    => $pulseDate->day,
+            'day_short'  => $pulseDate->format('D'),
+            'day_letter' => substr($pulseDate->format('D'), 0, 1),
+            'label'      => $pulseDate->format('M j'),
+            'is_today'   => $dayOffset === 0,
+            'status'     => $pulseStatus,
+            'count'      => $dayRows->count(),
+        ]);
+    }
+
+    // 8c-iii. Compact recent check-ins & pending excuse counter
+    $recentAttendances = Attendance::with(['subject:id,code,name'])
+        ->where('user_id', $user->id)
+        ->orderBy('date', 'desc')
+        ->orderBy('time_in', 'desc')
+        ->take(5)
+        ->get();
+
+    $pendingExcusesCount = ExcuseSubmission::where('user_id', $user->id)
+        ->where('status', 'pending')
+        ->count();
 
     // 8d. Today's schedule with status (upcoming, ongoing, completed, missed)
     // (Already built above to calculate dynamic misses)
@@ -341,6 +383,9 @@ class HomeController extends Controller
         'totalLate',
         'totalAbsent',
         'streakCount',
+        'weeklyPulse',
+        'recentAttendances',
+        'pendingExcusesCount',
         'todaySchedule',
         'subjectStats',
         'announcements'

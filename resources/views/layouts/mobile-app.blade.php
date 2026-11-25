@@ -196,8 +196,12 @@
     <link rel="stylesheet" href="{{ asset('css/experience-refinements.css') }}?v={{ filemtime(public_path('css/experience-refinements.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/system-ui-modern.css') }}?v={{ filemtime(public_path('css/system-ui-modern.css')) }}">
     @if(Auth::check() && Auth::user()->isStudent())
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="{{ asset('css/student-portal-redesign.css') }}?v={{ filemtime(public_path('css/student-portal-redesign.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/student-portal-simple.css') }}?v={{ filemtime(public_path('css/student-portal-simple.css')) }}">
+        @if(request()->routeIs('mobile.home'))
+            <link rel="stylesheet" href="{{ asset('css/student-dashboard.css') }}?v={{ filemtime(public_path('css/student-dashboard.css')) }}">
+        @endif
     @endif
 </head>
 <body class="mobile-app-layout {{ Auth::check() && Auth::user()->isStudent() ? 'student-portal student-mobile-portal' : '' }} {{ request()->routeIs('mobile.scan') ? 'scanner-page-layout' : '' }}" @if(Auth::user()?->isStudent()) data-student-layout="simple" @endif>

@@ -416,4 +416,114 @@ class StudentDashboardAndSidebarTest extends TestCase
             \Carbon\Carbon::setTestNow();
         }
     }
+
+    public function test_reinvented_student_dashboard_renders_standing_gauge_seven_day_pulse_recent_activity_and_pending_excuses(): void
+    {
+        $student = $this->createStudent([
+            'email' => 'student.cockpit@gmail.com',
+            'student_number' => '2310777',
+        ]);
+
+        $subject = Subject::create([
+            'code' => 'CS401',
+            'name' => 'Software Architecture',
+            'year_level' => 3,
+            'semester' => 1,
+            'course' => 'BSCS',
+            'section' => 'A',
+        ]);
+        $student->enrolledSubjects()->attach([$subject->id]);
+
+        $attendance = Attendance::create([
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'subject_code' => $subject->code,
+            'date' => now()->toDateString(),
+            'time_in' => '08:05:00',
+            'status' => 'Present',
+        ]);
+
+        \App\Models\ExcuseSubmission::create([
+            'user_id' => $student->id,
+            'attendance_id' => $attendance->id,
+            'reason' => 'Medical',
+            'description' => 'Clinic visit certificate',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($student)->get(route('home'));
+
+        $response->assertOk()
+            ->assertSee('student-dashboard.css', false)
+            ->assertSee('class="sd-cockpit"', false)
+            ->assertSee('Attendance Standing')
+            ->assertSee('7-Day Attendance Pulse')
+            ->assertSee('Recent Activity')
+            ->assertSee('1 Pending Excuse')
+            ->assertSee('Software Architecture');
+    }
+
+    public function test_reinvented_mobile_home_dashboard_renders_unified_cockpit_sections(): void
+    {
+        $admin = $this->createStudent([
+            'name' => 'Admin Mobile',
+            'role' => 'admin',
+            'admin_sub_role' => 'super_admin',
+            'student_number' => null,
+            'employee_id' => 'ADM-55',
+            'email' => 'admin.mobile@gmail.com',
+        ]);
+
+        $student = $this->createStudent([
+            'email' => 'student.mobile@gmail.com',
+            'student_number' => '2310888',
+        ]);
+
+        $subject = Subject::create([
+            'code' => 'CS405',
+            'name' => 'Mobile Systems',
+            'year_level' => 3,
+            'semester' => 1,
+            'course' => 'BSCS',
+            'section' => 'A',
+        ]);
+        $student->enrolledSubjects()->attach([$subject->id]);
+
+        Schedule::create([
+            'subject_id' => $subject->id,
+            'day' => now()->format('l'),
+            'start_time' => now()->addHour()->format('H:i:s'),
+            'end_time' => now()->addHours(2)->format('H:i:s'),
+            'room' => 'Lab 304',
+        ]);
+
+        Attendance::create([
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'subject_code' => $subject->code,
+            'date' => now()->toDateString(),
+            'time_in' => '09:00:00',
+            'status' => 'Present',
+        ]);
+
+        Announcement::create([
+            'title' => 'Mobile Campus Advisory',
+            'content' => 'Reminder to carry student ID on campus.',
+            'target_audience' => 'Student',
+            'author_id' => $admin->id,
+            'scheduled_for' => now()->subMinute(),
+        ]);
+
+        $response = $this->actingAs($student)->get(route('mobile.home'));
+
+        $response->assertOk()
+            ->assertSee('student-dashboard.css', false)
+            ->assertSee('sd-mobile-cockpit', false)
+            ->assertSee('Scan QR')
+            ->assertSee('Enter PIN')
+            ->assertSee('Attendance Standing')
+            ->assertSee('7-Day Pulse')
+            ->assertSee('Mobile Systems')
+            ->assertSee('Mobile Campus Advisory');
+    }
 }

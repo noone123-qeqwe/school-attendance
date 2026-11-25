@@ -72,6 +72,9 @@
         @endif
         <link rel="stylesheet" href="{{ asset('css/student-desktop-ux.css') }}?v={{ filemtime(public_path('css/student-desktop-ux.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/student-portal-navigation.css') }}?v={{ filemtime(public_path('css/student-portal-navigation.css')) }}">
+        @if(request()->routeIs('home'))
+            <link rel="stylesheet" href="{{ asset('css/student-dashboard.css') }}?v={{ filemtime(public_path('css/student-dashboard.css')) }}">
+        @endif
     @endif
 </head>
 
