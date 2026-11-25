@@ -553,7 +553,7 @@ public class MainActivity extends AppCompatActivity {
         passkeyCancellation = cancellation;
         passkeyRequestId = id;
 
-        if (canUseStrongBiometricPrompt()) {
+        if (canUseBiometricPrompt()) {
             createWithAndroidKeystoreBiometric(cancellation, reply, id, normalized, rpHost);
             return;
         }
@@ -575,7 +575,7 @@ public class MainActivity extends AppCompatActivity {
                                 } catch (JSONException ignored) {
                                 }
                             }
-                            if (canUseStrongBiometricPrompt()) {
+                            if (canUseBiometricPrompt()) {
                                 createWithAndroidKeystoreBiometric(cancellation, reply, id, normalized, rpHost);
                             } else {
                                 finishPasskeyRequest(cancellation, reply, id, null, "UnknownError");
@@ -589,7 +589,7 @@ public class MainActivity extends AppCompatActivity {
                                 finishPasskeyRequest(cancellation, reply, id, null, "NotAllowedError");
                                 return;
                             }
-                            if (canUseStrongBiometricPrompt()) {
+                            if (canUseBiometricPrompt()) {
                                 createWithAndroidKeystoreBiometric(cancellation, reply, id, normalized, rpHost);
                                 return;
                             }
@@ -598,7 +598,7 @@ public class MainActivity extends AppCompatActivity {
                     });
         } catch (RuntimeException ex) {
             if (passkeyCancellation != cancellation) return;
-            if (canUseStrongBiometricPrompt()) {
+            if (canUseBiometricPrompt()) {
                 createWithAndroidKeystoreBiometric(cancellation, reply, id, normalized, rpHost);
             } else {
                 finishPasskeyRequest(cancellation, reply, id, null,
@@ -630,7 +630,7 @@ public class MainActivity extends AppCompatActivity {
         if (matchedKeystore == null && emptyAllowList) {
             matchedKeystore = findLatestKeystoreEntry(rpHost);
         }
-        if (matchedKeystore != null && canUseStrongBiometricPrompt()) {
+        if (matchedKeystore != null && canUseBiometricPrompt()) {
             getWithAndroidKeystoreBiometric(cancellation, reply, id, options, rpHost, matchedKeystore);
             return;
         }
@@ -667,7 +667,7 @@ public class MainActivity extends AppCompatActivity {
                                 return;
                             }
                             JSONObject fallbackEntry = emptyAllowList ? findLatestKeystoreEntry(rpHost) : null;
-                            if (fallbackEntry != null && canUseStrongBiometricPrompt()) {
+                            if (fallbackEntry != null && canUseBiometricPrompt()) {
                                 getWithAndroidKeystoreBiometric(cancellation, reply, id, options, rpHost, fallbackEntry);
                                 return;
                             }
@@ -685,7 +685,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (RuntimeException ex) {
             if (passkeyCancellation != cancellation) return;
             JSONObject fallbackEntry = emptyAllowList ? findLatestKeystoreEntry(rpHost) : null;
-            if (fallbackEntry != null && canUseStrongBiometricPrompt()) {
+            if (fallbackEntry != null && canUseBiometricPrompt()) {
                 getWithAndroidKeystoreBiometric(cancellation, reply, id, options, rpHost, fallbackEntry);
             } else {
                 finishPasskeyRequest(cancellation, reply, id, null,
@@ -733,6 +733,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * True when the device can show a fingerprint prompt at all. Many phones rate their
+     * fingerprint sensor as "weak" (Class 2) and canUseStrongBiometricPrompt() is false for
+     * them, which previously made the app skip the fingerprint prompt entirely.
+     */
+    private boolean canUseBiometricPrompt() {
+        try {
+            BiometricManager manager = BiometricManager.from(this);
+            return manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS
+                    || manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     private void createWithAndroidKeystoreBiometric(@NonNull CancellationSignal cancellation,
                                                      @NonNull JavaScriptReplyProxy reply,
                                                      @NonNull String id,
@@ -747,17 +762,25 @@ public class MainActivity extends AppCompatActivity {
                 String credIdB64 = base64UrlEncode(credIdBytes);
                 alias = KEYSTORE_ALIAS_PREFIX + credIdB64;
 
+                // Strong sensors bind the key to the fingerprint (crypto-backed). Weak (Class 2)
+                // sensors cannot unlock crypto-bound keys, so the key is gated by an app-level
+                // BiometricPrompt instead.
+                final boolean strongKey = canUseStrongBiometricPrompt();
                 KeyGenParameterSpec.Builder specBuilder = new KeyGenParameterSpec.Builder(
                         alias, KeyProperties.PURPOSE_SIGN)
                         .setAlgorithmParameterSpec(new ECGenParameterSpec("secp256r1"))
-                        .setDigests(KeyProperties.DIGEST_SHA256)
-                        .setUserAuthenticationRequired(true)
-                        .setInvalidatedByBiometricEnrollment(true);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    specBuilder.setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG);
+                        .setDigests(KeyProperties.DIGEST_SHA256);
+                if (strongKey) {
+                    specBuilder.setUserAuthenticationRequired(true)
+                            .setInvalidatedByBiometricEnrollment(true);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        specBuilder.setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG);
+                    } else {
+                        @SuppressWarnings("deprecation")
+                        KeyGenParameterSpec.Builder ignored = specBuilder.setUserAuthenticationValidityDurationSeconds(-1);
+                    }
                 } else {
-                    @SuppressWarnings("deprecation")
-                    KeyGenParameterSpec.Builder ignored = specBuilder.setUserAuthenticationValidityDurationSeconds(-1);
+                    specBuilder.setUserAuthenticationRequired(false);
                 }
 
                 KeyPairGenerator kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore");
@@ -792,7 +815,7 @@ public class MainActivity extends AppCompatActivity {
                             byte[] attestationObject = buildAttestationObject(authData);
                             byte[] clientDataBytes = buildClientDataJson("webauthn.create", challenge);
 
-                            saveKeystoreEntry(credIdB64, finalAlias, rpId, userHandle, 1);
+                            saveKeystoreEntry(credIdB64, finalAlias, rpId, userHandle, 1, strongKey);
 
                             JSONArray transports = new JSONArray().put("internal");
                             JSONObject responseObj = new JSONObject()
@@ -832,10 +855,16 @@ public class MainActivity extends AppCompatActivity {
                 BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
                         .setTitle("Enable Fingerprint Sign-In")
                         .setSubtitle("Touch the fingerprint sensor to register this device")
-                        .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                        .setAllowedAuthenticators(strongKey
+                                ? BiometricManager.Authenticators.BIOMETRIC_STRONG
+                                : BiometricManager.Authenticators.BIOMETRIC_WEAK)
                         .setNegativeButtonText("Cancel")
                         .build();
-                prompt.authenticate(promptInfo, new BiometricPrompt.CryptoObject(signature));
+                if (strongKey) {
+                    prompt.authenticate(promptInfo, new BiometricPrompt.CryptoObject(signature));
+                } else {
+                    prompt.authenticate(promptInfo);
+                }
             } catch (Exception ex) {
                 activeBiometricPrompt = null;
                 if (alias != null) deleteKeystoreAlias(alias);
@@ -855,6 +884,7 @@ public class MainActivity extends AppCompatActivity {
             String credIdB64 = entry.optString("credentialId", "");
             String alias = entry.optString("alias", "");
             String userHandle = entry.optString("userHandle", "");
+            final boolean strongEntry = entry.optBoolean("strong", true);
             long nextSignCount = Math.max(1L, entry.optLong("signCount", 1L)) + 1L;
             String challenge = options.optString("challenge", "");
 
@@ -894,7 +924,7 @@ public class MainActivity extends AppCompatActivity {
                         if (passkeyCancellation != cancellation) return;
                         try {
                             BiometricPrompt.CryptoObject crypto = result.getCryptoObject();
-                            Signature authedSig = crypto != null ? crypto.getSignature() : null;
+                            Signature authedSig = crypto != null ? crypto.getSignature() : (strongEntry ? null : signature);
                             if (authedSig == null) {
                                 finishPasskeyRequest(cancellation, reply, id, null, "UnknownError");
                                 return;
@@ -942,10 +972,16 @@ public class MainActivity extends AppCompatActivity {
                 BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
                         .setTitle("Verify Your Fingerprint")
                         .setSubtitle("Touch the fingerprint sensor to sign in")
-                        .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+                        .setAllowedAuthenticators(strongEntry
+                                ? BiometricManager.Authenticators.BIOMETRIC_STRONG
+                                : BiometricManager.Authenticators.BIOMETRIC_WEAK)
                         .setNegativeButtonText("Cancel")
                         .build();
-                prompt.authenticate(promptInfo, new BiometricPrompt.CryptoObject(signature));
+                if (strongEntry) {
+                    prompt.authenticate(promptInfo, new BiometricPrompt.CryptoObject(signature));
+                } else {
+                    prompt.authenticate(promptInfo);
+                }
             } catch (Exception ex) {
                 activeBiometricPrompt = null;
                 finishPasskeyRequest(cancellation, reply, id, null, "UnknownError");
@@ -969,6 +1005,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveKeystoreEntry(String credIdB64, String alias, String rpId, String userHandle, long signCount) {
+        JSONObject existing = readKeystoreEntries().optJSONObject(credIdB64);
+        saveKeystoreEntry(credIdB64, alias, rpId, userHandle, signCount,
+                existing == null || existing.optBoolean("strong", true));
+    }
+
+    private void saveKeystoreEntry(String credIdB64, String alias, String rpId, String userHandle,
+                                   long signCount, boolean strong) {
         try {
             JSONObject entries = readKeystoreEntries();
             JSONObject existing = entries.optJSONObject(credIdB64);
@@ -979,6 +1022,7 @@ public class MainActivity extends AppCompatActivity {
                     .put("rpId", rpId)
                     .put("userHandle", userHandle)
                     .put("signCount", signCount)
+                    .put("strong", strong)
                     .put("createdAt", createdAt);
             entries.put(credIdB64, entry);
             writeKeystoreEntries(entries);
@@ -1349,7 +1393,7 @@ public class MainActivity extends AppCompatActivity {
 
         @android.webkit.JavascriptInterface
         public int getAppVersionCode() {
-            return 20923;
+            return 20924;
         }
 
         @android.webkit.JavascriptInterface
