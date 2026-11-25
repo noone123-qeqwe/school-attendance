@@ -2063,16 +2063,15 @@ function buildAllowCredentials(serverCredentials, allowHybrid) {
 }
 
 function buildAndroidAllowCredentials(serverCredentials) {
-    return (serverCredentials || []).filter(function(credential) {
-        return !Array.isArray(credential.transports)
-            || credential.transports.length === 0
-            || credential.transports.indexOf('internal') !== -1;
-    }).map(function(credential) {
-        return {
+    return (serverCredentials || []).map(function(credential) {
+        var descriptor = {
             type: credential.type || 'public-key',
-            id: credential.id,
-            transports: ['internal']
+            id: credential.id
         };
+        if (Array.isArray(credential.transports) && credential.transports.length > 0) {
+            descriptor.transports = credential.transports;
+        }
+        return descriptor;
     });
 }
 
@@ -2554,12 +2553,8 @@ async function performBiometricLogin(studentNumber, opts) {
         var inNativeApk = Boolean(window.AndroidDeviceBridge?.isNativeApp?.());
         var androidBridge = getAndroidPasskeyBridge();
         var serverAllow = opts.allowCredentials || [];
-        var filteredBrowserAllow = buildAllowCredentials(serverAllow, false);
-        var filteredAndroidAllow = buildAndroidAllowCredentials(serverAllow);
-
-        if (serverAllow.length > 0 && filteredBrowserAllow.length === 0) {
-            throw createWebAuthnError('NotFoundError', 'No fingerprint passkey was found on this device for your account.');
-        }
+        var browserAllow = buildAllowCredentials(serverAllow, true);
+        var androidAllow = buildAndroidAllowCredentials(serverAllow);
 
         var effectiveTimeout = androidBridge ? promptTimeout : browserTimeout;
         var publicKeyOptions = {
@@ -2567,17 +2562,16 @@ async function performBiometricLogin(studentNumber, opts) {
             userVerification: 'required',
             timeout: effectiveTimeout,
             rpId: opts.rpId,
-            hints: ['client-device'],
-            allowCredentials: androidBridge ? filteredAndroidAllow : serverAllow
+            allowCredentials: androidBridge ? androidAllow : serverAllow
         };
 
         showBiometricProgress(
             'Verify with fingerprint',
             androidBridge
                 ? 'Touch your device fingerprint sensor to verify your identity.'
-                : 'Follow your device fingerprint prompt. If Android shows "Sign in another way", no passkey is saved on this browser yet — tap Cancel and sign in with your password to register in Settings.',
+                : 'Follow your device or passkey prompt to verify your identity.',
             studentNumber,
-            androidBridge ? 'Waiting for fingerprint sensor…' : 'Waiting for device fingerprint prompt…',
+            androidBridge ? 'Waiting for fingerprint sensor…' : 'Waiting for biometric prompt…',
             { icon: 'bi-fingerprint' }
         );
 
@@ -2595,7 +2589,7 @@ async function performBiometricLogin(studentNumber, opts) {
             return navigator.credentials.get({
                 publicKey: Object.assign({}, publicKeyOptions, {
                     challenge: base64ToUint8Array(publicKeyOptions.challenge),
-                    allowCredentials: filteredBrowserAllow
+                    allowCredentials: browserAllow
                 }),
                 signal: attemptObj.signal
             });
@@ -2744,7 +2738,7 @@ function handleBiometricSignInError(err, studentNumber, opts) {
 
         if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
             var fallbackMethods = [];
-            if (hasAccountCredentials && err.name !== 'NotFoundError') {
+            if (hasAccountCredentials) {
                 fallbackMethods.push({
                     id: 'retry_local',
                     name: 'Try fingerprint again',
@@ -2765,15 +2759,11 @@ function handleBiometricSignInError(err, studentNumber, opts) {
             });
 
             var noLocalTitle = err.name === 'NotFoundError'
-                ? 'No fingerprint registered on this device'
-                : (hasAccountCredentials
-                    ? 'No fingerprint verified on this device'
-                    : 'No local fingerprint passkey found');
+                ? 'Passkey not found'
+                : 'Fingerprint verification incomplete';
             var noLocalMsg = err.name === 'NotFoundError'
-                ? (studentNumber
-                    ? 'This device does not have a saved fingerprint for this account. Fingerprints are saved per device, so logging out on your other device does not move it here. Sign in with your password once, then register this device\u2019s fingerprint in Settings.'
-                    : 'No local fingerprint passkey was found on this device. Use Face verification or sign in with your password.')
-                : 'Fingerprint verification was cancelled or did not complete on this device. If you registered on another browser or device, sign in with your password and register this device in Settings.';
+                ? 'No matching passkey was found during verification. Try again, use Face verification, or sign in with your password.'
+                : 'Fingerprint verification was cancelled or timed out. Try again, use Face verification, or sign in with your password.';
             openBiometricModal({
                 title: noLocalTitle,
                 headerIcon: 'bi-fingerprint',

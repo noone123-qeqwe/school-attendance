@@ -672,7 +672,6 @@ public class MainActivity extends AppCompatActivity {
         try {
             GetCredentialRequest credentialRequest = new GetCredentialRequest.Builder()
                     .addCredentialOption(new GetPublicKeyCredentialOption(options.toString()))
-                    .setPreferImmediatelyAvailableCredentials(true)
                     .build();
             CredentialManager.create(this).getCredentialAsync(this, credentialRequest, cancellation,
                     ContextCompat.getMainExecutor(this),
@@ -1353,7 +1352,7 @@ public class MainActivity extends AppCompatActivity {
             long legacy = info.versionCode;
             return legacy;
         } catch (Exception ignored) {
-            return 20928L;
+            return 20929L;
         }
     }
 
