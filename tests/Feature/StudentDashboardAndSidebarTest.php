@@ -526,4 +526,33 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertSee('Mobile Systems')
             ->assertSee('Mobile Campus Advisory');
     }
+
+    public function test_ui_ux_pro_max_wcag_tokens_skeletons_live_regions_and_design_system_are_in_place(): void
+    {
+        $student = $this->createStudent([
+            'email' => 'student.ux@gmail.com',
+            'student_number' => '2310666',
+        ]);
+
+        $response = $this->actingAs($student)->get(route('home'));
+        $response->assertOk()
+            ->assertSee('id="recordsModalLiveStatus"', false)
+            ->assertSee('ds-skeleton-stack', false)
+            ->assertSee('document.hidden', false);
+
+        $tokensCss = file_get_contents(public_path('css/design-tokens.css'));
+        $this->assertNotFalse($tokensCss);
+        $this->assertStringContainsString('scroll-padding-top:', $tokensCss);
+        $this->assertStringContainsString('touch-action: manipulation;', $tokensCss);
+        $this->assertStringContainsString('--ds-dur-exit:', $tokensCss);
+        $this->assertStringContainsString('.ds-error-summary', $tokensCss);
+
+        $modernCss = file_get_contents(public_path('css/system-ui-modern.css'));
+        $this->assertNotFalse($modernCss);
+        $this->assertStringContainsString('text-wrap: balance;', $modernCss);
+        $this->assertStringContainsString('font-variant-numeric: tabular-nums;', $modernCss);
+
+        $this->assertFileExists(base_path('design-system/smart-attendance/MASTER.md'));
+        $this->assertFileExists(base_path('design-system/smart-attendance/pages/student-dashboard.md'));
+    }
 }

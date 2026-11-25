@@ -551,6 +551,7 @@
                         <div id="sdScheduleFilterEmpty" class="sd-filter-empty" hidden>
                             No classes match this filter right now.
                         </div>
+                        <span id="sdScheduleFilterStatus" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></span>
                     @else
                         <div class="sd-empty-box">
                             <span class="sd-empty-icon" aria-hidden="true"><i class="bi bi-calendar2-check"></i></span>
@@ -879,6 +880,7 @@
                     <span id="recordsModalCount" class="badge sd-tabular" style="background:rgba(110,27,44,0.42); color:#fcf9fa; border:1px solid rgba(236,224,228,0.24); font-size:0.78rem; padding:6px 12px; border-radius:10px;">
                         {{ $totalRecords }} Records
                     </span>
+                    <span id="recordsModalLiveStatus" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></span>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
             </div>
@@ -1032,8 +1034,21 @@ function showAttDetail(dateKey, day) {
 
     if (!loadedCalendarMonths[monthKey]) {
         if (titleEl) titleEl.textContent = 'Loading calendar details';
-        if (subtitleEl) subtitleEl.innerHTML = '<span class="day-summary-chip chip-empty"><span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Preparing attendance and event details</span>';
-        if (contentEl) contentEl.innerHTML = '<div class="day-empty-card"><div class="day-empty-icon"><i class="bi bi-calendar2-week"></i></div><div style="font-weight:700;color:#f3ede4;">Loading this day…</div></div>';
+        if (subtitleEl) subtitleEl.innerHTML = '<span class="day-summary-chip chip-empty">Preparing attendance and event details</span>';
+        if (contentEl) {
+            contentEl.innerHTML = `
+                <div class="ds-skeleton-stack" aria-busy="true" aria-label="Loading day summary">
+                    <div class="ds-skeleton-card">
+                        <div class="ds-skeleton-line is-title"></div>
+                        <div class="ds-skeleton-line is-sub"></div>
+                        <div class="ds-skeleton-line is-full"></div>
+                    </div>
+                    <div class="ds-skeleton-card">
+                        <div class="ds-skeleton-line is-title"></div>
+                        <div class="ds-skeleton-line is-sub"></div>
+                    </div>
+                </div>`;
+        }
         openDaySummaryInspector();
         loadDashboardCalendarData(reqYear, reqMonth).then(function() {
             if (loadedCalendarMonths[monthKey] && currentSelectedDateKey === dateKey) {
@@ -1261,9 +1276,10 @@ async function loadAttendanceRecordsForModal() {
     const listEl = document.getElementById('recordsModalList');
     if (listEl) {
         listEl.innerHTML = `
-            <div style="text-align:center;padding:40px 20px;color:#b0979f;">
-                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Loading attendance records…
+            <div class="ds-skeleton-stack" aria-busy="true" aria-label="Loading attendance records">
+                <div class="ds-skeleton-card"><div class="ds-skeleton-line is-title"></div><div class="ds-skeleton-line is-sub"></div><div class="ds-skeleton-line is-full"></div></div>
+                <div class="ds-skeleton-card"><div class="ds-skeleton-line is-title"></div><div class="ds-skeleton-line is-sub"></div><div class="ds-skeleton-line is-full"></div></div>
+                <div class="ds-skeleton-card"><div class="ds-skeleton-line is-title"></div><div class="ds-skeleton-line is-sub"></div></div>
             </div>`;
     }
 
@@ -1404,10 +1420,15 @@ function filterAttendanceRecords() {
 function renderAttendanceRecordsList(items) {
     const listEl = document.getElementById('recordsModalList');
     const countEl = document.getElementById('recordsModalCount');
+    const liveStatusEl = document.getElementById('recordsModalLiveStatus');
     if (!listEl) return;
 
+    const countLabel = `${items.length} ${items.length === 1 ? 'Record' : 'Records'}`;
     if (countEl) {
-        countEl.textContent = `${items.length} ${items.length === 1 ? 'Record' : 'Records'}`;
+        countEl.textContent = countLabel;
+    }
+    if (liveStatusEl) {
+        liveStatusEl.textContent = `Showing ${items.length} matching attendance ${items.length === 1 ? 'record' : 'records'}.`;
     }
 
     if (items.length === 0) {
@@ -1496,6 +1517,21 @@ document.addEventListener('DOMContentLoaded', function() {
     if (rModal && rModal.parentNode !== document.body) document.body.appendChild(rModal);
     const sModal = document.getElementById('subjectBreakdownModal');
     if (sModal && sModal.parentNode !== document.body) document.body.appendChild(sModal);
+
+    // Keyboard arrow stepper when Day Summary Inspector is open (WCAG 2.2 keyboard parity)
+    document.addEventListener('keydown', function(event) {
+        const modal = document.getElementById('daySummaryModal');
+        if (!modal || !modal.classList.contains('show')) return;
+        const tag = (document.activeElement && document.activeElement.tagName) || '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            navigateDayModal(-1);
+        } else if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            navigateDayModal(1);
+        }
+    });
 });
 </script>
 
@@ -1510,6 +1546,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function tick() {
+        if (document.hidden) return;
         const now = new Date();
         let h = now.getHours();
         const m = now.getMinutes();
@@ -1570,6 +1607,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const emptyFilterEl = document.getElementById('sdScheduleFilterEmpty');
                 if (emptyFilterEl) emptyFilterEl.hidden = visibleCount > 0;
+                const statusEl = document.getElementById('sdScheduleFilterStatus');
+                if (statusEl) {
+                    const label = mode === 'all' ? 'total' : mode;
+                    statusEl.textContent = `Showing ${visibleCount} ${label} ${visibleCount === 1 ? 'class' : 'classes'} today.`;
+                }
             });
         });
 
@@ -1586,6 +1628,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) tick();
+    });
     setInterval(tick, 1000);
 })();
 </script>

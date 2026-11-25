@@ -21,8 +21,8 @@
     --sdc-border-subtle: rgba(236, 224, 228, 0.09);
     --sdc-border-strong: rgba(236, 224, 228, 0.34);
     --sdc-text: #fcf9fa;
-    --sdc-text-soft: #dfd1d5;
-    --sdc-muted: #b0979f;
+    --sdc-text-soft: #e3d5d9;
+    --sdc-muted: #baa3ab;
     --sdc-emerald: #34d399;
     --sdc-amber: #fbbf24;
     --sdc-rose: #ff6b7a;
@@ -54,7 +54,7 @@ body.student-mobile-portal {
     }
 
     body.student-portal .sidebar .student-nav-label {
-        color: #9e818a !important;
+        color: #bda4ac !important;
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link {
@@ -2390,5 +2390,64 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
     .sd-mobile-cockpit * {
         animation: none !important;
         transition: none !important;
+    }
+}
+
+/* ── UI UX Pro Max v2.15.0: Tactile Press, Responsive 375px Safety & Command Palette Parity ── */
+.sd-cockpit :is(.sd-cta-primary, .sd-cta-secondary, .sd-dock-pill, .sd-pulse-day, .sd-pill-btn, .sd-filter-btn, .sd-subject-card, .sd-kpi-trigger):active,
+.sd-mobile-cockpit :is(.sd-cta-primary, .sd-cta-secondary, .sd-dock-pill, .sd-pulse-day, .sd-pill-btn, .sd-subject-card, .sd-kpi-trigger):active {
+    transform: scale(0.985);
+}
+
+.sd-cockpit section,
+.sd-mobile-cockpit section {
+    scroll-margin-top: calc(var(--header-height, 72px) + 18px);
+}
+
+/* Match Command Palette (Ctrl+K) to Osmeña Colleges Burgundy & Pearl-Silver on Student Dashboard */
+body.student-portal #cmdPaletteOverlay .cmd-palette {
+    background: linear-gradient(180deg, rgba(36, 11, 19, 0.98) 0%, rgba(16, 5, 8, 0.99) 100%) !important;
+    border-color: rgba(236, 224, 228, 0.22) !important;
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.88), 0 0 0 1px rgba(138, 36, 57, 0.35) !important;
+}
+
+body.student-portal #cmdPaletteOverlay .cmd-palette-search-box {
+    background: rgba(15, 4, 7, 0.62) !important;
+    border-color: rgba(236, 224, 228, 0.22) !important;
+}
+
+body.student-portal #cmdPaletteOverlay .cmd-palette-search-box:focus-within {
+    border-color: rgba(255, 255, 255, 0.65) !important;
+    background: rgba(90, 24, 39, 0.28) !important;
+    box-shadow: 0 0 0 3px rgba(236, 224, 228, 0.14) !important;
+}
+
+body.student-portal #cmdPaletteOverlay .cmd-palette-search-icon {
+    color: #e48fa0 !important;
+}
+
+body.student-portal #cmdPaletteOverlay .cmd-cat-pill.active {
+    background: linear-gradient(135deg, rgba(122, 28, 46, 0.72), rgba(72, 18, 30, 0.82)) !important;
+    border-color: rgba(236, 224, 228, 0.34) !important;
+    color: #ffffff !important;
+}
+
+/* Ultra-narrow phone resilience (<= 375px) */
+@media screen and (max-width: 375px) {
+    .sd-command-actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sd-standing-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sd-pulse-grid {
+        gap: 4px;
+    }
+
+    .sd-pulse-day-short {
+        font-size: 0.6rem;
     }
 }

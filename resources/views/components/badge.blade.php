@@ -3,6 +3,7 @@
     'variant' => null,
     'size' => 'md',     // sm | md | lg
     'pulse' => false,
+    'live' => false,
     'icon' => null,
 ])
 
@@ -51,8 +52,8 @@
 
 <span 
     class="ds-badge ds-badge-{{ $key }} {{ $attributes->get('class') }}" 
-    style="display: inline-flex; align-items: center; border-radius: var(--ds-radius-pill, 9999px); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.5; white-space: nowrap; user-select: none; {{ $activeStyle }}"
-    role="status"
+    style="display: inline-flex; align-items: center; border-radius: var(--ds-radius-pill, 9999px); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.5; white-space: nowrap; user-select: none; font-variant-numeric: tabular-nums; {{ $activeStyle }}"
+    @if($live || $pulse) role="status" aria-live="polite" aria-atomic="true" @endif
 >
     @if($pulse)
         <span style="position: relative; display: inline-flex; width: 6px; height: 6px; margin-right: 2px;" aria-hidden="true">

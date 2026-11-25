@@ -4,7 +4,35 @@
 :root {
     --ui-radius-control: 10px;
     --ui-radius-card: 16px;
-    --ui-motion: 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    --ui-motion: var(--ds-dur-base, 180ms) var(--ds-ease-enter, cubic-bezier(0.16, 1, 0.3, 1));
+    --ui-motion-exit: var(--ds-dur-exit, 145ms) var(--ds-ease-exit, cubic-bezier(0.4, 0, 1, 1));
+}
+
+/* Typography resilience & balanced wrapping (UI UX Pro Max v2.15.0) */
+:where(h1, h2, h3, .header-page-title, .adm-card-title, .ent-section-title, .tch-card-title) {
+    text-wrap: balance;
+}
+
+:where(p, .sd-focus-note, .sd-standing-desc, .sd-ann-copy) {
+    text-wrap: pretty;
+}
+
+:where(
+    .ent-kpi-value,
+    .saas-kpi-value,
+    .stat-value,
+    .summary-chip-value,
+    .adm-table td,
+    .ent-table td,
+    .tch-table td,
+    time
+) {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Prevent horizontal overflow from long IDs/URLs inside flex/grid items */
+:where(.adm-card, .tch-card, .ent-section, .record-card, .info-card) :where(td, dd, p, span) {
+    overflow-wrap: anywhere;
 }
 
 .main-content > .page-enter {

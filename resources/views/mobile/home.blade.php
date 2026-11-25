@@ -518,6 +518,7 @@
         return rem > 0 ? (h + 'h ' + rem + 'm') : (h + 'h');
     }
     function tick() {
+        if (document.hidden) return;
         const now = new Date();
         let h = now.getHours();
         const m = now.getMinutes();
@@ -540,6 +541,9 @@
         }
     }
     document.addEventListener('DOMContentLoaded', tick);
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) tick();
+    });
     setInterval(tick, 1000);
 })();
 </script>

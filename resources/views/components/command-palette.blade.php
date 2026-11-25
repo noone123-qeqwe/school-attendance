@@ -12,18 +12,18 @@
         {{-- Top Search Bar --}}
         <div class="cmd-palette-header">
             <div class="cmd-palette-search-box">
-                <i class="bi bi-search cmd-palette-search-icon"></i>
+                <i class="bi bi-search cmd-palette-search-icon" aria-hidden="true"></i>
                 <input type="text" class="cmd-palette-input" id="cmdPaletteInput"
                        placeholder="Search pages, actions..."
                        autocomplete="off" spellcheck="false"
                        aria-label="Search pages and actions">
                 <button type="button" class="cmd-palette-clear-btn" id="cmdPaletteClearBtn" style="display:none;" title="Clear search" aria-label="Clear search">
-                    <i class="bi bi-x-circle-fill"></i>
+                    <i class="bi bi-x-circle-fill" aria-hidden="true"></i>
                 </button>
             </div>
             <kbd class="cmd-palette-kbd d-none d-md-inline-flex" title="Press Escape to close">ESC</kbd>
             <button type="button" class="cmd-palette-close-btn" id="cmdPaletteCloseBtn" aria-label="Close command palette" title="Close (ESC)">
-                <i class="bi bi-x-lg"></i>
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
             </button>
         </div>
 
@@ -51,7 +51,7 @@
             {{-- Quick Access Chips (shown when no search query) --}}
             <div class="cmd-quick-chips-wrap" id="cmdQuickChipsWrap">
                 <div class="cmd-quick-chips-label">
-                    <i class="bi bi-lightning-fill"></i> Quick Access
+                    <i class="bi bi-lightning-fill" aria-hidden="true"></i> Quick Access
                 </div>
                 <div class="cmd-quick-chips-row" id="cmdQuickChipsRow">
                     <!-- populated dynamically -->
@@ -62,7 +62,7 @@
             <div class="cmd-palette-group" id="cmdPaletteRecent" style="display:none;">
                 <div class="cmd-palette-group-header">
                     <div class="cmd-palette-group-label">
-                        <i class="bi bi-clock-history"></i> Recent
+                        <i class="bi bi-clock-history" aria-hidden="true"></i> Recent
                     </div>
                     <button type="button" class="cmd-palette-clear-recent" id="cmdClearRecentBtn">Clear</button>
                 </div>
@@ -73,16 +73,16 @@
             <div class="cmd-palette-group" id="cmdPaletteMainGroup">
                 <div class="cmd-palette-group-header">
                     <div class="cmd-palette-group-label" id="cmdPaletteGroupLabel">
-                        <i class="bi bi-compass"></i> Navigation
+                        <i class="bi bi-compass" aria-hidden="true"></i> Navigation
                     </div>
-                    <span class="cmd-palette-count-badge" id="cmdPaletteCountBadge"></span>
+                    <span class="cmd-palette-count-badge" id="cmdPaletteCountBadge" role="status" aria-live="polite" aria-atomic="true"></span>
                 </div>
                 <div id="cmdPaletteItems" class="cmd-palette-items-list"></div>
             </div>
 
             {{-- Empty State --}}
             <div class="cmd-palette-empty" id="cmdPaletteEmpty" style="display:none;">
-                <div class="cmd-empty-icon">
+                <div class="cmd-empty-icon" aria-hidden="true">
                     <i class="bi bi-search"></i>
                 </div>
                 <div class="cmd-empty-title">No matching pages or actions found</div>
@@ -98,7 +98,7 @@
                 <span><kbd>ESC</kbd> Close</span>
             </div>
             <div class="cmd-palette-footer-brand">
-                <i class="bi bi-shield-check"></i> Smart Attendance Command
+                <i class="bi bi-shield-check" aria-hidden="true"></i> Smart Attendance Command
             </div>
         </div>
     </div>
