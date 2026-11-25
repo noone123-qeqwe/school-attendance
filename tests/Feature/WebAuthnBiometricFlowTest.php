@@ -369,4 +369,83 @@ class WebAuthnBiometricFlowTest extends TestCase
         $this->assertStringNotContainsString('Set up fingerprint on this device', $loginHtml);
         $this->assertStringContainsString('on this account', $loginHtml);
     }
+
+    public function test_available_methods_is_independent_and_login_options_enforces_database_first_allow_list(): void
+    {
+        $webauthn = app(WebauthnService::class);
+        $origin = 'https://attendance.example';
+        config([
+            'webauthn.rp_id' => 'attendance.example',
+            'webauthn.allowed_origins' => [$origin],
+        ]);
+
+        // 1. Checking available methods never creates a WebAuthn login challenge in session.
+        $this->postJson(route('webauthn.available.methods'))
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure(['available_methods', 'face_login_enabled'])
+            ->assertSessionMissing('webauthn.login');
+
+        // 2. Account without passkeys returns 404 BIOMETRIC_UNAVAILABLE with face_login_enabled metadata.
+        $unenrolled = $this->createStudent('2026-8806', 'no-passkey@example.test');
+        $this->postJson(route('webauthn.login.options'), [
+            'identifier' => $unenrolled->email,
+            'biometric_method' => 'fingerprint',
+        ])->assertNotFound()
+            ->assertJsonPath('code', 'BIOMETRIC_UNAVAILABLE')
+            ->assertJsonStructure(['face_login_enabled', 'available_methods'])
+            ->assertSessionMissing('webauthn.login');
+
+        // 3. Assertion signed by a credential NOT in the database allow list issued for the account is rejected.
+        $studentA = $this->createStudent('2026-8807', 'student-a@example.test');
+        $studentB = $this->createStudent('2026-8808', 'student-b@example.test');
+        $keyA = $this->createEcKeyPair();
+        $keyB = $this->createEcKeyPair();
+        $credIdA = $webauthn->base64UrlEncode(random_bytes(16));
+        $credIdB = $webauthn->base64UrlEncode(random_bytes(16));
+
+        $studentA->webauthnCredentials()->create([
+            'credential_id' => $credIdA,
+            'public_key' => openssl_pkey_get_details($keyA)['key'],
+            'biometric_type' => 'fingerprint',
+            'transports' => ['internal'],
+        ]);
+        $studentB->webauthnCredentials()->create([
+            'credential_id' => $credIdB,
+            'public_key' => openssl_pkey_get_details($keyB)['key'],
+            'biometric_type' => 'fingerprint',
+            'transports' => ['internal'],
+        ]);
+
+        $opts = $this->postJson(route('webauthn.login.options'), [
+            'identifier' => $studentA->email,
+            'biometric_method' => 'fingerprint',
+        ])->assertOk()
+            ->assertJsonPath('allowCredentials.0.id', $credIdA)
+            ->json();
+
+        // Try submitting studentB's valid cryptographic signature against studentA's challenge.
+        $clientData = json_encode([
+            'type' => 'webauthn.get',
+            'challenge' => $opts['challenge'],
+            'origin' => $origin,
+        ], JSON_THROW_ON_ERROR);
+        $authData = hash('sha256', 'attendance.example', true) . chr(0x05) . pack('N', 1);
+        openssl_sign($authData . hash('sha256', $clientData, true), $sigB, $keyB, OPENSSL_ALGO_SHA256);
+
+        $this->postJson(route('webauthn.login'), [
+            'identifier' => $studentA->email,
+            'credential_id' => $credIdB,
+            'assertion' => [
+                'id' => $credIdB,
+                'response' => [
+                    'clientDataJSON' => $webauthn->base64UrlEncode($clientData),
+                    'authenticatorData' => $webauthn->base64UrlEncode($authData),
+                    'signature' => $webauthn->base64UrlEncode($sigB),
+                ],
+            ],
+        ])->assertStatus(401)
+            ->assertJsonPath('code', 'BIOMETRIC_UNAVAILABLE');
+        $this->assertGuest();
+    }
 }

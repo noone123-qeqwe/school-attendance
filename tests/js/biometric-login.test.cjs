@@ -24,11 +24,20 @@ const signedAssertion = {
     }
 };
 
-function createLogin({ native = true, account = identifier, androidBridgeExtra = null, setupReply = [401, { success: false, message: 'Incorrect password' }] } = {}) {
+function createLogin({
+    native = true,
+    account = identifier,
+    androidBridgeExtra = null,
+    setupReply = [401, { success: false, message: 'Incorrect password' }],
+    availableMethodsReply = [200, { success: true, discoverable: true, available_methods: ['fingerprint', 'face'], face_login_enabled: true }],
+    loginOptionsReply = null,
+    faceOptionsReply = [404, { success: false, code: 'FACE_LOGIN_UNAVAILABLE', message: 'No registered face profile was found for those sign-in details.' }]
+} = {}) {
     const bridge = new EventTarget();
     const nativeRequests = [];
     const browserRequests = [];
     const browserCreateRequests = [];
+    const cameraRequests = [];
     const requests = [];
     const redirects = [];
     const password = { value: '' };
@@ -65,7 +74,8 @@ function createLogin({ native = true, account = identifier, androidBridgeExtra =
         getOrCreateDeviceKey: () => 'test-device',
         navigator: {
             mediaDevices: {
-                async getUserMedia() {
+                async getUserMedia(constraints) {
+                    cameraRequests.push(constraints);
                     throw new DOMException('Camera unavailable in unit stub', 'NotFoundError');
                 }
             },
@@ -84,23 +94,29 @@ function createLogin({ native = true, account = identifier, androidBridgeExtra =
             const body = JSON.parse(options.body);
             requests.push({ url, body });
 
+            const defaultLoginOptions = [200, {
+                success: true,
+                challenge: 'DA0',
+                rpId: 'attendance.example.test',
+                hints: ['client-device'],
+                timeout: 45000,
+                face_login_enabled: true,
+                has_account_credentials: Boolean(body.identifier),
+                allowCredentials: body.identifier ? [{ type: 'public-key', id: credentialId, transports: ['internal', 'hybrid'] }] : []
+            }];
+
             const replies = {
-                '/webauthn.login.options': [200, {
-                    success: true,
-                    challenge: 'DA0',
-                    rpId: 'attendance.example.test',
-                    hints: ['client-device'],
-                    timeout: 45000,
-                    face_login_enabled: true,
-                    has_account_credentials: Boolean(body.identifier),
-                    allowCredentials: body.identifier ? [{ type: 'public-key', id: credentialId, transports: ['internal', 'hybrid'] }] : []
-                }],
-                '/webauthn.login': [200, { success: true, redirect: '/dashboard' }],
-                '/webauthn.setup.options': setupReply,
-                '/webauthn.setup.register': [200, { success: true, redirect: '/dashboard' }]
+                '/webauthn.available.methods': () => availableMethodsReply,
+                '/webauthn.login.options': () => (typeof loginOptionsReply === 'function'
+                    ? loginOptionsReply(body)
+                    : (loginOptionsReply || defaultLoginOptions)),
+                '/webauthn.login': () => [200, { success: true, redirect: '/dashboard' }],
+                '/webauthn.face.options': () => faceOptionsReply,
+                '/webauthn.setup.options': () => setupReply,
+                '/webauthn.setup.register': () => [200, { success: true, redirect: '/dashboard' }]
             };
             assert.ok(replies[url], `Unexpected request to ${url}`);
-            const [status, data] = replies[url];
+            const [status, data] = replies[url]();
             return { ok: status < 400, status, text: async () => JSON.stringify(data) };
         }
     });
@@ -109,7 +125,7 @@ function createLogin({ native = true, account = identifier, androidBridgeExtra =
     context.openBiometricModal = config => { modal = config; };
 
     return {
-        context, nativeRequests, browserRequests, browserCreateRequests, requests, redirects, password, modalIdentifier,
+        context, nativeRequests, browserRequests, browserCreateRequests, cameraRequests, requests, redirects, password, modalIdentifier,
         get modal() { return modal; },
         select(id) {
             const method = modal.methods?.find(candidate => candidate.id === id);
@@ -124,10 +140,12 @@ function createLogin({ native = true, account = identifier, androidBridgeExtra =
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
-test('Android local fingerprint sign-in restricts transports to internal and submits assertion', async () => {
+test('Android local fingerprint sign-in checks DB first, restricts transports to internal, and submits assertion', async () => {
     const login = createLogin();
     await login.context.handleBiometricLogin();
-    assert.equal(login.requests[0].body.identifier, identifier);
+    // Chooser loads independent method availability without issuing a WebAuthn challenge yet.
+    assert.equal(login.requests.length, 1);
+    assert.equal(login.requests[0].url, '/webauthn.available.methods');
     assert.deepEqual(
         Array.from(login.modal.methods, method => method.id),
         ['fingerprint', 'face', 'password']
@@ -136,6 +154,10 @@ test('Android local fingerprint sign-in restricts transports to internal and sub
 
     login.select('fingerprint');
     await settle();
+    await settle();
+    const optsReq = login.requests.find(({ url }) => url === '/webauthn.login.options');
+    assert.ok(optsReq, 'Expected database-first login-options lookup');
+    assert.equal(optsReq.body.identifier, identifier);
     assert.equal(login.nativeRequests.length, 1);
     const request = login.nativeRequests[0];
     assert.equal(request.type, 'get');
@@ -165,6 +187,7 @@ test('a local Android miss falls back to face verification or password without c
     const login = createLogin();
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
+    await settle();
     await settle();
     login.reply({ id: login.nativeRequests[0].id, error: 'NotFoundError' });
     await settle();
@@ -235,6 +258,7 @@ test('a late Android assertion after cancellation cannot complete sign-in', asyn
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
     await settle();
+    await settle();
 
     const request = login.nativeRequests[0];
     login.context.closeBiometricModal();
@@ -250,6 +274,8 @@ test('an unsupported Android provider falls back to browser WebAuthn with intern
     const login = createLogin();
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
+    await settle();
+    await settle();
     login.reply({ id: login.nativeRequests[0].id, error: 'NotSupportedError' });
     await settle();
 
@@ -264,6 +290,7 @@ test('without the Android bridge a local fingerprint request strips hybrid trans
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
     await settle();
+    await settle();
 
     assert.equal(login.browserRequests.length, 1);
     assert.equal(login.browserRequests[0].publicKey.hints[0], 'client-device');
@@ -271,14 +298,19 @@ test('without the Android bridge a local fingerprint request strips hybrid trans
     assert.deepEqual(Array.from(login.browserRequests[0].publicKey.allowCredentials[0].transports), ['internal']);
 });
 
-test('selecting Fingerprint verification without an identifier or local passkey prompts for account ID first', async () => {
-    const login = createLogin({ native: false, account: '' });
+test('selecting Fingerprint verification without an identifier always prompts for account ID first (DB-first)', async () => {
+    const login = createLogin({
+        native: true,
+        account: '',
+        androidBridgeExtra: { isNativeApp: () => true, hasLocalPasskey: () => true }
+    });
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
     await settle();
 
     assert.equal(login.modal.title, 'Fingerprint verification');
     assert.equal(login.modal.showIdentifier, true);
+    assert.equal(login.nativeRequests.length, 0);
     assert.equal(login.browserRequests.length, 0);
 });
 
@@ -288,6 +320,8 @@ test('native Android APK does not fall back to WebView WebAuthn on NotSupportedE
     });
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
+    await settle();
+    await settle();
     login.reply({ id: login.nativeRequests[0].id, error: 'NotSupportedError' });
     await settle();
 
@@ -295,7 +329,30 @@ test('native Android APK does not fall back to WebView WebAuthn on NotSupportedE
     assert.equal(login.modal.title, 'Fingerprint verification unavailable');
 });
 
-test('native app with no matching local passkey fails clearly without opening the system prompt', async () => {
+test('fingerprint lookup with no DB credentials never invokes device prompt and offers Face and Password fallbacks', async () => {
+    const login = createLogin({
+        loginOptionsReply: [404, {
+            success: false,
+            code: 'BIOMETRIC_UNAVAILABLE',
+            message: 'No passkey was found for those sign-in details.',
+            face_login_enabled: true
+        }]
+    });
+    await login.context.handleBiometricLogin();
+    login.select('fingerprint');
+    await settle();
+    await settle();
+
+    assert.equal(login.nativeRequests.length, 0);
+    assert.equal(login.browserRequests.length, 0);
+    assert.equal(login.modal.title, 'No fingerprint passkey registered');
+    assert.deepEqual(
+        Array.from(login.modal.methods, method => method.id),
+        ['face', 'password']
+    );
+});
+
+test('native app delegates DB allowCredentials to Android bridge and shows clear message on NotFoundError', async () => {
     const login = createLogin({
         androidBridgeExtra: {
             isNativeApp: () => true,
@@ -307,25 +364,97 @@ test('native app with no matching local passkey fails clearly without opening th
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
     await settle();
+    await settle();
 
-    assert.equal(login.nativeRequests.length, 0);
+    // Native bridge receives the exact DB allowCredentials so Credential Manager can also be checked.
+    assert.equal(login.nativeRequests.length, 1);
+    assert.equal(login.nativeRequests[0].type, 'get');
+    assert.equal(login.nativeRequests[0].publicKey.allowCredentials[0].id, credentialId);
+
+    login.reply({ id: login.nativeRequests[0].id, error: 'NotFoundError' });
+    await settle();
+
     assert.equal(login.modal.title, 'No fingerprint registered on this device');
     assert.ok(login.modal.message.includes('register this device'));
 });
 
-test('native app with a matching local passkey still opens the system prompt', async () => {
+test('retrying fingerprint after cancellation fetches a fresh database challenge instead of reusing stale options', async () => {
+    let optionsCount = 0;
     const login = createLogin({
-        androidBridgeExtra: {
-            isNativeApp: () => true,
-            hasLocalPasskey: () => true,
-            isBiometricAvailable: () => true,
-            matchesLocalPasskey: () => true
+        loginOptionsReply: () => {
+            optionsCount += 1;
+            return [200, {
+                success: true,
+                challenge: 'CHALLENGE_' + optionsCount,
+                rpId: 'attendance.example.test',
+                hints: ['client-device'],
+                timeout: 45000,
+                face_login_enabled: true,
+                has_account_credentials: true,
+                allowCredentials: [{ type: 'public-key', id: credentialId, transports: ['internal'] }]
+            }];
         }
     });
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
     await settle();
+    await settle();
 
-    assert.equal(login.nativeRequests.length, 1);
-    assert.equal(login.nativeRequests[0].type, 'get');
+    assert.equal(login.nativeRequests[0].publicKey.challenge, 'CHALLENGE_1');
+    login.reply({ id: login.nativeRequests[0].id, error: 'NotAllowedError' });
+    await settle();
+
+    login.select('retry_local');
+    await settle();
+    await settle();
+
+    assert.equal(optionsCount, 2);
+    assert.equal(login.nativeRequests[1].publicKey.challenge, 'CHALLENGE_2');
+});
+
+test('Face verification checks database registration FIRST and never opens camera when unregistered', async () => {
+    const login = createLogin({
+        faceOptionsReply: [404, {
+            success: false,
+            code: 'FACE_LOGIN_UNAVAILABLE',
+            message: 'No registered face profile was found for those sign-in details.'
+        }]
+    });
+    await login.context.handleBiometricLogin();
+    login.select('face');
+    await settle();
+    await settle();
+
+    assert.equal(login.requests.some(({ url }) => url === '/webauthn.face.options'), true);
+    assert.equal(login.requests.some(({ url }) => url === '/webauthn.login.options'), false);
+    assert.equal(login.cameraRequests.length, 0);
+    assert.equal(login.modal.title, 'Face verification unavailable');
+    assert.equal(login.modal.primaryBtnText, 'Use fingerprint');
+});
+
+test('Face verification opens camera capture only AFTER database confirms registered face profile', async () => {
+    const login = createLogin({
+        faceOptionsReply: [200, {
+            success: true,
+            face_challenge: {
+                id: 'a'.repeat(64),
+                poses: ['front', 'left', 'right', 'up', 'down'],
+                expires_in: 70
+            }
+        }]
+    });
+    // Provide faceGuidanceUrl dataset on modal element for this test
+    login.context.document.getElementById = id => {
+        if (id === 'biometricModal') return { dataset: { faceGuidanceUrl: '/js/guidance.js' } };
+        if (id === 'bioFaceCaptureCanvas') return { width: 0 };
+        return null;
+    };
+
+    await login.context.handleBiometricLogin();
+    login.select('face');
+    await settle();
+    await settle();
+
+    assert.equal(login.requests.some(({ url }) => url === '/webauthn.face.options'), true);
+    assert.equal(login.cameraRequests.length, 1);
 });

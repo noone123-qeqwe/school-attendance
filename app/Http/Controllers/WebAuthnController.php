@@ -169,6 +169,10 @@ class WebAuthnController extends Controller
         $request->session()->put('webauthn.login', [
             'challenge' => $options['challenge'],
             'user_id' => $user?->id,
+            'allow_credential_ids' => array_values(array_map(
+                static fn (array $cred): string => (string) ($cred['id'] ?? ''),
+                $options['allowCredentials']
+            )),
             'expires_at' => now()->timestamp + self::LOGIN_CHALLENGE_LIFETIME_SECONDS,
         ]);
 
@@ -178,7 +182,7 @@ class WebAuthnController extends Controller
             'has_account_credentials' => $user !== null,
             'available_methods' => $this->availableMethodNames(),
             'face_login_enabled' => $this->faceLoginReady(),
-        ]);
+        ])->header('Cache-Control', 'private, no-store');
     }
 
     public function availableMethods()
@@ -188,7 +192,7 @@ class WebAuthnController extends Controller
             'discoverable' => true,
             'available_methods' => $this->availableMethodNames(),
             'face_login_enabled' => $this->faceLoginReady(),
-        ]);
+        ])->header('Cache-Control', 'private, no-store');
     }
 
 
@@ -354,7 +358,9 @@ class WebAuthnController extends Controller
             'success' => false,
             'code' => 'BIOMETRIC_UNAVAILABLE',
             'message' => 'No passkey was found for those sign-in details. Check your account details or use your password.',
-        ], 404);
+            'available_methods' => $this->availableMethodNames(),
+            'face_login_enabled' => $this->faceLoginReady(),
+        ], 404)->header('Cache-Control', 'private, no-store');
     }
 
     public function login(Request $request, WebauthnService $webauthn)
@@ -408,6 +414,21 @@ class WebAuthnController extends Controller
             ], 401);
         }
 
+        $allowedFromCeremony = is_array($ceremony['allow_credential_ids'] ?? null)
+            ? array_values(array_filter($ceremony['allow_credential_ids'], 'is_string'))
+            : [];
+        if ($allowedFromCeremony !== [] && !in_array($normalizedCredentialId, $allowedFromCeremony, true)) {
+            \Illuminate\Support\Facades\Log::warning('WebAuthn assertion credential not in database allow list', [
+                'expected_user_id' => $expectedUserId,
+                'credential_fingerprint' => hash('sha256', $credentialId),
+            ]);
+            return response()->json([
+                'success' => false,
+                'code' => 'BIOMETRIC_UNAVAILABLE',
+                'message' => 'Biometric sign-in could not be completed. Check your sign-in details or use your password.',
+            ], 401);
+        }
+
         // 2. Locate matching credential (prefer expected user's credential if targeted)
         $user = null;
         $dbCredential = null;
@@ -416,6 +437,7 @@ class WebAuthnController extends Controller
         if ($expectedUserId !== null) {
             $dbCredential = \App\Models\WebauthnCredential::with('user')
                 ->where('user_id', $expectedUserId)
+                ->where('public_key', 'like', '%BEGIN PUBLIC KEY%')
                 ->whereIn('credential_id', $credentialIds)
                 ->first();
             $user = $dbCredential?->user;

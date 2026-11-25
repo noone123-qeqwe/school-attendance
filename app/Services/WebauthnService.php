@@ -130,6 +130,8 @@ class WebauthnService
         if ($user) {
             $allowCredentials = $user->webauthnCredentials()
                 ->where('public_key', 'like', '%BEGIN PUBLIC KEY%')
+                ->orderByDesc('last_used_at')
+                ->orderByDesc('created_at')
                 ->get()
                 ->map(fn ($credential) => array_filter([
                     'type' => 'public-key',

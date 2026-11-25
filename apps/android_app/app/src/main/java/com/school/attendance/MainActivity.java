@@ -711,7 +711,13 @@ public class MainActivity extends AppCompatActivity {
                                 name = "NotFoundError";
                             } else if (error instanceof GetCredentialUnsupportedException
                                     || error instanceof GetCredentialProviderConfigurationException) {
-                                name = "NotSupportedError";
+                                // When the database returned specific credential IDs for this account
+                                // and this device has a working fingerprint sensor but neither local
+                                // KeyStore nor Credential Manager holds a matching passkey, report
+                                // NotFoundError so the user gets clear per-device registration guidance.
+                                name = (!emptyAllowList && canUseBiometricPrompt())
+                                        ? "NotFoundError"
+                                        : "NotSupportedError";
                             }
                             finishPasskeyRequest(cancellation, reply, id, null, name);
                         }
@@ -721,6 +727,8 @@ public class MainActivity extends AppCompatActivity {
             JSONObject fallbackEntry = emptyAllowList ? findLatestKeystoreEntry(rpHost) : null;
             if (fallbackEntry != null && canUseBiometricPrompt()) {
                 getWithAndroidKeystoreBiometric(cancellation, reply, id, options, rpHost, fallbackEntry);
+            } else if (!emptyAllowList && canUseBiometricPrompt()) {
+                finishPasskeyRequest(cancellation, reply, id, null, "NotFoundError");
             } else {
                 finishPasskeyRequest(cancellation, reply, id, null,
                         ex instanceof UnsupportedOperationException ? "NotSupportedError" : "UnknownError");
@@ -1345,7 +1353,7 @@ public class MainActivity extends AppCompatActivity {
             long legacy = info.versionCode;
             return legacy;
         } catch (Exception ignored) {
-            return 20927L;
+            return 20928L;
         }
     }
 
@@ -1724,57 +1732,6 @@ public class MainActivity extends AppCompatActivity {
         @android.webkit.JavascriptInterface
         public void checkForAppUpdate() {
             checkForApkUpdate(true);
-        }
-
-        @android.webkit.JavascriptInterface
-        public void authenticateBiometric(final String title, final String subtitle, final String successJsCallback, final String errorJsCallback) {
-            runOnUiThread(() -> {
-                try {
-                    Executor executor = ContextCompat.getMainExecutor(MainActivity.this);
-                    BiometricPrompt bp = new BiometricPrompt(MainActivity.this, executor, new BiometricPrompt.AuthenticationCallback() {
-                        @Override
-                        public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
-                            super.onAuthenticationSucceeded(result);
-                            if (webView != null && successJsCallback != null && !successJsCallback.trim().isEmpty()) {
-                                webView.evaluateJavascript("if (typeof " + successJsCallback + " === 'function') { " + successJsCallback + "(); }", null);
-                            }
-                        }
-
-                        @Override
-                        public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
-                            super.onAuthenticationError(errorCode, errString);
-                            boolean isUserCancelled = (errorCode == BiometricPrompt.ERROR_USER_CANCELED || errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON);
-                            if (webView != null && errorJsCallback != null && !errorJsCallback.trim().isEmpty()) {
-                                String safeErr = errString.toString().replace("'", "\\'");
-                                webView.evaluateJavascript("if (typeof " + errorJsCallback + " === 'function') { " + errorJsCallback + "('" + safeErr + "', " + errorCode + ", " + isUserCancelled + "); }", null);
-                            }
-                        }
-
-                        @Override
-                        public void onAuthenticationFailed() {
-                            super.onAuthenticationFailed();
-                            // Transient recognition failure: BiometricPrompt keeps listening on sensor
-                        }
-                    });
-
-                    String promptTitle = (title != null && !title.trim().isEmpty()) ? title : "Sign In with Fingerprint";
-                    String promptSub = (subtitle != null && !subtitle.trim().isEmpty()) ? subtitle : "Touch fingerprint sensor or verify identity to continue";
-
-                    BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
-                            .setTitle(promptTitle)
-                            .setSubtitle(promptSub)
-                            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG | BiometricManager.Authenticators.BIOMETRIC_WEAK)
-                            .setNegativeButtonText("Cancel")
-                            .build();
-
-                    bp.authenticate(promptInfo);
-                } catch (Exception e) {
-                    if (webView != null && errorJsCallback != null && !errorJsCallback.trim().isEmpty()) {
-                        String safeErr = (e.getMessage() != null ? e.getMessage() : "Biometric error").replace("'", "\\'");
-                        webView.evaluateJavascript("if (typeof " + errorJsCallback + " === 'function') { " + errorJsCallback + "('" + safeErr + "', -1, false); }", null);
-                    }
-                }
-            });
         }
     }
 }
