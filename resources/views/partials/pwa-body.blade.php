@@ -1517,8 +1517,17 @@
     }
 
     // ── 3. Standalone State & Universal Install Display Logic ──
+    function isNativeAndroidApp() {
+        return Boolean(
+            (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.isNativeApp === 'function' && window.AndroidDeviceBridge.isNativeApp()) ||
+            window.AttendancePasskey ||
+            /SmartAttendanceApp/i.test(navigator.userAgent || '')
+        );
+    }
+
     function checkIsStandalone() {
-        return window.matchMedia('(display-mode: standalone)').matches ||
+        return isNativeAndroidApp() ||
+               window.matchMedia('(display-mode: standalone)').matches ||
                window.navigator.standalone === true ||
                document.referrer.includes('android-app://') ||
                window.matchMedia('(display-mode: fullscreen)').matches ||
@@ -1527,17 +1536,19 @@
 
     async function checkIsAppInstalled() {
         if (checkIsStandalone()) return true;
-        if (deferredPrompt) {
-            localStorage.removeItem('pwa_app_installed');
-            return false;
-        }
+        if (localStorage.getItem('pwa_apk_downloaded') === 'true') return true;
         if ('getInstalledRelatedApps' in navigator) {
             try {
                 const related = await navigator.getInstalledRelatedApps();
                 if (related && related.length > 0) {
+                    localStorage.setItem('pwa_app_installed', 'true');
                     return true;
                 }
             } catch(e) {}
+        }
+        if (deferredPrompt) {
+            localStorage.removeItem('pwa_app_installed');
+            return false;
         }
         return false;
     }
@@ -1548,12 +1559,14 @@
         return;
         @endauth
         if (checkIsStandalone()) return;
+        if (localStorage.getItem('pwa_app_installed') === 'true' || localStorage.getItem('pwa_apk_downloaded') === 'true') return;
         if (sessionStorage.getItem('pwa_banner_dismissed') === 'true') return;
         const dismissedUntil = localStorage.getItem('pwa_banner_dismissed_until');
         if (dismissedUntil && Date.now() < parseInt(dismissedUntil, 10)) return;
 
         setTimeout(() => {
             if (checkIsStandalone()) return;
+            if (localStorage.getItem('pwa_app_installed') === 'true' || localStorage.getItem('pwa_apk_downloaded') === 'true') return;
             const banner = document.getElementById('pwaInstallBanner');
             if (banner && banner.style.display !== 'flex') {
                 banner.style.display = 'flex';
@@ -1581,12 +1594,23 @@
         if (downloadRow) downloadRow.style.display = 'none';
         @else
         const standalone = checkIsStandalone();
-        const installedFlag = localStorage.getItem('pwa_app_installed') === 'true';
+        const installedFlag = localStorage.getItem('pwa_app_installed') === 'true' || localStorage.getItem('pwa_apk_downloaded') === 'true';
         if (standalone || installedFlag) {
             triggers.forEach(el => { el.style.setProperty('display', 'none', 'important'); el.style.visibility = 'hidden'; });
             if (banner) banner.style.display = 'none';
             if (downloadRow) downloadRow.style.display = 'none';
             return;
+        }
+
+        if ('getInstalledRelatedApps' in navigator) {
+            navigator.getInstalledRelatedApps().then(related => {
+                if (related && related.length > 0) {
+                    localStorage.setItem('pwa_app_installed', 'true');
+                    triggers.forEach(el => { el.style.setProperty('display', 'none', 'important'); el.style.visibility = 'hidden'; });
+                    if (banner) banner.style.display = 'none';
+                    if (downloadRow) downloadRow.style.display = 'none';
+                }
+            }).catch(() => {});
         }
 
         triggers.forEach(el => {
@@ -1611,7 +1635,9 @@
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        localStorage.removeItem('pwa_app_installed');
+        if (!checkIsStandalone() && localStorage.getItem('pwa_apk_downloaded') !== 'true') {
+            localStorage.removeItem('pwa_app_installed');
+        }
         console.log('[PWA] Native install prompt captured and ready.');
         syncPwaInstallVisibility();
     });
@@ -1697,6 +1723,14 @@
                 if (alertEl) {
                     alertEl.style.display = 'flex';
                 }
+
+                // Mark APK as downloaded so the floating install banner stops appearing.
+                try {
+                    localStorage.setItem('pwa_apk_downloaded', 'true');
+                    localStorage.setItem('pwa_app_installed', 'true');
+                } catch (e) {}
+                hideInstallBanner(30);
+                syncPwaInstallVisibility();
 
                 if (window.triggerHaptic) {
                     window.triggerHaptic('success');
@@ -2250,6 +2284,18 @@
         if (closeBannerTrigger) {
             e.preventDefault();
             hideInstallBanner(3);
+            return;
+        }
+
+        // Direct APK download links (login page or floating banner)
+        const apkDirectLink = target.closest('a[download="SmartAttendance.apk"], #pwaBannerApkBtn');
+        if (apkDirectLink) {
+            try {
+                localStorage.setItem('pwa_apk_downloaded', 'true');
+                localStorage.setItem('pwa_app_installed', 'true');
+            } catch (err) {}
+            hideInstallBanner(30);
+            syncPwaInstallVisibility();
             return;
         }
 

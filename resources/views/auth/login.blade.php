@@ -583,14 +583,20 @@ if (document.readyState === 'loading') {
 // ── PWA INSTALL BUTTON CONTROLLER (LOGIN PAGE) ──────────────────────────────
 (function() {
     function checkStandalone() {
-        return window.matchMedia('(display-mode: standalone)').matches ||
+        return Boolean(
+            (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.isNativeApp === 'function' && window.AndroidDeviceBridge.isNativeApp()) ||
+            window.AttendancePasskey ||
+            /SmartAttendanceApp/i.test(navigator.userAgent || '')
+        ) ||
+               window.matchMedia('(display-mode: standalone)').matches ||
                window.navigator.standalone === true ||
                document.referrer.includes('android-app://') ||
                window.matchMedia('(display-mode: fullscreen)').matches;
     }
 
     function checkInstalledFlag() {
-        return localStorage.getItem('pwa_app_installed') === 'true';
+        return localStorage.getItem('pwa_app_installed') === 'true' ||
+               localStorage.getItem('pwa_apk_downloaded') === 'true';
     }
 
     async function checkRelatedApps() {

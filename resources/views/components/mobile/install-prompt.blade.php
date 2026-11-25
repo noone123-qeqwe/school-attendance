@@ -171,16 +171,28 @@
         window.deferredPrompt = null;
     }
 
+    function isInstalledOrNativeApp() {
+        return Boolean(
+            (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.isNativeApp === 'function' && window.AndroidDeviceBridge.isNativeApp()) ||
+            window.AttendancePasskey ||
+            /SmartAttendanceApp/i.test(navigator.userAgent || '') ||
+            localStorage.getItem('pwa_app_installed') === 'true' ||
+            localStorage.getItem('pwa_apk_downloaded') === 'true'
+        ) ||
+            window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone ||
+            document.referrer.includes('android-app://');
+    }
+
     window.addEventListener('load', function() {
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                            window.navigator.standalone ||
-                            document.referrer.includes('android-app://');
+        const isStandalone = isInstalledOrNativeApp();
 
         const dismissed = localStorage.getItem('installPromptDismissed');
         const dismissTime = localStorage.getItem('installPromptDismissTime');
 
         if (!isStandalone && (!dismissed || (Date.now() - dismissTime) > 7 * 24 * 60 * 60 * 1000)) {
             setTimeout(() => {
+                if (isInstalledOrNativeApp()) return;
                 const promptEl = document.getElementById('installPrompt');
                 if (promptEl) promptEl.style.display = 'block';
             }, 3000);
