@@ -1007,9 +1007,21 @@ function bufferToBase64Url(buffer) {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-async function requestFingerprintAssertion(options, signal) {
-    if (!window.PublicKeyCredential) {
-        throw new Error('A fingerprint or device biometric is not available in this browser.');
+async function requestFingerprintAssertion(options, signal, timeout = 20000) {
+    if (window.DevicePasskeys?.hasAndroidPasskeyBridge?.()) {
+        return window.DevicePasskeys.requestAndroidPasskey('get', {
+            challenge: options.challenge,
+            rpId: options.rpId,
+            userVerification: 'required',
+            timeout,
+            hints: ['client-device'],
+            allowCredentials: (options.allowCredentials || []).map(credential => ({
+                type: 'public-key', id: credential.id, transports: ['internal']
+            }))
+        }, signal);
+    }
+    if (!window.PublicKeyCredential || typeof navigator.credentials?.get !== 'function') {
+        throw new Error('Device verification is unavailable in this browser.');
     }
 
     var hostname = window.location.hostname;
@@ -1031,32 +1043,9 @@ async function requestFingerprintAssertion(options, signal) {
         }),
         hints: Array.isArray(options.hints) && options.hints.length ? options.hints : ['client-device'],
         userVerification: 'required',
-        timeout: 20000
+        timeout
     };
     if (effectiveRpId) publicKey.rpId = effectiveRpId;
-
-    if (window.DevicePasskeys?.hasAndroidPasskeyBridge?.()) {
-        try {
-            var androidGetOptions = {
-                challenge: options.challenge,
-                rpId: effectiveRpId || options.rpId,
-                userVerification: 'required',
-                timeout: 20000,
-                hints: ['client-device'],
-                allowCredentials: (options.allowCredentials || []).map(function(credential) {
-                    return {
-                        type: credential.type || 'public-key',
-                        id: credential.id,
-                        transports: ['internal']
-                    };
-                })
-            };
-            var bridged = await window.DevicePasskeys.requestAndroidPasskey('get', androidGetOptions, signal);
-            if (bridged) return bridged;
-        } catch (bridgeErr) {
-            if (bridgeErr.name !== 'NotSupportedError' || typeof navigator.credentials?.get !== 'function') throw bridgeErr;
-        }
-    }
 
     var assertion = await navigator.credentials.get({publicKey: publicKey, signal: signal});
     return {
@@ -1497,12 +1486,6 @@ function doFingerprint() {
     document.getElementById('vSub').textContent = 'Complete your device biometric or screen lock prompt...';
     hideMsg();
 
-    if (!window.PublicKeyCredential) {
-        fingerprintInProgress = false;
-        showFpError('Biometrics not supported on this device. Please use a compatible phone or browser.');
-        return;
-    }
-
     var devKey = (typeof window.getOrCreateDeviceKey === 'function')
         ? window.getOrCreateDeviceKey()
         : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
@@ -1538,95 +1521,47 @@ function doFingerprint() {
             return;
         }
 
-        var challenge;
-        var allowCredentials;
-        try {
-            challenge = base64ToUint8Array(opts.challenge);
-            allowCredentials = [];
-            for (var i = 0; i < opts.allowCredentials.length; i++) {
-                var cred = opts.allowCredentials[i];
-                allowCredentials.push({ type: cred.type, id: base64ToUint8Array(cred.id), transports: ['internal'] });
+        var scanButton = document.getElementById('retryFpBtn');
+        var requestScan = async function() {
+            fingerprintInProgress = true;
+            scanButton.style.display = 'none';
+            try {
+                var credentialData = await requestFingerprintAssertion(opts, undefined, 60000);
+                setStep(4);
+                setIcon('#f0fdf4', 'bi bi-fingerprint', '#16a34a');
+                document.getElementById('vTitle').textContent = 'Confirming attendance';
+                document.getElementById('vSub').textContent = 'Checking your device verification…';
+                document.getElementById('credentialInput').value = JSON.stringify(credentialData);
+                await submitAttendance(credentialData);
+            } catch (err) {
+                if (['NotAllowedError', 'InvalidStateError', 'NotFoundError'].includes(err.name)) {
+                    showFpError('The fingerprint check was cancelled or no matching credential was found. <a href="{{ route("settings.biometrics.fingerprint") }}">Register this device</a> to use it for attendance.');
+                } else {
+                    showFpError('Device verification could not finish. Try again.');
+                }
             }
-        } catch(e) { 
-            fingerprintInProgress = false;
-            showFpError('Failed to decode credentials: ' + e.message); 
-            return; 
-        }
-
-        var hostname = window.location.hostname;
-        var isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
-        var sRp = (opts.rpId || '').toLowerCase().trim();
-        var h = hostname.toLowerCase().trim();
-        var effectiveRpId = isIp ? undefined : ((sRp && (h === sRp || h.endsWith('.' + sRp))) ? sRp : hostname);
-
-        var pubKey = {
-            challenge: challenge,
-            allowCredentials: allowCredentials,
-            userVerification: 'required',
-            hints: ['client-device'],
-            timeout: 60000
         };
-        if (effectiveRpId) {
-            pubKey.rpId = effectiveRpId;
-        }
-
-        var getPromise = (window.DevicePasskeys?.hasAndroidPasskeyBridge?.())
-            ? window.DevicePasskeys.requestAndroidPasskey('get', {
-                challenge: opts.challenge,
-                rpId: effectiveRpId || opts.rpId,
-                userVerification: 'required',
-                timeout: 60000,
-                hints: ['client-device'],
-                allowCredentials: (opts.allowCredentials || []).map(function(c) {
-                    return { type: c.type || 'public-key', id: c.id, transports: ['internal'] };
-                })
-            }).catch(function(err) {
-                if (err && err.name === 'NotSupportedError' && typeof navigator.credentials?.get === 'function') {
-                    return navigator.credentials.get({ publicKey: pubKey });
-                }
-                throw err;
-            })
-            : navigator.credentials.get({ publicKey: pubKey });
-
-        getPromise.then(function(assertion) {
-            setStep(4);
-            setIcon('#f0fdf4', 'bi bi-fingerprint', '#16a34a');
-            document.getElementById('vTitle').textContent = 'Identity Verified';
-            document.getElementById('vSub').textContent = 'Clocking you in now...';
-            showMsg('ok', '<i class="bi bi-check-circle me-1"></i> Fingerprint confirmed.');
-
-            var isRawB64 = typeof assertion.rawId === 'string';
-            var credentialId = isRawB64 ? assertion.rawId : bufferToBase64Url(assertion.rawId);
-
-            var credentialData = {
-                id: credentialId,
-                type: assertion.type || 'public-key',
-                rawId: credentialId,
-                response: {
-                    clientDataJSON: isRawB64 ? assertion.response.clientDataJSON : bufferToBase64Url(assertion.response.clientDataJSON),
-                    authenticatorData: isRawB64 ? assertion.response.authenticatorData : bufferToBase64Url(assertion.response.authenticatorData),
-                    signature: isRawB64 ? assertion.response.signature : bufferToBase64Url(assertion.response.signature),
-                    userHandle: assertion.response.userHandle
-                        ? (isRawB64 ? assertion.response.userHandle : bufferToBase64Url(assertion.response.userHandle))
-                        : null
-                }
-            };
-
-            document.getElementById('credentialInput').value = JSON.stringify(credentialData);
-            submitAttendance(credentialData);
-        }).catch(function(err) {
+        if (!window.DevicePasskeys?.hasAndroidPasskeyBridge?.() && navigator.userActivation?.isActive === false) {
+            var readyAt = performance.now();
             fingerprintInProgress = false;
-            if (err.name === 'NotAllowedError' || err.name === 'InvalidStateError') {
-                showFpError('Fingerprint was cancelled or not found on this browser. If you switched browsers, <a href="{{ route("settings") }}#tab-fingerprint" style="color:#2563eb;font-weight:700;text-decoration:underline;">register this browser in Settings</a>.');
-            } else {
-                showFpError((err.name || 'Error') + ': ' + (err.message || 'Verification failed.'));
-            }
-        });
+            document.getElementById('vTitle').textContent = 'Ready to scan';
+            document.getElementById('vSub').textContent = 'Tap Scan fingerprint to open your device prompt.';
+            scanButton.textContent = 'Scan fingerprint';
+            scanButton.style.display = 'flex';
+            scanButton.onclick = function() {
+                if (performance.now() - readyAt >= 45000) doFingerprint();
+                else requestScan();
+            };
+        } else {
+            requestScan();
+        }
     };
     xhr.onerror = function() { 
         fingerprintInProgress = false;
         showFpError('Network error. Please try again.'); 
     };
+    xhr.timeout = 15000;
+    xhr.ontimeout = xhr.onerror;
     xhr.send(JSON.stringify({
         token: QR_TOKEN,
         device_key: devKey,

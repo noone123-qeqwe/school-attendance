@@ -140,6 +140,18 @@ function createLogin({
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
+test('browser verification waits for a fresh tap when account lookup consumes activation', async () => {
+    const login = createLogin({ native: false });
+    login.context.navigator.userActivation = { isActive: false };
+    await login.context.startFingerprintWithIdentifier(identifier);
+    assert.equal(login.browserRequests.length, 0);
+    assert.equal(login.modal.primaryBtnText, 'Scan fingerprint');
+    login.context.navigator.userActivation.isActive = true;
+    login.modal.onPrimaryClick();
+    await settle();
+    assert.equal(login.browserRequests.length, 1);
+});
+
 test('Android fingerprint sign-in checks DB first, targets internal platform authenticator, and submits assertion', async () => {
     const login = createLogin();
     await login.context.handleBiometricLogin();
@@ -215,8 +227,7 @@ test('Android setup sends create message with residentKey required and completes
     await settle();
     await settle();
     assert.equal(login.modal.title, 'Confirm on your device');
-    login.modal.onPrimaryClick();
-    await settle();
+    assert.equal(login.browserCreateRequests.length, 0);
 
     const createReq = login.nativeRequests.find(req => req.type === 'create');
     assert.ok(createReq, 'Expected Android bridge create request');

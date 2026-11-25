@@ -13,6 +13,12 @@ async function refreshDevicePasskeySupport() {
         status.textContent = available
             ? ''
             : (window.DevicePasskeys?.message(result, 'create') || 'Device passkeys are unavailable in this browser.');
+        if (result.reason === 'update-app') {
+            const update = document.createElement('a');
+            update.href = '{{ route("pwa.download.apk") }}';
+            update.textContent = 'Download the Android update';
+            status.append(' ', update);
+        }
     }
     return available;
 }
@@ -363,33 +369,39 @@ async function beginDevicePasskeyRegistration() {
         };
 
         statusTitle.textContent = 'Confirm on your device';
-        statusText.textContent = 'Continue to open your device’s passkey prompt.';
-        confirmButton.hidden = false;
-        const credential = await window.DevicePasskeys.confirmOnClick(confirmButton, async () => {
-            confirmButton.hidden = true;
-            statusText.textContent = 'Follow your device’s biometric or screen lock prompt.';
-            focusBiometricHeading(statusTitle);
-            if (getAndroidDevicePasskeyBridge() && typeof window.DevicePasskeys?.requestAndroidPasskey === 'function') {
-                return window.DevicePasskeys.requestAndroidPasskey('create', androidCreateOptions, controller.signal);
-            }
-            try {
-                return await navigator.credentials.create({ publicKey, signal: controller.signal });
-            } catch (err) {
-                if (err && (err.name === 'NotSupportedError' || err.name === 'TypeError' || err.name === 'ConstraintError')) {
-                    const fallbackPublicKey = {
-                        ...publicKey,
-                        authenticatorSelection: {
-                            authenticatorAttachment: 'platform',
-                            userVerification: 'required',
-                            residentKey: 'preferred',
-                            requireResidentKey: false
-                        }
-                    };
-                    return await navigator.credentials.create({ publicKey: fallbackPublicKey, signal: controller.signal });
+        let credential;
+        if (getAndroidDevicePasskeyBridge()) {
+            statusText.textContent = 'Touch your fingerprint sensor to register this device.';
+            credential = await window.DevicePasskeys.requestAndroidPasskey('create', androidCreateOptions, controller.signal);
+        } else {
+            statusText.textContent = 'Continue to open your device’s passkey prompt.';
+            confirmButton.hidden = false;
+            const requestBrowserCredential = async () => {
+                confirmButton.hidden = true;
+                statusText.textContent = 'Follow your device’s biometric or screen lock prompt.';
+                focusBiometricHeading(statusTitle);
+                try {
+                    return await navigator.credentials.create({ publicKey, signal: controller.signal });
+                } catch (err) {
+                    if (err && (err.name === 'NotSupportedError' || err.name === 'TypeError' || err.name === 'ConstraintError')) {
+                        const fallbackPublicKey = {
+                            ...publicKey,
+                            authenticatorSelection: {
+                                authenticatorAttachment: 'platform',
+                                userVerification: 'required',
+                                residentKey: 'preferred',
+                                requireResidentKey: false
+                            }
+                        };
+                        return await navigator.credentials.create({ publicKey: fallbackPublicKey, signal: controller.signal });
+                    }
+                    throw err;
                 }
-                throw err;
-            }
-        }, controller.signal);
+            };
+            credential = navigator.userActivation?.isActive
+                ? await requestBrowserCredential()
+                : await window.DevicePasskeys.confirmOnClick(confirmButton, requestBrowserCredential, controller.signal);
+        }
         if (controller.signal.aborted) return;
         if (!credential) throw new Error('The passkey request ended before registration finished.');
 

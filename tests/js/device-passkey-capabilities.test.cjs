@@ -6,8 +6,9 @@ const vm = require('node:vm');
 
 const script = fs.readFileSync(path.resolve(__dirname, '../../public/js/device-passkey-capabilities.js'), 'utf8');
 
-function loadPasskeys(PublicKeyCredential, { secure = true, credentials = { get() {}, create() {} } } = {}) {
-    const window = { isSecureContext: secure, PublicKeyCredential };
+function loadPasskeys(PublicKeyCredential, { secure = true, credentials = { get() {}, create() {} }, native } = {}) {
+    const window = { isSecureContext: secure, PublicKeyCredential, AndroidDeviceBridge: native };
+    if (native) window.AttendancePasskey = { postMessage() {}, addEventListener() {} };
     vm.runInNewContext(script, { window, navigator: { credentials } });
     return window.DevicePasskeys;
 }
@@ -62,11 +63,42 @@ test('checks client capabilities when the platform probe is missing or rejects',
     }
 });
 
-test('treats missing capability information as unknown', async () => {
+test('an inconclusive browser probe permits registration through the platform creation request', async () => {
     const passkeys = loadPasskeys({ getClientCapabilities: async () => { throw new Error(); } });
-    for (const operation of ['get', 'create']) {
-        assert.deepEqual({ ...await passkeys.check(operation) }, {
-            available: false, platformAvailable: null, reason: 'unknown'
-        });
-    }
+    assert.deepEqual({ ...await passkeys.check('get') }, {
+        available: false, platformAvailable: null, reason: 'unknown'
+    });
+    assert.equal((await passkeys.check('create')).available, true);
+});
+
+test('Android registration uses the native sensor independently of browser WebAuthn', async () => {
+    const native = { isNativeApp: () => true, isBiometricAvailable: () => true };
+    const passkeys = loadPasskeys(null, { native, credentials: {} });
+    assert.equal((await passkeys.check('create')).reason, 'update-app');
+    native.hasLocalPasskey = () => false;
+    assert.equal((await passkeys.check('create')).available, true);
+    native.isBiometricAvailable = () => false;
+    assert.equal((await passkeys.check('create')).reason, 'sensor-unavailable');
+});
+
+test('QR attendance requests a native signature when the WebView has no browser WebAuthn API', async () => {
+    const view = fs.readFileSync(path.resolve(__dirname, '../../resources/views/qr/verify.blade.php'), 'utf8');
+    const handler = view.slice(view.indexOf('async function requestFingerprintAssertion'), view.indexOf('async function submitAttendance'));
+    const assertion = { rawId: 'AQID', type: 'public-key', response: { signature: 'fixture' } };
+    const calls = [];
+    const devicePasskeys = {
+        hasAndroidPasskeyBridge: () => true,
+        requestAndroidPasskey(...args) { calls.push(args); return Promise.resolve(assertion); }
+    };
+    const request = vm.runInNewContext(handler + '\nrequestFingerprintAssertion', { window: { DevicePasskeys: devicePasskeys } });
+    const options = { challenge: 'AQAB', rpId: 'attendance.example', allowCredentials: [{ id: 'AQID' }] };
+    const signal = new AbortController().signal;
+    assert.equal(await request(options, signal), assertion);
+    const [type, nativeOptions, nativeSignal] = calls[0];
+    assert.equal(type, 'get');
+    assert.equal(nativeSignal, signal);
+    assert.equal(nativeOptions.rpId, options.rpId);
+    assert.equal(nativeOptions.challenge, options.challenge);
+    assert.equal(nativeOptions.allowCredentials[0].id, options.allowCredentials[0].id);
+    assert.equal(nativeOptions.userVerification, 'required');
 });

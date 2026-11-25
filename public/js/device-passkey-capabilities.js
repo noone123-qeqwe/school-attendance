@@ -27,6 +27,7 @@
             var timeoutMs = Math.min(Math.max(Number(publicKeyOptions && publicKeyOptions.timeout) || 60000, 15000), 120000) + 5000;
             var timer = setTimeout(function () {
                 cleanup();
+                try { bridge.postMessage(JSON.stringify({ id: id, type: 'cancel' })); } catch (_) {}
                 reject(new DOMException('Passkey request timed out.', 'NotAllowedError'));
             }, timeoutMs);
 
@@ -85,7 +86,17 @@
         const unavailable = reason => ({ available: false, platformAvailable: null, reason });
         if (!window.isSecureContext) return unavailable('insecure');
 
-        if (hasAndroidPasskeyBridge() && window.AndroidDeviceBridge?.isBiometricAvailable?.() === true) {
+        const native = window.AndroidDeviceBridge;
+        if (operation === 'create' && native?.isNativeApp?.()) {
+            // Early APKs expose the message bridge but only handle sign-in requests.
+            if (typeof native.hasLocalPasskey !== 'function') {
+                return unavailable('update-app');
+            }
+            if (hasAndroidPasskeyBridge() && native.isBiometricAvailable?.() === false) {
+                return unavailable('sensor-unavailable');
+            }
+        }
+        if (hasAndroidPasskeyBridge() && native?.isBiometricAvailable?.() === true) {
             return {
                 available: true,
                 platformAvailable: true,
@@ -125,7 +136,8 @@
         // A platform authenticator may use a screen lock and does not identify a sensor type.
         const alternatePasskey = operation === 'get'
             && (capabilities.passkeyPlatformAuthenticator === true || capabilities.hybridTransport === true);
-        const available = platformAvailable === true || alternatePasskey;
+        const available = platformAvailable === true || alternatePasskey
+            || (operation === 'create' && platformAvailable === null);
 
         return {
             available,
@@ -139,6 +151,8 @@
         const messages = {
             insecure: 'Passkeys require a secure connection.',
             unsupported: 'This browser doesn’t support passkeys.',
+            'update-app': 'Update the Smart Attendance Android app to register a fingerprint on this phone.',
+            'sensor-unavailable': 'Android could not start fingerprint verification. Check that a fingerprint is enrolled in Android Settings, then return and try again.',
             unavailable: settingUp
                 ? 'This browser couldn’t find a device sign-in method for passkey setup. Check your device’s screen lock settings.'
                 : 'No passkey option is available in this browser.',
