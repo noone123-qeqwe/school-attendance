@@ -261,6 +261,10 @@ function bufferToBase64Url(buffer) {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+function getAndroidDevicePasskeyBridge() {
+    return window.DevicePasskeys?.hasAndroidPasskeyBridge?.() ? window.AttendancePasskey : null;
+}
+
 async function beginDevicePasskeyRegistration() {
     if (bioAbortController) return;
     const controller = new AbortController();
@@ -338,9 +342,24 @@ async function beginDevicePasskeyRegistration() {
             authenticatorSelection: {
                 authenticatorAttachment: 'platform',
                 userVerification: 'required',
-                residentKey: 'preferred',
-                requireResidentKey: false
+                residentKey: 'required',
+                requireResidentKey: true
             }
+        };
+
+        const androidCreateOptions = {
+            challenge: options.challenge,
+            rp,
+            user: {
+                id: options.user.id,
+                name: options.user.name,
+                displayName: options.user.displayName
+            },
+            pubKeyCredParams: publicKey.pubKeyCredParams,
+            timeout: publicKey.timeout,
+            attestation: publicKey.attestation,
+            excludeCredentials: options.excludeCredentials || [],
+            authenticatorSelection: publicKey.authenticatorSelection
         };
 
         statusTitle.textContent = 'Confirm on your device';
@@ -350,7 +369,26 @@ async function beginDevicePasskeyRegistration() {
             confirmButton.hidden = true;
             statusText.textContent = 'Follow your device’s biometric or screen lock prompt.';
             focusBiometricHeading(statusTitle);
-            return navigator.credentials.create({ publicKey, signal: controller.signal });
+            if (getAndroidDevicePasskeyBridge() && typeof window.DevicePasskeys?.requestAndroidPasskey === 'function') {
+                return window.DevicePasskeys.requestAndroidPasskey('create', androidCreateOptions, controller.signal);
+            }
+            try {
+                return await navigator.credentials.create({ publicKey, signal: controller.signal });
+            } catch (err) {
+                if (err && (err.name === 'NotSupportedError' || err.name === 'TypeError' || err.name === 'ConstraintError')) {
+                    const fallbackPublicKey = {
+                        ...publicKey,
+                        authenticatorSelection: {
+                            authenticatorAttachment: 'platform',
+                            userVerification: 'required',
+                            residentKey: 'preferred',
+                            requireResidentKey: false
+                        }
+                    };
+                    return await navigator.credentials.create({ publicKey: fallbackPublicKey, signal: controller.signal });
+                }
+                throw err;
+            }
         }, controller.signal);
         if (controller.signal.aborted) return;
         if (!credential) throw new Error('The passkey request ended before registration finished.');
@@ -360,10 +398,13 @@ async function beginDevicePasskeyRegistration() {
         statusTitle.textContent = 'Saving your passkey';
         statusText.textContent = 'Linking the passkey to your account.';
 
-        const credentialId = bufferToBase64Url(credential.rawId);
-        const transports = (credential.response && typeof credential.response.getTransports === 'function')
-            ? credential.response.getTransports()
-            : [];
+        const isBridgePayload = typeof credential.rawId === 'string';
+        const credentialId = isBridgePayload ? credential.rawId : bufferToBase64Url(credential.rawId);
+        const transports = Array.isArray(credential.response?.transports)
+            ? credential.response.transports
+            : ((credential.response && typeof credential.response.getTransports === 'function')
+                ? credential.response.getTransports()
+                : []);
 
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
             method: 'POST',
@@ -378,12 +419,16 @@ async function beginDevicePasskeyRegistration() {
                 credential_id: credentialId,
                 transports,
                 credential: {
-                    id: credential.id,
-                    type: credential.type,
+                    id: credential.id || credentialId,
+                    type: credential.type || 'public-key',
                     transports,
                     response: {
-                        attestationObject: bufferToBase64Url(credential.response.attestationObject),
-                        clientDataJSON: bufferToBase64Url(credential.response.clientDataJSON)
+                        attestationObject: isBridgePayload
+                            ? credential.response.attestationObject
+                            : bufferToBase64Url(credential.response.attestationObject),
+                        clientDataJSON: isBridgePayload
+                            ? credential.response.clientDataJSON
+                            : bufferToBase64Url(credential.response.clientDataJSON)
                     }
                 }
             })

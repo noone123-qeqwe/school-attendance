@@ -4,11 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\AccountLockoutService;
+use App\Services\BiometricVerificationAuditService;
+use App\Services\DeviceBindingService;
+use App\Services\FaceAttendanceChallenge;
+use App\Services\FaceAttendanceConsent;
+use App\Services\FaceVerificationAttemptLimiter;
+use App\Services\FeatureFlagService;
+use App\Services\LiveProfileFaceMatcher;
+use App\Services\ProfileFacePhotoService;
 use App\Services\WebauthnService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class WebAuthnController extends Controller
@@ -142,7 +152,7 @@ class WebAuthnController extends Controller
             'biometric_method' => ['nullable', 'in:fingerprint,face,device_lock'],
         ]);
 
-        $identifier = trim((string) ($request->input('student_number') ?? $request->input('identifier') ?? $request->input('email')));
+        $identifier = $this->resolveRequestIdentifier($request);
         $user = $identifier !== '' ? $this->findUserByIdentifier($identifier) : null;
 
         if ($identifier !== '' && (!$user || !$user->isActive())) {
@@ -166,7 +176,8 @@ class WebAuthnController extends Controller
             'success' => true,
             'discoverable' => $user === null,
             'has_account_credentials' => $user !== null,
-            'available_methods' => ['device_lock'],
+            'available_methods' => $this->availableMethodNames(),
+            'face_login_enabled' => $this->faceLoginReady(),
         ]);
     }
 
@@ -175,7 +186,8 @@ class WebAuthnController extends Controller
         return response()->json([
             'success' => true,
             'discoverable' => true,
-            'available_methods' => ['device_lock'],
+            'available_methods' => $this->availableMethodNames(),
+            'face_login_enabled' => $this->faceLoginReady(),
         ]);
     }
 
@@ -253,6 +265,7 @@ class WebAuthnController extends Controller
             'credential' => ['nullable', 'array'],
             'biometric_type' => ['nullable', 'in:fingerprint,face,device_lock'],
             'device_name' => ['nullable', 'string', 'max:120'],
+            'qr_token' => ['nullable', 'string', 'max:512'],
         ]);
         $userId = session('webauthn.setup_user_id');
         if (!$userId) {
@@ -285,8 +298,6 @@ class WebAuthnController extends Controller
             $credential['transports'] = $transports;
         }
 
-        $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
-
         try {
             $stored = $webauthn->storeCredential($user, $credential);
             $stored->forceFill([
@@ -296,31 +307,18 @@ class WebAuthnController extends Controller
 
             session()->forget('webauthn.setup_user_id');
 
-            Auth::login($user, true);
-            $request->session()->regenerate();
-            $request->session()->forget('admin_2fa_verified');
-            $request->session()->put('user_role', $user->role);
-            $request->session()->put('login_timestamp', now()->toString());
-
-            if ($user->isStudent()) {
-                app(\App\Services\DeviceBindingService::class)->bind($user, $request, true);
-                $request->session()->save();
-            }
-
-            $redirectUrl = route('home');
-            if ($user->isAdmin()) {
-                $redirectUrl = route('admin.2fa.form');
-            } elseif ($user->isTeacher()) {
-                $redirectUrl = route('teacher.dashboard');
-            } elseif ($user->isParent()) {
-                $redirectUrl = route('parent.dashboard');
-            }
+            $redirectUrl = $this->completeAuthenticatedLogin(
+                $request,
+                $user,
+                $request->input('qr_token'),
+                true
+            );
 
             return response()->json([
                 "success" => true,
                 "message" => 'Passkey sign-in enabled for your account.',
                 "biometric_type" => $biometricType,
-                "redirect" => $redirectUrl
+                "redirect" => $redirectUrl,
             ]);
         } catch (\Throwable $e) {
             $isConflict = str_contains($e->getMessage(), 'already registered') || str_contains($e->getMessage(), 'another account');
@@ -379,6 +377,7 @@ class WebAuthnController extends Controller
             'assertion' => ['required', 'array'],
             'assertion.id' => ['required', 'string', 'max:2048'],
             'assertion.response.userHandle' => ['nullable', 'string', 'max:128'],
+            'qr_token' => ['nullable', 'string', 'max:512'],
         ]);
         $ceremony = $request->session()->pull('webauthn.login');
         if (!$ceremony || $ceremony['expires_at'] <= now()->timestamp) {
@@ -500,39 +499,285 @@ class WebAuthnController extends Controller
             return response()->json(["success" => false, "message" => "Biometric authentication could not be completed. Try again or use your password."], 401);
         }
 
+        $redirectUrl = $this->completeAuthenticatedLogin(
+            $request,
+            $user,
+            $request->input('qr_token')
+        );
+
+        return response()->json($this->loginSuccessPayload($user, $redirectUrl));
+    }
+
+    public function faceLoginOptions(Request $request, AccountLockoutService $lockout)
+    {
+        $request->validate([
+            'identifier' => ['nullable', 'string', 'max:255'],
+            'student_number' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $identifier = $this->resolveRequestIdentifier($request);
+        if ($identifier === '') {
+            return response()->json([
+                'success' => false,
+                'code' => 'IDENTIFIER_REQUIRED',
+                'message' => 'Enter your student number or email first to verify your face.',
+            ], 422);
+        }
+
+        $ip = $request->ip();
+        if ($lockout->isLocked($identifier, $ip)) {
+            return $this->lockedAccountResponse($lockout->getRemainingSeconds($identifier, $ip));
+        }
+
+        if (!$this->faceLoginReady()) {
+            return response()->json([
+                'success' => false,
+                'code' => 'FACE_VERIFICATION_UNAVAILABLE',
+                'message' => 'Live face verification is unavailable on this server right now. Sign in with your fingerprint or password.',
+            ], 503);
+        }
+
+        $user = $this->findUserByIdentifier($identifier);
+        if (!$user || !$this->canUseFaceLogin($user)) {
+            return response()->json([
+                'success' => false,
+                'code' => 'FACE_LOGIN_UNAVAILABLE',
+                'message' => 'No registered face profile was found for those sign-in details. Sign in with your password and register your face in Settings.',
+            ], 404);
+        }
+
+        $limiter = app(FaceVerificationAttemptLimiter::class);
+        if ($limiter->isLocked($user, 0)) {
+            return $this->faceCooldownResponse($limiter, $user);
+        }
+
+        $challenge = app(FaceAttendanceChallenge::class)->issueForLogin($request, $user);
+
+        return response()->json([
+            'success' => true,
+            'face_challenge' => $challenge,
+        ])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function faceLogin(Request $request, AccountLockoutService $lockout)
+    {
+        $request->validate([
+            'identifier' => ['nullable', 'string', 'max:255'],
+            'student_number' => ['nullable', 'string', 'max:255'],
+            'email' => ['nullable', 'string', 'max:255'],
+            'face_challenge' => ['required', 'string', 'size:64'],
+            'live_frames' => ['required', 'array', 'size:' . FaceAttendanceChallenge::FRAME_COUNT],
+            'live_frames.*' => ['required', 'string', 'max:' . FaceAttendanceChallenge::MAX_FRAME_LENGTH],
+            'qr_token' => ['nullable', 'string', 'max:512'],
+        ]);
+
+        $identifier = $this->resolveRequestIdentifier($request);
+        if ($identifier === '') {
+            return response()->json([
+                'success' => false,
+                'code' => 'IDENTIFIER_REQUIRED',
+                'message' => 'Enter your student number or email first to verify your face.',
+            ], 422);
+        }
+
+        $ip = $request->ip();
+        if ($lockout->isLocked($identifier, $ip)) {
+            return $this->lockedAccountResponse($lockout->getRemainingSeconds($identifier, $ip));
+        }
+
+        if (!$this->faceLoginReady()) {
+            return response()->json([
+                'success' => false,
+                'code' => 'FACE_VERIFICATION_UNAVAILABLE',
+                'message' => 'Live face verification is unavailable on this server right now. Sign in with your fingerprint or password.',
+            ], 503);
+        }
+
+        $user = $this->findUserByIdentifier($identifier);
+        if (!$user || !$this->canUseFaceLogin($user)) {
+            $attempt = $lockout->recordFailedAttempt($identifier, $ip);
+            if ($attempt['locked']) {
+                return $this->lockedAccountResponse($attempt['lockout_seconds']);
+            }
+            return response()->json([
+                'success' => false,
+                'code' => 'FACE_VERIFICATION_FAILED',
+                'message' => 'Face sign-in is unavailable for those account details. Sign in with your password instead.',
+            ], 401);
+        }
+
+        $limiter = app(FaceVerificationAttemptLimiter::class);
+        if ($limiter->isLocked($user, 0)) {
+            return $this->faceCooldownResponse($limiter, $user);
+        }
+
+        $challengeService = app(FaceAttendanceChallenge::class);
+        $audit = app(BiometricVerificationAuditService::class);
+        $lockedResponse = Cache::lock($challengeService->loginLockKey($user), 30)->get(function () use (
+            $request,
+            $user,
+            $identifier,
+            $ip,
+            $lockout,
+            $limiter,
+            $challengeService,
+            $audit
+        ) {
+            if ($limiter->isLocked($user, 0)) {
+                return $this->faceCooldownResponse($limiter, $user);
+            }
+
+            $poses = $challengeService->consumeForLogin($request, $user);
+            $frames = $request->input('live_frames', []);
+            if (!$poses || count($frames) !== FaceAttendanceChallenge::FRAME_COUNT) {
+                $audit->record($user, $request, 0, false, 'login_invalid_challenge_or_capture');
+                $limiter->recordFailure($user, 0);
+                $attempt = $lockout->recordFailedAttempt($identifier, $ip);
+                if ($attempt['locked']) {
+                    return $this->lockedAccountResponse($attempt['lockout_seconds']);
+                }
+                return response()->json([
+                    'success' => false,
+                    'code' => 'FACE_CHALLENGE_INVALID',
+                    'message' => 'The camera check expired or was incomplete. Start face verification again.',
+                ], 422);
+            }
+
+            $result = app(LiveProfileFaceMatcher::class)->verifyAttendance($user, $frames, $poses);
+            if (($result['liveness_passed'] ?? false) !== true || ($result['match'] ?? false) !== true) {
+                $code = $result['code'] ?? 'MATCHER_UNAVAILABLE';
+                $audit->record($user, $request, 0, false, 'login_' . strtolower($code));
+                if ($code !== 'MATCHER_UNAVAILABLE') {
+                    $limiter->recordFailure($user, 0);
+                    $attempt = $lockout->recordFailedAttempt($identifier, $ip);
+                    if ($attempt['locked']) {
+                        return $this->lockedAccountResponse($attempt['lockout_seconds']);
+                    }
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'code' => $code,
+                    'message' => $result['message'] ?? 'Face verification did not match. Please try again in good lighting.',
+                ], $code === 'MATCHER_UNAVAILABLE' ? 503 : 422);
+            }
+
+            $audit->record($user, $request, 0, true, '');
+            $limiter->clear($user, 0);
+            $lockout->clear($identifier, null);
+
+            $redirectUrl = $this->completeAuthenticatedLogin(
+                $request,
+                $user,
+                $request->input('qr_token')
+            );
+
+            return response()->json($this->loginSuccessPayload($user, $redirectUrl));
+        });
+
+        if ($lockedResponse === false) {
+            return response()->json([
+                'success' => false,
+                'code' => 'FACE_VERIFICATION_BUSY',
+                'message' => 'A camera verification check is already in progress. Wait a moment and try again.',
+            ], 409);
+        }
+
+        return $lockedResponse;
+    }
+
+    private function lockedAccountResponse(int $retryAfterSeconds): \Illuminate\Http\JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'code' => 'ACCOUNT_LOCKED',
+            'message' => 'Too many unsuccessful attempts. Please wait before trying again.',
+        ], 429)->header('Retry-After', (string) max(1, $retryAfterSeconds));
+    }
+
+    private function faceCooldownResponse(FaceVerificationAttemptLimiter $limiter, User $user): \Illuminate\Http\JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'code' => 'FACE_ATTEMPTS_EXHAUSTED',
+            'message' => 'Too many unsuccessful face checks. Wait before retrying or sign in with your password.',
+        ], 429)->header('Retry-After', (string) max(1, $limiter->secondsUntilRetry($user, 0)));
+    }
+
+    private function resolveRequestIdentifier(Request $request): string
+    {
+        return trim((string) ($request->input('student_number') ?? $request->input('identifier') ?? $request->input('email') ?? ''));
+    }
+
+    private function availableMethodNames(): array
+    {
+        return $this->faceLoginReady() ? ['fingerprint', 'face'] : ['fingerprint'];
+    }
+
+    private function faceLoginReady(): bool
+    {
+        return app(FeatureFlagService::class)->enabled('feature.face_verification')
+            && app(LiveProfileFaceMatcher::class)->attendanceReady();
+    }
+
+    private function canUseFaceLogin(User $user): bool
+    {
+        return $user->isActive()
+            && app(ProfileFacePhotoService::class)->hasCameraEnrollment($user)
+            && (!$user->isStudent() || app(FaceAttendanceConsent::class)->approved($user));
+    }
+
+    private function redirectTargetForUser(User $user, ?string $qrToken): string
+    {
+        if ($user->isAdmin()) {
+            return route('admin.2fa.form');
+        }
+        if ($user->isTeacher()) {
+            return route('teacher.dashboard');
+        }
+        if ($user->isParent()) {
+            return route('parent.dashboard');
+        }
+
+        $cleanQrToken = is_string($qrToken) ? trim($qrToken) : '';
+        if ($user->isStudent() && $cleanQrToken !== '') {
+            return route('qr.scan', ['token' => $cleanQrToken]);
+        }
+
+        return route('home');
+    }
+
+    private function completeAuthenticatedLogin(Request $request, User $user, ?string $qrToken = null, bool $strictStudentBind = false): string
+    {
         Auth::login($user, true);
         $request->session()->regenerate();
         $request->session()->forget('admin_2fa_verified');
         $request->session()->put('user_role', $user->role);
         $request->session()->put('login_timestamp', now()->toString());
 
-        // Bind device on WebAuthn login too (same as password login)
         if ($user->isStudent()) {
-            app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+            app(DeviceBindingService::class)->bind($user, $request, $strictStudentBind);
             $request->session()->save();
         }
 
-        $redirectUrl = route('home');
-        if ($user->isAdmin()) {
-            $redirectUrl = route('admin.2fa.form');
-        } elseif ($user->isTeacher()) {
-            $redirectUrl = route('teacher.dashboard');
-        } elseif ($user->isParent()) {
-            $redirectUrl = route('parent.dashboard');
-        }
+        return $this->redirectTargetForUser($user, $qrToken);
+    }
 
-        return response()->json([
-            "success" => true,
-            "user" => [
+    private function loginSuccessPayload(User $user, string $redirectUrl): array
+    {
+        return [
+            'success' => true,
+            'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'role' => $user->role,
                 'identifier' => $user->student_number ?? $user->email,
             ],
-            "role" => $user->role,
-            "redirect" => $redirectUrl,
-            "dashboard_url" => $redirectUrl,
-        ]);
+            'role' => $user->role,
+            'redirect' => $redirectUrl,
+            'dashboard_url' => $redirectUrl,
+        ];
     }
 
     private function defaultDeviceName(Request $request): string

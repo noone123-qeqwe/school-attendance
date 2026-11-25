@@ -1244,6 +1244,39 @@
             font-size: 0.74rem;
             color: #cbd5e1;
             margin-top: 6px;
+        }
+        #biometricModal [hidden] {
+            display: none !important;
+        }
+        .bio-face-pose-text {
+            margin: 0 0 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--gold-soft, #f3d78a);
+            text-align: center;
+        }
+        .bio-face-oval-reticle {
+            position: absolute;
+            width: 56%;
+            height: 74%;
+            border: 2.5px dashed rgba(243, 215, 138, 0.78);
+            border-radius: 50% / 55%;
+            box-shadow: 0 0 0 9999px rgba(2, 6, 23, 0.42);
+            pointer-events: none;
+            z-index: 3;
+        }
+        .bio-face-confirm-text {
+            margin: 8px 0 0;
+            min-height: 1.2em;
+            font-size: 0.78rem;
+            color: #86efac;
+            text-align: center;
+        }
+        #bioModalIdentifierWrap {
+            margin-bottom: 14px;
+            text-align: left;
+        }
+            margin-top: 6px;
             line-height: 1.35;
         }
 

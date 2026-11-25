@@ -12,6 +12,8 @@ use App\Http\Controllers\HomeController;
 Route::post('/webauthn/login-options', [App\Http\Controllers\WebAuthnController::class, 'loginOptions'])->middleware('throttle:webauthn.options')->block(10, 10)->name('webauthn.login.options');
 Route::post('/webauthn/available-methods', [App\Http\Controllers\WebAuthnController::class, 'availableMethods'])->middleware('throttle:webauthn.options')->name('webauthn.available.methods');
 Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 'login'])->middleware('throttle:login')->block(10, 10)->name('webauthn.login');
+Route::post('/webauthn/face-login-options', [App\Http\Controllers\WebAuthnController::class, 'faceLoginOptions'])->middleware('throttle:webauthn.options')->block(10, 10)->name('webauthn.face.options');
+Route::post('/webauthn/face-login', [App\Http\Controllers\WebAuthnController::class, 'faceLogin'])->middleware('throttle:login')->block(10, 10)->name('webauthn.face.login');
 Route::post('/webauthn/setup-options', [App\Http\Controllers\WebAuthnController::class, 'setupOptions'])->middleware('throttle:webauthn.options')->name('webauthn.setup.options');
 Route::post('/webauthn/setup-register', [App\Http\Controllers\WebAuthnController::class, 'setupRegister'])->middleware('throttle:login')->name('webauthn.setup.register');
 Route::post('/webauthn/native-biometric-login', [App\Http\Controllers\WebAuthnController::class, 'nativeBiometricLogin'])->middleware('throttle:login')->name('webauthn.native.login');

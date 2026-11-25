@@ -27,19 +27,23 @@ class LoginPageUiTest extends TestCase
         $response->assertSee('class="glass-input-wrap glass-input-wrap--password anim-fade-up anim-d5"', false);
         $response->assertSee('class="d-flex align-items-center justify-content-between glass-remember-row anim-fade-up anim-d5"', false);
 
-        // The chooser keeps password sign-in available and delegates verification to the device.
+        // The chooser keeps password sign-in available and offers Fingerprint + Face verification.
         $response->assertSee('<div id="passkeyControls">', false);
         $response->assertSee('Sign in with biometrics', false);
-        $response->assertSee('Use a device passkey or your password', false);
+        $response->assertSee('Use fingerprint, face verification, or your password', false);
 
         $response->assertSee('id="bioModalMethodsWrap"', false);
         $response->assertSee('id="bioModalMethodsList"', false);
-        $response->assertSee("'Use a device passkey'", false);
+        $response->assertSee('id="bioModalFaceWrap"', false);
+        $response->assertSee('id="bioFaceCameraVideo"', false);
+        $response->assertSee("name: 'Fingerprint'", false);
+        $response->assertSee("name: 'Face verification'", false);
         $response->assertSee("name: 'Use passkey from another device'", false);
-        $response->assertSee("name: 'Set up a passkey on this device'", false);
-        $response->assertDontSee("name: 'Fingerprint'", false);
-        $response->assertDontSee("name: 'Face verification'", false);
+        $response->assertSee("name: 'Set up fingerprint on this device'", false);
         $response->assertSee("name: 'Enter password'", false);
+
+        $csp = (string) $response->headers->get('Content-Security-Policy', '');
+        $this->assertStringContainsString("'wasm-unsafe-eval'", $csp);
     }
 
     public function test_login_css_removes_moving_logo_animation_and_enlarges_desktop_form(): void

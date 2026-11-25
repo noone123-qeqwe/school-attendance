@@ -572,6 +572,7 @@
     </div>
 </div>
 
+<script src="{{ asset('js/device-passkey-capabilities.js') }}?v={{ filemtime(public_path('js/device-passkey-capabilities.js')) }}" @cspNonce></script>
 <script @cspNonce>
 var STUDENT_NUMBER = '{{ addslashes(Auth::user()->student_number) }}';
 var QR_TOKEN = '{{ addslashes($token) }}';
@@ -1033,6 +1034,29 @@ async function requestFingerprintAssertion(options, signal) {
         timeout: 20000
     };
     if (effectiveRpId) publicKey.rpId = effectiveRpId;
+
+    if (window.DevicePasskeys?.hasAndroidPasskeyBridge?.()) {
+        try {
+            var androidGetOptions = {
+                challenge: options.challenge,
+                rpId: effectiveRpId || options.rpId,
+                userVerification: 'required',
+                timeout: 20000,
+                hints: ['client-device'],
+                allowCredentials: (options.allowCredentials || []).map(function(credential) {
+                    return {
+                        type: credential.type || 'public-key',
+                        id: credential.id,
+                        transports: ['internal']
+                    };
+                })
+            };
+            var bridged = await window.DevicePasskeys.requestAndroidPasskey('get', androidGetOptions, signal);
+            if (bridged) return bridged;
+        } catch (bridgeErr) {
+            if (bridgeErr.name !== 'NotSupportedError' || typeof navigator.credentials?.get !== 'function') throw bridgeErr;
+        }
+    }
 
     var assertion = await navigator.credentials.get({publicKey: publicKey, signal: signal});
     return {
@@ -1546,26 +1570,45 @@ function doFingerprint() {
             pubKey.rpId = effectiveRpId;
         }
 
-        navigator.credentials.get({
-            publicKey: pubKey
-        }).then(function(assertion) {
+        var getPromise = (window.DevicePasskeys?.hasAndroidPasskeyBridge?.())
+            ? window.DevicePasskeys.requestAndroidPasskey('get', {
+                challenge: opts.challenge,
+                rpId: effectiveRpId || opts.rpId,
+                userVerification: 'required',
+                timeout: 60000,
+                hints: ['client-device'],
+                allowCredentials: (opts.allowCredentials || []).map(function(c) {
+                    return { type: c.type || 'public-key', id: c.id, transports: ['internal'] };
+                })
+            }).catch(function(err) {
+                if (err && err.name === 'NotSupportedError' && typeof navigator.credentials?.get === 'function') {
+                    return navigator.credentials.get({ publicKey: pubKey });
+                }
+                throw err;
+            })
+            : navigator.credentials.get({ publicKey: pubKey });
+
+        getPromise.then(function(assertion) {
             setStep(4);
             setIcon('#f0fdf4', 'bi bi-fingerprint', '#16a34a');
             document.getElementById('vTitle').textContent = 'Identity Verified';
             document.getElementById('vSub').textContent = 'Clocking you in now...';
             showMsg('ok', '<i class="bi bi-check-circle me-1"></i> Fingerprint confirmed.');
 
-            var credentialId = bufferToBase64Url(assertion.rawId);
+            var isRawB64 = typeof assertion.rawId === 'string';
+            var credentialId = isRawB64 ? assertion.rawId : bufferToBase64Url(assertion.rawId);
 
             var credentialData = {
                 id: credentialId,
-                type: assertion.type,
-                rawId: bufferToBase64Url(assertion.rawId),
+                type: assertion.type || 'public-key',
+                rawId: credentialId,
                 response: {
-                    clientDataJSON: bufferToBase64Url(assertion.response.clientDataJSON),
-                    authenticatorData: bufferToBase64Url(assertion.response.authenticatorData),
-                    signature: bufferToBase64Url(assertion.response.signature),
-                    userHandle: assertion.response.userHandle ? bufferToBase64Url(assertion.response.userHandle) : null
+                    clientDataJSON: isRawB64 ? assertion.response.clientDataJSON : bufferToBase64Url(assertion.response.clientDataJSON),
+                    authenticatorData: isRawB64 ? assertion.response.authenticatorData : bufferToBase64Url(assertion.response.authenticatorData),
+                    signature: isRawB64 ? assertion.response.signature : bufferToBase64Url(assertion.response.signature),
+                    userHandle: assertion.response.userHandle
+                        ? (isRawB64 ? assertion.response.userHandle : bufferToBase64Url(assertion.response.userHandle))
+                        : null
                 }
             };
 

@@ -367,7 +367,7 @@ if (document.readyState === 'loading') {
                             </div>
                             <div>
                                 <div class="fp-row-label" id="fpLabel">Sign in with biometrics</div>
-                                <div class="fp-row-hint" id="fpHint">Use a device passkey or your password</div>
+                                <div class="fp-row-hint" id="fpHint">Use fingerprint, face verification, or your password</div>
                             </div>
                         </div>
                         <i class="bi bi-chevron-right fp-row-arrow" id="fpArrow"></i>
@@ -475,7 +475,10 @@ if (document.readyState === 'loading') {
 
 
 <!-- Biometric Not Registered / Setup & Status Modal -->
-<div id="biometricModal" class="bio-modal-overlay" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bioModalTitle" aria-describedby="bioModalDesc">
+<div id="biometricModal" class="bio-modal-overlay" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bioModalTitle" aria-describedby="bioModalDesc"
+     data-face-guidance-url="{{ Vite::asset('resources/js/attendance-face-guidance.js') }}"
+     data-face-options-url="{{ route('webauthn.face.options') }}"
+     data-face-login-url="{{ route('webauthn.face.login') }}">
     <div class="bio-modal-backdrop" id="bioModalBackdrop"></div>
     <div class="bio-modal-dialog">
         <div class="bio-modal-card">
@@ -504,6 +507,47 @@ if (document.readyState === 'loading') {
                 <span id="bioModalProgressIcon" class="biometric-spinner" aria-hidden="true"></span>
                 <span id="bioModalProgressText"></span>
             </div>
+
+            <!-- Inline Identifier Input (when Face Verification starts without a typed ID) -->
+            <div id="bioModalIdentifierWrap" style="display:none;">
+                <label class="bio-modal-input-label" for="bioModalIdentifierInput">Student ID, Email, or Mobile</label>
+                <div class="glass-input-wrap">
+                    <i class="bi bi-person-fill g-icon"></i>
+                    <input type="text" id="bioModalIdentifierInput" class="glass-input" placeholder="Enter your Student ID or Email" autocomplete="username">
+                </div>
+            </div>
+
+            <!-- Guided Live Camera Face Verification Panel -->
+            <div id="bioModalFaceWrap" hidden>
+                <div class="bio-login-progress-wrap" style="margin-top:0;margin-bottom:10px;">
+                    <div class="bio-login-progress-meta">
+                        <span id="bioFaceProgressLabel">0/5 angles captured</span>
+                        <span id="bioFaceLivenessStatus" role="status">Starting camera…</span>
+                    </div>
+                    <div class="bio-login-progress-bar">
+                        <div class="bio-login-progress-fill" id="bioFaceProgressFill" style="width:0%"></div>
+                    </div>
+                    <progress id="bioFaceProgress" value="0" max="5" hidden></progress>
+                </div>
+                <p id="bioFacePoseInstruction" class="bio-face-pose-text" aria-live="polite">Position your face inside the oval.</p>
+                <div class="bio-login-camera-box" id="bioFaceCameraBox">
+                    <video id="bioFaceCameraVideo" class="bio-login-face-feed" autoplay playsinline muted></video>
+                    <canvas id="bioFaceCaptureCanvas" style="display:none;"></canvas>
+                    <div class="bio-login-reticle-corner tl"></div>
+                    <div class="bio-login-reticle-corner tr"></div>
+                    <div class="bio-login-reticle-corner bl"></div>
+                    <div class="bio-login-reticle-corner br"></div>
+                    <div class="bio-login-laser-bar" id="bioFaceLaserBar"></div>
+                    <div class="bio-face-oval-reticle" id="bioFaceOvalGuide"></div>
+                    <div class="bio-login-hud-badge" id="bioFaceStatusPill">
+                        <span class="bio-login-pulse-dot" id="bioFaceStatusDot" aria-hidden="true"></span>
+                        <span id="bioFaceStatusText" aria-live="polite" aria-atomic="true">Starting camera…</span>
+                    </div>
+                </div>
+                @include('partials.camera-light-controls', ['cameraLightId' => 'bioFaceLight'])
+                <p id="bioFaceCaptureConfirmation" class="bio-face-confirm-text" role="status"></p>
+            </div>
+
             <!-- Inline Password Verification Field (for setup flow) -->
             <div id="bioModalPasswordWrap" style="display:none;">
                 <label class="bio-modal-input-label" for="bioModalPasswordInput">Account password</label>
@@ -957,6 +1001,7 @@ var fpLabel = document.getElementById('fpLabel');
 var fpHint = document.getElementById('fpHint');
 var fpIcon = document.getElementById('fpIcon');
 var fpArrow = document.getElementById('fpArrow');
+var biometricQrToken = document.querySelector('#loginForm input[name="qr_token"]')?.value;
 
 var bioAbortController = null;
 var bioAbortReason = null; // 'user' | 'timeout' | 'superseded' | null
@@ -967,6 +1012,34 @@ var biometricPreviousOverflow = '';
 var isBioPending = false;
 var biometricRedirectStarted = false;
 var passkeySignInCheck = null;
+var bioFaceStream = null;
+var bioFaceDetector = null;
+var bioFaceLighting = null;
+
+function getBioFaceLightControl() {
+    if (!bioFaceLighting && typeof window.CameraLighting?.mount === 'function') {
+        bioFaceLighting = window.CameraLighting.mount(document.getElementById('bioFaceLight'));
+    }
+    return bioFaceLighting;
+}
+
+function stopFaceLoginCapture() {
+    try { bioFaceLighting?.stop?.(); } catch (e) {}
+    if (bioFaceStream && typeof bioFaceStream.getTracks === 'function') {
+        bioFaceStream.getTracks().forEach(function(track) {
+            try { track.stop(); } catch (e) {}
+        });
+    }
+    bioFaceStream = null;
+    if (bioFaceDetector && typeof bioFaceDetector.close === 'function') {
+        try { bioFaceDetector.close(); } catch (e) {}
+    }
+    bioFaceDetector = null;
+    var video = document.getElementById('bioFaceCameraVideo');
+    if (video) video.srcObject = null;
+    var canvas = document.getElementById('bioFaceCaptureCanvas');
+    if (canvas) canvas.width = 0;
+}
 
 function createWebAuthnError(name, message, extra) {
     var err = new Error(message);
@@ -986,6 +1059,7 @@ function clearBioWatchdog() {
 
 function abortActiveBiometricAttempt(reason) {
     clearBioWatchdog();
+    stopFaceLoginCapture();
     bioAbortReason = reason || 'user';
     if (bioAbortController) {
         try { bioAbortController.abort(); } catch (e) {}
@@ -1304,6 +1378,8 @@ function openBiometricModal(config) {
     var secondaryBtn = document.getElementById('bioModalSecondaryBtn');
     var cancelBtn = document.getElementById('bioModalCancelBtn');
     var passWrap = document.getElementById('bioModalPasswordWrap');
+    var idWrap = document.getElementById('bioModalIdentifierWrap');
+    var faceWrap = document.getElementById('bioModalFaceWrap');
     var progress = document.getElementById('bioModalProgress');
     var progressText = document.getElementById('bioModalProgressText');
     var progressIcon = document.getElementById('bioModalProgressIcon');
@@ -1311,6 +1387,9 @@ function openBiometricModal(config) {
     if (!wasOpen) {
         biometricReturnFocus = document.activeElement === document.body ? fpRowBtn : document.activeElement;
         biometricPreviousOverflow = document.body.style.overflow;
+    }
+    if (!config.showFaceCapture) {
+        stopFaceLoginCapture();
     }
     hideFpMessage();
     modal.dataset.tone = config.badgeType || 'info';
@@ -1334,6 +1413,16 @@ function openBiometricModal(config) {
         if (pillEl) pillEl.style.display = 'none';
     }
     
+    if (idWrap) {
+        idWrap.style.display = config.showIdentifier ? 'block' : 'none';
+        var modalIdInput = document.getElementById('bioModalIdentifierInput');
+        if (modalIdInput && typeof config.prefillIdentifier === 'string') {
+            modalIdInput.value = config.prefillIdentifier;
+        }
+    }
+    if (faceWrap) {
+        faceWrap.hidden = !config.showFaceCapture;
+    }
     if (passWrap) {
         passWrap.style.display = config.showPassword ? 'block' : 'none';
     }
@@ -1429,9 +1518,11 @@ function openBiometricModal(config) {
     document.body.style.overflow = 'hidden';
     if (!config.complete) {
         var firstMethodBtn = methodsList ? methodsList.querySelector('button.bio-method-card') : null;
-        var focusTarget = config.showPassword
-            ? document.getElementById('bioModalPasswordInput')
-            : (firstMethodBtn || (primaryBtn && !primaryBtn.hidden && !primaryBtn.disabled ? primaryBtn : titleEl));
+        var focusTarget = config.showIdentifier
+            ? document.getElementById('bioModalIdentifierInput')
+            : (config.showPassword
+                ? document.getElementById('bioModalPasswordInput')
+                : (firstMethodBtn || (primaryBtn && !primaryBtn.hidden && !primaryBtn.disabled ? primaryBtn : titleEl)));
         focusTarget?.focus({ preventScroll: true });
     }
 }
@@ -1656,24 +1747,66 @@ async function startBiometricRegistration(identifier, password) {
             attestation: opts.attestation || 'none',
             excludeCredentials: excludeCredentials,
             hints: ['client-device'],
-            authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' }
+            authenticatorSelection: {
+                authenticatorAttachment: 'platform',
+                userVerification: 'required',
+                residentKey: 'required',
+                requireResidentKey: true
+            }
         };
 
+        var androidCreateOptions = {
+            challenge: opts.challenge,
+            rp: opts.rp,
+            user: { id: opts.user.id, name: opts.user.name, displayName: opts.user.displayName },
+            pubKeyCredParams: basePublicKey.pubKeyCredParams,
+            timeout: basePublicKey.timeout,
+            attestation: basePublicKey.attestation,
+            excludeCredentials: opts.excludeCredentials || [],
+            authenticatorSelection: basePublicKey.authenticatorSelection
+        };
+
+        var androidBridge = getAndroidPasskeyBridge();
         var credential = await new Promise(function(resolve, reject) {
             var cancelBeforePrompt = function() { resolve(null); };
             attemptObj.signal.addEventListener('abort', cancelBeforePrompt, { once: true });
             openBiometricModal({
                 title: 'Confirm on your device',
                 identifier: identifier,
-                message: 'Continue to open your device’s passkey prompt.',
+                message: 'Continue to open your device’s fingerprint or passkey prompt.',
                 primaryBtnText: 'Continue to device prompt',
                 secondaryBtnText: 'Enter password',
                 showCancelBtn: true,
                 onPrimaryClick: function() {
                     attemptObj.signal.removeEventListener('abort', cancelBeforePrompt);
-                    showBiometricProgress('Confirm on your device', 'Complete your device’s biometric or screen lock prompt to save a passkey.', identifier, 'Waiting for device verification…', { icon: 'bi-phone' });
-                    runWithCredentialWatchdog(function() {
-                        return navigator.credentials.create({ publicKey: basePublicKey, signal: attemptObj.signal });
+                    showBiometricProgress('Confirm on your device', 'Complete your device’s fingerprint or screen lock prompt to save a passkey.', identifier, 'Waiting for device verification…', { icon: 'bi-fingerprint' });
+                    runWithCredentialWatchdog(async function() {
+                        if (androidBridge) {
+                            try {
+                                return await requestAndroidPasskey(androidBridge, 'create', androidCreateOptions, attemptObj);
+                            } catch (bridgeErr) {
+                                if (bridgeErr.name !== 'NotSupportedError' || typeof navigator.credentials?.create !== 'function') {
+                                    throw bridgeErr;
+                                }
+                                androidBridge = null;
+                            }
+                        }
+                        try {
+                            return await navigator.credentials.create({ publicKey: basePublicKey, signal: attemptObj.signal });
+                        } catch (createErr) {
+                            if (createErr && (createErr.name === 'NotSupportedError' || createErr.name === 'TypeError' || createErr.name === 'ConstraintError')) {
+                                var fallbackPublicKey = Object.assign({}, basePublicKey, {
+                                    authenticatorSelection: {
+                                        authenticatorAttachment: 'platform',
+                                        userVerification: 'required',
+                                        residentKey: 'preferred',
+                                        requireResidentKey: false
+                                    }
+                                });
+                                return await navigator.credentials.create({ publicKey: fallbackPublicKey, signal: attemptObj.signal });
+                            }
+                            throw createErr;
+                        }
                     }, basePublicKey.timeout, attemptObj).then(resolve, reject);
                 }
             });
@@ -1684,12 +1817,15 @@ async function startBiometricRegistration(identifier, password) {
         }
 
         showBiometricProgress('Saving biometric sign-in', 'Your device confirmed setup. We’re linking this passkey to your account.', identifier, 'Saving credential to your account…');
-        var rawId = bufferToBase64Url(credential.rawId);
-        var clientDataJSON = bufferToBase64Url(credential.response.clientDataJSON);
-        var attestationObject = bufferToBase64Url(credential.response.attestationObject);
-        var transports = (credential.response && typeof credential.response.getTransports === 'function')
-            ? credential.response.getTransports()
-            : [];
+        var isRawB64 = typeof credential.rawId === 'string';
+        var rawId = isRawB64 ? credential.rawId : bufferToBase64Url(credential.rawId);
+        var clientDataJSON = isRawB64 ? credential.response.clientDataJSON : bufferToBase64Url(credential.response.clientDataJSON);
+        var attestationObject = isRawB64 ? credential.response.attestationObject : bufferToBase64Url(credential.response.attestationObject);
+        var transports = Array.isArray(credential.response?.transports)
+            ? credential.response.transports
+            : ((credential.response && typeof credential.response.getTransports === 'function')
+                ? credential.response.getTransports()
+                : []);
 
         var saveFetch = await fetchJsonWithTimeout('{{ route("webauthn.setup.register") }}', {
             method: 'POST',
@@ -1701,10 +1837,12 @@ async function startBiometricRegistration(identifier, password) {
             },
             body: JSON.stringify({
                 credential_id: rawId,
+                biometric_type: 'fingerprint',
+                qr_token: biometricQrToken,
                 transports: transports,
                 credential: {
-                    id: credential.id,
-                    type: credential.type,
+                    id: credential.id || rawId,
+                    type: credential.type || 'public-key',
                     transports: transports,
                     response: {
                         attestationObject: attestationObject,
@@ -1852,7 +1990,10 @@ function getAndroidPasskeyBridge() {
         && typeof bridge.addEventListener === 'function' ? bridge : null;
 }
 
-function requestAndroidPasskey(bridge, publicKey, attemptObj) {
+function requestAndroidPasskey(bridge, typeOrPublicKey, publicKeyOrAttempt, maybeAttempt) {
+    var type = typeof typeOrPublicKey === 'string' ? typeOrPublicKey : 'get';
+    var publicKey = typeof typeOrPublicKey === 'string' ? publicKeyOrAttempt : typeOrPublicKey;
+    var attemptObj = typeof typeOrPublicKey === 'string' ? maybeAttempt : publicKeyOrAttempt;
     var id = String(attemptObj.id);
     var signal = attemptObj.signal;
 
@@ -1867,8 +2008,12 @@ function requestAndroidPasskey(bridge, publicKey, attemptObj) {
             try { result = JSON.parse(event.data); } catch (err) { return; }
             if (result?.id !== id) return;
             cleanup();
-            if (result.error) reject(createWebAuthnError(result.error, 'Android could not complete passkey verification.'));
-            else resolve(result.assertion);
+            var credentialPayload = result.credential || result.assertion;
+            if (result.error || !credentialPayload) {
+                reject(createWebAuthnError(result.error || 'UnknownError', 'Android could not complete passkey verification.'));
+            } else {
+                resolve(credentialPayload);
+            }
         }
 
         function onAbort() {
@@ -1880,7 +2025,7 @@ function requestAndroidPasskey(bridge, publicKey, attemptObj) {
         bridge.addEventListener('message', onMessage);
         signal.addEventListener('abort', onAbort, { once: true });
         try {
-            bridge.postMessage(JSON.stringify({ type: 'get', id: id, publicKey: publicKey }));
+            bridge.postMessage(JSON.stringify({ type: type, id: id, publicKey: publicKey }));
         } catch (err) {
             cleanup();
             reject(err);
@@ -1888,8 +2033,22 @@ function requestAndroidPasskey(bridge, publicKey, attemptObj) {
     });
 }
 
-function buildAllowCredentials(serverCredentials) {
-    return (serverCredentials || []).map(function(credential) {
+function buildAllowCredentials(serverCredentials, allowHybrid) {
+    var list = serverCredentials || [];
+    if (!allowHybrid) {
+        return list.filter(function(credential) {
+            return !Array.isArray(credential.transports)
+                || credential.transports.length === 0
+                || credential.transports.indexOf('internal') !== -1;
+        }).map(function(credential) {
+            return {
+                type: credential.type || 'public-key',
+                id: base64ToUint8Array(credential.id),
+                transports: ['internal']
+            };
+        });
+    }
+    return list.map(function(credential) {
         var descriptor = {
             type: credential.type || 'public-key',
             id: base64ToUint8Array(credential.id)
@@ -1897,6 +2056,30 @@ function buildAllowCredentials(serverCredentials) {
         if (credential.transports?.length) descriptor.transports = credential.transports;
         return descriptor;
     });
+}
+
+function buildAndroidAllowCredentials(serverCredentials) {
+    return (serverCredentials || []).filter(function(credential) {
+        return !Array.isArray(credential.transports)
+            || credential.transports.length === 0
+            || credential.transports.indexOf('internal') !== -1;
+    }).map(function(credential) {
+        return {
+            type: credential.type || 'public-key',
+            id: credential.id,
+            transports: ['internal']
+        };
+    });
+}
+
+function canRequestFaceSignIn(serverOpts) {
+    if (serverOpts && serverOpts.face_login_enabled === false) return false;
+    return Boolean(
+        window.isSecureContext
+        && typeof navigator !== 'undefined'
+        && navigator.mediaDevices
+        && typeof navigator.mediaDevices.getUserMedia === 'function'
+    );
 }
 
 var otherDevicePasskeyOption = {
@@ -1908,11 +2091,269 @@ var otherDevicePasskeyOption = {
 };
 var setupPasskeyOption = {
     id: 'setup',
-    name: 'Set up a passkey on this device',
-    desc: 'Confirm your account password to add a passkey.',
+    name: 'Set up fingerprint on this device',
+    desc: 'Confirm your account password to add a local fingerprint passkey.',
     icon: 'bi-shield-lock',
     accentClass: 'bio-method-icon-box--fingerprint'
 };
+var faceSignInOption = {
+    id: 'face',
+    name: 'Face verification',
+    desc: 'Capture a live camera face scan to verify liveness and sign in.',
+    icon: 'bi-person-bounding-box',
+    accentClass: 'bio-method-icon-box--face'
+};
+
+function updateFaceCaptureStatus(message, statusText) {
+    var pillText = document.getElementById('bioFaceStatusText');
+    var liveness = document.getElementById('bioFaceLivenessStatus');
+    if (pillText && message) pillText.textContent = message;
+    if (liveness && (statusText || message)) liveness.textContent = statusText || message;
+}
+
+function promptFaceIdentifier(prefill, errorMessage) {
+    openBiometricModal({
+        title: 'Face verification',
+        headerIcon: 'bi-person-bounding-box',
+        badgeType: errorMessage ? 'warning' : 'info',
+        message: errorMessage || 'Enter your Student ID, Email, or Mobile Number so we can check your registered face profile.',
+        showIdentifier: true,
+        prefillIdentifier: prefill || '',
+        primaryBtnText: 'Start camera',
+        secondaryBtnText: 'Enter password',
+        showCancelBtn: true,
+        onPrimaryClick: function() {
+            var modalIdInput = document.getElementById('bioModalIdentifierInput');
+            var entered = modalIdInput ? modalIdInput.value.trim() : '';
+            if (!entered) {
+                promptFaceIdentifier('', 'Enter your Student ID, Email, or Mobile Number to continue.');
+                return;
+            }
+            if (idInput) {
+                idInput.value = entered;
+                if (typeof updateAccountBanner === 'function') updateAccountBanner();
+            }
+            startFaceVerificationLogin(entered);
+        },
+        onSecondaryClick: closeBiometricModalAndFocusPassword
+    });
+}
+
+async function startFaceVerificationLogin(identifier) {
+    if (biometricRedirectStarted || isBioPending) return;
+    var resolvedIdentifier = (identifier || (idInput ? idInput.value : '') || '').trim();
+    if (!resolvedIdentifier) {
+        promptFaceIdentifier('');
+        return;
+    }
+
+    if (!window.isSecureContext || !navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+        openBiometricModal({
+            title: 'Camera unavailable',
+            headerIcon: 'bi-camera-video-off',
+            identifier: resolvedIdentifier,
+            badgeType: 'warning',
+            message: 'This browser cannot access the camera here. Sign in with fingerprint or your password.',
+            primaryBtnText: 'Enter password',
+            secondaryBtnText: false,
+            showCancelBtn: true,
+            onPrimaryClick: closeBiometricModalAndFocusPassword
+        });
+        return;
+    }
+
+    var modalEl = document.getElementById('biometricModal');
+    var faceGuidanceUrl = modalEl?.dataset?.faceGuidanceUrl;
+    var faceOptionsUrl = modalEl?.dataset?.faceOptionsUrl || '{{ route("webauthn.face.options") }}';
+    var faceLoginUrl = modalEl?.dataset?.faceLoginUrl || '{{ route("webauthn.face.login") }}';
+
+    var attemptObj = startNewBiometricAttempt();
+    isBioPending = true;
+
+    openBiometricModal({
+        title: 'Face verification',
+        headerIcon: 'bi-person-bounding-box',
+        identifier: resolvedIdentifier,
+        message: 'Center your face inside the frame and follow each head-turn direction.',
+        showFaceCapture: true,
+        hidePrimaryBtn: true,
+        secondaryBtnText: 'Cancel',
+        onSecondaryClick: closeBiometricModal
+    });
+
+    var progressEl = document.getElementById('bioFaceProgress');
+    var progressFill = document.getElementById('bioFaceProgressFill');
+    var progressLabel = document.getElementById('bioFaceProgressLabel');
+    var instructionEl = document.getElementById('bioFacePoseInstruction');
+    var confirmEl = document.getElementById('bioFaceCaptureConfirmation');
+    var video = document.getElementById('bioFaceCameraVideo');
+    var canvas = document.getElementById('bioFaceCaptureCanvas');
+
+    if (progressEl) progressEl.value = 0;
+    if (progressFill) progressFill.style.width = '0%';
+    if (progressLabel) progressLabel.textContent = '0/5 angles captured';
+    if (instructionEl) instructionEl.textContent = 'Position your face inside the oval.';
+    if (confirmEl) confirmEl.textContent = '';
+    updateFaceCaptureStatus('Starting camera…', 'Liveness check pending');
+
+    try {
+        var stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
+            audio: false
+        });
+        if (isStaleBiometricAttempt(attemptObj)) {
+            stream.getTracks().forEach(function(t) { t.stop(); });
+            return;
+        }
+        bioFaceStream = stream;
+        if (video) {
+            video.srcObject = stream;
+            await video.play();
+        }
+        if (isStaleBiometricAttempt(attemptObj)) return;
+
+        getBioFaceLightControl()?.start?.(stream);
+        updateFaceCaptureStatus('Preparing face detection…', 'Loading camera guidance');
+
+        if (!faceGuidanceUrl) {
+            throw createWebAuthnError('NotSupportedError', 'Face detection assets are not available.');
+        }
+
+        var guidancePromise = import(faceGuidanceUrl);
+        var optFetch = await fetchJsonWithTimeout(faceOptionsUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                identifier: resolvedIdentifier,
+                student_number: resolvedIdentifier
+            })
+        }, 15000, attemptObj);
+        if (isStaleBiometricAttempt(attemptObj)) return;
+
+        var optRes = optFetch.response;
+        var optData = optFetch.data;
+        if (!optRes.ok || !optData?.face_challenge?.id || !Array.isArray(optData.face_challenge.poses) || optData.face_challenge.poses.length !== 5) {
+            var optMsg = (optData && optData.message) || 'Face verification could not be started.';
+            throw createWebAuthnError('FaceLoginError', optMsg, {
+                status: optRes.status,
+                code: optData?.code || null
+            });
+        }
+
+        var guidance = await guidancePromise;
+        if (isStaleBiometricAttempt(attemptObj)) return;
+        bioFaceDetector = await guidance.createDetector();
+        if (isStaleBiometricAttempt(attemptObj)) return;
+
+        var frames = await guidance.captureSequence({
+            video: video,
+            canvas: canvas,
+            detector: bioFaceDetector,
+            poses: optData.face_challenge.poses,
+            signal: attemptObj.signal,
+            expiresIn: optData.face_challenge.expires_in,
+            onGuide: function(message, state, direction) {
+                if (instructionEl && direction && instructionEl.textContent !== direction) {
+                    instructionEl.textContent = direction;
+                }
+                updateFaceCaptureStatus(message, state === 'matched' ? 'Hold pose steady' : message);
+            },
+            onProgress: function(count, pose) {
+                if (progressEl) progressEl.value = count;
+                if (progressFill) progressFill.style.width = Math.round((count / 5) * 100) + '%';
+                if (progressLabel) progressLabel.textContent = count + '/5 angles captured';
+                if (confirmEl) {
+                    var labels = { front: 'Front', left: 'Left', right: 'Right', up: 'Upward', down: 'Downward' };
+                    confirmEl.textContent = (labels[pose] || 'View') + ' angle captured.';
+                }
+                window.triggerHaptic?.('light');
+            }
+        });
+        if (isStaleBiometricAttempt(attemptObj)) return;
+
+        stopFaceLoginCapture();
+        showBiometricProgress(
+            'Checking face verification',
+            'Confirming live capture and matching your encrypted face profile.',
+            resolvedIdentifier,
+            'Verifying liveness & identity…',
+            { icon: 'bi-person-bounding-box', dismissible: false }
+        );
+
+        var devKey = (typeof window.getOrCreateDeviceKey === 'function')
+            ? window.getOrCreateDeviceKey()
+            : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
+
+        var loginFetch = await fetchJsonWithTimeout(faceLoginUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Device-Key': devKey,
+                'X-Device-Fingerprint': devKey
+            },
+            body: JSON.stringify({
+                identifier: resolvedIdentifier,
+                student_number: resolvedIdentifier,
+                face_challenge: optData.face_challenge.id,
+                live_frames: frames,
+                qr_token: biometricQrToken
+            })
+        }, 25000, attemptObj);
+        if (isStaleBiometricAttempt(attemptObj)) return;
+
+        var loginRes = loginFetch.response;
+        var loginData = loginFetch.data;
+        if (!loginRes.ok || !loginData || !loginData.success) {
+            var failMsg = (loginData && loginData.message) || 'Face verification did not match. Try again in even lighting.';
+            throw createWebAuthnError('FaceLoginError', failMsg, {
+                status: loginRes.status,
+                code: loginData?.code || null
+            });
+        }
+
+        completeBiometricLogin(loginData);
+    } catch (err) {
+        stopFaceLoginCapture();
+        resetBiometricButton();
+        if (attemptObj.id !== activeBioAttemptId || (attemptObj.signal.aborted && bioAbortReason === 'user')) {
+            return;
+        }
+
+        var message = err && err.name === 'NotAllowedError'
+            ? 'Camera access was denied. Allow camera permission in your browser settings to verify with your face, or use your fingerprint or password.'
+            : (err?.message || 'Face verification could not be completed. Please try again.');
+        var cannotRetry = err?.code === 'FACE_LOGIN_UNAVAILABLE'
+            || err?.code === 'FACE_VERIFICATION_UNAVAILABLE'
+            || err?.code === 'FACE_ATTEMPTS_EXHAUSTED'
+            || err?.code === 'ACCOUNT_LOCKED'
+            || err?.status === 429
+            || err?.status === 503;
+
+        openBiometricModal({
+            title: cannotRetry ? 'Face verification unavailable' : 'Face verification incomplete',
+            headerIcon: 'bi-person-bounding-box',
+            identifier: resolvedIdentifier,
+            badgeType: 'warning',
+            message: message,
+            primaryBtnText: cannotRetry ? 'Use fingerprint' : 'Try face again',
+            secondaryBtnText: 'Enter password',
+            showCancelBtn: true,
+            onPrimaryClick: function() {
+                if (cannotRetry) openBiometricSignInChoices(resolvedIdentifier);
+                else startFaceVerificationLogin(resolvedIdentifier);
+            },
+            onSecondaryClick: closeBiometricModalAndFocusPassword
+        });
+    }
+}
 
 async function openBiometricSignInChoices(identifier, allowHybrid = false) {
     var attemptObj = startNewBiometricAttempt();
@@ -1938,18 +2379,27 @@ async function openBiometricSignInChoices(identifier, allowHybrid = false) {
             showCancelBtn: true,
             onMethodSelect: function(method) {
                 if (method.id === 'password') closeBiometricModalAndFocusPassword();
+                else if (method.id === 'face') startFaceVerificationLogin(identifier);
                 else onSelect(method);
             }
         });
     }
 
-    showChoices('Choose how to sign in.', [], null, 'Checking passkey availability…');
+    showChoices('Choose how to verify your identity.', [], null, 'Checking biometric options…');
     try {
         var capability = await refreshPasskeySignIn();
         if (isStaleBiometricAttempt(attemptObj)) return;
         var browserPasskeys = canRequestDeviceSignIn(capability);
-        if (!browserPasskeys && !getAndroidPasskeyBridge()) {
+        var hasDevicePasskeys = browserPasskeys || Boolean(getAndroidPasskeyBridge());
+        var cameraFaceSupported = canRequestFaceSignIn();
+
+        if (!hasDevicePasskeys && !cameraFaceSupported) {
             showChoices(passkeyAvailabilityMessage(capability, 'get'), []);
+            return;
+        }
+
+        if (!hasDevicePasskeys && cameraFaceSupported) {
+            showChoices('Choose how to verify your identity.', [faceSignInOption], function() {});
             return;
         }
 
@@ -1961,7 +2411,7 @@ async function openBiometricSignInChoices(identifier, allowHybrid = false) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ identifier: identifier, biometric_method: 'device_lock' })
+            body: JSON.stringify({ identifier: identifier, biometric_method: 'fingerprint' })
         }, 15000, attemptObj);
         if (isStaleBiometricAttempt(attemptObj)) return;
 
@@ -1971,8 +2421,13 @@ async function openBiometricSignInChoices(identifier, allowHybrid = false) {
         if (opts?.code === 'BIOMETRIC_UNAVAILABLE' && identifier) {
             var setupCapability = await checkPasskeyAvailability('create');
             if (isStaleBiometricAttempt(attemptObj)) return;
-            showChoices(opts.message, setupCapability.available ? [setupPasskeyOption] : [], function() {
-                openBiometricSetupModal(identifier, attemptObj.signal);
+            var fallbackChoices = [];
+            if (canRequestFaceSignIn(opts)) fallbackChoices.push(faceSignInOption);
+            if (setupCapability.available) fallbackChoices.push(setupPasskeyOption);
+            showChoices(opts.message, fallbackChoices, function(selected) {
+                if (selected.id === 'setup') {
+                    openBiometricSetupModal(identifier, attemptObj.signal);
+                }
             });
             return;
         }
@@ -1988,20 +2443,24 @@ async function openBiometricSignInChoices(identifier, allowHybrid = false) {
         }
 
         var readyAt = performance.now();
-        var localOption = {
-            id: 'device_lock',
-            name: 'Use a device passkey',
-            desc: 'Use a passkey saved on this device with fingerprint, face unlock, or screen lock.',
-            icon: 'bi-shield-lock',
+        var fingerprintOption = {
+            id: 'fingerprint',
+            name: 'Fingerprint',
+            desc: 'Use your device fingerprint sensor or screen lock to verify and sign in.',
+            icon: 'bi-fingerprint',
             accentClass: 'bio-method-icon-box--fingerprint'
         };
-        var methods = [localOption];
+        var methods = [fingerprintOption];
+        if (canRequestFaceSignIn(opts)) {
+            methods.push(faceSignInOption);
+        }
         if (browserPasskeys) {
             if (allowHybrid) methods.unshift(otherDevicePasskeyOption);
             else methods.push(otherDevicePasskeyOption);
         }
         if (identifier) methods.push(setupPasskeyOption);
-        showChoices('Choose how to sign in.', methods, function(method) {
+
+        showChoices('Choose how to verify your identity.', methods, function(method) {
             if (method.id === 'setup') {
                 openBiometricSetupModal(identifier, attemptObj.signal);
                 return;
@@ -2027,28 +2486,37 @@ async function performBiometricLogin(studentNumber, opts, allowHybrid) {
     try {
         var promptTimeout = Math.min(Math.max(Number(opts.timeout) || 45000, 15000), 60000);
         var androidBridge = allowHybrid ? null : getAndroidPasskeyBridge();
+        var serverAllow = opts.allowCredentials || [];
+        var filteredBrowserAllow = buildAllowCredentials(serverAllow, allowHybrid);
+        var filteredAndroidAllow = buildAndroidAllowCredentials(serverAllow);
+
+        if (!allowHybrid && serverAllow.length > 0 && filteredBrowserAllow.length === 0) {
+            throw createWebAuthnError('NotFoundError', 'No fingerprint passkey was found on this device for your account.');
+        }
+
         var publicKeyOptions = {
             challenge: opts.challenge,
             userVerification: 'required',
             timeout: promptTimeout,
             rpId: opts.rpId,
-            hints: allowHybrid ? ['hybrid', 'security-key', 'client-device'] : opts.hints,
-            allowCredentials: opts.allowCredentials || []
+            hints: allowHybrid ? ['hybrid', 'security-key', 'client-device'] : ['client-device'],
+            allowCredentials: androidBridge ? filteredAndroidAllow : serverAllow
         };
 
         showBiometricProgress(
-            allowHybrid ? 'Use passkey from another device' : 'Verify with your device',
+            allowHybrid ? 'Use passkey from another device' : 'Verify with fingerprint',
             allowHybrid
                 ? 'Choose a passkey from another device or security key to finish signing in.'
-                : 'Follow your device prompt to verify using fingerprint, face unlock, or screen lock.',
+                : 'Touch your device fingerprint sensor or confirm screen lock to sign in.',
             studentNumber,
-            allowHybrid ? 'Waiting for cross-device passkey…' : 'Confirming on your device…'
+            allowHybrid ? 'Waiting for cross-device passkey…' : 'Opening fingerprint sensor…',
+            { icon: allowHybrid ? 'bi-phone' : 'bi-fingerprint' }
         );
 
         var assertion = await runWithCredentialWatchdog(async function() {
             if (androidBridge) {
                 try {
-                    return await requestAndroidPasskey(androidBridge, publicKeyOptions, attemptObj);
+                    return await requestAndroidPasskey(androidBridge, 'get', publicKeyOptions, attemptObj);
                 } catch (err) {
                     if (err.name !== 'NotSupportedError' || typeof navigator.credentials?.get !== 'function') throw err;
                     androidBridge = null;
@@ -2057,7 +2525,7 @@ async function performBiometricLogin(studentNumber, opts, allowHybrid) {
             return navigator.credentials.get({
                 publicKey: Object.assign({}, publicKeyOptions, {
                     challenge: base64ToUint8Array(publicKeyOptions.challenge),
-                    allowCredentials: buildAllowCredentials(publicKeyOptions.allowCredentials)
+                    allowCredentials: filteredBrowserAllow
                 }),
                 signal: attemptObj.signal
             });
@@ -2070,8 +2538,8 @@ async function performBiometricLogin(studentNumber, opts, allowHybrid) {
 
         showBiometricProgress('Finishing sign-in', 'Checking your passkey response.', studentNumber, 'Completing sign-in…', { dismissible: false });
 
-        // The native bridge returns WebAuthn JSON, while browsers return buffers.
-        var encode = androidBridge ? function(value) { return value; } : bufferToBase64Url;
+        var isRawB64 = typeof assertion.rawId === 'string';
+        var encode = isRawB64 ? function(value) { return value; } : bufferToBase64Url;
         var credentialId = encode(assertion.rawId);
         var assertionResponse = {
             clientDataJSON: encode(assertion.response.clientDataJSON),
@@ -2106,7 +2574,8 @@ async function performBiometricLogin(studentNumber, opts, allowHybrid) {
                 assertion: assertionData,
                 student_number: studentNumber,
                 identifier: studentNumber,
-                biometric_method: 'device_lock',
+                biometric_method: 'fingerprint',
+                qr_token: biometricQrToken,
                 device_key: devKey,
                 device_fingerprint: devKey
             })
@@ -2162,7 +2631,7 @@ function handleBiometricSignInError(err, studentNumber, opts, allowHybrid) {
                 title: 'Verification timed out',
                 headerIcon: 'bi-clock-history',
                 identifier: studentNumber,
-                message: 'Your device verification prompt did not finish in time. Try again, verify from another device, or sign in with your password.',
+                message: 'Your device verification prompt did not finish in time. Try again, verify with your face, or sign in with your password.',
                 badgeType: 'warning',
                 primaryBtnText: 'Try again',
                 secondaryBtnText: 'Enter password',
@@ -2174,31 +2643,45 @@ function handleBiometricSignInError(err, studentNumber, opts, allowHybrid) {
         }
 
         if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
-            if (hasAccountCredentials && !allowHybrid) {
-                var fallbackMethods = [];
-                if (err.name !== 'NotFoundError') fallbackMethods.push({
+            var fallbackMethods = [];
+            if (hasAccountCredentials && !allowHybrid && err.name !== 'NotFoundError') {
+                fallbackMethods.push({
                     id: 'retry_local',
-                    name: 'Try this device again',
-                    desc: 'Open the device verification prompt again.',
-                    icon: 'bi-shield-lock',
+                    name: 'Try fingerprint again',
+                    desc: 'Open the fingerprint verification prompt again.',
+                    icon: 'bi-fingerprint',
                     accentClass: 'bio-method-icon-box--fingerprint'
                 });
-                if (typeof navigator.credentials?.get === 'function') fallbackMethods.push(otherDevicePasskeyOption);
-                if (studentNumber) fallbackMethods.push(setupPasskeyOption);
-                fallbackMethods.push({
-                    id: 'password',
-                    name: 'Enter password',
-                    desc: 'Type your account password to sign in.',
-                    icon: 'bi-lock-fill',
-                    accentClass: 'bio-method-icon-box--password'
-                });
+            }
+            if (canRequestFaceSignIn(opts)) {
+                fallbackMethods.push(faceSignInOption);
+            }
+            if (studentNumber) fallbackMethods.push(setupPasskeyOption);
+            if (!allowHybrid && typeof navigator.credentials?.get === 'function') {
+                fallbackMethods.push(otherDevicePasskeyOption);
+            }
+            fallbackMethods.push({
+                id: 'password',
+                name: 'Enter password',
+                desc: 'Type your account password to sign in.',
+                icon: 'bi-lock-fill',
+                accentClass: 'bio-method-icon-box--password'
+            });
+
+            if (hasAccountCredentials || !allowHybrid) {
+                var noLocalTitle = hasAccountCredentials
+                    ? 'No fingerprint verified on this device'
+                    : 'No local fingerprint passkey found';
+                var noLocalMsg = err.name === 'NotFoundError'
+                    ? (studentNumber
+                        ? 'This device could not find a saved fingerprint passkey for this account. Register one on this device or use face verification.'
+                        : 'No local fingerprint passkey was found on this device. Enter your account ID to set up fingerprint sign-in, or use face verification.')
+                    : 'Fingerprint verification was cancelled or did not complete on this device.';
                 openBiometricModal({
-                    title: 'No passkey verified on this device',
-                    headerIcon: 'bi-shield-lock',
+                    title: noLocalTitle,
+                    headerIcon: 'bi-fingerprint',
                     identifier: studentNumber,
-                    message: err.name === 'NotFoundError'
-                        ? 'This device couldn’t find a saved passkey for this account.'
-                        : 'Verification was cancelled or this device couldn’t use a saved passkey for this account.',
+                    message: noLocalMsg,
                     badgeType: 'warning',
                     methods: fallbackMethods,
                     hidePrimaryBtn: true,
@@ -2206,7 +2689,9 @@ function handleBiometricSignInError(err, studentNumber, opts, allowHybrid) {
                     showCancelBtn: true,
                     onMethodSelect: function(selected) {
                         if (selected.id === 'retry_local') {
-                            openBiometricSignInChoices(studentNumber);
+                            performBiometricLogin(studentNumber, opts, false);
+                        } else if (selected.id === 'face') {
+                            startFaceVerificationLogin(studentNumber);
                         } else if (selected.id === 'try_hybrid') {
                             openBiometricSignInChoices(studentNumber, true);
                         } else if (selected.id === 'setup') {
@@ -2234,20 +2719,6 @@ function handleBiometricSignInError(err, studentNumber, opts, allowHybrid) {
                 });
                 return;
             }
-
-            openBiometricModal({
-                title: 'No usable passkey found on this device',
-                headerIcon: 'bi-shield-lock',
-                identifier: studentNumber,
-                message: 'Enter your Student ID, Email, or Mobile Number first to check biometric credentials on your account, or sign in with your password.',
-                badgeType: 'warning',
-                primaryBtnText: 'Enter account ID',
-                secondaryBtnText: 'Enter password',
-                showCancelBtn: true,
-                onPrimaryClick: closeBiometricModalAndFocusIdentifier,
-                onSecondaryClick: closeBiometricModalAndFocusPassword
-            });
-            return;
         }
 
         var friendlyMsg;
@@ -2356,6 +2827,19 @@ function setupBiometricListeners() {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 handleSetupBiometricsClick();
+            }
+        });
+    }
+
+    var bioModalId = document.getElementById('bioModalIdentifierInput');
+    if (bioModalId && bioModalId.dataset.biometricBound !== 'true') {
+        bioModalId.dataset.biometricBound = 'true';
+        bioModalId.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (typeof currentPrimaryModalCallback === 'function') {
+                    currentPrimaryModalCallback(e);
+                }
             }
         });
     }
