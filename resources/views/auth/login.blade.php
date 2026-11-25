@@ -305,7 +305,7 @@ if (document.readyState === 'loading') {
 
         <!-- Logo + heading -->
         <div class="text-center">
-            <div class="anim-fade-up anim-d1" style="display:flex; justify-content:center;">
+            <div class="glass-logo-wrap">
                 <div class="glass-logo">
                     <img src="{{ asset('images/logo.png') }}" alt="Logo">
                 </div>
@@ -377,7 +377,7 @@ if (document.readyState === 'loading') {
             </div>
 
             <!-- Password -->
-            <div class="glass-input-wrap anim-fade-up anim-d5" style="margin-bottom: 7px;">
+            <div class="glass-input-wrap glass-input-wrap--password anim-fade-up anim-d5">
                 <i class="bi bi-lock-fill g-icon"></i>
                 <input type="password" name="password" id="loginPassword"
                        class="glass-input has-eye @error('password') is-invalid @enderror"
@@ -390,12 +390,12 @@ if (document.readyState === 'loading') {
                 <div class="invalid-feedback-custom anim-fade-up anim-d5" style="margin-top:-10px;margin-bottom:12px;">{{ $message }}</div>
             @enderror
             <!-- Remember Me & Forgot Password Row -->
-            <div class="d-flex align-items-center justify-content-between anim-fade-up anim-d5" style="font-size: 0.82rem; padding: 0 2px; margin-bottom: 9px;">
-                <label style="display: inline-flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; margin: 0; color: rgba(255,255,255,0.85); font-weight: 500;">
-                    <input type="checkbox" name="remember" id="rememberMe" value="1" checked style="width: 16px; height: 16px; accent-color: #d4af37; cursor: pointer; border-radius: 4px;">
+            <div class="d-flex align-items-center justify-content-between glass-remember-row anim-fade-up anim-d5">
+                <label class="glass-remember-label">
+                    <input type="checkbox" name="remember" id="rememberMe" value="1" checked class="glass-remember-check">
                     <span>Remember me</span>
                 </label>
-                <a href="{{ route('otp.forgot.form') }}" id="forgotPasswordLink" style="color: rgba(212,175,55,0.9); text-decoration: none; font-weight: 500; transition: color 0.2s;">
+                <a href="{{ route('otp.forgot.form') }}" id="forgotPasswordLink" class="glass-forgot-link">
                     Forgot password?
                 </a>
             </div>
@@ -425,12 +425,12 @@ if (document.readyState === 'loading') {
             </button>
         </form>
 
-        <div style="text-align:center;margin-top:6px;" class="anim-fade-up anim-d7">
+        <div class="glass-recovery-row anim-fade-up anim-d7">
             <a href="#" id="useRecoveryCodeLink" class="glass-note-link">
                 <i class="bi bi-key me-1"></i>Use Recovery Code
             </a>
         </div>
-        <div class="glass-link-row anim-fade-up anim-d7" style="margin-top:4px;">
+        <div class="glass-link-row anim-fade-up anim-d7">
             Don't have an account? <a href="{{ route('register') }}">Register here</a>
         </div>
         
