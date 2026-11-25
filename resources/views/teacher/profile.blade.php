@@ -698,34 +698,32 @@ async function registerDevicePasskey() {
         };
 
         // Require device verification with the local platform authenticator.
+        const strategies = [
+            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required', requireResidentKey: true },
+            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred', requireResidentKey: false },
+            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged', requireResidentKey: false }
+        ];
         let credential = null;
-        try {
-            credential = await navigator.credentials.create({
-                publicKey: Object.assign({}, basePublicKey, {
-                    authenticatorSelection: {
-                        authenticatorAttachment: 'platform',
-                        userVerification: 'required',
-                        residentKey: 'preferred',
-                        requireResidentKey: false
-                    }
-                })
-            });
-        } catch (firstErr) {
-            if (firstErr.name === 'AbortError' || firstErr.name === 'NotAllowedError') throw firstErr;
-            credential = await navigator.credentials.create({
-                publicKey: Object.assign({}, basePublicKey, {
-                    authenticatorSelection: {
-                        authenticatorAttachment: 'platform',
-                        userVerification: 'required',
-                        residentKey: 'discouraged',
-                        requireResidentKey: false
-                    }
-                })
-            });
+        let lastCreateErr = null;
+        for (const selection of strategies) {
+            try {
+                credential = await navigator.credentials.create({
+                    publicKey: Object.assign({}, basePublicKey, { authenticatorSelection: selection })
+                });
+                break;
+            } catch (createErr) {
+                lastCreateErr = createErr;
+                if (createErr.name === 'AbortError'
+                    || createErr.name === 'NotAllowedError'
+                    || createErr.name === 'InvalidStateError'
+                    || createErr.name === 'SecurityError') {
+                    throw createErr;
+                }
+            }
         }
 
         if (!credential) {
-            throw new Error('Passkey setup was canceled.');
+            throw (lastCreateErr || new Error('Passkey setup was canceled.'));
         }
 
         const rawId = bufferToBase64Url(credential.rawId);
@@ -739,21 +737,26 @@ async function registerDevicePasskey() {
                 ? new Uint8Array(credential.response.attestationObject)
                 : credential.response.attestationObject
         );
+        const rawTransports = (credential.response && typeof credential.response.getTransports === 'function')
+            ? credential.response.getTransports()
+            : ['internal'];
+        const transports = Array.isArray(rawTransports) && rawTransports.length ? rawTransports : ['internal'];
 
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
             body: JSON.stringify({
                 credential_id: rawId,
+                transports: transports,
                 credential: {
                     id: credential.id,
                     type: credential.type,
+                    transports: transports,
                     response: {
                         attestationObject: attestationObject,
                         clientDataJSON: clientDataJSON
                     }
-                },
-                device_name: /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'Mobile Device' : 'Desktop Browser'
+                }
             })
         });
         const result = await saveRes.json();

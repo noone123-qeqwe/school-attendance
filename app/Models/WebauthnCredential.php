@@ -14,10 +14,12 @@ class WebauthnCredential extends Model
         'sign_count',
         'device_name',
         'biometric_type',
+        'transports',
         'last_used_at',
     ];
 
     protected $casts = [
+        'transports' => 'array',
         'last_used_at' => 'datetime',
     ];
 

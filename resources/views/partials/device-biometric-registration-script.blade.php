@@ -159,8 +159,8 @@ async function loadDevices() {
             emptyDiv.style.cssText = 'text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);';
             emptyDiv.innerHTML = `
                 <i class="bi bi-shield-lock" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
-                <div style="font-weight:700;color:#f3e7cd;margin-bottom:4px;">No device passkeys registered yet</div>
-                <div style="font-size:.78rem;color:#b39b82;">Use the registration button above to set up this device.</div>
+                <div style="font-weight:700;color:#f3e7cd;margin-bottom:4px;">No passkeys registered on this account yet</div>
+                <div style="font-size:.78rem;color:#b39b82;">Use the registration button above to add a passkey for this device to your account.</div>
             `;
             list.appendChild(emptyDiv);
         }
@@ -342,20 +342,35 @@ async function beginDevicePasskeyRegistration() {
         };
 
         statusTitle.textContent = 'Confirm on your device';
-        statusText.textContent = 'Follow your device’s secure prompt.';
-        let credential;
-        try {
-            credential = await navigator.credentials.create({ publicKey, signal: controller.signal });
-        } catch (error) {
-            if (controller.signal.aborted || error.name !== 'NotSupportedError') throw error;
-            const nonresidentKey = {
-                ...publicKey,
-                authenticatorSelection: { ...publicKey.authenticatorSelection, residentKey: 'discouraged' }
-            };
-            credential = await navigator.credentials.create({ publicKey: nonresidentKey, signal: controller.signal });
+        statusText.textContent = 'Follow your device’s biometric or screen lock prompt.';
+        const strategies = [
+            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required', requireResidentKey: true },
+            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred', requireResidentKey: false },
+            { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged', requireResidentKey: false }
+        ];
+        let credential = null;
+        let lastCreateError = null;
+        for (const selection of strategies) {
+            if (controller.signal.aborted) return;
+            try {
+                credential = await navigator.credentials.create({
+                    publicKey: { ...publicKey, authenticatorSelection: selection },
+                    signal: controller.signal
+                });
+                break;
+            } catch (error) {
+                lastCreateError = error;
+                if (controller.signal.aborted
+                    || error.name === 'AbortError'
+                    || error.name === 'NotAllowedError'
+                    || error.name === 'InvalidStateError'
+                    || error.name === 'SecurityError') {
+                    throw error;
+                }
+            }
         }
         if (controller.signal.aborted) return;
-        if (!credential) throw new Error('The passkey request ended before registration finished.');
+        if (!credential) throw (lastCreateError || new Error('The passkey request ended before registration finished.'));
 
         setBioRegistrationStage(3);
         frame?.classList.add('bio-detected');
@@ -363,6 +378,11 @@ async function beginDevicePasskeyRegistration() {
         statusText.textContent = 'Linking the passkey to your account.';
 
         const credentialId = bufferToBase64Url(credential.rawId);
+        const transports = (credential.response && typeof credential.response.getTransports === 'function')
+            ? credential.response.getTransports()
+            : ['internal'];
+        const normalizedTransports = Array.isArray(transports) && transports.length ? transports : ['internal'];
+
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
             method: 'POST',
             signal: controller.signal,
@@ -374,15 +394,16 @@ async function beginDevicePasskeyRegistration() {
             },
             body: JSON.stringify({
                 credential_id: credentialId,
+                transports: normalizedTransports,
                 credential: {
                     id: credential.id,
                     type: credential.type,
+                    transports: normalizedTransports,
                     response: {
                         attestationObject: bufferToBase64Url(credential.response.attestationObject),
                         clientDataJSON: bufferToBase64Url(credential.response.clientDataJSON)
                     }
-                },
-                device_name: 'Device passkey'
+                }
             })
         });
 

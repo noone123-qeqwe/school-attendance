@@ -66,7 +66,7 @@ class WebauthnService
         $parsed = $this->parseAuthenticatorData($authData, true);
         $this->assertRpIdHash($parsed);
         if (($parsed['flags'] & 0x01) !== 0x01 || ($parsed['flags'] & 0x04) !== 0x04) {
-            throw new RuntimeException('Device verification was not completed. Please use your fingerprint, Face ID, or device PIN and try again.');
+            throw new RuntimeException('Device verification was not completed. Complete your device biometric or screen lock prompt and try again.');
         }
         $credentialId = $this->base64UrlEncode($parsed['credential_id']);
         $submittedCredentialId = $credential['rawId'] ?? $credential['id'] ?? null;
@@ -90,11 +90,14 @@ class WebauthnService
             })
             ->first();
 
+        $transports = $this->sanitizeTransports($credential['transports'] ?? null) ?? ['internal'];
+
         if ($existing) {
             $existing->forceFill([
                 'credential_id' => $credentialId,
                 'public_key' => $publicKey,
                 'sign_count' => $parsed['sign_count'],
+                'transports' => $transports,
                 'last_used_at' => now(),
             ])->save();
 
@@ -108,6 +111,7 @@ class WebauthnService
             'sign_count' => $parsed['sign_count'],
             'device_name' => 'Biometric Device',
             'biometric_type' => 'fingerprint',
+            'transports' => $transports,
             'last_used_at' => now(),
         ]);
     }
@@ -125,6 +129,7 @@ class WebauthnService
                 ->map(fn ($credential) => [
                     'type' => 'public-key',
                     'id' => $this->normalizeCredentialId($credential->credential_id),
+                    'transports' => $this->credentialTransports($credential),
                 ])
                 ->values()
                 ->toArray();
@@ -135,10 +140,52 @@ class WebauthnService
                 'challenge' => $this->base64UrlEncode($challenge),
                 'rpId' => $this->rpId(),
                 'allowCredentials' => $allowCredentials,
+                'hints' => ['client-device'],
                 'userVerification' => 'required',
                 'timeout' => 60000,
             ],
         ];
+    }
+
+    /**
+     * Normalize WebAuthn authenticator transports from the browser response.
+     *
+     * @param  array<int, mixed>|null  $transports
+     * @return array<int, string>|null
+     */
+    private function sanitizeTransports(?array $transports): ?array
+    {
+        if (!$transports) {
+            return null;
+        }
+
+        $allowed = ['internal', 'hybrid', 'usb', 'nfc', 'ble', 'smart-card'];
+        $filtered = array_values(array_unique(array_filter(
+            array_map(fn ($value) => is_string($value) ? strtolower(trim($value)) : '', $transports),
+            fn (string $value) => in_array($value, $allowed, true)
+        )));
+
+        if ($filtered === []) {
+            return null;
+        }
+
+        // Prefer 'internal' first so Credential Manager favors native platform biometrics.
+        if (in_array('internal', $filtered, true)) {
+            $filtered = array_values(array_unique(array_merge(['internal'], $filtered)));
+        }
+
+        return $filtered;
+    }
+
+    /**
+     * Resolve stored transports for a credential, defaulting legacy platform keys to internal.
+     *
+     * @return array<int, string>
+     */
+    private function credentialTransports(WebauthnCredential $credential): array
+    {
+        return $this->sanitizeTransports(is_array($credential->transports) ? $credential->transports : null)
+            ?? ['internal'];
     }
 
     public function verifyAssertion(User $user, array $assertion, ?WebauthnCredential $credential = null): WebauthnCredential
@@ -214,7 +261,7 @@ class WebauthnService
         }
         if (($parsed['flags'] & 0x04) !== 0x04) {
             Log::warning('WebAuthn UV flag not set', ['flags' => $parsed['flags'], 'user_id' => $user->id]);
-            throw new RuntimeException('Device verification was not completed. Please use your fingerprint, Face ID, or device PIN and try again.');
+            throw new RuntimeException('Device verification was not completed. Complete your device biometric or screen lock prompt and try again.');
         }
         
         Log::debug('WebAuthn flags OK', ['flags' => $parsed['flags'], 'up' => true, 'uv' => true]);

@@ -40,7 +40,7 @@ class WebAuthnController extends Controller
             'type' => $request->input('type') ?? 'public-key',
             'response' => $request->input('response') ?? [],
         ];
-        $defaultDevice = $biometricType === 'face' ? 'Face ID / Facial Recognition' : 'Fingerprint Sensor';
+        $defaultDevice = $this->defaultDeviceName($request);
         $deviceName = $request->input('device_name') ?? $defaultDevice;
 
         if (!$credentialId || !is_string($credentialId)) {
@@ -66,7 +66,7 @@ class WebAuthnController extends Controller
             return response()->json([
                 'success' => false,
                 'code' => 'SECURE_FACE_CREDENTIAL_REQUIRED',
-                'message' => 'Camera-only face profiles cannot be used for sign-in. Register Face ID or Windows Hello through your device passkey prompt.',
+                'message' => 'Camera-only face profiles cannot be used for sign-in. Register a device passkey in Settings to enable biometric sign-in.',
             ], 422);
         }
 
@@ -78,12 +78,17 @@ class WebAuthnController extends Controller
             return response()->json([
                 'success' => false,
                 'code' => 'SECURE_FACE_CREDENTIAL_REQUIRED',
-                'message' => 'Face sign-in must be registered through the protected passkey prompt on this device.',
+                'message' => 'Face sign-in must be registered through your device passkey prompt on this account.',
             ], 422);
         }
 
         if (!is_array($credential) || empty($credential['response'])) {
             return response()->json(["success" => false, "message" => "Invalid credential data."], 422);
+        }
+
+        $transports = $credential['transports'] ?? $request->input('transports');
+        if (is_array($transports)) {
+            $credential['transports'] = $transports;
         }
 
         try {
@@ -158,6 +163,7 @@ class WebAuthnController extends Controller
         return response()->json($options + [
             'success' => true,
             'discoverable' => $user === null,
+            'has_account_credentials' => $user !== null,
             'available_methods' => ['device_lock'],
         ]);
     }
@@ -261,13 +267,16 @@ class WebAuthnController extends Controller
         }
         $typeLabel = $biometricType === 'face' ? 'Face sign-in' : 'Fingerprint';
 
-        $defaultDevice = $biometricType === 'face' 
-            ? 'Face ID / Facial Recognition' 
-            : (str_contains(request()->userAgent() ?? '', 'Mobile') ? 'Mobile Fingerprint Sensor' : 'Desktop Fingerprint Sensor');
+        $defaultDevice = $this->defaultDeviceName($request);
         $deviceName = $request->input('device_name') ?? $defaultDevice;
 
         if (!$credentialId || !is_string($credentialId)) {
             return response()->json(["success" => false, "message" => "Credential ID is required."], 422);
+        }
+
+        $transports = $credential['transports'] ?? $request->input('transports');
+        if (is_array($transports)) {
+            $credential['transports'] = $transports;
         }
 
         $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
@@ -520,6 +529,28 @@ class WebAuthnController extends Controller
         ]);
     }
 
+    private function defaultDeviceName(Request $request): string
+    {
+        $ua = strtolower((string) $request->userAgent());
+        if (str_contains($ua, 'android')) {
+            return 'Android Device';
+        }
+        if (str_contains($ua, 'iphone') || str_contains($ua, 'ipad') || str_contains($ua, 'ipod')) {
+            return 'iPhone / iPad';
+        }
+        if (str_contains($ua, 'macintosh') || str_contains($ua, 'mac os x')) {
+            return 'Mac';
+        }
+        if (str_contains($ua, 'windows')) {
+            return 'Windows PC';
+        }
+        if (str_contains($ua, 'mobile')) {
+            return 'Mobile Device';
+        }
+
+        return 'Device Passkey';
+    }
+
     /** Reject legacy native biometric requests that cannot prove device verification. */
     public function nativeBiometricLogin(Request $request)
     {
@@ -543,15 +574,18 @@ class WebAuthnController extends Controller
     {
         $devices = DB::table("webauthn_credentials")
             ->where("user_id", Auth::id())
-            ->select(["credential_id", "device_name", "biometric_type", "public_key", "created_at", "last_used_at"])
+            ->select(["credential_id", "device_name", "biometric_type", "transports", "public_key", "created_at", "last_used_at"])
             ->orderBy("created_at", "desc")
             ->get()
             ->map(function ($d) {
+                $transports = is_string($d->transports) ? json_decode($d->transports, true) : $d->transports;
+
                 return [
                     'credential_id' => $d->credential_id,
                     'name' => $d->device_name ?? 'My Device',
                     'device_name' => $d->device_name ?? 'My Device',
                     'biometric_type' => in_array($d->biometric_type, ['face', 'fingerprint']) ? $d->biometric_type : 'fingerprint',
+                    'transports' => is_array($transports) && $transports !== [] ? array_values($transports) : ['internal'],
                     'is_secure_face_credential' => $d->biometric_type === 'face'
                         ? str_contains((string) $d->public_key, 'BEGIN PUBLIC KEY')
                         : null,

@@ -396,7 +396,7 @@
             </div>
             <div style="font-size:1.1rem;font-weight:800;color:#fde68a;margin-bottom:6px;">Biometric Verification Required</div>
             <p style="font-size:0.85rem;color:var(--ds-text-secondary, #D1C5B4);line-height:1.45;margin-bottom:16px;">
-                {{ $message ?? 'You must have a registered profile photo or fingerprint on this device before clocking in with QR attendance.' }}
+                {{ $message ?? 'You must have a registered profile photo or passkey on this account before clocking in with QR attendance.' }}
             </p>
             <div class="d-flex flex-column gap-2">
                 @if(app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification'))
@@ -1019,8 +1019,16 @@ async function requestFingerprintAssertion(options, signal) {
     var publicKey = {
         challenge: base64ToUint8Array(options.challenge),
         allowCredentials: (options.allowCredentials || []).map(function(credential) {
-            return {type: credential.type, id: base64ToUint8Array(credential.id), transports: ['internal', 'hybrid']};
+            var transports = Array.isArray(credential.transports) && credential.transports.length
+                ? credential.transports
+                : ['internal'];
+            return {
+                type: credential.type || 'public-key',
+                id: base64ToUint8Array(credential.id),
+                transports: transports.indexOf('internal') !== -1 ? ['internal'] : transports
+            };
         }),
+        hints: Array.isArray(options.hints) && options.hints.length ? options.hints : ['client-device'],
         userVerification: 'required',
         timeout: 20000
     };
@@ -1462,7 +1470,7 @@ function doFingerprint() {
     document.getElementById('retryFpBtn').style.display = 'none';
     setSpinner();
     document.getElementById('vTitle').textContent = 'Verifying Identity';
-    document.getElementById('vSub').textContent = 'Touch your fingerprint sensor or use Face ID...';
+    document.getElementById('vSub').textContent = 'Complete your device biometric or screen lock prompt...';
     hideMsg();
 
     if (!window.PublicKeyCredential) {
