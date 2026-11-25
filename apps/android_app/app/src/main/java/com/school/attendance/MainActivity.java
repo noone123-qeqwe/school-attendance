@@ -553,6 +553,11 @@ public class MainActivity extends AppCompatActivity {
         passkeyCancellation = cancellation;
         passkeyRequestId = id;
 
+        if (canUseStrongBiometricPrompt()) {
+            createWithAndroidKeystoreBiometric(cancellation, reply, id, normalized, rpHost);
+            return;
+        }
+
         try {
             CreatePublicKeyCredentialRequest createRequest = new CreatePublicKeyCredentialRequest(normalized.toString());
             CredentialManager.create(this).createCredentialAsync(this, createRequest, cancellation,
@@ -620,7 +625,11 @@ public class MainActivity extends AppCompatActivity {
         passkeyRequestId = id;
 
         JSONArray allowCredentials = options.optJSONArray("allowCredentials");
+        boolean emptyAllowList = allowCredentials == null || allowCredentials.length() == 0;
         JSONObject matchedKeystore = findMatchingKeystoreEntry(rpHost, allowCredentials);
+        if (matchedKeystore == null && emptyAllowList) {
+            matchedKeystore = findLatestKeystoreEntry(rpHost);
+        }
         if (matchedKeystore != null && canUseStrongBiometricPrompt()) {
             getWithAndroidKeystoreBiometric(cancellation, reply, id, options, rpHost, matchedKeystore);
             return;
@@ -657,7 +666,6 @@ public class MainActivity extends AppCompatActivity {
                                 finishPasskeyRequest(cancellation, reply, id, null, "NotAllowedError");
                                 return;
                             }
-                            boolean emptyAllowList = allowCredentials == null || allowCredentials.length() == 0;
                             JSONObject fallbackEntry = emptyAllowList ? findLatestKeystoreEntry(rpHost) : null;
                             if (fallbackEntry != null && canUseStrongBiometricPrompt()) {
                                 getWithAndroidKeystoreBiometric(cancellation, reply, id, options, rpHost, fallbackEntry);
@@ -676,7 +684,6 @@ public class MainActivity extends AppCompatActivity {
                     });
         } catch (RuntimeException ex) {
             if (passkeyCancellation != cancellation) return;
-            boolean emptyAllowList = allowCredentials == null || allowCredentials.length() == 0;
             JSONObject fallbackEntry = emptyAllowList ? findLatestKeystoreEntry(rpHost) : null;
             if (fallbackEntry != null && canUseStrongBiometricPrompt()) {
                 getWithAndroidKeystoreBiometric(cancellation, reply, id, options, rpHost, fallbackEntry);
@@ -1338,6 +1345,11 @@ public class MainActivity extends AppCompatActivity {
         public boolean hasLocalPasskey() {
             String host = APP_ORIGIN.getHost();
             return host != null && findLatestKeystoreEntry(host) != null;
+        }
+
+        @android.webkit.JavascriptInterface
+        public int getAppVersionCode() {
+            return 20923;
         }
 
         @android.webkit.JavascriptInterface

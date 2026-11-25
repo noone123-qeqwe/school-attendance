@@ -173,5 +173,54 @@
         });
     }
 
-    window.DevicePasskeys = { check, message, confirmOnClick, hasAndroidPasskeyBridge, requestAndroidPasskey };
+    var BROWSER_PASSKEYS_STORAGE_KEY = 'attendance_browser_passkeys';
+
+    function normalizePasskeyId(id) {
+        return String(id || '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function getRememberedBrowserPasskeys() {
+        try {
+            var raw = window.localStorage && window.localStorage.getItem(BROWSER_PASSKEYS_STORAGE_KEY);
+            if (!raw) return [];
+            var parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function rememberBrowserPasskey(credentialId) {
+        var clean = normalizePasskeyId(credentialId);
+        if (!clean) return;
+        try {
+            if (!window.localStorage) return;
+            var current = getRememberedBrowserPasskeys().filter(function (id) {
+                return id !== clean;
+            });
+            current.unshift(clean);
+            window.localStorage.setItem(BROWSER_PASSKEYS_STORAGE_KEY, JSON.stringify(current.slice(0, 20)));
+        } catch (_) {
+            // Ignore private-mode storage restrictions.
+        }
+    }
+
+    function hasRememberedBrowserPasskey(allowCredentials) {
+        var stored = getRememberedBrowserPasskeys();
+        if (stored.length === 0) return false;
+        if (!Array.isArray(allowCredentials) || allowCredentials.length === 0) return true;
+        return allowCredentials.some(function (cred) {
+            return cred && cred.id && stored.indexOf(normalizePasskeyId(cred.id)) !== -1;
+        });
+    }
+
+    window.DevicePasskeys = {
+        check,
+        message,
+        confirmOnClick,
+        hasAndroidPasskeyBridge,
+        requestAndroidPasskey,
+        rememberBrowserPasskey,
+        hasRememberedBrowserPasskey
+    };
 })();

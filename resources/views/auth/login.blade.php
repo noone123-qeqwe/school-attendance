@@ -478,7 +478,8 @@ if (document.readyState === 'loading') {
 <div id="biometricModal" class="bio-modal-overlay" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bioModalTitle" aria-describedby="bioModalDesc"
      data-face-guidance-url="{{ Vite::asset('resources/js/attendance-face-guidance.js') }}"
      data-face-options-url="{{ route('webauthn.face.options') }}"
-     data-face-login-url="{{ route('webauthn.face.login') }}">
+     data-face-login-url="{{ route('webauthn.face.login') }}"
+     data-apk-download-url="{{ \Illuminate\Support\Facades\Route::has('pwa.download.apk') ? route('pwa.download.apk') : url('/download/apk') }}">
     <div class="bio-modal-backdrop" id="bioModalBackdrop"></div>
     <div class="bio-modal-dialog">
         <div class="bio-modal-card">
@@ -1857,6 +1858,9 @@ async function startBiometricRegistration(identifier, password) {
         var regResult = saveFetch.data;
 
         if (saveRes.ok && regResult && regResult.success) {
+            if (!isRawB64) {
+                window.DevicePasskeys?.rememberBrowserPasskey?.(rawId);
+            }
             resetBiometricButton();
             try {
                 saveAccount({ identifier: identifier, name: identifier });
@@ -2097,32 +2101,116 @@ function updateFaceCaptureStatus(message, statusText) {
     if (liveness && (statusText || message)) liveness.textContent = statusText || message;
 }
 
-function promptFaceIdentifier(prefill, errorMessage) {
+function promptModalIdentifier(config, prefill, errorMessage) {
     openBiometricModal({
-        title: 'Face verification',
-        headerIcon: 'bi-person-bounding-box',
+        title: config.title,
+        headerIcon: config.headerIcon,
         badgeType: errorMessage ? 'warning' : 'info',
-        message: errorMessage || 'Enter your Student ID, Email, or Mobile Number so we can check your registered face profile.',
+        message: errorMessage || config.message,
         showIdentifier: true,
         prefillIdentifier: prefill || '',
-        primaryBtnText: 'Start camera',
+        primaryBtnText: config.primaryBtnText,
         secondaryBtnText: 'Enter password',
         showCancelBtn: true,
         onPrimaryClick: function() {
             var modalIdInput = document.getElementById('bioModalIdentifierInput');
             var entered = modalIdInput ? modalIdInput.value.trim() : '';
             if (!entered) {
-                promptFaceIdentifier('', 'Enter your Student ID, Email, or Mobile Number to continue.');
+                promptModalIdentifier(config, '', 'Enter your Student ID, Email, or Mobile Number to continue.');
                 return;
             }
             if (idInput) {
                 idInput.value = entered;
                 if (typeof updateAccountBanner === 'function') updateAccountBanner();
             }
-            startFaceVerificationLogin(entered);
+            config.onSubmit(entered);
         },
         onSecondaryClick: closeBiometricModalAndFocusPassword
     });
+}
+
+function promptFaceIdentifier(prefill, errorMessage) {
+    promptModalIdentifier({
+        title: 'Face verification',
+        headerIcon: 'bi-person-bounding-box',
+        message: 'Enter your Student ID, Email, or Mobile Number so we can check your registered face profile.',
+        primaryBtnText: 'Start camera',
+        onSubmit: startFaceVerificationLogin
+    }, prefill, errorMessage);
+}
+
+function promptFingerprintIdentifier(prefill, errorMessage) {
+    promptModalIdentifier({
+        title: 'Fingerprint verification',
+        headerIcon: 'bi-fingerprint',
+        message: 'Enter your Student ID, Email, or Mobile Number to check your registered fingerprint passkey on this device.',
+        primaryBtnText: 'Verify fingerprint',
+        onSubmit: startFingerprintWithIdentifier
+    }, prefill, errorMessage);
+}
+
+async function fetchFingerprintLoginOptions(identifier, attemptObj) {
+    return fetchJsonWithTimeout('{{ route("webauthn.login.options") }}', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ identifier: identifier, biometric_method: 'fingerprint' })
+    }, 15000, attemptObj);
+}
+
+async function startFingerprintWithIdentifier(identifier) {
+    if (biometricRedirectStarted || isBioPending) return;
+    var attemptObj = startNewBiometricAttempt();
+    showBiometricProgress('Checking account passkeys', 'Checking fingerprint sign-in options for your account.', identifier, 'Checking account…', { icon: 'bi-fingerprint' });
+    try {
+        var optFetch = await fetchFingerprintLoginOptions(identifier, attemptObj);
+        if (isStaleBiometricAttempt(attemptObj)) return;
+        var optRes = optFetch.response;
+        var opts = optFetch.data;
+        if (opts?.code === 'BIOMETRIC_UNAVAILABLE') {
+            var fallbackMethods = [];
+            if (canRequestFaceSignIn(opts)) fallbackMethods.push(faceSignInOption);
+            fallbackMethods.push({
+                id: 'password',
+                name: 'Enter password',
+                desc: 'Type your account password to sign in.',
+                icon: 'bi-lock-fill',
+                accentClass: 'bio-method-icon-box--password'
+            });
+            openBiometricModal({
+                title: 'No fingerprint passkey registered',
+                headerIcon: 'bi-fingerprint',
+                identifier: identifier,
+                badgeType: 'warning',
+                message: opts.message || 'No passkey was found for those sign-in details. Sign in with Face verification or your password and register this device in Settings.',
+                methods: fallbackMethods,
+                hidePrimaryBtn: true,
+                secondaryBtnText: false,
+                showCancelBtn: true,
+                onMethodSelect: function(selected) {
+                    if (selected.id === 'face') startFaceVerificationLogin(identifier);
+                    else closeBiometricModalAndFocusPassword();
+                }
+            });
+            return;
+        }
+        if (!optRes.ok || !opts || !opts.success) {
+            if (optRes.status === 419) {
+                throw createWebAuthnError('SessionExpiredError', 'Your session security token expired. Refresh this page and try again.');
+            }
+            if (optRes.status === 429) {
+                throw createWebAuthnError('RateLimitError', 'Too many sign-in attempts. Wait a moment and try again.');
+            }
+            throw new Error((opts && opts.message) || 'Device sign-in could not be started.');
+        }
+        performBiometricLogin(identifier, opts);
+    } catch (err) {
+        if (!isStaleBiometricAttempt(attemptObj)) handleBiometricSignInError(err, identifier, null);
+    }
 }
 
 async function startFaceVerificationLogin(identifier) {
@@ -2389,16 +2477,7 @@ async function openBiometricSignInChoices(identifier) {
             return;
         }
 
-        var optFetch = await fetchJsonWithTimeout('{{ route("webauthn.login.options") }}', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ identifier: identifier, biometric_method: 'fingerprint' })
-        }, 15000, attemptObj);
+        var optFetch = await fetchFingerprintLoginOptions(identifier, attemptObj);
         if (isStaleBiometricAttempt(attemptObj)) return;
 
         var optRes = optFetch.response;
@@ -2435,6 +2514,12 @@ async function openBiometricSignInChoices(identifier) {
         }
 
         showChoices('Choose how to verify your identity.', methods, function(method) {
+            var hasApkLocalPasskey = Boolean(window.AndroidDeviceBridge?.hasLocalPasskey?.());
+            var hasBrowserPasskey = Boolean(window.DevicePasskeys?.hasRememberedBrowserPasskey?.());
+            if (!identifier && !hasApkLocalPasskey && !hasBrowserPasskey && !(opts.allowCredentials && opts.allowCredentials.length)) {
+                promptFingerprintIdentifier('');
+                return;
+            }
             // Leave enough time for the native prompt to complete within the server challenge lifetime.
             if (performance.now() - readyAt >= 45000) {
                 openBiometricSignInChoices(identifier);
@@ -2454,6 +2539,8 @@ async function performBiometricLogin(studentNumber, opts) {
 
     try {
         var promptTimeout = Math.min(Math.max(Number(opts.timeout) || 45000, 15000), 60000);
+        var browserTimeout = Math.min(promptTimeout, 25000);
+        var inNativeApk = Boolean(window.AndroidDeviceBridge?.isNativeApp?.());
         var androidBridge = getAndroidPasskeyBridge();
         var serverAllow = opts.allowCredentials || [];
         var filteredBrowserAllow = buildAllowCredentials(serverAllow, false);
@@ -2463,10 +2550,11 @@ async function performBiometricLogin(studentNumber, opts) {
             throw createWebAuthnError('NotFoundError', 'No fingerprint passkey was found on this device for your account.');
         }
 
+        var effectiveTimeout = androidBridge ? promptTimeout : browserTimeout;
         var publicKeyOptions = {
             challenge: opts.challenge,
             userVerification: 'required',
-            timeout: promptTimeout,
+            timeout: effectiveTimeout,
             rpId: opts.rpId,
             hints: ['client-device'],
             allowCredentials: androidBridge ? filteredAndroidAllow : serverAllow
@@ -2474,9 +2562,11 @@ async function performBiometricLogin(studentNumber, opts) {
 
         showBiometricProgress(
             'Verify with fingerprint',
-            'Touch your device fingerprint sensor or confirm screen lock to sign in.',
+            androidBridge
+                ? 'Touch your device fingerprint sensor to verify your identity.'
+                : 'Follow your device fingerprint prompt. If Android shows "Sign in another way", no passkey is saved on this browser yet — tap Cancel and sign in with your password to register in Settings.',
             studentNumber,
-            'Opening fingerprint sensor…',
+            androidBridge ? 'Waiting for fingerprint sensor…' : 'Waiting for device fingerprint prompt…',
             { icon: 'bi-fingerprint' }
         );
 
@@ -2485,7 +2575,9 @@ async function performBiometricLogin(studentNumber, opts) {
                 try {
                     return await requestAndroidPasskey(androidBridge, 'get', publicKeyOptions, attemptObj);
                 } catch (err) {
-                    if (err.name !== 'NotSupportedError' || typeof navigator.credentials?.get !== 'function') throw err;
+                    if (err.name !== 'NotSupportedError' || inNativeApk || typeof navigator.credentials?.get !== 'function') {
+                        throw err;
+                    }
                     androidBridge = null;
                 }
             }
@@ -2496,7 +2588,7 @@ async function performBiometricLogin(studentNumber, opts) {
                 }),
                 signal: attemptObj.signal
             });
-        }, promptTimeout, attemptObj);
+        }, effectiveTimeout, attemptObj);
 
         if (isStaleBiometricAttempt(attemptObj)) return;
         if (!assertion) {
@@ -2561,6 +2653,9 @@ async function performBiometricLogin(studentNumber, opts) {
             }
             throw new Error((result && result.message) || 'Device sign-in could not be completed.');
         }
+        if (!isRawB64) {
+            window.DevicePasskeys?.rememberBrowserPasskey?.(credentialId);
+        }
         completeBiometricLogin(result);
     } catch (err) {
         if (attemptObj.id !== activeBioAttemptId || (attemptObj.signal.aborted && bioAbortReason !== 'timeout')) return;
@@ -2576,6 +2671,33 @@ function handleBiometricSignInError(err, studentNumber, opts) {
             (opts && opts.has_account_credentials)
             || (opts && Array.isArray(opts.allowCredentials) && opts.allowCredentials.length > 0)
         );
+        var isOutdatedNativeApk = Boolean(
+            window.AndroidDeviceBridge?.isNativeApp?.()
+            && typeof window.AndroidDeviceBridge?.hasLocalPasskey !== 'function'
+        );
+
+        if (isOutdatedNativeApk && (err.name === 'NotSupportedError' || err.name === 'NotFoundError' || err.name === 'TimeoutError')) {
+            var apkUrl = document.getElementById('biometricModal')?.dataset?.apkDownloadUrl;
+            openBiometricModal({
+                title: 'Update app for fingerprint verification',
+                headerIcon: 'bi-phone',
+                identifier: studentNumber,
+                badgeType: 'warning',
+                message: 'Install the latest Smart Attendance app update to use the native fingerprint sensor directly, or sign in with Face verification or your password.',
+                primaryBtnText: apkUrl ? 'Download app update' : 'Enter password',
+                secondaryBtnText: canRequestFaceSignIn(opts) ? 'Face verification' : 'Enter password',
+                showCancelBtn: true,
+                onPrimaryClick: function() {
+                    if (apkUrl) window.location.href = apkUrl;
+                    else closeBiometricModalAndFocusPassword();
+                },
+                onSecondaryClick: function() {
+                    if (canRequestFaceSignIn(opts)) startFaceVerificationLogin(studentNumber);
+                    else closeBiometricModalAndFocusPassword();
+                }
+            });
+            return;
+        }
 
         if (err.name === 'SessionExpiredError') {
             openBiometricModal({
@@ -2595,10 +2717,10 @@ function handleBiometricSignInError(err, studentNumber, opts) {
 
         if (bioAbortReason === 'timeout' || err.name === 'TimeoutError') {
             openBiometricModal({
-                title: 'Verification timed out',
+                title: 'Fingerprint prompt timed out',
                 headerIcon: 'bi-clock-history',
                 identifier: studentNumber,
-                message: 'Your device verification prompt did not finish in time. Try again, verify with your face, or sign in with your password.',
+                message: 'Your device fingerprint prompt did not open or finish in time. Ensure fingerprint sign-in is registered on this device in Settings, use Face verification, or sign in with your password.',
                 badgeType: 'warning',
                 primaryBtnText: 'Try again',
                 secondaryBtnText: 'Enter password',
@@ -2636,9 +2758,9 @@ function handleBiometricSignInError(err, studentNumber, opts) {
                 : 'No local fingerprint passkey found';
             var noLocalMsg = err.name === 'NotFoundError'
                 ? (studentNumber
-                    ? 'This device could not find a saved fingerprint passkey for this account. Use face verification or sign in with your password and add this device in Settings.'
-                    : 'No local fingerprint passkey was found on this device. Use face verification or sign in with your password.')
-                : 'Fingerprint verification was cancelled or did not complete on this device.';
+                    ? 'This device does not have a saved fingerprint passkey for this account. Use Face verification or sign in with your password and register this device in Settings.'
+                    : 'No local fingerprint passkey was found on this device. Use Face verification or sign in with your password.')
+                : 'Fingerprint verification was cancelled or did not complete on this device. If you registered on another browser or device, sign in with your password and register this device in Settings.';
             openBiometricModal({
                 title: noLocalTitle,
                 headerIcon: 'bi-fingerprint',
@@ -2668,22 +2790,23 @@ function handleBiometricSignInError(err, studentNumber, opts) {
         } else if (err.name === 'SecurityError') {
             friendlyMsg = 'This domain or HTTPS configuration blocked biometric sign-in (' + window.location.hostname + ').';
         } else if (err.name === 'NotSupportedError' || err.name === 'InvalidStateError') {
-            friendlyMsg = 'This browser or device configuration does not support the requested passkey verification method.';
+            friendlyMsg = 'This browser or device could not find or use a local fingerprint passkey. Sign in with your password and register this device in Settings.';
         } else {
             friendlyMsg = err.message || 'Device sign-in could not be completed.';
         }
 
         openBiometricModal({
-            title: 'Device sign-in unavailable',
-            headerIcon: 'bi-shield-lock',
+            title: 'Fingerprint verification unavailable',
+            headerIcon: 'bi-fingerprint',
             identifier: studentNumber,
-            message: friendlyMsg + ' Try again or enter your password.',
+            message: friendlyMsg,
             badgeType: 'warning',
-            primaryBtnText: 'Try again',
+            primaryBtnText: canRequestFaceSignIn(opts) ? 'Use face verification' : 'Try again',
             secondaryBtnText: 'Enter password',
             showCancelBtn: true,
             onPrimaryClick: function() {
-                openBiometricSignInChoices(studentNumber);
+                if (canRequestFaceSignIn(opts)) startFaceVerificationLogin(studentNumber);
+                else openBiometricSignInChoices(studentNumber);
             },
             onSecondaryClick: closeBiometricModalAndFocusPassword
         });

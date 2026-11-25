@@ -444,6 +444,10 @@ async function beginDevicePasskeyRegistration() {
             throw new Error(result.message || 'Could not save the passkey. Try again.');
         }
 
+        if (!isBridgePayload) {
+            window.DevicePasskeys?.rememberBrowserPasskey?.(credentialId);
+        }
+
         setBioRegistrationStage(4);
         showRegistrationView('bioSuccessView');
         focusBiometricHeading(document.getElementById('bioSuccessTitle'));

@@ -24,7 +24,7 @@ const signedAssertion = {
     }
 };
 
-function createLogin({ native = true, account = identifier, setupReply = [401, { success: false, message: 'Incorrect password' }] } = {}) {
+function createLogin({ native = true, account = identifier, androidBridgeExtra = null, setupReply = [401, { success: false, message: 'Incorrect password' }] } = {}) {
     const bridge = new EventTarget();
     const nativeRequests = [];
     const browserRequests = [];
@@ -48,6 +48,7 @@ function createLogin({ native = true, account = identifier, setupReply = [401, {
         isSecureContext: true,
         PublicKeyCredential: function PublicKeyCredential() {},
         AttendancePasskey: native ? bridge : undefined,
+        AndroidDeviceBridge: androidBridgeExtra || undefined,
         DevicePasskeys: { check: async () => ({ available: true, platformAvailable: true }) },
         document: {
             addEventListener() {},
@@ -268,4 +269,28 @@ test('without the Android bridge a local fingerprint request strips hybrid trans
     assert.equal(login.browserRequests[0].publicKey.hints[0], 'client-device');
     assert.deepEqual(Array.from(login.browserRequests[0].publicKey.allowCredentials[0].id), [1, 2, 3]);
     assert.deepEqual(Array.from(login.browserRequests[0].publicKey.allowCredentials[0].transports), ['internal']);
+});
+
+test('selecting Fingerprint verification without an identifier or local passkey prompts for account ID first', async () => {
+    const login = createLogin({ native: false, account: '' });
+    await login.context.handleBiometricLogin();
+    login.select('fingerprint');
+    await settle();
+
+    assert.equal(login.modal.title, 'Fingerprint verification');
+    assert.equal(login.modal.showIdentifier, true);
+    assert.equal(login.browserRequests.length, 0);
+});
+
+test('native Android APK does not fall back to WebView WebAuthn on NotSupportedError', async () => {
+    const login = createLogin({
+        androidBridgeExtra: { isNativeApp: () => true, hasLocalPasskey: () => false }
+    });
+    await login.context.handleBiometricLogin();
+    login.select('fingerprint');
+    login.reply({ id: login.nativeRequests[0].id, error: 'NotSupportedError' });
+    await settle();
+
+    assert.equal(login.browserRequests.length, 0);
+    assert.equal(login.modal.title, 'Fingerprint verification unavailable');
 });
