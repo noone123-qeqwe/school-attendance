@@ -144,14 +144,17 @@
             </div>
 
             {{-- Right Spotlight: Live or Next Class --}}
-            <aside class="sd-hero-spotlight {{ $liveClassItem ? 'is-live' : ($nextClassItem ? 'is-next' : 'is-idle') }}" aria-labelledby="dashboardClassHeading">
+            <aside id="sdHeroSpotlight" class="sd-hero-spotlight {{ $liveClassItem ? 'is-live' : ($nextClassItem ? 'is-next' : 'is-idle') }}" aria-labelledby="dashboardClassHeading" @if($featuredClass) data-start-ms="{{ $featuredClass->start_time->getTimestampMs() }}" data-end-ms="{{ $featuredClass->end_time->getTimestampMs() }}" @endif>
                 <div class="sd-spotlight-top">
                     <span class="sd-spotlight-label">
                         <span class="sd-spotlight-dot {{ $liveClassItem ? 'is-live' : ($nextClassItem ? 'is-next' : 'is-done') }}" aria-hidden="true"></span>
                         {{ $liveClassItem ? 'Class in Progress' : ($nextClassItem ? 'Up Next Today' : "Today's Status") }}
                     </span>
                     @if($featuredClass)
-                        <span class="sd-spotlight-code">{{ $featuredClass->subject->code }}</span>
+                        <span class="sd-spotlight-badges">
+                            <span id="sdSpotlightTimer" class="sd-spotlight-timer" aria-live="off"></span>
+                            <span class="sd-spotlight-code">{{ $featuredClass->subject->code }}</span>
+                        </span>
                     @endif
                 </div>
 
@@ -169,6 +172,19 @@
                             <span><i class="bi bi-person" aria-hidden="true"></i> {{ $featuredInstructor }}</span>
                         @endif
                     </div>
+                    @if($liveClassItem)
+                        @php
+                            $spotStartTs = $liveClassItem->start_time->timestamp;
+                            $spotEndTs = $liveClassItem->end_time->timestamp;
+                            $spotNowTs = now()->timestamp;
+                            $spotProgressPct = $spotEndTs > $spotStartTs
+                                ? min(100, max(4, round((($spotNowTs - $spotStartTs) / ($spotEndTs - $spotStartTs)) * 100)))
+                                : 50;
+                        @endphp
+                        <div class="sd-spotlight-progress" aria-hidden="true">
+                            <span id="sdSpotlightProgressFill" class="sd-spotlight-progress-fill" style="width: {{ $spotProgressPct }}%;"></span>
+                        </div>
+                    @endif
                 @else
                     <p class="sd-spotlight-empty-note">
                         {{ $todayClassCount ? 'You have wrapped up all scheduled sessions for today.' : 'Use your free block to review records or submit any pending excuses.' }}
@@ -180,6 +196,10 @@
                         <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sd-spotlight-link is-check-in">
                             <i class="bi bi-qr-code-scan" aria-hidden="true"></i> Check in now
                         </a>
+                    @elseif($liveClassItem && !empty($alreadyClockedIn))
+                        <span class="sd-spotlight-checked">
+                            <i class="bi bi-check2-circle" aria-hidden="true"></i> Checked in
+                        </span>
                     @endif
                     <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-spotlight-link">
                         View timetable <i class="bi bi-arrow-right" aria-hidden="true"></i>
@@ -188,6 +208,10 @@
             </aside>
 
             {{-- Bottom Telemetry Bar --}}
+            @php
+                $completedTodayCount = $todaySchedCollection->where('status', 'completed')->count();
+                $remainingTodayCount = $todaySchedCollection->whereIn('status', ['ongoing', 'upcoming'])->count();
+            @endphp
             <div class="student-hero-deck">
                 <div class="hero-deck-card" title="Campus Local Time">
                     <div class="hero-deck-icon icon-time" aria-hidden="true">
@@ -226,7 +250,13 @@
                         </div>
                         <div class="hero-deck-body">
                             <div class="hero-deck-value">{{ $streakCount }} {{ $streakCount == 1 ? 'Day' : 'Days' }}</div>
-                            <div class="hero-deck-label">Active streak</div>
+                            <div class="hero-deck-label">
+                                @if($todayClassCount > 0)
+                                    Active streak &middot; {{ $completedTodayCount }}/{{ $todayClassCount }} today
+                                @else
+                                    Active streak
+                                @endif
+                            </div>
                         </div>
                     </div>
                 @else
@@ -235,8 +265,14 @@
                             <i class="bi bi-calendar3"></i>
                         </div>
                         <div class="hero-deck-body">
-                            <div class="hero-deck-value">{{ $todayClassCount }} {{ \Illuminate\Support\Str::plural('Class', $todayClassCount) }}</div>
-                            <div class="hero-deck-label">Today's schedule</div>
+                            <div class="hero-deck-value">
+                                @if($todayClassCount > 0)
+                                    {{ $completedTodayCount }}/{{ $todayClassCount }} Done
+                                @else
+                                    0 Classes
+                                @endif
+                            </div>
+                            <div class="hero-deck-label">{{ $todayClassCount > 0 ? "Today's progress" : "Today's schedule" }}</div>
                         </div>
                     </div>
                 @endif
@@ -281,45 +317,50 @@
     </nav>
 
     {{-- ── Attendance Overview KPIs ─────────────────────────────────── --}}
+    @php
+        $presentShare = $computedTotalAll > 0 ? round((($totalPresent ?? 0) / $computedTotalAll) * 100) : null;
+        $lateShare = $computedTotalAll > 0 ? round((($totalLate ?? 0) / $computedTotalAll) * 100) : null;
+        $absentShare = $computedTotalAll > 0 ? round((($totalAbsent ?? 0) / $computedTotalAll) * 100) : null;
+    @endphp
     <section aria-labelledby="attendanceOverviewHeading">
         <div class="sd-overview-head">
             <h2 id="attendanceOverviewHeading">Attendance Overview</h2>
-            <a href="{{ route('student.calendar') }}#attendance-records">Open full records <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            <a href="{{ route('student.calendar') }}#attendance-records">Open calendar &amp; log <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
         </div>
         <div class="ent-grid ent-grid-4" id="realStats">
-            <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Present']) }}#attendance-records" title="View present attendance records">
+            <button type="button" class="sd-kpi-link sd-kpi-btn" onclick="openAttendanceRecordsModal('present')" title="Filter attendance log by Present">
                 <div class="ent-kpi-card sd-kpi-card" data-accent="success">
                     <div class="ent-kpi-icon" aria-hidden="true"><i class="bi bi-check-circle-fill"></i></div>
                     <div class="ent-kpi-body">
                         <div class="ent-kpi-label">Present</div>
                         <div class="ent-kpi-value">{{ $totalPresent ?? 0 }}</div>
-                        <div class="sd-kpi-sub">On-time check-ins</div>
+                        <div class="sd-kpi-sub">{{ $presentShare !== null ? $presentShare.'% of recorded sessions' : 'On-time check-ins' }}</div>
                     </div>
                     <i class="bi bi-arrow-up-right sd-kpi-chevron" aria-hidden="true"></i>
                 </div>
-            </a>
-            <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Late']) }}#attendance-records" title="View late attendance records">
+            </button>
+            <button type="button" class="sd-kpi-link sd-kpi-btn" onclick="openAttendanceRecordsModal('late')" title="Filter attendance log by Late">
                 <div class="ent-kpi-card sd-kpi-card" data-accent="warning">
                     <div class="ent-kpi-icon" aria-hidden="true"><i class="bi bi-clock-fill"></i></div>
                     <div class="ent-kpi-body">
                         <div class="ent-kpi-label">Late</div>
                         <div class="ent-kpi-value">{{ $totalLate ?? 0 }}</div>
-                        <div class="sd-kpi-sub">Late arrivals</div>
+                        <div class="sd-kpi-sub">{{ $lateShare !== null ? $lateShare.'% of recorded sessions' : 'Late arrivals' }}</div>
                     </div>
                     <i class="bi bi-arrow-up-right sd-kpi-chevron" aria-hidden="true"></i>
                 </div>
-            </a>
-            <a class="sd-kpi-link" href="{{ route('student.calendar', ['status' => 'Absent']) }}#attendance-records" title="View absent records & excuses">
+            </button>
+            <button type="button" class="sd-kpi-link sd-kpi-btn" onclick="openAttendanceRecordsModal('absent')" title="Filter attendance log by Absent">
                 <div class="ent-kpi-card sd-kpi-card" data-accent="danger">
                     <div class="ent-kpi-icon" aria-hidden="true"><i class="bi bi-x-circle-fill"></i></div>
                     <div class="ent-kpi-body">
                         <div class="ent-kpi-label">Absent</div>
                         <div class="ent-kpi-value">{{ $totalAbsent ?? 0 }}</div>
-                        <div class="sd-kpi-sub">Missed sessions</div>
+                        <div class="sd-kpi-sub">{{ $absentShare !== null ? $absentShare.'% missed sessions' : 'Missed sessions' }}</div>
                     </div>
                     <i class="bi bi-arrow-up-right sd-kpi-chevron" aria-hidden="true"></i>
                 </div>
-            </a>
+            </button>
             <a class="sd-kpi-link" href="{{ route('student.classes') }}" title="View enrolled subjects">
                 <div class="ent-kpi-card sd-kpi-card" data-accent="gold">
                     <div class="ent-kpi-icon" aria-hidden="true"><i class="bi bi-book-fill"></i></div>
@@ -355,6 +396,19 @@
 
                 <div class="sd-panel-body">
                     @if($todaySchedCollection->isNotEmpty())
+                        @if($todayClassCount >= 3)
+                            <div class="sd-sched-filters" role="group" aria-label="Filter today's classes">
+                                <button type="button" class="sd-sched-filter-btn is-active" data-sched-filter="all" aria-pressed="true">
+                                    All ({{ $todayClassCount }})
+                                </button>
+                                <button type="button" class="sd-sched-filter-btn" data-sched-filter="remaining" aria-pressed="false">
+                                    Remaining ({{ $remainingTodayCount }})
+                                </button>
+                                <button type="button" class="sd-sched-filter-btn" data-sched-filter="done" aria-pressed="false">
+                                    Done ({{ $completedTodayCount }})
+                                </button>
+                            </div>
+                        @endif
                         <div class="schedule-items-grid sd-timeline-list">
                         @foreach($todaySchedCollection as $item)
                             @php
@@ -363,8 +417,14 @@
                                 $instructorName = trim((string) ($item->subject->instructorUser?->name ?? $item->subject->instructor ?? ''));
                                 $timeInText = $item->attendance?->time_in ? \Carbon\Carbon::parse($item->attendance->time_in)->format('g:i A') : null;
                                 $excuseHref = $item->attendance?->id ? route('excuses.create', $item->attendance->id) : route('excuses.create_general');
+                                $itemStartTs = $item->start_time->timestamp;
+                                $itemEndTs = $item->end_time->timestamp;
+                                $itemNowTs = now()->timestamp;
+                                $itemLivePct = ($item->status === 'ongoing' && $itemEndTs > $itemStartTs)
+                                    ? min(100, max(4, round((($itemNowTs - $itemStartTs) / ($itemEndTs - $itemStartTs)) * 100)))
+                                    : 0;
                             @endphp
-                            <div class="schedule-modern-card sd-timeline-item is-status-{{ $item->status }}" style="--tl-color: {{ $statusColor }};">
+                            <div class="schedule-modern-card sd-timeline-item is-status-{{ $item->status }}" data-sched-status="{{ $item->status }}" style="--tl-color: {{ $statusColor }};">
                                 <div class="sd-timeline-time d-none d-md-flex" aria-hidden="true">
                                     <strong>{{ $item->start_time->format('g:i A') }}</strong>
                                     <span>{{ $item->end_time->format('g:i A') }}</span>
@@ -386,6 +446,11 @@
                                             </span>
                                         @endif
                                     </div>
+                                    @if($item->status === 'ongoing')
+                                        <div class="sd-timeline-progress" aria-hidden="true">
+                                            <div class="sd-timeline-progress-fill" style="width: {{ $itemLivePct }}%;"></div>
+                                        </div>
+                                    @endif
                                     @if(($roomName !== '' && strtoupper($roomName) !== 'TBA') || $timeInText || $item->status === 'missed' || $item->status === 'ongoing')
                                         <div class="sd-sched-meta-pills">
                                             @if($roomName !== '' && strtoupper($roomName) !== 'TBA')
@@ -416,6 +481,9 @@
                                 </div>
                             </div>
                         @endforeach
+                        </div>
+                        <div id="sdScheduleFilterEmpty" class="sd-sched-filter-empty" hidden>
+                            No classes match this filter right now.
                         </div>
                     @else
                         <div class="schedule-empty-state">
@@ -464,24 +532,26 @@
                                     $barWidth = $hasSubjectRecords ? min(100, max(0, $sub->rate)) : 0;
                                 @endphp
                                 <div class="sd-subject-item">
-                                    <div class="sd-subject-item-top">
-                                        <div class="sd-subject-id-group">
-                                            <span class="sd-subject-code">{{ $sub->code }}</span>
-                                            <span class="sd-subject-name" title="{{ $sub->name }}">{{ $sub->name }}</span>
+                                    <button type="button" class="sd-subject-item-trigger" onclick="openSubjectBreakdownModal()" aria-label="View full breakdown including {{ $sub->code }} {{ $sub->name }}">
+                                        <div class="sd-subject-item-top">
+                                            <div class="sd-subject-id-group">
+                                                <span class="sd-subject-code">{{ $sub->code }}</span>
+                                                <span class="sd-subject-name" title="{{ $sub->name }}">{{ $sub->name }}</span>
+                                            </div>
+                                            <span class="sd-subject-rate {{ $rateClass }}">{{ $hasSubjectRecords ? $sub->rate.'%' : 'No records' }}</span>
                                         </div>
-                                        <span class="sd-subject-rate {{ $rateClass }}">{{ $hasSubjectRecords ? $sub->rate.'%' : 'No records' }}</span>
-                                    </div>
-                                    <div class="sd-progress-track" aria-hidden="true">
-                                        <div class="sd-progress-fill" style="width: {{ $barWidth }}%; background: {{ $barColor }};"></div>
-                                    </div>
-                                    <div class="sd-subject-counts">
-                                        <span><strong class="text-count-present">{{ $sub->present }}</strong> present</span>
-                                        <span><strong class="text-count-late">{{ $sub->late }}</strong> late</span>
-                                        <span><strong class="text-count-absent">{{ $sub->absent }}</strong> absent</span>
-                                        @if($hasSubjectRecords && $sub->rate < 75)
-                                            <span class="sd-risk-pill">Below 75%</span>
-                                        @endif
-                                    </div>
+                                        <div class="sd-progress-track" aria-hidden="true">
+                                            <div class="sd-progress-fill" style="width: {{ $barWidth }}%; background: {{ $barColor }};"></div>
+                                        </div>
+                                        <div class="sd-subject-counts">
+                                            <span><strong class="text-count-present">{{ $sub->present }}</strong> present</span>
+                                            <span><strong class="text-count-late">{{ $sub->late }}</strong> late</span>
+                                            <span><strong class="text-count-absent">{{ $sub->absent }}</strong> absent</span>
+                                            @if($hasSubjectRecords && $sub->rate < 75)
+                                                <span class="sd-risk-pill">Below 75%</span>
+                                            @endif
+                                        </div>
+                                    </button>
                                 </div>
                             @endforeach
                         </div>
@@ -509,12 +579,23 @@
                 <div class="sd-panel-body">
                     <div class="sd-announcements-list">
                         @foreach($announcements as $announcement)
-                            <article class="sd-announcement-item">
+                            @php
+                                $annContent = trim((string) $announcement->content);
+                                $annNeedsClamp = \Illuminate\Support\Str::length($annContent) > 170 || substr_count($annContent, "\n") >= 3;
+                                $annUrgent = \Illuminate\Support\Str::contains(strtolower((string) $announcement->title . ' ' . ($announcement->target_audience ?? '')), ['urgent', 'important', 'alert']);
+                                $annCopyId = 'sdAnnouncementCopy' . $loop->index;
+                            @endphp
+                            <article class="sd-announcement-item {{ $annUrgent ? 'is-urgent' : '' }}">
                                 <div class="sd-announcement-head">
                                     <h3 class="sd-announcement-title">{{ $announcement->title }}</h3>
                                     <span class="schedule-code-badge">{{ $announcement->target_audience ?? 'All' }}</span>
                                 </div>
-                                <p class="sd-announcement-copy">{{ $announcement->content }}</p>
+                                <p id="{{ $annCopyId }}" class="sd-announcement-copy {{ $annNeedsClamp ? 'is-clamped' : '' }}">{{ $annContent }}</p>
+                                @if($annNeedsClamp)
+                                    <button type="button" class="sd-announcement-toggle" data-announcement-toggle="{{ $annCopyId }}" aria-expanded="false">
+                                        Read more
+                                    </button>
+                                @endif
                                 <div class="sd-announcement-meta">
                                     <span><i class="bi bi-person-fill" aria-hidden="true"></i> {{ $announcement->author->name ?? 'Administration' }}</span>
                                     <span><i class="bi bi-clock" aria-hidden="true"></i> {{ ($announcement->scheduled_for ?? $announcement->created_at)->diffForHumans() }}</span>
@@ -1309,7 +1390,13 @@ async function loadAttendanceRecordsForModal() {
     return attendanceHistoryRequest;
 }
 
-function openAttendanceRecordsModal() {
+function openAttendanceRecordsModal(initialStatus) {
+    const statusFilterEl = document.getElementById('recordsStatusFilter');
+    if (statusFilterEl && typeof initialStatus === 'string') {
+        statusFilterEl.value = initialStatus;
+    } else if (statusFilterEl && !initialStatus) {
+        statusFilterEl.value = 'all';
+    }
     const modalEl = document.getElementById('attendanceRecordsModal');
     if (modalEl) {
         if (modalEl.parentNode !== document.body) {
@@ -1332,7 +1419,12 @@ function openAttendanceRecordsModal() {
             document.body.classList.add('modal-open');
         }
     }
-    loadAttendanceRecordsForModal();
+    loadAttendanceRecordsForModal().then(() => {
+        if (statusFilterEl && typeof initialStatus === 'string') {
+            statusFilterEl.value = initialStatus;
+            filterAttendanceRecords();
+        }
+    });
     if (window.triggerHaptic) window.triggerHaptic('light');
 }
 
@@ -1543,6 +1635,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script nonce="{{ csp_nonce() }}">
 (function() {
+    function formatRemainingMinutes(diffMs) {
+        const totalMins = Math.max(1, Math.ceil(diffMs / 60000));
+        if (totalMins < 60) {
+            return totalMins + 'm';
+        }
+        const hours = Math.floor(totalMins / 60);
+        const mins = totalMins % 60;
+        return mins > 0 ? (hours + 'h ' + mins + 'm') : (hours + 'h');
+    }
+
     function tick() {
         const now = new Date();
         let h = now.getHours(), m = now.getMinutes();
@@ -1551,7 +1653,77 @@ document.addEventListener('DOMContentLoaded', function() {
         const short = h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
         const clockEl = document.getElementById('studentClock');
         if (clockEl) clockEl.textContent = short;
+
+        const nowMs = now.getTime();
+        const spotlight = document.getElementById('sdHeroSpotlight');
+        if (spotlight) {
+            const startMs = Number(spotlight.getAttribute('data-start-ms') || 0);
+            const endMs = Number(spotlight.getAttribute('data-end-ms') || 0);
+            const timerEl = document.getElementById('sdSpotlightTimer');
+            const progressFill = document.getElementById('sdSpotlightProgressFill');
+
+            if (startMs && endMs && timerEl) {
+                if (nowMs >= startMs && nowMs <= endMs) {
+                    const leftText = formatRemainingMinutes(endMs - nowMs);
+                    timerEl.textContent = leftText + ' left';
+                    if (progressFill) {
+                        const pct = Math.min(100, Math.max(4, Math.round(((nowMs - startMs) / Math.max(1, endMs - startMs)) * 100)));
+                        progressFill.style.width = pct + '%';
+                    }
+                } else if (nowMs < startMs) {
+                    timerEl.textContent = 'Starts in ' + formatRemainingMinutes(startMs - nowMs);
+                } else {
+                    timerEl.textContent = 'Session ended';
+                    if (progressFill) progressFill.style.width = '100%';
+                }
+            }
+        }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        tick();
+
+        document.querySelectorAll('[data-sched-filter]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const mode = btn.getAttribute('data-sched-filter');
+                document.querySelectorAll('[data-sched-filter]').forEach(function(peer) {
+                    const active = peer === btn;
+                    peer.classList.toggle('is-active', active);
+                    peer.setAttribute('aria-pressed', active ? 'true' : 'false');
+                });
+                const items = document.querySelectorAll('#todayScheduleSection .sd-timeline-item');
+                let visibleCount = 0;
+                items.forEach(function(item) {
+                    const status = item.getAttribute('data-sched-status') || '';
+                    let show = true;
+                    if (mode === 'remaining') {
+                        show = status === 'ongoing' || status === 'upcoming';
+                    } else if (mode === 'done') {
+                        show = status === 'completed';
+                    }
+                    item.classList.toggle('is-filtered-hidden', !show);
+                    if (show) visibleCount++;
+                });
+                const emptyFilterEl = document.getElementById('sdScheduleFilterEmpty');
+                if (emptyFilterEl) {
+                    emptyFilterEl.hidden = visibleCount > 0;
+                }
+            });
+        });
+
+        document.querySelectorAll('[data-announcement-toggle]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const copyId = btn.getAttribute('data-announcement-toggle');
+                const copyEl = copyId ? document.getElementById(copyId) : null;
+                if (!copyEl) return;
+                const expanded = btn.getAttribute('aria-expanded') === 'true';
+                copyEl.classList.toggle('is-clamped', expanded);
+                btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                btn.textContent = expanded ? 'Read more' : 'Show less';
+            });
+        });
+    });
+
     setInterval(tick, 1000);
 })();
 </script>

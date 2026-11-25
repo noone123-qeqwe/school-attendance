@@ -315,4 +315,102 @@ class StudentDashboardAndSidebarTest extends TestCase
         ]);
         $this->actingAs($teacher)->get(route('settings'))->assertRedirect();
     }
+
+    public function test_student_dashboard_renders_interactive_filters_kpi_modals_and_announcement_toggles(): void
+    {
+        $testNow = \Carbon\Carbon::today('Asia/Manila')->setTime(10, 0);
+        \Carbon\Carbon::setTestNow($testNow);
+
+        try {
+            $admin = $this->createStudent([
+                'name' => 'Admin Interactive',
+                'role' => 'admin',
+                'admin_sub_role' => 'super_admin',
+                'student_number' => null,
+                'employee_id' => 'ADM-99',
+                'email' => 'admin.interactive@gmail.com',
+            ]);
+
+            $teacher = $this->createStudent([
+                'name' => 'Prof. Interactive',
+                'role' => 'teacher',
+                'student_number' => null,
+                'employee_id' => 'TCH-98',
+                'email' => 'teacher.interactive@gmail.com',
+            ]);
+
+            $student = $this->createStudent([
+                'email' => 'student.interactive@gmail.com',
+                'student_number' => '2310999',
+            ]);
+            $student->forceFill(['created_at' => $testNow->copy()->subDays(5)])->save();
+
+            $todayName = $testNow->format('l');
+
+            $classes = [
+                ['code' => 'CS201', 'name' => 'Algorithms', 'start' => '08:00:00', 'end' => '09:00:00', 'present' => true],
+                ['code' => 'CS202', 'name' => 'Operating Systems', 'start' => '09:30:00', 'end' => '11:00:00', 'present' => false],
+                ['code' => 'CS203', 'name' => 'Computer Networks', 'start' => '13:00:00', 'end' => '14:30:00', 'present' => false],
+            ];
+
+            $subjectIds = [];
+            foreach ($classes as $idx => $entry) {
+                $subject = Subject::create([
+                    'code' => $entry['code'],
+                    'name' => $entry['name'],
+                    'year_level' => 3,
+                    'semester' => 1,
+                    'course' => 'BSCS',
+                    'section' => 'A',
+                    'instructor_id' => $teacher->id,
+                ]);
+                $subjectIds[] = $subject->id;
+
+                Schedule::create([
+                    'subject_id' => $subject->id,
+                    'day' => $todayName,
+                    'start_time' => $entry['start'],
+                    'end_time' => $entry['end'],
+                    'room' => 'Room ' . (201 + $idx),
+                ]);
+
+                if ($entry['present']) {
+                    Attendance::create([
+                        'user_id' => $student->id,
+                        'subject_id' => $subject->id,
+                        'subject_code' => $subject->code,
+                        'date' => $testNow->toDateString(),
+                        'time_in' => '08:04:00',
+                        'status' => 'Present',
+                    ]);
+                }
+            }
+
+            $student->enrolledSubjects()->attach($subjectIds);
+
+            Announcement::create([
+                'title' => 'Important Laboratory Guideline',
+                'content' => str_repeat('Please bring your lab notebook and student ID card before scheduled sessions. ', 4),
+                'target_audience' => 'Student',
+                'author_id' => $admin->id,
+                'scheduled_for' => $testNow->copy()->subHour(),
+            ]);
+
+            $response = $this->actingAs($student)->get(route('home'));
+
+            $response->assertOk()
+                ->assertSee('id="sdHeroSpotlight"', false)
+                ->assertSee('id="sdSpotlightTimer"', false)
+                ->assertSee("openAttendanceRecordsModal('present')", false)
+                ->assertSee("openAttendanceRecordsModal('late')", false)
+                ->assertSee("openAttendanceRecordsModal('absent')", false)
+                ->assertSee('openSubjectBreakdownModal()', false)
+                ->assertSee('All (3)', false)
+                ->assertSee('Remaining (2)', false)
+                ->assertSee('Done (1)', false)
+                ->assertSee('Read more', false);
+        } finally {
+            \Carbon\Carbon::setTestNow();
+        }
+    }
 }

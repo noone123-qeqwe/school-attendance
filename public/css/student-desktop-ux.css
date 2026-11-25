@@ -2341,10 +2341,44 @@
     }
 
     /* Today's Schedule Timeline */
+    body.student-portal #mainContent #todayScheduleSection .sd-sched-filters {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px;
+        border-radius: 10px;
+        background: rgba(12, 10, 9, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        margin-bottom: 14px;
+    }
+
+    body.student-portal #mainContent #todayScheduleSection .sd-sched-filter-btn {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: #9e9082;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 5px 11px;
+        border-radius: 7px;
+        cursor: pointer;
+        transition: background 0.16s ease, color 0.16s ease;
+    }
+
+    body.student-portal #mainContent #todayScheduleSection .sd-sched-filter-btn:hover {
+        color: #f5efe6;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    body.student-portal #mainContent #todayScheduleSection .sd-sched-filter-btn.is-active {
+        background: rgba(223, 184, 121, 0.16);
+        color: #f4d69f;
+    }
+
     body.student-portal #mainContent #todayScheduleSection .sd-timeline-list {
         display: flex !important;
         flex-direction: column;
-        gap: 0 !important;
+        gap: 8px !important;
     }
 
     body.student-portal #mainContent #todayScheduleSection .sd-timeline-item {
@@ -2352,31 +2386,44 @@
         align-items: flex-start;
         justify-content: space-between;
         gap: 14px;
-        padding: 14px 10px !important;
-        border: 0 !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-        border-radius: 10px !important;
-        background: transparent !important;
+        padding: 13px 14px !important;
+        border: 1px solid rgba(255, 255, 255, 0.055) !important;
+        border-radius: 13px !important;
+        background: rgba(14, 11, 9, 0.42) !important;
         box-shadow: none !important;
-        transition: background 0.16s ease;
+        transition: background 0.18s ease, border-color 0.18s ease;
     }
 
-    body.student-portal #mainContent #todayScheduleSection .sd-timeline-item:last-child {
-        border-bottom: 0 !important;
+    body.student-portal #mainContent #todayScheduleSection .sd-timeline-item.is-filtered-hidden {
+        display: none !important;
     }
 
     body.student-portal #mainContent #todayScheduleSection .sd-timeline-item:hover {
-        background: rgba(255, 255, 255, 0.025) !important;
+        background: rgba(255, 255, 255, 0.035) !important;
+        border-color: rgba(223, 184, 121, 0.2) !important;
     }
 
     body.student-portal #mainContent #todayScheduleSection .sd-timeline-item.is-status-ongoing {
-        background: linear-gradient(90deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.02) 100%) !important;
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.11) 0%, rgba(223, 184, 121, 0.03) 100%) !important;
+        border-color: rgba(251, 191, 36, 0.3) !important;
+    }
+
+    body.student-portal #mainContent #todayScheduleSection .sd-timeline-item.is-status-completed {
+        background: rgba(16, 185, 129, 0.035) !important;
+        border-color: rgba(16, 185, 129, 0.14) !important;
+    }
+
+    body.student-portal #mainContent #todayScheduleSection .sd-timeline-item.is-status-missed {
+        background: rgba(239, 68, 68, 0.035) !important;
+        border-color: rgba(248, 113, 113, 0.16) !important;
     }
 
     body.student-portal #mainContent .sd-timeline-time {
+        display: flex;
         flex-direction: column;
         text-align: right;
         padding-top: 2px;
+        min-width: 66px;
         font-variant-numeric: tabular-nums;
     }
 
@@ -2389,25 +2436,28 @@
 
     body.student-portal #mainContent .sd-timeline-time span {
         font-size: 0.72rem;
-        color: #a99b8d;
+        color: #9e9082;
         white-space: nowrap;
     }
 
     body.student-portal #mainContent .sd-timeline-rail {
         position: relative;
+        display: flex;
         justify-content: center;
         padding-top: 6px;
         align-self: stretch;
+        width: 14px;
+        flex-shrink: 0;
     }
 
     body.student-portal #mainContent .sd-timeline-rail::before {
         content: "";
         position: absolute;
-        top: 18px;
-        bottom: -20px;
+        top: 20px;
+        bottom: -22px;
         left: 50%;
-        width: 1px;
-        background: rgba(255, 255, 255, 0.1);
+        width: 1.5px;
+        background: rgba(255, 255, 255, 0.08);
         transform: translateX(-50%);
     }
 
@@ -2422,11 +2472,12 @@
         background: var(--tl-color, #dfb879);
         position: relative;
         z-index: 1;
-        box-shadow: 0 0 0 4px #1a1512;
+        box-shadow: 0 0 0 4px rgba(23, 18, 15, 0.95);
     }
 
     body.student-portal #mainContent .sd-timeline-item.is-status-ongoing .sd-timeline-node {
-        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.22);
+        background: #fbbf24;
+        box-shadow: 0 0 0 5px rgba(251, 191, 36, 0.24);
     }
 
     body.student-portal #mainContent .schedule-main-info {
@@ -2437,9 +2488,24 @@
     body.student-portal #mainContent .schedule-subject-title {
         font-weight: 750;
         color: #fcf8f2;
-        font-size: 0.96rem;
+        font-size: 0.95rem;
         line-height: 1.35;
         overflow-wrap: anywhere;
+    }
+
+    body.student-portal #mainContent .sd-timeline-progress {
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    body.student-portal #mainContent .sd-timeline-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #dfb879, #fbbf24);
+        transition: width 0.35s ease;
     }
 
     body.student-portal #mainContent .schedule-meta-row {
@@ -2447,7 +2513,7 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 6px 10px;
-        margin-top: 5px;
+        margin-top: 6px;
         color: #b5a89a;
         font-size: 0.8rem;
     }
@@ -2488,31 +2554,38 @@
         align-items: center;
         gap: 6px;
         flex-wrap: wrap;
-        margin-top: 8px;
+        margin-top: 9px;
     }
 
     body.student-portal #mainContent .sd-sched-chip {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        padding: 3px 9px;
-        border-radius: 7px;
-        background: rgba(255, 255, 255, 0.045);
+        padding: 4px 10px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
         color: #d6cbbd;
         font-size: 0.73rem;
         font-weight: 600;
         text-decoration: none;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
 
     body.student-portal #mainContent .sd-sched-chip.is-checked-in {
-        background: rgba(16, 185, 129, 0.1);
+        background: rgba(16, 185, 129, 0.12);
         color: #6ee7b7;
     }
 
     body.student-portal #mainContent .sd-sched-chip.is-check-in-cta {
-        background: rgba(223, 184, 121, 0.15);
-        border: 1px solid rgba(223, 184, 121, 0.3);
-        color: #f0d098;
+        background: rgba(223, 184, 121, 0.16);
+        border: 1px solid rgba(223, 184, 121, 0.34);
+        color: #f4d69f;
+        font-weight: 700;
+    }
+
+    body.student-portal #mainContent .sd-sched-chip.is-check-in-cta:hover {
+        background: rgba(223, 184, 121, 0.26);
+        color: #fff;
     }
 
     body.student-portal #mainContent .sd-sched-chip.is-excuse-cta {
@@ -2531,8 +2604,8 @@
         align-items: center;
         text-align: center;
         padding: 32px 18px;
-        border: 1px dashed rgba(223, 184, 121, 0.2);
-        border-radius: 12px;
+        border: 1px dashed rgba(223, 184, 121, 0.22);
+        border-radius: 14px;
         background: rgba(255, 255, 255, 0.015);
     }
 
@@ -2570,17 +2643,34 @@
     body.student-portal #mainContent .sd-subject-list {
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 9px;
     }
 
     body.student-portal #mainContent .sd-subject-item {
-        padding: 0 0 13px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 11px 13px;
+        border-radius: 12px;
+        background: rgba(14, 11, 9, 0.42);
+        border: 1px solid rgba(255, 255, 255, 0.055);
+        transition: background 0.16s ease, border-color 0.16s ease;
     }
 
-    body.student-portal #mainContent .sd-subject-item:last-child {
-        padding-bottom: 0;
-        border-bottom: 0;
+    body.student-portal #mainContent .sd-subject-item-trigger {
+        width: 100%;
+        appearance: none;
+        background: transparent;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        text-align: left;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+        display: block;
+    }
+
+    body.student-portal #mainContent .sd-subject-item:hover {
+        background: rgba(255, 255, 255, 0.035);
+        border-color: rgba(223, 184, 121, 0.24);
     }
 
     body.student-portal #mainContent .sd-subject-item-top {
@@ -2588,7 +2678,7 @@
         align-items: baseline;
         justify-content: space-between;
         gap: 10px;
-        margin-bottom: 7px;
+        margin-bottom: 8px;
     }
 
     body.student-portal #mainContent .sd-subject-id-group {
@@ -2629,23 +2719,24 @@
     body.student-portal #mainContent .sd-subject-rate.is-risk { color: #f87171; }
 
     body.student-portal #mainContent .sd-progress-track {
-        height: 5px;
+        height: 6px;
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.07);
         overflow: hidden;
-        margin-bottom: 7px;
+        margin-bottom: 8px;
     }
 
     body.student-portal #mainContent .sd-progress-fill {
         height: 100%;
         border-radius: 999px;
+        transition: width 0.3s ease;
     }
 
     body.student-portal #mainContent .sd-subject-counts {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
-        gap: 8px 12px;
+        gap: 6px 12px;
         font-size: 0.73rem;
         color: #a99b8d;
     }
@@ -2656,7 +2747,7 @@
 
     body.student-portal #mainContent .sd-risk-pill {
         margin-left: auto;
-        padding: 1px 7px;
+        padding: 2px 8px;
         border-radius: 999px;
         background: rgba(239, 68, 68, 0.14);
         border: 1px solid rgba(248, 113, 113, 0.3);
@@ -2669,15 +2760,25 @@
     body.student-portal #mainContent .sd-announcements-list {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
     }
 
     body.student-portal #mainContent .sd-announcement-item {
-        padding: 13px 15px;
-        border-radius: 12px;
-        background: rgba(12, 10, 9, 0.45);
+        padding: 14px 16px;
+        border-radius: 13px;
+        background: rgba(14, 11, 9, 0.45);
         border: 1px solid rgba(255, 255, 255, 0.06);
         border-left: 3px solid #dfb879;
+        transition: background 0.16s ease, border-color 0.16s ease;
+    }
+
+    body.student-portal #mainContent .sd-announcement-item:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    body.student-portal #mainContent .sd-announcement-item.is-urgent {
+        border-left-color: #f87171;
+        background: rgba(239, 68, 68, 0.045);
     }
 
     body.student-portal #mainContent .sd-announcement-head {
@@ -2693,15 +2794,38 @@
         font-size: 0.9rem;
         font-weight: 750;
         color: #fcf8f2;
-        line-height: 1.35;
+        line-height: 1.38;
     }
 
     body.student-portal #mainContent .sd-announcement-copy {
         margin: 0 0 8px;
         font-size: 0.82rem;
-        line-height: 1.5;
+        line-height: 1.55;
         color: #cfc3b4;
         white-space: pre-line;
+    }
+
+    body.student-portal #mainContent .sd-announcement-copy.is-clamped {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    body.student-portal #mainContent .sd-announcement-toggle {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        margin: -2px 0 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #dfb879;
+        cursor: pointer;
+    }
+
+    body.student-portal #mainContent .sd-announcement-toggle:hover {
+        text-decoration: underline;
     }
 
     body.student-portal #mainContent .sd-announcement-meta {
@@ -2870,6 +2994,188 @@
 
         body.student-portal #mainContent #realStats .sd-kpi-chevron {
             display: none;
+        }
+
+        body.student-portal #mainContent #todayScheduleSection .sd-sched-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        body.student-portal #mainContent #todayScheduleSection .sd-sched-filter-btn {
+            appearance: none;
+            flex: 1 1 auto;
+            min-height: 36px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(12, 10, 9, 0.55);
+            color: #9e9082;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 6px 10px;
+            border-radius: 9px;
+            cursor: pointer;
+        }
+
+        body.student-portal #mainContent #todayScheduleSection .sd-sched-filter-btn.is-active {
+            background: rgba(223, 184, 121, 0.16);
+            border-color: rgba(223, 184, 121, 0.35);
+            color: #f4d69f;
+        }
+
+        body.student-portal #mainContent .sd-timeline-progress {
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        body.student-portal #mainContent .sd-timeline-progress-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #dfb879, #fbbf24);
+        }
+
+        body.student-portal #mainContent .sd-subject-item {
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(14, 11, 9, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 8px;
+        }
+    }
+
+    /* Cross-breakpoint interactive dashboard polish */
+    body.student-portal #mainContent .sd-spotlight-badges {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    body.student-portal #mainContent .sd-spotlight-timer {
+        font-variant-numeric: tabular-nums;
+        font-size: 0.71rem;
+        font-weight: 700;
+        color: #f6e0b3;
+        background: rgba(251, 191, 36, 0.14);
+        border: 1px solid rgba(251, 191, 36, 0.28);
+        padding: 2px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+
+    body.student-portal #mainContent .sd-spotlight-timer:empty {
+        display: none;
+    }
+
+    body.student-portal #mainContent .sd-spotlight-progress {
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.09);
+        overflow: hidden;
+        margin-top: 10px;
+    }
+
+    body.student-portal #mainContent .sd-spotlight-progress-fill {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #dfb879 0%, #fbbf24 100%);
+        transition: width 0.35s ease;
+    }
+
+    body.student-portal #mainContent .sd-spotlight-checked {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 12px;
+        border-radius: 10px;
+        background: rgba(16, 185, 129, 0.14);
+        border: 1px solid rgba(52, 211, 153, 0.28);
+        color: #6ee7b7;
+        font-size: 0.79rem;
+        font-weight: 700;
+    }
+
+    body.student-portal #mainContent button.sd-kpi-btn {
+        appearance: none;
+        background: transparent;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        text-align: left;
+        width: 100%;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+        display: block;
+    }
+
+    body.student-portal #mainContent .sd-kpi-link .sd-kpi-chevron {
+        transition: transform 0.18s ease, color 0.18s ease;
+    }
+
+    body.student-portal #mainContent .sd-kpi-link:hover .sd-kpi-chevron {
+        transform: translate(2px, -2px);
+        color: #dfb879;
+    }
+
+    body.student-portal #mainContent .sd-sched-filter-empty {
+        padding: 18px 14px;
+        margin-top: 8px;
+        border: 1px dashed rgba(223, 184, 121, 0.2);
+        border-radius: 12px;
+        text-align: center;
+        color: #a99b8d;
+        font-size: 0.82rem;
+    }
+
+    body.student-portal #mainContent .sd-timeline-item.is-filtered-hidden {
+        display: none !important;
+    }
+
+    body.student-portal #mainContent .sd-subject-item-trigger {
+        width: 100%;
+        appearance: none;
+        background: transparent;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        text-align: left;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+        display: block;
+    }
+
+    body.student-portal #mainContent .sd-announcement-copy.is-clamped {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    body.student-portal #mainContent .sd-announcement-toggle {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        margin: -2px 0 8px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #dfb879;
+        cursor: pointer;
+    }
+
+    body.student-portal #mainContent .sd-announcement-toggle:hover {
+        text-decoration: underline;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        body.student-portal #mainContent :is(.sd-progress-fill, .sd-timeline-progress-fill, .sd-spotlight-progress-fill, .sd-kpi-chevron, .sd-timeline-item, .sd-subject-item, .sd-announcement-item) {
+            transition: none !important;
         }
     }
 }
