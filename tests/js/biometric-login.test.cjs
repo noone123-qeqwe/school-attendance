@@ -127,10 +127,10 @@ test('Android local fingerprint sign-in restricts transports to internal and sub
     const login = createLogin();
     await login.context.handleBiometricLogin();
     assert.equal(login.requests[0].body.identifier, identifier);
-    assert.ok(login.modal.methods.some(method => method.id === 'fingerprint'));
-    assert.ok(login.modal.methods.some(method => method.id === 'face'));
-    assert.ok(login.modal.methods.some(method => method.id === 'try_hybrid'));
-    assert.ok(login.modal.methods.some(method => method.id === 'password'));
+    assert.deepEqual(
+        Array.from(login.modal.methods, method => method.id),
+        ['fingerprint', 'face', 'password']
+    );
 
     login.select('fingerprint');
     await settle();
@@ -159,22 +159,7 @@ test('Android local fingerprint sign-in restricts transports to internal and sub
     assert.deepEqual(login.redirects, ['/dashboard']);
 });
 
-test('cross-device sign-in uses browser WebAuthn even when the Android bridge exists', async () => {
-    const login = createLogin();
-    await login.context.handleBiometricLogin();
-    login.select('try_hybrid');
-    await settle();
-
-    assert.deepEqual(login.nativeRequests, []);
-    assert.equal(login.browserRequests.length, 1);
-    const { publicKey } = login.browserRequests[0];
-    assert.equal(publicKey.hints[0], 'hybrid');
-    assert.equal(publicKey.userVerification, 'required');
-    assert.deepEqual(Array.from(publicKey.allowCredentials[0].id), [1, 2, 3]);
-    assert.deepEqual(Array.from(publicKey.allowCredentials[0].transports), ['internal', 'hybrid']);
-});
-
-test('a local Android miss can start password-confirmed setup for an account with other passkeys', async () => {
+test('a local Android miss falls back to face verification or password without cross-device or setup cards', async () => {
     const login = createLogin();
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
@@ -182,22 +167,10 @@ test('a local Android miss can start password-confirmed setup for an account wit
     login.reply({ id: login.nativeRequests[0].id, error: 'NotFoundError' });
     await settle();
 
-    assert.ok(login.modal.methods.some(method => method.id === 'try_hybrid'));
-    assert.ok(login.modal.methods.some(method => method.id === 'face'));
-    assert.ok(login.modal.methods.some(method => method.id === 'password'));
-    login.select('setup');
-    await settle();
-    await login.modal.onPrimaryClick();
-    assert.equal(login.modal.showPassword, true);
-    assert.equal(login.requests.some(({ url }) => url === '/webauthn.setup.options'), false);
-
-    login.password.value = 'fixture-password';
-    await login.modal.onPrimaryClick();
-    assert.deepEqual(login.requests.at(-1), {
-        url: '/webauthn.setup.options',
-        body: { identifier, password: 'fixture-password' }
-    });
-    assert.equal(login.modal.message, 'Incorrect password');
+    assert.deepEqual(
+        Array.from(login.modal.methods, method => method.id),
+        ['face', 'password']
+    );
 });
 
 test('Android setup sends create message with residentKey required and completes registration', async () => {

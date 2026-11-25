@@ -38,8 +38,8 @@ class LoginPageUiTest extends TestCase
         $response->assertSee('id="bioFaceCameraVideo"', false);
         $response->assertSee("name: 'Fingerprint'", false);
         $response->assertSee("name: 'Face verification'", false);
-        $response->assertSee("name: 'Use passkey from another device'", false);
-        $response->assertSee("name: 'Set up fingerprint on this device'", false);
+        $response->assertDontSee('Use passkey from another device', false);
+        $response->assertDontSee('Set up fingerprint on this device', false);
         $response->assertSee("name: 'Enter password'", false);
 
         $csp = (string) $response->headers->get('Content-Security-Policy', '');

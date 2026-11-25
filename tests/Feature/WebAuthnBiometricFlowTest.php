@@ -365,7 +365,8 @@ class WebAuthnBiometricFlowTest extends TestCase
         $this->assertStringContainsString('abortActiveBiometricAttempt', $loginHtml);
         $this->assertStringContainsString('client-device', $loginHtml);
         $this->assertStringContainsString('getTransports', $loginHtml);
-        $this->assertStringContainsString('Use passkey from another device', $loginHtml);
+        $this->assertStringNotContainsString('Use passkey from another device', $loginHtml);
+        $this->assertStringNotContainsString('Set up fingerprint on this device', $loginHtml);
         $this->assertStringContainsString('on this account', $loginHtml);
     }
 }
