@@ -120,18 +120,11 @@ class WebauthnService
         $allowCredentials = [];
         if ($user) {
             $allowCredentials = $user->webauthnCredentials()
+                ->where('public_key', 'like', '%BEGIN PUBLIC KEY%')
                 ->get()
-                ->filter(function ($credential) {
-                    // A camera descriptor is not a WebAuthn public key and cannot authenticate.
-                    if ($credential->biometric_type === 'face' && !str_contains((string) $credential->public_key, 'BEGIN PUBLIC KEY')) {
-                        return false;
-                    }
-                    return true;
-                })
                 ->map(fn ($credential) => [
                     'type' => 'public-key',
-                    'id' => $credential->credential_id,
-                    'transports' => ['internal', 'hybrid'],
+                    'id' => $this->normalizeCredentialId($credential->credential_id),
                 ])
                 ->values()
                 ->toArray();
@@ -195,6 +188,9 @@ class WebauthnService
 
         if ($credential->user_id !== $user->id) {
             throw new RuntimeException('This biometric credential belongs to a different account.');
+        }
+        if ($normalizedCredentialId !== $this->normalizeCredentialId($credential->credential_id)) {
+            throw new RuntimeException('The authenticator returned a different credential.');
         }
 
         Log::debug('WebAuthn credential found', [

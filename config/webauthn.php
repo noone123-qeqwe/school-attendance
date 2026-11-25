@@ -15,6 +15,30 @@ $defaultRpId = is_array($appParts) ? strtolower((string) ($appParts['host'] ?? '
 $configuredRpId = trim((string) env('WEBAUTHN_RP_ID', ''));
 $configuredOrigins = trim((string) env('WEBAUTHN_ALLOWED_ORIGINS', ''));
 $configuredAndroidOrigins = trim((string) env('WEBAUTHN_ALLOWED_ANDROID_ORIGINS', ''));
+$androidOrigins = [];
+
+// Use the same signing certificates as the Digital Asset Links served by this app.
+// Keep an explicit environment allowlist authoritative for custom deployments.
+if ($configuredAndroidOrigins === '') {
+    $assetLinksPath = dirname(__DIR__) . '/public/.well-known/assetlinks.json';
+    $assetLinks = is_file($assetLinksPath) ? json_decode(file_get_contents($assetLinksPath), true) : [];
+    foreach ((array) $assetLinks as $statement) {
+        $target = $statement['target'] ?? [];
+        if (($target['namespace'] ?? null) !== 'android_app'
+            || ($target['package_name'] ?? null) !== 'com.school.attendance'
+            || !in_array('delegate_permission/common.get_login_creds', (array) ($statement['relation'] ?? []), true)) {
+            continue;
+        }
+        foreach ((array) ($target['sha256_cert_fingerprints'] ?? []) as $fingerprint) {
+            if (is_string($fingerprint) && preg_match('/\A(?:[a-f0-9]{2}:){31}[a-f0-9]{2}\z/i', $fingerprint)) {
+                $hash = hex2bin(str_replace(':', '', $fingerprint));
+                $androidOrigins[] = 'android:apk-key-hash:' . rtrim(strtr(base64_encode($hash), '+/', '-_'), '=');
+            }
+        }
+    }
+} else {
+    $androidOrigins = array_filter(array_map('trim', explode(',', $configuredAndroidOrigins)));
+}
 
 return [
     // WebAuthn is bound to deployment configuration, never to request headers.
@@ -26,9 +50,5 @@ return [
         explode(',', $configuredOrigins !== '' ? $configuredOrigins : $defaultOrigin)
     ))),
 
-    // Add exact Android WebAuthn origins only when native passkey support is configured.
-    'allowed_android_origins' => array_values(array_filter(array_map(
-        'trim',
-        explode(',', $configuredAndroidOrigins)
-    ))),
+    'allowed_android_origins' => array_values(array_unique($androidOrigins)),
 ];

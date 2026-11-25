@@ -27,17 +27,16 @@ class LoginPageUiTest extends TestCase
         $response->assertSee('class="glass-input-wrap glass-input-wrap--password anim-fade-up anim-d5"', false);
         $response->assertSee('class="d-flex align-items-center justify-content-between glass-remember-row anim-fade-up anim-d5"', false);
 
-        // Biometrics button is visible without waiting on passkey gating and renamed from passkey
+        // The chooser keeps password sign-in available and delegates verification to the device.
         $response->assertSee('<div id="passkeyControls">', false);
         $response->assertSee('Sign in with biometrics', false);
-        $response->assertSee('Fingerprint, face verification, or password', false);
-        $response->assertDontSee('Sign in with a passkey', false);
+        $response->assertSee('Use a device passkey or your password', false);
 
-        // Clicking opens the biometric options list containing Fingerprint, Face verification, and Enter password
         $response->assertSee('id="bioModalMethodsWrap"', false);
         $response->assertSee('id="bioModalMethodsList"', false);
-        $response->assertSee("name: 'Fingerprint'", false);
-        $response->assertSee("name: 'Face verification'", false);
+        $response->assertSee("name: 'Use a device passkey'", false);
+        $response->assertDontSee("name: 'Fingerprint'", false);
+        $response->assertDontSee("name: 'Face verification'", false);
         $response->assertSee("name: 'Enter password'", false);
     }
 

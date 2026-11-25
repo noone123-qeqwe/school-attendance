@@ -141,163 +141,36 @@ class WebAuthnController extends Controller
             'biometric_method' => ['nullable', 'in:fingerprint,face,device_lock'],
         ]);
 
-        $raw = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
-        $savedIdentifiers = $request->input('saved_identifiers');
-        if (!is_array($savedIdentifiers)) {
-            $savedIdentifiers = [];
-        }
-        
-        // Targeted account lookup if identifier provided
-        if ($raw && is_string($raw) && trim($raw) !== '') {
-            $identifier = trim($raw);
-            $user = $this->findUserByIdentifier($identifier);
+        $identifier = trim((string) ($request->input('student_number') ?? $request->input('identifier') ?? $request->input('email')));
+        $user = $identifier !== '' ? $this->findUserByIdentifier($identifier) : null;
 
-            if (!$user || !$user->isActive()) {
-                return $this->biometricUnavailableResponse();
-            }
-
-            // Check if user has hardware WebAuthn credentials
-            $hasWebauthn = $user->webauthnCredentials()
-                ->where(function ($q) {
-                    $q->whereNull('biometric_type')
-                      ->orWhere('biometric_type', '!=', 'face')
-                      ->orWhere('public_key', 'LIKE', '%BEGIN PUBLIC KEY%');
-                })
-                ->exists();
-
-            if ($request->input('biometric_method') === 'face') {
-                $hasSecureFaceCredential = $user->webauthnCredentials()->where('biometric_type', 'face')
-                    ->where('public_key', 'LIKE', '%BEGIN PUBLIC KEY%')->exists();
-                if (!$hasSecureFaceCredential) {
-                    return $this->biometricUnavailableResponse();
-                }
-            }
-
-            if (!$hasWebauthn) {
-                // Legacy camera photos are not authentication credentials.
-                return $this->biometricUnavailableResponse();
-            }
-            
-            $options = $webauthn->authenticationOptions($user);
-            
-            // If the client sent other saved accounts on this device, also include their credentials
-            // so any registered user on this device can authenticate smoothly
-            if (!empty($savedIdentifiers)) {
-                $existingIds = collect($options['publicKey']['allowCredentials'])->pluck('id')->all();
-                foreach ($savedIdentifiers as $savedId) {
-                    if (!is_string($savedId) || trim($savedId) === '' || strcasecmp(trim($savedId), $identifier) === 0) {
-                        continue;
-                    }
-                    $otherUser = $this->findUserByIdentifier(trim($savedId));
-                    if ($otherUser && $otherUser->isActive()) {
-                        $otherCreds = $otherUser->webauthnCredentials()
-                            ->where(function ($q) {
-                                $q->whereNull('biometric_type')
-                                  ->orWhere('biometric_type', '!=', 'face')
-                                  ->orWhere('public_key', 'LIKE', '%BEGIN PUBLIC KEY%');
-                            })
-                            ->get();
-                        foreach ($otherCreds as $oc) {
-                            if (!in_array($oc->credential_id, $existingIds)) {
-                                $options['publicKey']['allowCredentials'][] = [
-                                    'type' => 'public-key',
-                                    'id' => $oc->credential_id,
-                                    'transports' => ['internal', 'hybrid'],
-                                ];
-                                $existingIds[] = $oc->credential_id;
-                            }
-                        }
-                    }
-                }
-            }
-            
-            if ($request->input('biometric_method') === 'face') {
-                $faceIds = $user->webauthnCredentials()->where('biometric_type', 'face')
-                    ->where('public_key', 'LIKE', '%BEGIN PUBLIC KEY%')->pluck('credential_id')->all();
-                $options['publicKey']['allowCredentials'] = array_values(array_filter(
-                    $options['publicKey']['allowCredentials'],
-                    fn ($credential) => in_array($credential['id'], $faceIds, true)
-                ));
-            }
-
-            return response()->json(array_merge($options['publicKey'], [
-                'success' => true,
-                'available_methods' => ['fingerprint', 'face', 'device_lock'],
-            ]));
+        if ($identifier !== '' && (!$user || !$user->isActive())) {
+            return $this->biometricUnavailableResponse();
         }
 
-        // Discoverable / Passkey mode: No identifier passed
-        session()->forget("webauthn_login_user_id");
-        $faceOnly = $request->input('biometric_method') === 'face';
-        if ($faceOnly && empty($savedIdentifiers)) {
-            return response()->json([
-                'success' => false,
-                'code' => 'BIOMETRIC_UNAVAILABLE',
-                'message' => 'Enter your ID or email, or use your password to sign in.',
-            ], 422);
-        }
-        $options = $webauthn->authenticationOptions(null);
-
-        // If saved_identifiers was passed in discoverable mode, populate allowCredentials with known device accounts
-        if (!empty($savedIdentifiers)) {
-            $allowCredentials = [];
-            $existingIds = [];
-            foreach ($savedIdentifiers as $savedId) {
-                if (!is_string($savedId) || trim($savedId) === '') continue;
-                $savedUser = $this->findUserByIdentifier(trim($savedId));
-                if ($savedUser && $savedUser->isActive()) {
-                    $creds = $savedUser->webauthnCredentials()
-                        ->where(function ($q) {
-                            $q->whereNull('biometric_type')
-                              ->orWhere('biometric_type', '!=', 'face')
-                              ->orWhere('public_key', 'LIKE', '%BEGIN PUBLIC KEY%');
-                        })
-                        ->get();
-                    foreach ($creds as $c) {
-                        $t = $c->biometric_type ?: 'fingerprint';
-                        if ($faceOnly && $t !== 'face') continue;
-
-                        if (!in_array($c->credential_id, $existingIds)) {
-                            $allowCredentials[] = [
-                                'type' => 'public-key',
-                                'id' => $c->credential_id,
-                                'transports' => ['internal', 'hybrid'],
-                            ];
-                            $existingIds[] = $c->credential_id;
-                        }
-                    }
-                }
-            }
-            if (!empty($allowCredentials)) {
-                $options['publicKey']['allowCredentials'] = $allowCredentials;
-            }
-        }
-        if ($faceOnly && empty($options['publicKey']['allowCredentials'])) {
-            return response()->json([
-                'success' => false,
-                'code' => 'BIOMETRIC_UNAVAILABLE',
-                'message' => 'Biometric sign-in could not be started. Enter your account details or use your password.',
-            ], 404);
+        // Credential labels describe enrollment UI, not the verification method
+        // the authenticator can perform. An empty allow list enables discovery.
+        $options = $webauthn->authenticationOptions($user)['publicKey'];
+        if ($user && !$options['allowCredentials']) {
+            return $this->biometricUnavailableResponse();
         }
 
-        return response()->json(array_merge($options['publicKey'], [
-            "success" => true,
-            "discoverable" => true,
-            "available_methods" => ['fingerprint', 'face', 'device_lock'],
-        ]));
+        return response()->json($options + [
+            'success' => true,
+            'discoverable' => $user === null,
+            'available_methods' => ['device_lock'],
+        ]);
     }
 
-    /**
-     * Return device-compatible choices without looking up whether an account exists.
-     */
-    public function availableMethods(Request $request)
+    public function availableMethods()
     {
         return response()->json([
             'success' => true,
             'discoverable' => true,
-            'available_methods' => ['fingerprint', 'face', 'device_lock'],
+            'available_methods' => ['device_lock'],
         ]);
     }
+
 
     public function setupOptions(Request $request, WebauthnService $webauthn, AccountLockoutService $lockout)
     {
@@ -486,8 +359,13 @@ class WebAuthnController extends Controller
         }
 
         $request->validate(["credential_id" => "required|string", "assertion" => "required|array"]);
-        $credentialId = $request->input('credential_id') ?? $request->input('assertion.id');
+        $credentialId = $request->input('credential_id');
         $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
+        $paddedId = $normalizedCredentialId . str_repeat('=', (4 - strlen($normalizedCredentialId) % 4) % 4);
+        $credentialIds = array_unique([
+            $credentialId, $normalizedCredentialId, $paddedId,
+            strtr($normalizedCredentialId, '-_', '+/'), strtr($paddedId, '-_', '+/'),
+        ]);
 
         // 1. Check if an account was targeted via session or request input
         $isSwitchUser = $request->boolean('switch_user') || $request->boolean('allow_detected_user');
@@ -520,10 +398,7 @@ class WebAuthnController extends Controller
 
         if ($expectedUser) {
             $dbCredential = $expectedUser->webauthnCredentials()
-                ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
-                    $query->where('credential_id', $credentialId)
-                          ->orWhere('credential_id', $normalizedCredentialId);
-                })
+                ->whereIn('credential_id', $credentialIds)
                 ->first();
 
             if ($dbCredential) {
@@ -534,10 +409,7 @@ class WebAuthnController extends Controller
         // If userHandle is provided (from WebAuthn assertion response), use it to identify user
         if (!$dbCredential && $userHandle) {
             $candidateCredentials = \App\Models\WebauthnCredential::with('user')
-                ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
-                    $query->where('credential_id', $credentialId)
-                          ->orWhere('credential_id', $normalizedCredentialId);
-                })
+                ->whereIn('credential_id', $credentialIds)
                 ->get();
 
             foreach ($candidateCredentials as $cand) {
@@ -555,10 +427,7 @@ class WebAuthnController extends Controller
 
         if (!$dbCredential) {
             $dbCredential = \App\Models\WebauthnCredential::with('user')
-                ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
-                    $query->where('credential_id', $credentialId)
-                          ->orWhere('credential_id', $normalizedCredentialId);
-                })
+                ->whereIn('credential_id', $credentialIds)
                 ->first();
 
             if ($dbCredential && $dbCredential->user) {
@@ -603,15 +472,6 @@ class WebAuthnController extends Controller
                 "success" => false,
                 "code" => "BIOMETRIC_UNAVAILABLE",
                 "message" => "Biometric sign-in could not be completed. Try again or use your password."
-            ], 401);
-        }
-
-        if ($request->input('biometric_method') === 'face'
-            && $dbCredential->biometric_type !== 'face') {
-            return response()->json([
-                'success' => false,
-                'code' => 'BIOMETRIC_UNAVAILABLE',
-                'message' => 'Biometric sign-in could not be completed. Try another sign-in method or use your password.',
             ], 401);
         }
 
