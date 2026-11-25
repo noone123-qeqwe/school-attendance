@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.view.View;
 import android.webkit.GeolocationPermissions;
 import android.webkit.PermissionRequest;
@@ -35,10 +36,28 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.GetPublicKeyCredentialOption;
+import androidx.credentials.PublicKeyCredential;
+import androidx.credentials.exceptions.GetCredentialCancellationException;
+import androidx.credentials.exceptions.GetCredentialException;
+import androidx.credentials.exceptions.GetCredentialProviderConfigurationException;
+import androidx.credentials.exceptions.GetCredentialUnsupportedException;
+import androidx.credentials.exceptions.NoCredentialException;
+import androidx.webkit.JavaScriptReplyProxy;
+import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebSettingsCompat;
+import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -57,6 +76,8 @@ public class MainActivity extends AppCompatActivity {
     private View launchError;
     private ValueCallback<Uri[]> fileUploadCallback;
     private PermissionRequest pendingPermissionRequest;
+    private CancellationSignal passkeyCancellation;
+    private String passkeyRequestId;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -113,6 +134,13 @@ public class MainActivity extends AppCompatActivity {
         return "https".equalsIgnoreCase(url.getScheme())
                 && APP_ORIGIN.getHost().equalsIgnoreCase(url.getHost())
                 && (url.getPort() == -1 || url.getPort() == 443);
+    }
+
+    private static boolean isAttendanceLoginUrl(@Nullable String currentUrl) {
+        if (currentUrl == null) return false;
+        Uri url = Uri.parse(currentUrl);
+        // Guest QR scans also redirect here, with the attendance token in the query.
+        return isAttendanceUrl(url) && "/login".equals(url.getEncodedPath());
     }
 
     private static boolean isAttendanceEntryRequest(WebResourceRequest request) {
@@ -181,6 +209,12 @@ public class MainActivity extends AppCompatActivity {
             );
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            WebViewCompat.addWebMessageListener(webView, "AttendancePasskey",
+                    Collections.singleton(APP_URL), this::onPasskeyMessage);
+        }
+
         // Native Device Binding Bridge: exposes stable hardware/app installation UUID
         webView.addJavascriptInterface(new AndroidDeviceBridge(this), "AndroidDeviceBridge");
 
@@ -191,6 +225,7 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                cancelPasskeyRequest();
                 launchError.setVisibility(View.GONE);
                 view.setVisibility(View.VISIBLE);
                 progressBar.setVisibility(View.VISIBLE);
@@ -402,6 +437,132 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         enterImmersiveMode();
+    }
+
+    @Override
+    protected void onDestroy() {
+        cancelPasskeyRequest();
+        super.onDestroy();
+    }
+
+    private void onPasskeyMessage(@NonNull WebView view, @NonNull WebMessageCompat message,
+                                  @NonNull Uri sourceOrigin, boolean isMainFrame,
+                                  @NonNull JavaScriptReplyProxy reply) {
+        if (!isMainFrame || !isAttendanceUrl(sourceOrigin) || !isAttendanceLoginUrl(view.getUrl())) {
+            return;
+        }
+
+        JSONObject request;
+        try {
+            String data = message.getData();
+            if (data == null) return;
+            request = new JSONObject(data);
+        } catch (JSONException | IllegalStateException invalidMessage) {
+            return;
+        }
+
+        Object requestId = request.opt("id");
+        if (!(requestId instanceof String)) return;
+        String id = (String) requestId;
+        if (id.isEmpty() || id.length() > 128) return;
+
+        String type = request.optString("type");
+        if ("cancel".equals(type) && id.equals(passkeyRequestId)) {
+            cancelPasskeyRequest();
+            sendPasskeyReply(reply, id, null, "AbortError");
+            return;
+        }
+        if (!"get".equals(type)) return;
+
+        JSONObject options = request.optJSONObject("publicKey");
+        if (options == null || !APP_ORIGIN.getHost().equals(options.optString("rpId"))
+                || !"required".equals(options.optString("userVerification"))) {
+            sendPasskeyReply(reply, id, null, "UnknownError");
+            return;
+        }
+        if (passkeyCancellation != null) {
+            sendPasskeyReply(reply, id, null, "AbortError");
+            return;
+        }
+
+        CancellationSignal cancellation = new CancellationSignal();
+        passkeyCancellation = cancellation;
+        passkeyRequestId = id;
+
+        try {
+            GetCredentialRequest credentialRequest = new GetCredentialRequest.Builder()
+                    .addCredentialOption(new GetPublicKeyCredentialOption(options.toString()))
+                    .setPreferImmediatelyAvailableCredentials(true)
+                    .build();
+            CredentialManager.create(this).getCredentialAsync(this, credentialRequest, cancellation,
+                    ContextCompat.getMainExecutor(this),
+                    new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
+                        @Override
+                        public void onResult(@NonNull GetCredentialResponse response) {
+                            if (response.getCredential() instanceof PublicKeyCredential) {
+                                PublicKeyCredential credential = (PublicKeyCredential) response.getCredential();
+                                try {
+                                    JSONObject assertion = new JSONObject(credential.getAuthenticationResponseJson());
+                                    finishPasskeyRequest(cancellation, reply, id, assertion, null);
+                                    return;
+                                } catch (JSONException invalidResponse) {
+                                    // Credential providers must return a WebAuthn assertion as JSON.
+                                }
+                            }
+                            finishPasskeyRequest(cancellation, reply, id, null, "UnknownError");
+                        }
+
+                        @Override
+                        public void onError(@NonNull GetCredentialException error) {
+                            String name = "UnknownError";
+                            if (error instanceof NoCredentialException) {
+                                name = "NotFoundError";
+                            } else if (error instanceof GetCredentialCancellationException) {
+                                name = "NotAllowedError";
+                            } else if (error instanceof GetCredentialUnsupportedException
+                                    || error instanceof GetCredentialProviderConfigurationException) {
+                                name = "NotSupportedError";
+                            }
+                            finishPasskeyRequest(cancellation, reply, id, null, name);
+                        }
+                    });
+        } catch (UnsupportedOperationException unsupported) {
+            finishPasskeyRequest(cancellation, reply, id, null, "NotSupportedError");
+        } catch (RuntimeException failedRequest) {
+            finishPasskeyRequest(cancellation, reply, id, null, "UnknownError");
+        }
+    }
+
+    private void finishPasskeyRequest(CancellationSignal cancellation, JavaScriptReplyProxy reply,
+                                      String id, @Nullable JSONObject assertion, @Nullable String error) {
+        if (passkeyCancellation != cancellation) return;
+        passkeyCancellation = null;
+        passkeyRequestId = null;
+        if (isAttendanceLoginUrl(webView.getUrl())) {
+            sendPasskeyReply(reply, id, assertion, error);
+        }
+    }
+
+    private void cancelPasskeyRequest() {
+        CancellationSignal cancellation = passkeyCancellation;
+        passkeyCancellation = null;
+        passkeyRequestId = null;
+        if (cancellation != null) cancellation.cancel();
+    }
+
+    private static void sendPasskeyReply(JavaScriptReplyProxy reply, String id,
+                                         @Nullable JSONObject assertion, @Nullable String error) {
+        try {
+            JSONObject response = new JSONObject().put("id", id);
+            if (assertion != null) {
+                response.put("assertion", assertion);
+            } else {
+                response.put("error", error);
+            }
+            reply.postMessage(response.toString());
+        } catch (JSONException ignored) {
+            // Reply values are strings and the JSON returned by Credential Manager.
+        }
     }
 
     @Override

@@ -10,8 +10,8 @@ android {
         applicationId 'com.school.attendance'
         minSdk 24
         targetSdk 35
-        versionCode 20920
-        versionName "9.1.10"
+        versionCode 20921
+        versionName "9.1.11"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -989,6 +989,7 @@ function abortActiveBiometricAttempt(reason) {
     bioAbortReason = reason || 'user';
     if (bioAbortController) {
         try { bioAbortController.abort(); } catch (e) {}
+        bioAbortController = null;
     }
 }
 
@@ -1229,7 +1230,6 @@ function bufferToBase64Url(buffer) {
 function resetBiometricButton() {
     clearBioWatchdog();
     isBioPending = false;
-    bioAbortController = null;
     if (!fpRowBtn) return;
     fpRowBtn.disabled = false;
     fpRowBtn.style.opacity = '1';
@@ -1535,7 +1535,7 @@ async function openBiometricSetupModal(identifier, signal) {
         title: 'Set up biometrics',
         headerIcon: 'bi-shield-lock',
         identifier: activeSetupIdentifier,
-        message: 'No usable sign-in passkey was returned for the account details entered. Confirm your password to register a passkey on this account for this device, or sign in with your password.',
+        message: 'Confirm your password to register a passkey on this account for use on this device.',
         badgeType: 'warning',
         primaryBtnText: 'Set up biometrics',
         secondaryBtnText: 'Enter password',
@@ -1846,6 +1846,48 @@ function canRequestDeviceSignIn(capability) {
         && capability && !['insecure', 'unsupported'].includes(capability.reason);
 }
 
+function getAndroidPasskeyBridge() {
+    var bridge = window.AttendancePasskey;
+    return window.isSecureContext && typeof bridge?.postMessage === 'function'
+        && typeof bridge.addEventListener === 'function' ? bridge : null;
+}
+
+function requestAndroidPasskey(bridge, publicKey, attemptObj) {
+    var id = String(attemptObj.id);
+    var signal = attemptObj.signal;
+
+    return new Promise(function(resolve, reject) {
+        function cleanup() {
+            bridge.removeEventListener('message', onMessage);
+            signal.removeEventListener('abort', onAbort);
+        }
+
+        function onMessage(event) {
+            var result;
+            try { result = JSON.parse(event.data); } catch (err) { return; }
+            if (result?.id !== id) return;
+            cleanup();
+            if (result.error) reject(createWebAuthnError(result.error, 'Android could not complete passkey verification.'));
+            else resolve(result.assertion);
+        }
+
+        function onAbort() {
+            cleanup();
+            try { bridge.postMessage(JSON.stringify({ type: 'cancel', id: id })); } catch (err) {}
+            reject(createWebAuthnError('AbortError', 'Verification was cancelled.'));
+        }
+
+        bridge.addEventListener('message', onMessage);
+        signal.addEventListener('abort', onAbort, { once: true });
+        try {
+            bridge.postMessage(JSON.stringify({ type: 'get', id: id, publicKey: publicKey }));
+        } catch (err) {
+            cleanup();
+            reject(err);
+        }
+    });
+}
+
 function buildAllowCredentials(serverCredentials) {
     return (serverCredentials || []).map(function(credential) {
         var descriptor = {
@@ -1856,6 +1898,21 @@ function buildAllowCredentials(serverCredentials) {
         return descriptor;
     });
 }
+
+var otherDevicePasskeyOption = {
+    id: 'try_hybrid',
+    name: 'Use passkey from another device',
+    desc: 'Use a saved passkey from another phone or a security key.',
+    icon: 'bi-phone',
+    accentClass: 'bio-method-icon-box--fingerprint'
+};
+var setupPasskeyOption = {
+    id: 'setup',
+    name: 'Set up a passkey on this device',
+    desc: 'Confirm your account password to add a passkey.',
+    icon: 'bi-shield-lock',
+    accentClass: 'bio-method-icon-box--fingerprint'
+};
 
 async function openBiometricSignInChoices(identifier, allowHybrid = false) {
     var attemptObj = startNewBiometricAttempt();
@@ -1890,7 +1947,8 @@ async function openBiometricSignInChoices(identifier, allowHybrid = false) {
     try {
         var capability = await refreshPasskeySignIn();
         if (isStaleBiometricAttempt(attemptObj)) return;
-        if (!canRequestDeviceSignIn(capability)) {
+        var browserPasskeys = canRequestDeviceSignIn(capability);
+        if (!browserPasskeys && !getAndroidPasskeyBridge()) {
             showChoices(passkeyAvailabilityMessage(capability, 'get'), []);
             return;
         }
@@ -1913,9 +1971,9 @@ async function openBiometricSignInChoices(identifier, allowHybrid = false) {
         if (opts?.code === 'BIOMETRIC_UNAVAILABLE' && identifier) {
             var setupCapability = await checkPasskeyAvailability('create');
             if (isStaleBiometricAttempt(attemptObj)) return;
-            showChoices(opts.message + ' Camera face profiles are used for attendance.', setupCapability.available ? [{
-                id: 'setup', name: 'Set up a device passkey', desc: 'Confirm your account password to register this device.', icon: 'bi-shield-lock'
-            }] : [], function() { openBiometricSetupModal(identifier, attemptObj.signal); });
+            showChoices(opts.message, setupCapability.available ? [setupPasskeyOption] : [], function() {
+                openBiometricSetupModal(identifier, attemptObj.signal);
+            });
             return;
         }
 
@@ -1930,44 +1988,53 @@ async function openBiometricSignInChoices(identifier, allowHybrid = false) {
         }
 
         var readyAt = performance.now();
-        var preferHybrid = allowHybrid || capability.platformAvailable === false;
-        showChoices('Your device chooses how to verify you, such as fingerprint, face unlock, or screen lock. Camera profiles are used for attendance.', [{
+        var localOption = {
             id: 'device_lock',
-            name: allowHybrid ? 'Use passkey from another device' : 'Use a device passkey',
-            desc: 'Open your browser’s passkey prompt.',
+            name: 'Use a device passkey',
+            desc: 'Use a passkey saved on this device with fingerprint, face unlock, or screen lock.',
             icon: 'bi-shield-lock',
             accentClass: 'bio-method-icon-box--fingerprint'
-        }], function() {
-            // Leave enough time for the native prompt to complete within the server challenge lifetime.
-            if (performance.now() - readyAt >= 45000) {
-                openBiometricSignInChoices(identifier, allowHybrid);
+        };
+        var methods = [localOption];
+        if (browserPasskeys) {
+            if (allowHybrid) methods.unshift(otherDevicePasskeyOption);
+            else methods.push(otherDevicePasskeyOption);
+        }
+        if (identifier) methods.push(setupPasskeyOption);
+        showChoices('Choose how to sign in.', methods, function(method) {
+            if (method.id === 'setup') {
+                openBiometricSetupModal(identifier, attemptObj.signal);
                 return;
             }
-            performBiometricLogin(identifier, opts, allowHybrid, preferHybrid);
+            var useAnotherDevice = method.id === 'try_hybrid';
+            // Leave enough time for the native prompt to complete within the server challenge lifetime.
+            if (performance.now() - readyAt >= 45000) {
+                openBiometricSignInChoices(identifier, useAnotherDevice);
+                return;
+            }
+            performBiometricLogin(identifier, opts, useAnotherDevice);
         });
     } catch (err) {
         if (!isStaleBiometricAttempt(attemptObj)) handleBiometricSignInError(err, identifier, null, allowHybrid);
     }
 }
 
-async function performBiometricLogin(studentNumber, opts, allowHybrid, preferHybrid) {
+async function performBiometricLogin(studentNumber, opts, allowHybrid) {
     if (biometricRedirectStarted || isBioPending) return;
     var attemptObj = startNewBiometricAttempt();
     isBioPending = true;
 
     try {
         var promptTimeout = Math.min(Math.max(Number(opts.timeout) || 45000, 15000), 60000);
-        var getPublicKey = {
-            challenge: base64ToUint8Array(opts.challenge),
+        var androidBridge = allowHybrid ? null : getAndroidPasskeyBridge();
+        var publicKeyOptions = {
+            challenge: opts.challenge,
             userVerification: 'required',
             timeout: promptTimeout,
-            rpId: opts.rpId
+            rpId: opts.rpId,
+            hints: allowHybrid ? ['hybrid', 'security-key', 'client-device'] : opts.hints,
+            allowCredentials: opts.allowCredentials || []
         };
-        getPublicKey.hints = preferHybrid ? ['hybrid', 'security-key', 'client-device'] : opts.hints;
-        var mappedAllowCredentials = buildAllowCredentials(opts.allowCredentials);
-        if (mappedAllowCredentials && mappedAllowCredentials.length > 0) {
-            getPublicKey.allowCredentials = mappedAllowCredentials;
-        }
 
         showBiometricProgress(
             allowHybrid ? 'Use passkey from another device' : 'Verify with your device',
@@ -1978,9 +2045,20 @@ async function performBiometricLogin(studentNumber, opts, allowHybrid, preferHyb
             allowHybrid ? 'Waiting for cross-device passkey…' : 'Confirming on your device…'
         );
 
-        var assertion = await runWithCredentialWatchdog(function() {
+        var assertion = await runWithCredentialWatchdog(async function() {
+            if (androidBridge) {
+                try {
+                    return await requestAndroidPasskey(androidBridge, publicKeyOptions, attemptObj);
+                } catch (err) {
+                    if (err.name !== 'NotSupportedError' || typeof navigator.credentials?.get !== 'function') throw err;
+                    androidBridge = null;
+                }
+            }
             return navigator.credentials.get({
-                publicKey: getPublicKey,
+                publicKey: Object.assign({}, publicKeyOptions, {
+                    challenge: base64ToUint8Array(publicKeyOptions.challenge),
+                    allowCredentials: buildAllowCredentials(publicKeyOptions.allowCredentials)
+                }),
                 signal: attemptObj.signal
             });
         }, promptTimeout, attemptObj);
@@ -1992,14 +2070,16 @@ async function performBiometricLogin(studentNumber, opts, allowHybrid, preferHyb
 
         showBiometricProgress('Finishing sign-in', 'Checking your passkey response.', studentNumber, 'Completing sign-in…', { dismissible: false });
 
-        var credentialId = bufferToBase64Url(assertion.rawId);
+        // The native bridge returns WebAuthn JSON, while browsers return buffers.
+        var encode = androidBridge ? function(value) { return value; } : bufferToBase64Url;
+        var credentialId = encode(assertion.rawId);
         var assertionResponse = {
-            clientDataJSON: bufferToBase64Url(assertion.response.clientDataJSON),
-            authenticatorData: bufferToBase64Url(assertion.response.authenticatorData),
-            signature: bufferToBase64Url(assertion.response.signature)
+            clientDataJSON: encode(assertion.response.clientDataJSON),
+            authenticatorData: encode(assertion.response.authenticatorData),
+            signature: encode(assertion.response.signature)
         };
         if (assertion.response.userHandle) {
-            assertionResponse.userHandle = bufferToBase64Url(assertion.response.userHandle);
+            assertionResponse.userHandle = encode(assertion.response.userHandle);
         }
         var assertionData = {
             id: credentialId,
@@ -2095,35 +2175,32 @@ function handleBiometricSignInError(err, studentNumber, opts, allowHybrid) {
 
         if (err.name === 'NotAllowedError' || err.name === 'NotFoundError') {
             if (hasAccountCredentials && !allowHybrid) {
+                var fallbackMethods = [];
+                if (err.name !== 'NotFoundError') fallbackMethods.push({
+                    id: 'retry_local',
+                    name: 'Try this device again',
+                    desc: 'Open the device verification prompt again.',
+                    icon: 'bi-shield-lock',
+                    accentClass: 'bio-method-icon-box--fingerprint'
+                });
+                if (typeof navigator.credentials?.get === 'function') fallbackMethods.push(otherDevicePasskeyOption);
+                if (studentNumber) fallbackMethods.push(setupPasskeyOption);
+                fallbackMethods.push({
+                    id: 'password',
+                    name: 'Enter password',
+                    desc: 'Type your account password to sign in.',
+                    icon: 'bi-lock-fill',
+                    accentClass: 'bio-method-icon-box--password'
+                });
                 openBiometricModal({
                     title: 'No passkey verified on this device',
                     headerIcon: 'bi-shield-lock',
                     identifier: studentNumber,
-                    message: 'Passkeys are registered on this account, but verification was cancelled or no matching passkey is accessible on this device.',
+                    message: err.name === 'NotFoundError'
+                        ? 'This device couldn’t find a saved passkey for this account.'
+                        : 'Verification was cancelled or this device couldn’t use a saved passkey for this account.',
                     badgeType: 'warning',
-                    methods: [
-                        {
-                            id: 'retry_local',
-                            name: 'Try this device again',
-                            desc: 'Prompt this device’s biometrics or screen lock again',
-                            icon: 'bi-shield-lock',
-                            accentClass: 'bio-method-icon-box--fingerprint'
-                        },
-                        {
-                            id: 'try_hybrid',
-                            name: 'Use passkey from another device',
-                            desc: 'Use a saved passkey from another phone or security key',
-                            icon: 'bi-phone',
-                            accentClass: 'bio-method-icon-box--fingerprint'
-                        },
-                        {
-                            id: 'password',
-                            name: 'Enter password',
-                            desc: 'Type your account password to sign in',
-                            icon: 'bi-lock-fill',
-                            accentClass: 'bio-method-icon-box--password'
-                        }
-                    ],
+                    methods: fallbackMethods,
                     hidePrimaryBtn: true,
                     secondaryBtnText: false,
                     showCancelBtn: true,
@@ -2132,6 +2209,8 @@ function handleBiometricSignInError(err, studentNumber, opts, allowHybrid) {
                             openBiometricSignInChoices(studentNumber);
                         } else if (selected.id === 'try_hybrid') {
                             openBiometricSignInChoices(studentNumber, true);
+                        } else if (selected.id === 'setup') {
+                            openBiometricSetupModal(studentNumber, startNewBiometricAttempt().signal);
                         } else {
                             closeBiometricModalAndFocusPassword();
                         }
