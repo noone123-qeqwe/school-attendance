@@ -780,8 +780,8 @@
                 <span class="notif-stat-num" id="statActiveCount">{{ $counts['active'] ?? 0 }}</span>
                 <span class="notif-stat-label">Active Notices</span>
             </div>
-            <div class="notif-stat-icon" style="background:rgba(255,209,102,0.12); color:#ffd166;">
-                <i class="bi bi-bell"></i>
+            <div class="notif-stat-icon" style="background:rgba(107,25,43,0.34); color:#E898A8;">
+                <i class="bi bi-bell" aria-hidden="true"></i>
             </div>
         </a>
 
@@ -849,12 +849,13 @@
                 @if(request('type'))
                     <input type="hidden" name="type" value="{{ request('type') }}">
                 @endif
-                <i class="bi bi-search notif-search-icon"></i>
+                <i class="bi bi-search notif-search-icon" aria-hidden="true"></i>
                 <input type="text" 
                        name="search" 
                        id="notifSearchInput" 
                        class="notif-search-input" 
                        placeholder="Search alerts or subjects..." 
+                       aria-label="Search notifications or subjects"
                        value="{{ request('search') }}"
                        autocomplete="off">
                 @if(request('search'))
@@ -965,7 +966,7 @@
                                 @endif
                                 @if($notification->subject_code)
                                     <span class="notif-meta-item">
-                                        <i class="bi bi-book-fill" style="color:var(--notif-gold);"></i>
+                                        <i class="bi bi-book-fill" style="color:#E898A8;" aria-hidden="true"></i>
                                         {{ $notification->subject_code }}
                                     </span>
                                 @endif

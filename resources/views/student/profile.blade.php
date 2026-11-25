@@ -367,11 +367,11 @@
                     @php $rate = round((($totalPresent + $totalLate) / $totalAll) * 100); @endphp
                     <div style="margin-top:4px;">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span style="font-size:0.78rem;font-weight:600;color:#b39b82;">Attendance Rate</span>
-                            <span style="font-size:0.84rem;font-weight:700;color:{{ $rate >= 75 ? '#4ade80' : '#f87171' }};">{{ $rate }}%</span>
+                            <span style="font-size:0.78rem;font-weight:600;color:#9E8990;">Attendance Rate</span>
+                            <span style="font-size:0.84rem;font-weight:700;color:{{ $rate >= 75 ? '#34D399' : '#FB7185' }};">{{ $rate }}%</span>
                         </div>
-                        <div style="height:8px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;">
-                            <div style="height:100%;width:{{ $rate }}%;background:{{ $rate >= 75 ? 'linear-gradient(90deg,#16a34a,#4ade80)' : 'linear-gradient(90deg,#dc2626,#f87171)' }};border-radius:99px;transition:width 1s ease;"></div>
+                        <div style="height:6px;background:rgba(250,247,248,0.08);border-radius:99px;overflow:hidden;">
+                            <div style="height:100%;width:{{ $rate }}%;background:{{ $rate >= 75 ? '#34D399' : '#FB7185' }};border-radius:99px;transition:width 0.6s ease;"></div>
                         </div>
                     </div>
                     @endif
@@ -452,25 +452,25 @@
                     </div>
 
                     <div style="margin-bottom:16px;">
-                        <div style="font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Registered devices</div>
+                        <div style="font-size:.72rem;font-weight:700;color:#9E8990;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Registered devices</div>
                         <div id="deviceList">
-                            <div style="text-align:center;padding:16px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:10px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
-                                <i class="bi bi-shield-lock" style="font-size:1.8rem;display:block;margin-bottom:6px;opacity:.4;color:var(--gold,#CFA46F);"></i>
+                            <div style="text-align:center;padding:16px;color:#9E8990;font-size:.84rem;background:#0B0406;border-radius:10px;border:1px dashed rgba(250,247,248,0.14);" id="noDevices">
+                                <i class="bi bi-shield-lock" style="font-size:1.6rem;display:block;margin-bottom:6px;opacity:.6;color:#E898A8;" aria-hidden="true"></i>
                                 No passkeys registered yet.
                             </div>
                         </div>
                     </div>
 
-                    <button type="button" onclick="registerDevicePasskey()" id="registerFpBtn" disabled class="btn w-100" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);color:white;font-weight:700;padding:11px 18px;border-radius:12px;border:none;">
-                        <i class="bi bi-shield-lock me-2"></i>Set up a passkey
+                    <button type="button" onclick="registerDevicePasskey()" id="registerFpBtn" disabled class="btn w-100" style="background:#FAF7F8;color:#14080C;font-weight:700;min-height:44px;padding:10px 18px;border-radius:10px;border:1px solid #FAF7F8;">
+                        <i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Set up a passkey
                     </button>
                     <div id="fpMessage" style="margin-top:12px;font-size:.82rem;display:none;"></div>
-                    <div class="mt-3 pt-3 d-flex align-items-center justify-content-between gap-2 flex-wrap" style="border-top: 1px solid rgba(255,255,255,0.07);">
-                        <a href="{{ route('settings.biometrics.face') }}" style="color:#f5dfa8;font-size:0.8rem;font-weight:700;text-decoration:none;">
-                            <i class="bi bi-camera-video me-1"></i>Face Recognition Setup
+                    <div class="mt-3 pt-3 d-flex align-items-center justify-content-between gap-2 flex-wrap" style="border-top: 1px solid rgba(250,247,248,0.08);">
+                        <a href="{{ route('settings.biometrics.face') }}" style="color:#E898A8;font-size:0.8rem;font-weight:700;text-decoration:none;">
+                            <i class="bi bi-camera-video me-1" aria-hidden="true"></i>Face Recognition Setup
                         </a>
-                        <a href="{{ route('settings') }}#tab-biometrics" style="color:#b39b82;font-size:0.8rem;font-weight:600;text-decoration:none;">
-                            Security Hub <i class="bi bi-arrow-right ms-1"></i>
+                        <a href="{{ route('settings') }}#tab-biometrics" style="color:#D4C6CA;font-size:0.8rem;font-weight:600;text-decoration:none;">
+                            Security Hub <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
                         </a>
                     </div>
                 </div>
@@ -484,31 +484,6 @@
 
 @include('partials.profile-device-passkey-capability')
 <script @cspNonce>
-function normalizeBase64(base64) {
-    base64 = (base64 || '').replace(/-/g, '+').replace(/_/g, '/');
-    var padding = base64.length % 4;
-    if (padding) base64 += '===='.slice(padding);
-    return base64;
-}
-
-function base64ToUint8Array(base64) {
-    base64 = normalizeBase64(base64);
-    var binary = atob(base64);
-    var bytes = new Uint8Array(binary.length);
-    for (var i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes;
-}
-
-function bufferToBase64Url(buffer) {
-    var bytes = new Uint8Array(buffer);
-    var binary = '';
-    for (var i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
 async function loadDevices() {
     try {
         const res = await fetch('{{ route("webauthn.devices") }}');
@@ -535,12 +510,12 @@ async function loadDevices() {
                             <i class="bi bi-shield-lock"></i>
                         </div>
                         <div>
-                            <div style="font-size:.85rem;font-weight:600;color:#f3e7cd;">${d.name || d.device_name || "My Device"}</div>
-                            <div style="font-size:.7rem;color:#b39b82;">Registered ${new Date(d.created_at).toLocaleDateString()}</div>
+                            <div style="font-size:.85rem;font-weight:600;color:#FAF7F8;">${d.name || d.device_name || "My Device"}</div>
+                            <div style="font-size:.72rem;color:#9E8990;">Registered ${new Date(d.created_at).toLocaleDateString()}</div>
                         </div>
                     </div>
                     <button type="button" onclick="removeDevice('${d.credential_id}', this)"
-                        style="padding:4px 10px;border-radius:6px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:.75rem;font-weight:600;cursor:pointer;">
+                        style="min-height:36px;padding:4px 12px;border-radius:7px;background:rgba(251,113,133,0.12);color:#FB7185;border:1px solid rgba(251,113,133,0.28);font-size:.75rem;font-weight:600;cursor:pointer;">
                         Remove
                     </button>`;
                 list.appendChild(div);
@@ -550,133 +525,6 @@ async function loadDevices() {
         }
     } catch(e) {
         console.error('Error loading devices:', e);
-    }
-}
-
-async function registerDevicePasskey() {
-    if (window.location.hostname === '127.0.0.1') {
-        const targetUrl = window.location.href.replace('//127.0.0.1', '//localhost');
-        window.location.replace(targetUrl);
-        return;
-    }
-
-    const btn = document.getElementById('registerFpBtn');
-    const msg = document.getElementById('fpMessage');
-    if (!btn || btn.disabled || profilePasskeyRegistrationPending) return;
-    profilePasskeyRegistrationPending = true;
-    btn.disabled = true;
-    if (msg) msg.style.display = 'none';
-
-    let available = false;
-    try {
-        available = await refreshProfilePasskeyCapability();
-        if (!available) return;
-
-        btn.textContent = 'Preparing passkey setup…';
-        const optRes = await fetch('{{ route("webauthn.register.options") }}', {
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
-        });
-        const opts = await optRes.json();
-
-        if (!optRes.ok || !opts.challenge || !opts.user) {
-            throw new Error(opts.message || 'Could not start passkey setup.');
-        }
-
-        const challenge = base64ToUint8Array(opts.challenge);
-        const userId = base64ToUint8Array(opts.user.id);
-        const hostname = window.location.hostname;
-        const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
-        const rp = { name: opts.rp?.name || 'School Attendance' };
-        if (!isIp) {
-            const sRp = (opts.rp?.id || '').toLowerCase().trim();
-            rp.id = sRp || hostname;
-        }
-
-        const excludeCredentials = (opts.excludeCredentials || []).map(c => ({
-            type: c.type || 'public-key',
-            id: base64ToUint8Array(c.id)
-        }));
-
-        const basePublicKey = {
-            challenge,
-            rp: rp,
-            user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
-            pubKeyCredParams: opts.pubKeyCredParams || [
-                { type: 'public-key', alg: -7 },
-                { type: 'public-key', alg: -257 }
-            ],
-            timeout: opts.timeout || 120000,
-            attestation: opts.attestation || 'none',
-            excludeCredentials,
-            hints: ['client-device']
-        };
-
-        basePublicKey.authenticatorSelection = {
-            authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred'
-        };
-        btn.textContent = 'Continue to device prompt';
-        const credential = await window.DevicePasskeys.confirmOnClick(btn, async () => {
-            btn.textContent = 'Waiting for your device…';
-            return navigator.credentials.create({ publicKey: basePublicKey });
-        });
-        if (!credential) {
-            throw new Error('Passkey setup was canceled.');
-        }
-
-        const rawId = bufferToBase64Url(credential.rawId);
-        const clientDataJSON = bufferToBase64Url(
-            credential.response.clientDataJSON instanceof ArrayBuffer
-                ? new Uint8Array(credential.response.clientDataJSON)
-                : credential.response.clientDataJSON
-        );
-        const attestationObject = bufferToBase64Url(
-            credential.response.attestationObject instanceof ArrayBuffer
-                ? new Uint8Array(credential.response.attestationObject)
-                : credential.response.attestationObject
-        );
-        const transports = (credential.response && typeof credential.response.getTransports === 'function')
-            ? credential.response.getTransports()
-            : [];
-
-        const saveRes = await fetch('{{ route("webauthn.register") }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-            body: JSON.stringify({
-                credential_id: rawId,
-                transports: transports,
-                credential: {
-                    id: credential.id,
-                    type: credential.type,
-                    transports: transports,
-                    response: {
-                        attestationObject: attestationObject,
-                        clientDataJSON: clientDataJSON
-                    }
-                }
-            })
-        });
-        const result = await saveRes.json();
-
-        if (result.success) {
-            if (msg) {
-                msg.style.display = 'block';
-                msg.style.color = '#4ade80';
-                msg.innerHTML = '<i class="bi bi-check-circle me-2"></i>Passkey registered successfully.';
-            }
-            loadDevices();
-        } else {
-            throw new Error(result.message || 'Registration failed');
-        }
-    } catch(err) {
-        if (msg) {
-            msg.style.display = 'block';
-            msg.style.color = '#f87171';
-            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + (err.message || 'Passkey setup was canceled.');
-        }
-    } finally {
-        profilePasskeyRegistrationPending = false;
-        btn.disabled = !available;
-        btn.innerHTML = '<i class="bi bi-shield-lock me-2"></i>Set up a passkey';
     }
 }
 

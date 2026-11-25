@@ -673,4 +673,91 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertStringContainsString('#biometricModal .bio-modal-card', $bioCss);
         $this->assertStringNotContainsString('#251b16', $bioCss);
     }
+
+    public function test_reinvented_student_v3_pages_selectors_and_accessibility_contracts(): void
+    {
+        $student = $this->createStudent([
+            'email' => 'student.v3.audit@gmail.com',
+            'student_number' => '2310812',
+        ]);
+
+        // Calendar page no longer shows stale golden border copy
+        $this->actingAs($student)
+            ->get(route('student.calendar'))
+            ->assertOk()
+            ->assertSee('highlighted border', false)
+            ->assertDontSee('The <strong>golden border</strong> marks today', false);
+
+        // Mobile scan page drops redundant 101KB student-desktop-ux.css stylesheet
+        $this->actingAs($student)
+            ->get(route('mobile.scan'))
+            ->assertOk()
+            ->assertDontSee('student-desktop-ux.css', false)
+            ->assertSee('sd-scan-desktop-bar', false);
+
+        // Schedule route renders unified Classes & Schedule view cleanly with Obsidian Oxblood palette
+        $this->actingAs($student)
+            ->get(route('student.schedule'))
+            ->assertOk()
+            ->assertSee('corWeeklyGridView', false)
+            ->assertSee('sd-view-toggle', false);
+
+        // Standalone schedule view exposes ARIA tablist and pressed states
+        $scheduleView = file_get_contents(resource_path('views/student/schedule.blade.php'));
+        $this->assertNotFalse($scheduleView);
+        $this->assertStringContainsString('role="tablist"', $scheduleView);
+        $this->assertStringContainsString('aria-pressed=', $scheduleView);
+
+        // Notifications search input has explicit accessible label
+        $this->actingAs($student)
+            ->get(route('notifications'))
+            ->assertOk()
+            ->assertSee('aria-label="Search notifications or subjects"', false);
+
+        // Student pending approval, password change, QR result, and offline fallback use unified Obsidian Oxblood palette
+        $this->actingAs($student)
+            ->get(route('password.change.form'))
+            ->assertOk()
+            ->assertSee('#14080C', false)
+            ->assertDontSee('#6366f1', false);
+
+        $this->flushSession();
+        $pendingStudent = $this->createStudent([
+            'email' => 'student.pending.v3@gmail.com',
+            'student_number' => '2310813',
+            'student_registration_pending' => true,
+        ]);
+
+        $this->actingAs($pendingStudent)
+            ->get(route('student.pending-approval'))
+            ->assertOk()
+            ->assertSee('#14080C', false)
+            ->assertDontSee('rgba(25,15,13,.94)', false);
+
+        $qrResultHtml = view('qr.result', ['status' => 'success', 'message' => 'Recorded'])->render();
+        $this->assertStringContainsString('#14080C', $qrResultHtml);
+        $this->assertStringNotContainsString('#0f172a', $qrResultHtml);
+
+        auth()->logout();
+        $this->flushSession();
+        $this->get('/offline')
+            ->assertOk()
+            ->assertSee('--bg:#0B0406;', false)
+            ->assertDontSee('--bg:#110A0A;', false);
+
+        // Verify fixed selector parity in student-portal-master.css & clean student-dashboard.css
+        $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
+        $this->assertNotFalse($masterCss);
+        $this->assertStringContainsString('.notif-item-card', $masterCss);
+        $this->assertStringContainsString('.notif-pill', $masterCss);
+        $this->assertStringContainsString('#cmdPaletteOverlay .cmd-palette', $masterCss);
+        $this->assertStringContainsString('.cor-table-wrap', $masterCss);
+        $this->assertStringContainsString('.sd-scan-desktop-bar', $masterCss);
+        $this->assertStringNotContainsString('background-attachment: fixed', $masterCss);
+
+        $dashCss = file_get_contents(public_path('css/student-dashboard.css'));
+        $this->assertNotFalse($dashCss);
+        $this->assertStringContainsString('--sdc-canvas: #0B0406;', $dashCss);
+        $this->assertStringContainsString('--sdc-surface: #14080C;', $dashCss);
+    }
 }

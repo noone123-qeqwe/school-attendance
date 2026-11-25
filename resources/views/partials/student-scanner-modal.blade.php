@@ -23,12 +23,12 @@
 
             <!-- Desktop: Dedicated Header (Code Only) -->
             <div id="desktopScannerHeader" class="desktop-scanner-header" style="display: none; align-items: center; gap: 10px;">
-                <div style="width: 36px; height: 36px; border-radius: 12px; background: rgba(207,164,111,0.16); color: #cfa46f; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; border: 1px solid rgba(207,164,111,0.3);">
-                    <i class="bi bi-key-fill"></i>
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: #1C0C11; color: #E898A8; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border: 1px solid rgba(232,152,168,0.28);">
+                    <i class="bi bi-key-fill" aria-hidden="true"></i>
                 </div>
                 <div>
-                    <div style="font-size: 1.05rem; font-weight: 800; color: #f3e7cd; letter-spacing: -0.2px; line-height: 1.2;">Enter Attendance Code</div>
-                    <div style="font-size: 0.72rem; color: #b39b82;">Manual attendance check-in</div>
+                    <div style="font-size: 1.02rem; font-weight: 700; color: #FAF7F8; letter-spacing: -0.02em; line-height: 1.2;">Enter Attendance Code</div>
+                    <div style="font-size: 0.72rem; color: #9E8990;">Manual attendance check-in</div>
                 </div>
             </div>
             
@@ -261,64 +261,66 @@
 .outside-range-popup-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(10, 5, 5, 0.88);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(8, 3, 5, 0.86);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 100002;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 16px;
-    animation: fadeIn 0.25s ease-out forwards;
+    animation: fadeIn 0.2s ease-out forwards;
 }
 
 .outside-range-popup-card {
-    background: linear-gradient(180deg, #241616 0%, #150d0d 100%);
-    border: 1.5px solid rgba(239, 68, 68, 0.45);
-    border-radius: 24px;
+    background: #14080C;
+    border: 1px solid rgba(251, 113, 133, 0.38);
+    border-top: 2px solid #FB7185;
+    border-radius: 16px;
     max-width: 440px;
     width: 100%;
     padding: 24px 20px;
     text-align: center;
     position: relative;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 68, 68, 0.2);
-    animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.72);
+    animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes scaleUp {
-    0% { transform: scale(0.92); opacity: 0; }
+    0% { transform: scale(0.95); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
 }
 
 .outside-range-close-btn {
     position: absolute;
-    top: 14px;
-    right: 14px;
-    background: rgba(255, 255, 255, 0.08);
-    border: none;
-    color: #f3e7cd;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    top: 12px;
+    right: 12px;
+    background: #1C0C11;
+    border: 1px solid rgba(250, 247, 248, 0.12);
+    color: #FAF7F8;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.15s ease, color 0.15s ease;
 }
 
 .outside-range-close-btn:hover {
-    background: rgba(239, 68, 68, 0.3);
-    color: #ffffff;
+    background: rgba(251, 113, 133, 0.2);
+    color: #FFFFFF;
 }
 
 .outside-range-icon-pulse {
-    width: 68px;
-    height: 68px;
+    width: 60px;
+    height: 60px;
     margin: 0 auto 14px;
-    border-radius: 50%;
-    background: rgba(239, 68, 68, 0.15);
+    border-radius: 14px;
+    background: rgba(251, 113, 133, 0.14);
+    border: 1px solid rgba(251, 113, 133, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -326,69 +328,59 @@
 }
 
 .outside-range-icon-pulse::after {
-    content: '';
-    position: absolute;
-    inset: -6px;
-    border-radius: 50%;
-    border: 2px solid rgba(239, 68, 68, 0.35);
-    animation: pulseRing 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-@keyframes pulseRing {
-    0% { transform: scale(0.85); opacity: 1; }
-    100% { transform: scale(1.35); opacity: 0; }
+    display: none;
 }
 
 .outside-range-icon-inner {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #ef4444, #b91c1c);
-    color: #ffffff;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: rgba(251, 113, 133, 0.22);
+    color: #FB7185;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
-    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.5);
+    font-size: 1.35rem;
 }
 
 .outside-range-badge {
     display: inline-flex;
     align-items: center;
-    background: rgba(239, 68, 68, 0.18);
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    color: #fca5a5;
+    background: rgba(251, 113, 133, 0.14);
+    border: 1px solid rgba(251, 113, 133, 0.3);
+    color: #FDA4AF;
     font-size: 0.68rem;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: 0.08em;
-    padding: 3px 10px;
-    border-radius: 99px;
+    padding: 3px 9px;
+    border-radius: 6px;
     margin-bottom: 8px;
 }
 
 .outside-range-headline {
-    font-size: 1.35rem;
-    font-weight: 800;
-    color: #ffffff;
+    font-size: 1.28rem;
+    font-weight: 700;
+    color: #FAF7F8;
     margin-bottom: 8px;
+    letter-spacing: -0.02em;
 }
 
 .outside-range-desc {
-    font-size: 0.88rem;
-    color: #d1c4b2;
+    font-size: 0.86rem;
+    color: #D4C6CA;
     line-height: 1.5;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .outside-range-metrics-box {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(207, 164, 111, 0.2);
-    border-radius: 16px;
-    padding: 14px 18px;
-    margin-bottom: 18px;
+    background: #0B0406;
+    border: 1px solid rgba(250, 247, 248, 0.09);
+    border-radius: 12px;
+    padding: 13px 16px;
+    margin-bottom: 16px;
 }
 
 .outside-range-metric-col {
@@ -397,26 +389,27 @@
 }
 
 .outside-range-metric-col .metric-label {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    color: #b39b82;
+    color: #9E8990;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     margin-bottom: 4px;
 }
 
 .outside-range-metric-col .metric-val {
-    font-size: 1.45rem;
+    font-size: 1.38rem;
     font-weight: 800;
-    font-family: monospace;
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
 }
 
 .outside-range-metric-col.detected .metric-val {
-    color: #f87171;
+    color: #FB7185;
 }
 
 .outside-range-metric-col.allowed .metric-val {
-    color: #fbbf24;
+    color: #FBBF24;
 }
 
 .outside-range-metric-col .metric-sub {
@@ -426,58 +419,59 @@
 
 .outside-range-divider {
     width: 1px;
-    height: 48px;
-    background: rgba(255, 255, 255, 0.1);
+    height: 44px;
+    background: rgba(250, 247, 248, 0.1);
     margin: 0 12px;
 }
 
 .outside-range-tip-box {
     display: flex;
     align-items: flex-start;
-    background: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.25);
-    border-radius: 12px;
-    padding: 12px 14px;
+    background: #1C0C11;
+    border: 1px solid rgba(232, 152, 168, 0.24);
+    border-radius: 10px;
+    padding: 11px 14px;
     font-size: 0.8rem;
-    color: #fde68a;
+    color: #D4C6CA;
     text-align: left;
-    margin-bottom: 22px;
+    margin-bottom: 18px;
     line-height: 1.45;
 }
 
 .outside-range-actions {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .outside-range-btn-primary {
-    background: linear-gradient(135deg, #cfa46f, #a07a4a);
-    color: #110a0a;
-    font-weight: 800;
-    font-size: 0.92rem;
-    padding: 12px 20px;
-    border-radius: 14px;
-    border: none;
+    background: #FAF7F8;
+    color: #14080C;
+    font-weight: 700;
+    font-size: 0.9rem;
+    min-height: 46px;
+    padding: 11px 18px;
+    border-radius: 10px;
+    border: 1px solid #FAF7F8;
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 16px rgba(207, 164, 111, 0.3);
+    transition: background 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .outside-range-btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 22px rgba(207, 164, 111, 0.4);
+    background: #FFFFFF;
+    color: #0B0406;
 }
 
 .outside-range-btn-secondary {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(207, 164, 111, 0.3);
-    color: #f3e7cd;
+    background: #1C0C11;
+    border: 1px solid rgba(250, 247, 248, 0.16);
+    color: #FAF7F8;
     font-weight: 700;
-    font-size: 0.88rem;
+    font-size: 0.86rem;
+    min-height: 44px;
     padding: 10px 18px;
     border-radius: 14px;
     cursor: pointer;

@@ -49,57 +49,55 @@
         }
         .schedule-day-pill {
             flex-shrink: 0;
-            min-height: 42px;
-            padding: 8px 16px;
-            border-radius: 99px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.04);
-            color: #b39b82;
-            font-size: 0.85rem;
+            min-height: 44px;
+            padding: 8px 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(250, 247, 248, 0.1);
+            background: #14080C;
+            color: #9E8990;
+            font-size: 0.84rem;
             font-weight: 700;
             display: flex;
             align-items: center;
             gap: 6px;
             touch-action: manipulation;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
             cursor: pointer;
         }
         .schedule-day-pill:active {
-            transform: scale(0.94);
+            transform: scale(0.96);
         }
         .schedule-day-pill.active {
-            background: linear-gradient(135deg, rgba(207, 164, 111, 0.28), rgba(184, 134, 56, 0.15)) !important;
-            border-color: rgba(207, 164, 111, 0.55) !important;
-            color: #f5dfa8 !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+            background: #6B192B !important;
+            border-color: rgba(232, 152, 168, 0.42) !important;
+            color: #FAF7F8 !important;
         }
         .schedule-day-pill-badge {
             font-size: 0.7rem;
             padding: 2px 7px;
-            border-radius: 99px;
-            background: rgba(207, 164, 111, 0.2);
-            color: #f5dfa8;
-            font-weight: 800;
+            border-radius: 6px;
+            background: rgba(232, 152, 168, 0.14);
+            color: #E898A8;
+            font-weight: 700;
         }
         .schedule-day-pill.active .schedule-day-pill-badge {
-            background: #cfa46f;
-            color: #120804;
+            background: #FAF7F8;
+            color: #14080C;
         }
         .schedule-day-today-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: #4ade80;
-            box-shadow: 0 0 8px rgba(74, 222, 128, 0.7);
+            background: #34D399;
             flex-shrink: 0;
         }
         .sched-mobile-card {
-            border-left: 3px solid var(--gold, #CFA46F);
-            background: rgba(255, 255, 255, 0.03);
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-            border-radius: 14px;
+            border-left: 3px solid #E898A8;
+            background: #1C0C11;
+            border-top: 1px solid rgba(250, 247, 248, 0.08);
+            border-right: 1px solid rgba(250, 247, 248, 0.08);
+            border-bottom: 1px solid rgba(250, 247, 248, 0.08);
+            border-radius: 10px;
             padding: 14px;
             margin-bottom: 10px;
         }
@@ -108,13 +106,14 @@
 
 <!-- Mobile Day Selector Pill Rail -->
 <div class="d-md-none">
-    <div class="schedule-day-rail">
+    <div class="schedule-day-rail" role="tablist" aria-label="Select weekday">
         @foreach($validDays as $day)
             @php $count = $weeklySchedule[$day]->count(); @endphp
             <button type="button" 
                     class="schedule-day-pill {{ $day === $defaultDay ? 'active' : '' }}" 
                     onclick="selectScheduleDay('{{ $day }}')"
-                    id="sched-pill-{{ $day }}">
+                    id="sched-pill-{{ $day }}"
+                    aria-pressed="{{ $day === $defaultDay ? 'true' : 'false' }}">
                 @if($day === $currentDay)
                     <span class="schedule-day-today-dot" aria-label="Today"></span>
                 @endif
@@ -223,8 +222,8 @@
                     </div>
                 @else
                     <div class="text-center py-4">
-                        <i class="bi bi-cup-hot" style="font-size: 2.5rem; color: rgba(255,255,255,0.08); margin-bottom: 16px; display: block;"></i>
-                        <div style="color: #b39b82; font-size: 0.9rem; margin-top: 8px;">No classes scheduled for this day.</div>
+                        <i class="bi bi-cup-hot" aria-hidden="true" style="font-size: 2.2rem; color: rgba(250,247,248,0.16); margin-bottom: 12px; display: block;"></i>
+                        <div style="color: #9E8990; font-size: 0.88rem; margin-top: 6px;">No classes scheduled for this day.</div>
                     </div>
                 @endif
             </x-card>
@@ -235,10 +234,14 @@
 <script nonce="{{ csp_nonce() }}">
     function selectScheduleDay(day) {
         if (window.triggerHaptic) window.triggerHaptic('light');
-        document.querySelectorAll('.schedule-day-pill').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.schedule-day-pill').forEach(btn => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-pressed', 'false');
+        });
         const activeBtn = document.getElementById('sched-pill-' + day);
         if (activeBtn) {
             activeBtn.classList.add('active');
+            activeBtn.setAttribute('aria-pressed', 'true');
             activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
         document.querySelectorAll('.schedule-day-col').forEach(col => col.classList.add('mobile-sched-hidden'));

@@ -100,9 +100,20 @@
         }
 
         body.student-mobile-portal {
-            background-image:
-                radial-gradient(circle at top right, rgba(122, 26, 26, 0.24), transparent 52%),
-                radial-gradient(circle at 0% 82%, rgba(212, 175, 55, 0.10), transparent 48%);
+            --gold-primary: #E898A8;
+            --gold-light: #FAF7F8;
+            --gold-dark: #6B192B;
+            --bg-dark: #0B0406;
+            --bg-surface: #14080C;
+            --bg-card: #1C0C11;
+            --bg-card-hover: #261118;
+            --border-subtle: rgba(250, 247, 248, 0.08);
+            --border-gold: rgba(232, 152, 168, 0.24);
+            --text-primary: #FAF7F8;
+            --text-secondary: #D4C6CA;
+            --text-muted: #9E8990;
+            background-color: #0B0406;
+            background-image: none;
         }
 
         /* Hide floating bottom dock cleanly when virtual keyboard or modal opens */

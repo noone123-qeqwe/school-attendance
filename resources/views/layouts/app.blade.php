@@ -86,7 +86,7 @@
     @endphp
 
     <!-- Skip to main content link for keyboard/screen readers -->
-    <a href="#mainContent" class="visually-hidden-focusable" style="position: absolute; top: 8px; left: 8px; background: #cfa46f; color: #110A0A; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
+    <a href="#mainContent" class="visually-hidden-focusable skip-to-main-link" style="position: absolute; top: 8px; left: 8px; background: #cfa46f; color: #110A0A; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
         Skip to main content
     </a>
 
@@ -96,8 +96,8 @@
 
     <aside class="sidebar" id="sidebar">
         <div class="d-md-none" style="padding: 16px 16px 0 16px; display: flex; align-items: center;">
-            <button onclick="closeSidebar()" class="btn btn-sm" style="color: #cfa46f; background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.2); border-radius: 8px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="bi bi-chevron-left"></i> Back
+            <button type="button" onclick="closeSidebar()" class="btn btn-sm mobile-sidebar-back-btn" style="color: #cfa46f; background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.2); border-radius: 8px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="bi bi-chevron-left" aria-hidden="true"></i> Back
             </button>
         </div>
         @section('role-sidebar')
@@ -199,9 +199,9 @@
                             </span>
                             @endif
                         </button>
-                        <div class="dropdown-menu dropdown-menu-end mt-2" style="width:340px;max-width:calc(100vw - 32px);border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(25,15,15,0.95);backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,0.5);padding:0;overflow:hidden;">
-                            <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
-                                <span style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Notifications</span>
+                        <div class="dropdown-menu dropdown-menu-end mt-2 top-notif-dropdown-menu" style="width:340px;max-width:calc(100vw - 32px);border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(25,15,15,0.95);backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,0.5);padding:0;overflow:hidden;">
+                            <div class="top-notif-header" style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
+                                <span class="top-notif-title" style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Notifications</span>
                                 <div id="topNavNotifHeaderActions" style="display:flex;align-items:center;gap:10px;">
                                     @if($unreadCount > 0)
                                     <span id="topNavNotifCountBadge" style="background:#fef2f2;color:#dc2626;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;">{{ $unreadCount }} new</span>
@@ -427,6 +427,7 @@
             const container = document.getElementById('toastContainer');
             if (!container) return;
 
+            const isStudentToast = document.body.classList.contains('student-portal');
             const colors = {
                 success:   { border: '#4ade80', icon: 'check-circle-fill', bg: 'rgba(34,197,94,0.12)' },
                 error:     { border: '#f87171', icon: 'x-circle-fill', bg: 'rgba(239,68,68,0.12)' },
@@ -434,7 +435,9 @@
                 info:      { border: '#60a5fa', icon: 'info-circle-fill', bg: 'rgba(59,130,246,0.12)' },
                 warning_3: { border: '#f87171', icon: 'exclamation-octagon-fill', bg: 'rgba(239,68,68,0.15)' },
                 warning_2: { border: '#fbbf24', icon: 'exclamation-triangle-fill', bg: 'rgba(245,158,11,0.15)' },
-                custom:    { border: '#cfa46f', icon: 'bell-fill', bg: 'rgba(207,164,111,0.15)' }
+                custom:    isStudentToast
+                    ? { border: '#E898A8', icon: 'bell-fill', bg: 'rgba(232,152,168,0.16)' }
+                    : { border: '#cfa46f', icon: 'bell-fill', bg: 'rgba(207,164,111,0.15)' }
             };
 
             const style = colors[type] || colors.success;
@@ -772,17 +775,22 @@
                     const isParent = {{ Auth::user()->isParent() ? 'true' : 'false' }};
                     const frag = document.createDocumentFragment();
 
+                    const isStudentPortal = document.body.classList.contains('student-portal');
                     const buildNotifNode = (n) => {
                         const row = document.createElement('div');
                         row.id = `notif-${n.id}`;
-                        const bgRow = n.is_read ? 'transparent' : (n.type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(212, 175, 55, 0.08)');
-                        row.style.cssText = `padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:${bgRow};transition:all .2s;`;
+                        const unreadDefaultBg = isStudentPortal ? 'rgba(107, 25, 43, 0.24)' : 'rgba(212, 175, 55, 0.08)';
+                        const bgRow = n.is_read ? 'transparent' : (n.type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : unreadDefaultBg);
+                        row.style.cssText = `padding:13px 18px;border-bottom:1px solid rgba(250,247,248,0.06);background:${bgRow};transition:all .2s;`;
 
                         const inner = document.createElement('div');
                         inner.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
 
+                        const defaultIconStyle = isStudentPortal
+                            ? 'background:rgba(107, 25, 43, 0.34);color:#E898A8;'
+                            : 'background:rgba(207, 164, 111, 0.15);color:#f3e7cd;';
                         const badgeWrap = document.createElement('div');
-                        badgeWrap.style.cssText = `width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;${colorMap[n.type] || 'background:rgba(207, 164, 111, 0.15);color:#f3e7cd;'}`;
+                        badgeWrap.style.cssText = `width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;${colorMap[n.type] || defaultIconStyle}`;
                         const badgeIcon = document.createElement('i');
                         badgeIcon.className = `bi ${iconMap[n.type] || 'bi-bell-fill'}`;
                         badgeWrap.appendChild(badgeIcon);
@@ -790,10 +798,10 @@
                         const bodyCol = document.createElement('div');
                         bodyCol.style.cssText = 'flex:1;min-width:0;';
                         const msgEl = document.createElement('div');
-                        msgEl.style.cssText = 'font-size:.82rem;color:#f3e7cd;line-height:1.4;';
+                        msgEl.style.cssText = `font-size:.82rem;color:${isStudentPortal ? '#FAF7F8' : '#f3e7cd'};line-height:1.4;`;
                         msgEl.textContent = String(n.message ?? '');
                         const timeEl = document.createElement('div');
-                        timeEl.style.cssText = 'font-size:.72rem;color:rgba(255,255,255,0.5);margin-top:4px;';
+                        timeEl.style.cssText = `font-size:.72rem;color:${isStudentPortal ? '#9E8990' : 'rgba(255,255,255,0.5)'};margin-top:4px;`;
                         timeEl.textContent = String(n.created_at_human ?? '');
                         bodyCol.append(msgEl, timeEl);
 
@@ -801,7 +809,7 @@
                         rightCol.style.cssText = 'display:flex;align-items:center;gap:4px;flex-shrink:0;';
                         if (!n.is_read) {
                             const dot = document.createElement('div');
-                            const dotColor = n.type === 'system_update' ? '#10b981' : '#f59e0b';
+                            const dotColor = n.type === 'system_update' ? '#10b981' : (isStudentPortal ? '#E898A8' : '#f59e0b');
                             dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${dotColor};`;
                             rightCol.appendChild(dot);
                         }

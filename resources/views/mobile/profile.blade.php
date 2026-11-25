@@ -189,132 +189,138 @@
 
 <style>
 .mobile-profile-page {
-    padding: 12px 4px 32px 4px;
+    padding: 8px 0 32px;
 }
 .mobile-profile-hero {
-    background: linear-gradient(180deg, rgba(207, 164, 111, 0.08) 0%, rgba(26, 26, 26, 0.4) 100%);
-    border: 1px solid rgba(207, 164, 111, 0.2);
-    border-radius: 20px;
-    padding: 24px 16px;
+    background: #14080C;
+    border: 1px solid rgba(250, 247, 248, 0.11);
+    border-top: 2px solid #6B192B;
+    border-radius: 14px;
+    padding: 22px 16px;
 }
 .mobile-user-name {
-    font-size: 1.3rem;
-    color: #FCF8F2;
+    font-size: 1.24rem;
+    letter-spacing: -0.02em;
+    color: #FAF7F8;
 }
 .mobile-user-sub {
-    color: #D1C5B4;
+    color: #D4C6CA;
 }
 .mobile-id-strong {
-    color: #F3E7CD;
+    color: #FAF7F8;
 }
 .mobile-copy-id-btn {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 9px;
-    border-radius: 99px;
-    border: 1px solid rgba(212, 175, 55, 0.35);
-    background: rgba(212, 175, 55, 0.14);
-    color: #F5DFA8;
-    font-size: 0.72rem;
+    justify-content: center;
+    gap: 5px;
+    min-height: 36px;
+    padding: 4px 11px;
+    border-radius: 8px;
+    border: 1px solid rgba(232, 152, 168, 0.3);
+    background: #1C0C11;
+    color: #E898A8;
+    font-size: 0.74rem;
     font-weight: 700;
     cursor: pointer;
 }
 .mobile-copy-id-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.96);
 }
 .mobile-link-chevron {
-    color: #A39683;
+    color: #9E8990;
     font-size: 0.9rem;
 }
 .ppm-role-pill {
-    background: rgba(207, 164, 111, 0.15);
-    color: #f3e7cd;
-    border: 1px solid rgba(207, 164, 111, 0.3);
+    background: rgba(107, 25, 43, 0.36);
+    color: #FAF7F8;
+    border: 1px solid rgba(232, 152, 168, 0.28);
     font-weight: 600;
-    font-size: 0.75rem;
+    font-size: 0.74rem;
     padding: 4px 10px;
-    border-radius: 99px;
+    border-radius: 7px;
 }
 .ppm-course-pill, .ppm-year-pill {
-    background: rgba(255, 255, 255, 0.05);
-    color: #b39b82;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #1C0C11;
+    color: #D4C6CA;
+    border: 1px solid rgba(250, 247, 248, 0.1);
     font-weight: 600;
-    font-size: 0.75rem;
+    font-size: 0.74rem;
     padding: 4px 10px;
-    border-radius: 99px;
+    border-radius: 7px;
 }
 .mobile-section-title {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.8px;
-    color: #b39b82;
+    letter-spacing: 0.08em;
+    color: #9E8990;
     margin-bottom: 8px;
-    padding-left: 4px;
+    padding-left: 2px;
 }
 .mobile-card {
-    background: rgba(207, 164, 111, 0.05);
-    border: 1px solid rgba(207, 164, 111, 0.12);
-    border-radius: 16px;
+    background: #14080C;
+    border: 1px solid rgba(250, 247, 248, 0.1);
+    border-radius: 14px;
     overflow: hidden;
 }
 .mobile-info-row {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 14px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 13px 16px;
+    border-bottom: 1px solid rgba(250, 247, 248, 0.075);
 }
 .mobile-info-row:last-child {
     border-bottom: none;
 }
 .mobile-info-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.04);
-    color: #cfa46f;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: #1C0C11;
+    border: 1px solid rgba(250, 247, 248, 0.08);
+    color: #E898A8;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 0.96rem;
     flex-shrink: 0;
 }
 .mobile-info-label {
-    font-size: 0.75rem;
-    color: #b39b82;
+    font-size: 0.71rem;
+    color: #9E8990;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
 }
 .mobile-info-val {
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     font-weight: 600;
-    color: #f3e7cd;
+    color: #FAF7F8;
     overflow-wrap: anywhere;
 }
 .mobile-menu-item {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 52px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    color: #f3e7cd;
+    min-height: 50px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    color: #FAF7F8;
     text-decoration: none;
-    transition: background-color 0.2s;
+    transition: background-color 0.15s ease;
 }
 .mobile-menu-item:hover, .mobile-menu-item:active {
-    background: rgba(255, 255, 255, 0.05);
+    background: #1C0C11;
+    color: #FFFFFF;
 }
 .mobile-menu-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 0.96rem;
     flex-shrink: 0;
 }
 </style>

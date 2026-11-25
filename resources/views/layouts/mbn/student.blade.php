@@ -1,14 +1,14 @@
 <nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav" aria-label="Student navigation">
-    <a href="{{ route('home') }}" class="mbn-item {{ request()->routeIs('home') && !request()->has('open_scanner') ? 'active' : '' }}">
-        <i class="bi bi-grid-fill"></i>
+    <a href="{{ route('home') }}" class="mbn-item {{ request()->routeIs('home') && !request()->has('open_scanner') ? 'active' : '' }}" @if(request()->routeIs('home') && !request()->has('open_scanner')) aria-current="page" @endif>
+        <i class="bi bi-grid-fill" aria-hidden="true"></i>
         <span>Home</span>
     </a>
-    <a href="{{ route('student.classes') }}" class="mbn-item {{ request()->routeIs('student.classes', 'student.schedule') ? 'active' : '' }}">
-        <i class="bi bi-journal-bookmark-fill"></i>
+    <a href="{{ route('student.classes') }}" class="mbn-item {{ request()->routeIs('student.classes', 'student.schedule') ? 'active' : '' }}" @if(request()->routeIs('student.classes', 'student.schedule')) aria-current="page" @endif>
+        <i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i>
         <span>Classes</span>
     </a>
-    <a href="{{ route('mobile.scan') }}" class="mbn-item mbn-item-featured" id="mbnStudentScanBtn" aria-label="Scan Attendance QR">
-        <div class="mbn-featured-btn">
+    <a href="{{ route('mobile.scan') }}" class="mbn-item mbn-item-featured {{ request()->routeIs('mobile.scan') ? 'active' : '' }}" @if(request()->routeIs('mobile.scan')) aria-current="page" @endif id="mbnStudentScanBtn" aria-label="Scan Attendance QR">
+        <div class="mbn-featured-btn" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="mbn-scan-icon-svg">
                 <path d="M3.5 8.5V5.5C3.5 4.4 4.4 3.5 5.5 3.5H8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M15.5 3.5H18.5C19.6 3.5 20.5 4.4 20.5 5.5V8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -27,7 +27,7 @@
         <span>Calendar</span>
     </a>
     <button type="button" class="mbn-item mbn-item-more" onclick="openMoreSheet()" aria-label="Open More Menu" aria-haspopup="dialog" aria-controls="moreSheet" aria-expanded="false" style="background:transparent;border:none;outline:none;cursor:pointer;">
-        <i class="bi bi-grid-3x3-gap-fill"></i>
+        <i class="bi bi-grid-3x3-gap-fill" aria-hidden="true"></i>
         <span>More</span>
     </button>
 </nav>

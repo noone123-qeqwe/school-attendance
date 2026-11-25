@@ -1,4 +1,4 @@
-/* Shared student navigation styles */
+/* Shared student navigation styles — Obsidian Oxblood & Alabaster v3.0 */
 body.student-portal .student-sidebar-brand .sidebar-logo {
     border: none;
     background: transparent;
@@ -13,6 +13,7 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     text-align: left;
     cursor: pointer;
 }
+
 .settings-sidebar-nav button.nav-link:not(.active):not([aria-current="page"]):not(:hover) {
     background: transparent;
     border-color: transparent;
@@ -28,35 +29,36 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     align-items: center;
     gap: 10px;
     min-height: 42px;
-    padding: 9px 12px;
+    padding: 8px 12px;
     margin: 0;
     border-radius: 10px;
-    border: 1px solid rgba(223, 184, 121, 0.24);
-    background: rgba(223, 184, 121, 0.08);
-    color: #f5dfa8;
-    font-size: 0.83rem;
+    border: 1px solid rgba(250, 244, 246, 0.12);
+    background: rgba(250, 244, 246, 0.04);
+    color: #faf7f8;
+    font-size: 0.82rem;
     font-weight: 650;
     text-decoration: none;
-    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 }
 
 .settings-sidebar-back-btn:hover {
-    background: rgba(223, 184, 121, 0.16);
-    border-color: rgba(223, 184, 121, 0.44);
-    color: #fff8eb;
+    background: rgba(107, 25, 43, 0.34);
+    border-color: rgba(250, 244, 246, 0.24);
+    color: #ffffff;
 }
 
 .settings-sidebar-back-btn i {
-    font-size: 0.96rem;
+    font-size: 0.92rem;
     width: 22px;
     text-align: center;
     flex-shrink: 0;
-    color: #dfb879;
+    color: #e898a8;
     transition: transform 0.16s ease;
 }
 
 .settings-sidebar-back-btn:hover i {
     transform: translateX(-2px);
+    color: #ffffff;
 }
 
 .sidebar.collapsed .settings-sidebar-back-wrap {
@@ -66,9 +68,9 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
 }
 
 .sidebar.collapsed .settings-sidebar-back-btn {
-    width: 44px;
-    height: 42px;
-    min-height: 42px;
+    width: 42px;
+    height: 40px;
+    min-height: 40px;
     padding: 0;
     justify-content: center;
 }
@@ -79,9 +81,9 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
 }
 
 .sidebar.collapsed .settings-sidebar-nav button.nav-link {
-    width: 44px;
-    height: 42px;
-    min-height: 42px;
+    width: 42px;
+    height: 40px;
+    min-height: 40px;
     padding: 0;
     justify-content: center;
 }
@@ -100,14 +102,14 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
         align-items: center;
         justify-content: flex-start;
         gap: 11px;
-        min-height: 68px;
-        padding: 16px 16px 14px;
+        min-height: 64px;
+        padding: 14px 16px 12px;
         background: transparent;
     }
 
     body.student-portal .student-sidebar-brand .sidebar-logo {
-        width: 36px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
     }
 
     body.student-portal .student-sidebar-brand .sidebar-text {
@@ -119,59 +121,59 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
         font-size: 0.82rem;
         line-height: 1.25;
         text-transform: none;
-        color: #f7efe4;
+        color: #faf7f8;
     }
 
     #sidebar .settings-sidebar-nav {
         padding: 10px 12px 24px;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 3px;
     }
 
     #sidebar .settings-sidebar-nav .nav-section-label {
         padding: 12px 10px 4px;
-        color: #9e9082;
+        color: #9e8990;
         font-size: 0.66rem;
         font-weight: 700;
-        letter-spacing: 0.09em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
     }
 
     #sidebar .settings-sidebar-nav .nav-link:is(.active, [aria-current="page"]) {
-        background: linear-gradient(135deg, rgba(223, 184, 121, 0.14) 0%, rgba(122, 26, 26, 0.12) 100%);
-        border-color: rgba(223, 184, 121, 0.28);
-        color: #f7efe4;
+        background: rgba(107, 25, 43, 0.42);
+        border-color: rgba(250, 244, 246, 0.16);
+        color: #ffffff;
         font-weight: 700;
-        box-shadow: inset 3px 0 0 #dfb879;
+        box-shadow: inset 2.5px 0 0 #faf7f8;
     }
 }
 
 @media screen and (min-width: 1024px) {
     body.student-portal {
-        --student-nav-canvas: #14110f;
-        --student-nav-surface: #1d1815;
-        --student-nav-hover: #27201c;
-        --student-nav-border: rgba(223, 184, 121, 0.14);
-        --student-nav-gold: #dfb879;
-        --student-nav-ivory: #f7efe4;
-        --student-nav-muted: #b5a89a;
+        --student-nav-canvas: #0b0406;
+        --student-nav-surface: #14080c;
+        --student-nav-hover: #210e15;
+        --student-nav-border: rgba(250, 244, 246, 0.09);
+        --student-nav-accent: #e898a8;
+        --student-nav-ink: #faf7f8;
+        --student-nav-muted: #a69097;
     }
 
     body.student-portal .sidebar {
-        background: linear-gradient(180deg, #171310 0%, #120f0d 100%) !important;
+        background: #100609 !important;
         border-right: 1px solid var(--student-nav-border) !important;
     }
 
     body.student-portal .sidebar .student-sidebar-brand {
-        min-height: 68px !important;
-        padding: 16px 18px 14px;
+        min-height: 64px !important;
+        padding: 14px 16px 12px;
         gap: 11px;
     }
 
     body.student-portal .student-sidebar-brand .sidebar-logo {
-        width: 36px;
-        height: 36px;
+        width: 34px;
+        height: 34px;
         background: transparent;
         border: none;
         border-radius: 50%;
@@ -181,29 +183,30 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     }
 
     body.student-portal .student-sidebar-brand .sidebar-brand {
-        font-size: .84rem !important;
-        font-weight: 700 !important;
+        font-size: 0.84rem !important;
+        font-weight: 750 !important;
         line-height: 1.25 !important;
-        color: var(--student-nav-ivory) !important;
+        letter-spacing: -0.01em;
+        color: var(--student-nav-ink) !important;
         text-transform: none;
     }
 
     body.student-portal .sidebar .sidebar-divider {
-        margin: 0 16px 6px;
+        margin: 0 14px 6px;
         background: var(--student-nav-border) !important;
     }
 
     body.student-portal .sidebar .student-sidebar-nav {
-        padding: 12px 12px 20px !important;
-        gap: 4px !important;
+        padding: 10px 10px 20px !important;
+        gap: 3px !important;
     }
 
     body.student-portal .sidebar .student-nav-label {
         padding: 12px 10px 5px;
-        color: #9e9082;
-        font-size: .66rem;
+        color: #8f7980;
+        font-size: 0.65rem;
         font-weight: 700;
-        letter-spacing: .09em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
     }
 
@@ -212,12 +215,12 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link {
-        min-height: 44px;
+        min-height: 40px;
         margin: 0;
-        padding: 9px 10px;
+        padding: 7px 10px;
         gap: 10px;
         color: var(--student-nav-muted);
-        font-size: .84rem;
+        font-size: 0.84rem;
         font-weight: 600;
         line-height: 1.35;
         border: 1px solid transparent;
@@ -226,39 +229,39 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link i {
         display: grid;
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
         place-items: center;
-        color: #b5a697;
-        font-size: .92rem;
+        color: #9e8990;
+        font-size: 0.9rem;
         border-radius: 7px;
-        background: rgba(255, 255, 255, 0.03);
-        transition: background 0.16s ease, color 0.16s ease;
+        background: transparent;
+        transition: background-color 0.16s ease, color 0.16s ease;
         transform: none;
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link:hover {
-        background: rgba(255, 255, 255, 0.04) !important;
-        border-color: rgba(255, 255, 255, 0.06);
-        color: var(--student-nav-ivory);
+        background: rgba(250, 244, 246, 0.05) !important;
+        border-color: rgba(250, 244, 246, 0.08);
+        color: var(--student-nav-ink);
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link:hover i {
-        color: var(--student-nav-gold);
-        background: rgba(223, 184, 121, 0.1);
+        color: #ffffff;
+        background: rgba(107, 25, 43, 0.36);
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link.active {
-        background: linear-gradient(135deg, rgba(223, 184, 121, 0.14) 0%, rgba(122, 26, 26, 0.12) 100%) !important;
-        border-color: rgba(223, 184, 121, 0.28) !important;
-        color: var(--student-nav-ivory) !important;
+        background: rgba(107, 25, 43, 0.42) !important;
+        border-color: rgba(250, 244, 246, 0.16) !important;
+        color: #ffffff !important;
         font-weight: 700;
-        box-shadow: inset 3px 0 0 var(--student-nav-gold) !important;
+        box-shadow: inset 2.5px 0 0 #faf7f8 !important;
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link.active i {
-        background: rgba(223, 184, 121, 0.18);
-        color: var(--student-nav-gold) !important;
+        background: rgba(250, 244, 246, 0.12);
+        color: #ffffff !important;
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link.active::before {
@@ -266,17 +269,17 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     }
 
     body.student-portal .sidebar .nav-link:focus-visible {
-        outline: 2px solid var(--student-nav-gold) !important;
+        outline: 2px solid #faf7f8 !important;
         outline-offset: -2px;
     }
 
     body.student-portal .sidebar.collapsed .student-sidebar-brand {
         justify-content: center;
-        padding: 16px 12px 14px;
+        padding: 14px 10px 12px;
     }
 
     body.student-portal .sidebar.collapsed .student-sidebar-nav {
-        padding: 12px 10px !important;
+        padding: 10px 10px !important;
         align-items: center;
     }
 
@@ -288,9 +291,9 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     }
 
     body.student-portal .sidebar.collapsed .student-sidebar-nav .nav-link {
-        width: 44px;
-        height: 42px;
-        min-height: 42px;
+        width: 42px;
+        height: 40px;
+        min-height: 40px;
         padding: 0;
         justify-content: center;
     }
@@ -305,10 +308,10 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     }
 
     body.student-portal .top-header {
-        background: rgba(19, 16, 14, 0.94) !important;
+        background: rgba(15, 6, 9, 0.9) !important;
         border-color: var(--student-nav-border) !important;
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
     }
 
     body.student-portal .top-header .header-left {
@@ -316,36 +319,37 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     }
 
     body.student-portal .top-header .header-page-title {
-        color: var(--student-nav-ivory);
-        font-size: .98rem;
+        color: var(--student-nav-ink);
+        font-size: 0.96rem;
         font-weight: 750;
+        letter-spacing: -0.015em;
         line-height: 1.25;
     }
 
     body.student-portal .top-header .header-page-sub {
         color: var(--student-nav-muted);
-        font-size: .74rem;
+        font-size: 0.73rem;
         line-height: 1.3;
     }
 
     body.student-portal .top-header :is(.burger-btn, .notif-btn, .header-account-trigger) {
-        height: 40px;
+        height: 38px;
         background: var(--student-nav-surface);
         border: 1px solid var(--student-nav-border);
         border-radius: 10px;
-        color: var(--student-nav-ivory);
+        color: var(--student-nav-ink);
         box-shadow: none;
         transform: none;
     }
 
     body.student-portal .top-header :is(.burger-btn, .notif-btn) {
-        width: 40px;
+        width: 38px;
     }
 
     body.student-portal .top-header :is(.burger-btn, .notif-btn, .header-account-trigger):hover {
         background: var(--student-nav-hover);
-        border-color: rgba(223, 184, 121, 0.35);
-        color: var(--student-nav-gold);
+        border-color: rgba(250, 244, 246, 0.22);
+        color: #ffffff;
         transform: none;
     }
 
@@ -359,17 +363,17 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     }
 
     body.student-portal .top-header .header-profile-img {
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
         flex: none;
-        border: 1px solid rgba(223, 184, 121, 0.3);
+        border: 1px solid rgba(250, 244, 246, 0.24);
         border-radius: 7px;
         transform: none;
     }
 
     body.student-portal .top-header #headerSearchBar {
-        width: clamp(180px, 22vw, 320px) !important;
-        height: 40px !important;
+        width: clamp(190px, 22vw, 310px) !important;
+        height: 38px !important;
         background: var(--student-nav-surface) !important;
         border-color: var(--student-nav-border) !important;
         border-radius: 10px !important;
@@ -381,22 +385,22 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     body.student-portal .top-header #headerSearchBar:hover,
     body.student-portal .top-header #headerSearchBar:focus-visible {
         background: var(--student-nav-hover) !important;
-        border-color: rgba(223, 184, 121, 0.35) !important;
-        color: var(--student-nav-ivory);
+        border-color: rgba(250, 244, 246, 0.22) !important;
+        color: var(--student-nav-ink);
     }
 
     body.student-portal .top-header :is(.header-search-icon, .header-search-key) {
-        color: var(--student-nav-gold);
+        color: var(--student-nav-accent);
     }
 
     body.student-portal .top-header .header-search-text {
         font-family: inherit;
-        font-size: .8rem;
+        font-size: 0.79rem;
     }
 
     body.student-portal .top-header .header-search-key {
         background: var(--student-nav-canvas);
-        border-color: rgba(223, 184, 121, 0.22);
+        border-color: rgba(250, 244, 246, 0.14);
         box-shadow: none;
     }
 }

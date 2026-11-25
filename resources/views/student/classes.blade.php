@@ -164,9 +164,9 @@
 @endphp
 
 @if(blank($user->section))
-<div role="status" class="mb-3" style="display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:14px;border:1px solid rgba(228,143,160,0.34);background:linear-gradient(135deg, rgba(90,24,39,0.52), rgba(27,9,15,0.96));color:#fcf9fa;">
-    <i class="bi bi-info-circle-fill" style="color:#e48fa0;margin-top:2px;" aria-hidden="true"></i>
-    <div><strong>Your section is not assigned yet.</strong><br><span style="color:#e3d5d9;">Section-based classes appear after the school assigns your section. Contact the registrar or school administrator to update your student profile.</span></div>
+<div role="status" class="mb-3" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px;border-radius:10px;border:1px solid rgba(232,152,168,0.28);border-left:3px solid #E898A8;background:#14080C;color:#FAF7F8;">
+    <i class="bi bi-info-circle-fill" style="color:#E898A8;margin-top:2px;" aria-hidden="true"></i>
+    <div><strong>Your section is not assigned yet.</strong><br><span style="color:#D4C6CA;">Section-based classes appear after the school assigns your section. Contact the registrar or school administrator to update your student profile.</span></div>
 </div>
 @endif
 
@@ -1419,11 +1419,11 @@
                                 <td>
                                     <div class="d-flex flex-column gap-1">
                                         <span class="cor-code-badge">{{ $sched->code }}</span>
-                                        <span style="font-size:0.72rem; color:#b39b82;">Sec {{ $sched->section }} &bull; #{{ $sched->class_number }}</span>
+                                        <span style="font-size:0.72rem; color:#9E8990;">Sec {{ $sched->section }} &bull; #{{ $sched->class_number }}</span>
                                     </div>
                                 </td>
                                 <td>
-                                    <div style="font-weight:700; color:#fcfbf9;">{{ $sched->name }}</div>
+                                    <div style="font-weight:700; color:#FAF7F8;">{{ $sched->name }}</div>
                                     @if($sched->is_today)
                                         <span class="cor-today-indicator mt-1 d-inline-flex"><i class="bi bi-dot"></i> Today</span>
                                     @endif
@@ -1444,7 +1444,7 @@
                                         <span class="text-muted">TBA</span>
                                     @endif
                                 </td>
-                                <td style="color:#dfd0bc;">{{ $sched->teacher }}</td>
+                                <td style="color:#D4C6CA;">{{ $sched->teacher }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -1470,13 +1470,13 @@
                             @if($wDay === $todayNameCor)
                                 <span class="cor-today-indicator"><i class="bi bi-dot"></i> Today</span>
                             @else
-                                <span style="font-size:0.74rem; color:#b39b82; font-weight:600;">{{ $dayClasses->count() }} {{ Str::plural('class', $dayClasses->count()) }}</span>
+                                <span style="font-size:0.74rem; color:#9E8990; font-weight:600;">{{ $dayClasses->count() }} {{ Str::plural('class', $dayClasses->count()) }}</span>
                             @endif
                         </div>
                         @forelse($dayClasses as $dc)
                             <div class="sd-sched-grid-card cor-week-item" data-days="{{ implode(',', $dc->raw_days) }}" data-is-today="{{ $dc->is_today ? '1' : '0' }}">
                                 <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
-                                    <span style="font-size: 0.77rem; font-weight: 800; color: #f5dfa8; font-variant-numeric: tabular-nums;">
+                                    <span style="font-size: 0.77rem; font-weight: 700; color: #E898A8; font-variant-numeric: tabular-nums;">
                                         @if($dc->start_time && $dc->end_time)
                                             {{ \Carbon\Carbon::parse($dc->start_time)->format('g:i A') }} – {{ \Carbon\Carbon::parse($dc->end_time)->format('g:i A') }}
                                         @else
@@ -1487,14 +1487,14 @@
                                         <span class="cor-room-badge" style="padding:2px 8px; font-size:0.7rem;">{{ $dc->room }}</span>
                                     @endif
                                 </div>
-                                <div style="font-weight: 700; color: #fcfbf9; font-size: 0.9rem; line-height: 1.3;">{{ $dc->name }}</div>
-                                <div class="d-flex align-items-center justify-content-between gap-2 mt-1" style="font-size: 0.76rem; color: #b39b82;">
-                                    <span style="color: #cfa46f; font-weight: 700;">{{ $dc->code }}</span>
+                                <div style="font-weight: 700; color: #FAF7F8; font-size: 0.9rem; line-height: 1.3;">{{ $dc->name }}</div>
+                                <div class="d-flex align-items-center justify-content-between gap-2 mt-1" style="font-size: 0.76rem; color: #9E8990;">
+                                    <span style="color: #E898A8; font-weight: 700;">{{ $dc->code }}</span>
                                     <span class="text-truncate" title="{{ $dc->teacher }}">{{ $dc->teacher }}</span>
                                 </div>
                             </div>
                         @empty
-                            <div style="color:#7d6e5d; font-size:0.82rem; padding:14px 4px; text-align:center;">No scheduled classes</div>
+                            <div style="color:#9E8990; font-size:0.82rem; padding:14px 4px; text-align:center;">No scheduled classes</div>
                         @endforelse
                     </div>
                 @endforeach

@@ -4,98 +4,94 @@
 
 @section('content')
 <style>
-    .result-wrapper { 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        min-height: calc(100vh - 70px); 
-        padding: 30px 20px; 
-        background: radial-gradient(circle at top right, rgba(128, 0, 0, 0.08), transparent 40%),
-                    radial-gradient(circle at bottom left, rgba(217, 119, 6, 0.06), transparent 40%),
-                    #0f172a;
+    .result-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 120px);
+        padding: 24px 16px;
+        background: transparent;
     }
-    .result-card { 
-        max-width: 440px; 
-        width: 100%; 
-        border-radius: 28px; 
-        padding: 44px 32px; 
-        background: rgba(30, 41, 59, 0.75); 
-        backdrop-filter: blur(20px); 
-        -webkit-backdrop-filter: blur(20px); 
-        border: 1px solid rgba(255, 255, 255, 0.1); 
-        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4); 
-        text-align: center; 
-        color: #f8fafc;
-        animation: cardPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    .result-card {
+        max-width: 460px;
+        width: 100%;
+        border-radius: 16px;
+        padding: 34px 28px;
+        background: #14080C;
+        border: 1px solid rgba(250, 247, 248, 0.12);
+        border-top: 2px solid #6B192B;
+        text-align: center;
+        color: #FAF7F8;
     }
-    @keyframes cardPop {
-        from { opacity: 0; transform: scale(0.95) translateY(10px); }
-        to { opacity: 1; transform: scale(1) translateY(0); }
+    .result-icon {
+        width: 68px;
+        height: 68px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 2rem;
     }
-    .result-icon { 
-        width: 88px; 
-        height: 88px; 
-        border-radius: 50%; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        margin: 0 auto 24px; 
-        font-size: 2.5rem; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-    }
-    .result-title { 
-        font-size: 1.5rem; 
-        font-weight: 800; 
-        color: #f8fafc; 
-        margin-bottom: 8px; 
+    .result-title {
+        font-size: 1.38rem;
+        font-weight: 700;
+        color: #FAF7F8;
+        margin-bottom: 8px;
         letter-spacing: -0.02em;
     }
-    .result-sub { 
-        font-size: 0.92rem; 
-        color: #94a3b8; 
-        margin-bottom: 24px; 
-        line-height: 1.6; 
+    .result-sub {
+        font-size: 0.88rem;
+        color: #D4C6CA;
+        margin-bottom: 20px;
+        line-height: 1.55;
     }
-    .result-badge { 
-        display: inline-flex; 
-        align-items: center; 
-        gap: 6px; 
-        padding: 8px 20px; 
-        border-radius: 99px; 
-        font-size: 0.88rem; 
-        font-weight: 700; 
-        margin-bottom: 20px; 
+    .result-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        font-variant-numeric: tabular-nums;
     }
     .subject-box {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
-        padding: 14px 18px;
-        margin-bottom: 24px;
-        font-size: 0.88rem;
-        color: #cbd5e1;
+        background: #0B0406;
+        border: 1px solid rgba(250, 247, 248, 0.08);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 22px;
+        font-size: 0.85rem;
+        color: #D4C6CA;
     }
-    .action-btn { 
-        display: inline-flex; 
-        align-items: center; 
-        justify-content: center; 
-        gap: 8px; 
-        width: 100%; 
-        padding: 14px 24px; 
-        background: linear-gradient(135deg, #800000, #991b1b); 
-        color: white; 
-        border-radius: 14px; 
-        text-decoration: none; 
-        font-weight: 700; 
-        font-size: 0.95rem; 
-        transition: all 0.25s ease; 
-        box-shadow: 0 4px 16px rgba(128, 0, 0, 0.35); 
-        border: none;
+    .subject-box strong {
+        color: #FAF7F8;
     }
-    .action-btn:hover { 
-        transform: translateY(-2px); 
-        box-shadow: 0 8px 24px rgba(128, 0, 0, 0.5); 
-        color: white; 
+    .subject-box i {
+        color: #E898A8 !important;
+    }
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        min-height: 46px;
+        padding: 12px 20px;
+        background: #FAF7F8;
+        color: #14080C;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: background 0.15s ease;
+        border: 1px solid #FAF7F8;
+    }
+    .action-btn:hover {
+        background: #FFFFFF;
+        color: #0B0406;
     }
     .secondary-btn {
         display: inline-flex;
@@ -103,20 +99,27 @@
         justify-content: center;
         gap: 8px;
         width: 100%;
-        padding: 12px 24px;
-        background: rgba(255, 255, 255, 0.06);
-        color: #cbd5e1;
-        border-radius: 14px;
+        min-height: 44px;
+        padding: 11px 20px;
+        background: #1C0C11;
+        color: #FAF7F8;
+        border-radius: 10px;
         text-decoration: none;
         font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
+        font-size: 0.88rem;
+        transition: background 0.15s ease, border-color 0.15s ease;
         margin-top: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(250, 247, 248, 0.16);
     }
     .secondary-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        color: #ffffff;
+        background: #261118;
+        border-color: rgba(250, 247, 248, 0.28);
+        color: #FFFFFF;
+    }
+    @media (max-width: 480px) {
+        .result-card {
+            padding: 26px 20px;
+        }
     }
 </style>
 

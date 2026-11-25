@@ -81,7 +81,6 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/student-desktop-ux.css') }}?v={{ filemtime(public_path('css/student-desktop-ux.css')) }}">
 <style>
     .mobile-scan-page {
         display: flex;
@@ -96,43 +95,39 @@
     .scan-hero {
         width: 100%;
         text-align: center;
-        padding: 22px 16px;
-        margin-bottom: 18px;
-        border-radius: 18px;
-        background: linear-gradient(145deg, rgba(122, 26, 26, 0.2), rgba(24, 16, 14, 0.92));
-        border: 1px solid rgba(207, 164, 111, 0.2);
+        padding: 24px 18px;
+        margin-bottom: 16px;
+        border-radius: 14px;
+        background: #14080C;
+        border: 1px solid rgba(250, 247, 248, 0.11);
+        border-top: 2px solid #6B192B;
     }
 
     .scan-hero-icon {
-        width: 72px;
-        height: 72px;
-        background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
-        border-radius: 22px;
+        width: 64px;
+        height: 64px;
+        background: #1C0C11;
+        border: 1px solid rgba(232, 152, 168, 0.3);
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 34px;
-        color: var(--bg-dark);
+        font-size: 30px;
+        color: #E898A8;
         margin: 0 auto 14px;
-        box-shadow: 0 8px 26px rgba(207, 164, 111, 0.35);
-        animation: scanPulse 2.5s ease-in-out infinite;
-    }
-
-    @keyframes scanPulse {
-        0%, 100% { box-shadow: 0 8px 26px rgba(207, 164, 111, 0.35); }
-        50% { box-shadow: 0 8px 36px rgba(207, 164, 111, 0.58), 0 0 0 10px rgba(207, 164, 111, 0.08); }
     }
 
     .scan-hero-title {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: var(--text-primary);
+        font-size: 1.24rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #FAF7F8;
         margin-bottom: 6px;
     }
 
     .scan-hero-subtitle {
         font-size: 0.84rem;
-        color: var(--text-secondary);
+        color: #D4C6CA;
         line-height: 1.5;
         margin: 0;
     }
@@ -143,41 +138,44 @@
         flex-direction: column;
         align-items: stretch;
         gap: 0;
-        margin-bottom: 18px;
+        margin-bottom: 16px;
     }
 
     .scan-open-btn {
         width: 100%;
-        min-height: 54px;
-        padding: 15px 22px;
-        background: linear-gradient(135deg, var(--gold-primary), var(--gold-dark));
-        color: var(--bg-dark);
-        border: none;
-        border-radius: 16px;
-        font-size: 1rem;
-        font-weight: 800;
+        min-height: 52px;
+        padding: 14px 20px;
+        background: #FAF7F8;
+        color: #14080C;
+        border: 1px solid #FAF7F8;
+        border-radius: 12px;
+        font-size: 0.96rem;
+        font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 10px;
         cursor: pointer;
-        box-shadow: 0 6px 22px rgba(207, 164, 111, 0.32);
-        transition: all 0.2s ease;
+        transition: background 0.15s ease, transform 0.12s ease;
+    }
+
+    .scan-open-btn:hover {
+        background: #FFFFFF;
+        color: #0B0406;
     }
 
     .scan-open-btn i {
-        font-size: 1.25rem;
+        font-size: 1.2rem;
     }
 
     .scan-open-btn:active {
-        transform: scale(0.96);
-        box-shadow: 0 3px 12px rgba(207, 164, 111, 0.25);
+        transform: scale(0.985);
     }
 
     .scan-divider-text {
-        font-size: 0.72rem;
+        font-size: 0.71rem;
         font-weight: 700;
-        color: var(--text-muted);
+        color: #9E8990;
         margin: 12px 0;
         text-align: center;
         text-transform: uppercase;
@@ -201,10 +199,10 @@
         width: 100%;
         min-height: 48px;
         padding: 12px 14px;
-        background: rgba(255, 255, 255, 0.04);
-        color: var(--gold-light, #F3E7CD);
-        border: 1px solid rgba(207, 164, 111, 0.28);
-        border-radius: 14px;
+        background: #14080C;
+        color: #FAF7F8;
+        border: 1px solid rgba(250, 247, 248, 0.14);
+        border-radius: 10px;
         font-size: 0.84rem;
         font-weight: 700;
         display: flex;
@@ -212,41 +210,48 @@
         justify-content: center;
         gap: 8px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
         margin-top: 0;
     }
 
     .scan-paste-btn {
-        background: rgba(207, 164, 111, 0.14);
-        color: #f5dfa8;
-        border-color: rgba(207, 164, 111, 0.4);
+        background: #1C0C11;
+        color: #E898A8;
+        border-color: rgba(232, 152, 168, 0.28);
+    }
+
+    .scan-code-btn:hover,
+    .scan-paste-btn:hover {
+        background: #261118;
+        border-color: rgba(250, 247, 248, 0.28);
+        color: #FFFFFF;
     }
 
     .scan-code-btn:active,
     .scan-paste-btn:active {
-        transform: scale(0.96);
-        background: var(--bg-card-hover);
+        transform: scale(0.985);
     }
 
     .scan-info-card {
         width: 100%;
-        background: var(--bg-card);
-        border: 1px solid rgba(207, 164, 111, 0.15);
-        border-radius: 16px;
-        padding: 18px;
+        background: #14080C;
+        border: 1px solid rgba(250, 247, 248, 0.09);
+        border-radius: 14px;
+        padding: 16px 18px;
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 12px;
     }
 
     .scan-unavailable {
         width: 100%;
-        padding: 14px 16px;
-        margin-bottom: 20px;
-        border: 1px solid rgba(239, 68, 68, 0.45);
-        border-radius: 12px;
-        background: rgba(239, 68, 68, 0.12);
-        color: #fecaca;
+        padding: 13px 16px;
+        margin-bottom: 16px;
+        border: 1px solid rgba(251, 113, 133, 0.38);
+        border-left: 3px solid #FB7185;
+        border-radius: 10px;
+        background: rgba(153, 27, 45, 0.18);
+        color: #FFE4E8;
         line-height: 1.5;
     }
 
@@ -254,8 +259,8 @@
         display: flex;
         align-items: flex-start;
         gap: 12px;
-        font-size: 13px;
-        color: var(--text-secondary);
+        font-size: 0.82rem;
+        color: #D4C6CA;
         line-height: 1.5;
     }
 

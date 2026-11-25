@@ -407,13 +407,13 @@
                 <span class="badge rounded-pill" id="sdInspectorStatusBadge" style="display:none; font-size:0.72rem; font-weight:700; padding:4px 10px;"></span>
             </div>
             <div class="sd-day-inspector-list" id="sdInspectorContent">
-                <p style="color:#b39b82; font-size:0.84rem; margin:0;">Loading calendar activity…</p>
+                <p style="color:#9E8990; font-size:0.84rem; margin:0;">Loading calendar activity…</p>
             </div>
-            <div class="d-flex align-items-center justify-content-between gap-2 mt-3 pt-2" style="border-top: 1px solid rgba(207, 164, 111, 0.14);">
-                <a href="{{ route('student.calendar') }}#attendance-records" id="sdInspectorRecordsLink" class="d-none" style="color:#f5dfa8; font-size:0.8rem; font-weight:700; text-decoration:none;">
+            <div class="d-flex align-items-center justify-content-between gap-2 mt-3 pt-2" style="border-top: 1px solid rgba(250, 247, 248, 0.08);">
+                <a href="{{ route('student.calendar') }}#attendance-records" id="sdInspectorRecordsLink" class="d-none" style="color:#E898A8; font-size:0.8rem; font-weight:700; text-decoration:none;">
                     <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filter records
                 </a>
-                <button type="button" id="sdInspectorModalBtn" class="btn btn-sm ms-auto" style="background: rgba(207,164,111,0.12); border: 1px solid rgba(207,164,111,0.28); color:#f5dfa8; font-size:0.76rem; font-weight:700; border-radius:9px; padding:5px 10px;">
+                <button type="button" id="sdInspectorModalBtn" class="btn btn-sm ms-auto" style="background: #1C0C11; border: 1px solid rgba(250,247,248,0.16); color:#FAF7F8; font-size:0.76rem; font-weight:700; border-radius:8px; padding:6px 12px;">
                     <i class="bi bi-arrows-angle-expand me-1" aria-hidden="true"></i>Details
                 </button>
             </div>
@@ -424,27 +424,27 @@
             <div class="scal-legend-title">Legend</div>
             <div class="scal-legend-grid">
                 <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.4);"></span>
+                    <span class="scal-legend-dot" style="background:#34D399;"></span>
                     Present
                 </div>
                 <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#f59e0b; box-shadow:0 0 6px rgba(245,158,11,0.4);"></span>
+                    <span class="scal-legend-dot" style="background:#FBBF24;"></span>
                     Late
                 </div>
                 <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.4);"></span>
+                    <span class="scal-legend-dot" style="background:#FB7185;"></span>
                     Absent
                 </div>
                 <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#ec4899; box-shadow:0 0 6px rgba(236,72,153,0.4);"></span>
+                    <span class="scal-legend-dot" style="background:#EC4899;"></span>
                     Exam
                 </div>
                 <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#8b5cf6; box-shadow:0 0 6px rgba(139,92,246,0.4);"></span>
+                    <span class="scal-legend-dot" style="background:#A78BFA;"></span>
                     Event
                 </div>
                 <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#4ade80; box-shadow:0 0 6px rgba(74,222,128,0.4);"></span>
+                    <span class="scal-legend-dot" style="background:#4ADE80;"></span>
                     Holiday
                 </div>
             </div>
@@ -456,7 +456,7 @@
             <ul class="scal-tips-list">
                 <li>Tap any <strong>day tile</strong> to view your subjects and attendance for that day.</li>
                 <li>Tile color shows your <strong>dominant attendance status</strong> for the day.</li>
-                <li>The <strong>golden border</strong> marks today.</li>
+                <li>The <strong>highlighted border</strong> marks today.</li>
             </ul>
         </details>
     </div>
@@ -483,14 +483,14 @@
                 <div class="ent-modal-row">
                     <div class="ent-modal-label">Date &amp; Time</div>
                     <div class="ent-modal-value">
-                        <i class="bi bi-clock" style="color:#cfa46f;"></i>
+                        <i class="bi bi-clock" style="color:#E898A8;" aria-hidden="true"></i>
                         <span id="eventTime">Date</span>
                     </div>
                 </div>
                 <div class="ent-modal-row" id="eventLocationContainer">
                     <div class="ent-modal-label">Location</div>
                     <div class="ent-modal-value">
-                        <i class="bi bi-geo-alt" style="color:#cfa46f;"></i>
+                        <i class="bi bi-geo-alt" style="color:#E898A8;" aria-hidden="true"></i>
                         <span id="eventLocation">Location</span>
                     </div>
                 </div>
@@ -504,18 +504,18 @@
     <div class="modal-dialog modal-dialog-bottom modal-dialog-scrollable">
         <div class="modal-content bottom-sheet-content">
             <div class="bottom-sheet-handle"></div>
-            <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(255,255,255,0.06)!important;">
+            <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(250,247,248,0.08)!important;">
                 <div>
-                    <h3 style="font-weight:700;font-size:1.2rem;color:#f3ede4;margin:0;padding-right:24px;" id="daySummaryTitle">Date</h3>
-                    <div style="font-size:0.85rem;color:#8b7d70;display:flex;align-items:center;gap:6px;margin-top:4px;" id="daySummarySubtitle">
+                    <h3 style="font-weight:700;font-size:1.15rem;color:#FAF7F8;margin:0;padding-right:36px;" id="daySummaryTitle">Date</h3>
+                    <div style="font-size:0.84rem;color:#9E8990;display:flex;align-items:center;gap:6px;margin-top:4px;" id="daySummarySubtitle">
                         <span id="daySummaryStatusDot" style="width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
                         <span id="daySummaryStatusText">Status</span>
                     </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white" aria-label="Close details" data-bs-dismiss="modal" onclick="closeDaySummaryModal()" style="position:absolute;top:20px;right:20px;"></button>
+                <button type="button" class="btn-close btn-close-white" aria-label="Close details" data-bs-dismiss="modal" onclick="closeDaySummaryModal()" style="position:absolute;top:16px;right:16px;min-width:44px;min-height:44px;"></button>
             </div>
             <div class="px-4 pb-4">
-                <h6 style="font-size:0.78rem;font-weight:700;color:#8b7d70;text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px 0;" id="daySummarySectionTitle">Subjects</h6>
+                <h6 style="font-size:0.76rem;font-weight:700;color:#9E8990;text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px 0;" id="daySummarySectionTitle">Subjects</h6>
                 <div id="daySummaryContent" class="d-flex flex-column gap-2">
                     <!-- dynamically populated -->
                 </div>
@@ -668,29 +668,29 @@ function scalRenderDesktopInspector(dateStr, evts, summaryText, summaryBg, summa
 
     listEl.replaceChildren();
     if (scalDataState === 'loading') {
-        listEl.innerHTML = '<p style="color:#b39b82;font-size:0.83rem;margin:0;">Loading day activity…</p>';
+        listEl.innerHTML = '<p style="color:#9E8990;font-size:0.83rem;margin:0;">Loading day activity…</p>';
         return;
     }
     if (scalDataState === 'error') {
-        listEl.innerHTML = '<p style="color:#fca5a5;font-size:0.83rem;margin:0;">Unable to load activities.</p>';
+        listEl.innerHTML = '<p style="color:#FDA4AF;font-size:0.83rem;margin:0;">Unable to load activities.</p>';
         return;
     }
     if (!evts.length) {
-        listEl.innerHTML = '<p style="color:#b39b82;font-size:0.83rem;margin:0;">No attendance or school events recorded on this date.</p>';
+        listEl.innerHTML = '<p style="color:#9E8990;font-size:0.83rem;margin:0;">No attendance or school events recorded on this date.</p>';
         return;
     }
     evts.forEach(ev => {
         const isAtt = (ev.type || '').toLowerCase() === 'attendance';
         const status = (ev.status || '').toLowerCase();
-        const badgeColor = status === 'present' ? '#34d399' : (status === 'late' ? '#fbbf24' : (status === 'absent' ? '#f87171' : '#c084fc'));
+        const badgeColor = status === 'present' ? '#34D399' : (status === 'late' ? '#FBBF24' : (status === 'absent' ? '#FB7185' : '#C084FC'));
         const item = document.createElement('div');
         item.className = 'sd-day-inspector-item';
         item.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-                <strong style="color:#fcfbf9;font-size:0.85rem;">${recordText(isAtt ? (ev.subject_name || ev.title) : ev.title)}</strong>
-                <span style="color:${badgeColor};font-size:0.72rem;font-weight:800;text-transform:uppercase;flex-shrink:0;">${recordText(isAtt ? ev.status : (ev.type || 'event').replace('_', ' '))}</span>
+                <strong style="color:#FAF7F8;font-size:0.85rem;">${recordText(isAtt ? (ev.subject_name || ev.title) : ev.title)}</strong>
+                <span style="color:${badgeColor};font-size:0.72rem;font-weight:700;text-transform:uppercase;flex-shrink:0;">${recordText(isAtt ? ev.status : (ev.type || 'event').replace('_', ' '))}</span>
             </div>
-            <div style="color:#b39b82;font-size:0.76rem;margin-top:4px;">${recordText(ev.time_string || (isAtt ? 'Time not set' : 'All Day'))}${ev.instructor_name ? ' · ' + recordText(ev.instructor_name) : ''}</div>
+            <div style="color:#9E8990;font-size:0.76rem;margin-top:4px;">${recordText(ev.time_string || (isAtt ? 'Time not set' : 'All Day'))}${ev.instructor_name ? ' · ' + recordText(ev.instructor_name) : ''}</div>
         `;
         listEl.appendChild(item);
     });

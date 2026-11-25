@@ -976,7 +976,7 @@
                 <h3 class="day-modal-date" id="daySummaryTitle">Date</h3>
                 <div class="day-summary-badges" id="daySummarySubtitle">
                     <span class="day-summary-chip chip-empty" id="daySummaryStatusText">
-                        <span id="daySummaryStatusDot" style="width:7px; height:7px; border-radius:50%; background:#ffd166; display:inline-block;"></span>
+                        <span id="daySummaryStatusDot" style="width:7px; height:7px; border-radius:50%; background:#E898A8; display:inline-block;"></span>
                         Attendance Details
                     </span>
                 </div>
@@ -986,8 +986,8 @@
                 <div id="daySummaryContent" class="d-flex flex-column gap-3">
                     <!-- dynamically populated with ATTENDANCE and EVENTS / IMPORTANT DATES sections -->
                 </div>
-                <div style="font-size:0.75rem; color:#8f826f; text-align:center; margin-top:20px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                    <i class="bi bi-shield-check text-gold" style="color:#cfa46f;"></i>
+                <div style="font-size:0.75rem; color:#9E8990; text-align:center; margin-top:20px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    <i class="bi bi-shield-check" style="color:#E898A8;" aria-hidden="true"></i>
                     <span>Real-time records, events, and schedules for this date.</span>
                 </div>
             </div>
@@ -1070,12 +1070,12 @@ function showAttDetail(dateKey, day) {
         }
         if (contentEl) {
             contentEl.innerHTML = `
-                <div class="day-empty-card" style="padding: 36px 20px; text-align: center;">
+                <div class="day-empty-card" style="padding: 32px 20px; text-align: center;">
                     <div class="day-empty-icon" style="margin-bottom: 14px;">
-                        <i class="bi bi-calendar2-x" style="font-size: 2.4rem; color: #b39b82; opacity: 0.6;"></i>
+                        <i class="bi bi-calendar2-x" style="font-size: 2rem; color: #E898A8;"></i>
                     </div>
-                    <div style="font-weight:800; font-size:1.05rem; color:#f3ede4; margin-bottom:6px;">No records or events for this date.</div>
-                    <div style="font-size:0.82rem; color:#8f826f; max-width:300px; margin:0 auto; line-height:1.5;">There are no attendance records, classes, exams, events, or holidays scheduled for this date.</div>
+                    <div style="font-weight:700; font-size:1rem; color:#FAF7F8; margin-bottom:6px;">No records or events for this date.</div>
+                    <div style="font-size:0.82rem; color:#9E8990; max-width:300px; margin:0 auto; line-height:1.5;">There are no attendance records, classes, exams, events, or holidays scheduled for this date.</div>
                 </div>`;
         }
     } else {
@@ -1086,7 +1086,7 @@ function showAttDetail(dateKey, day) {
             const lateCount = records.filter(r => r.status_lower === 'late').length;
             const absentCount = records.filter(r => r.status_lower === 'absent').length;
 
-            badgesHtml += `<span class="day-summary-chip chip-count"><i class="bi bi-journal-bookmark-fill me-1" style="color:#cfa46f;"></i> ${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}</span>`;
+            badgesHtml += `<span class="day-summary-chip chip-count"><i class="bi bi-journal-bookmark-fill me-1" style="color:#E898A8;"></i> ${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}</span>`;
             if (presentCount > 0) {
                 badgesHtml += `<span class="day-summary-chip chip-present"><i class="bi bi-check-circle-fill me-1"></i> ${presentCount} Present</span>`;
             }
@@ -1184,16 +1184,16 @@ function showAttDetail(dateKey, day) {
                             ${r.time_out ? `
                             <div>
                                 <div class="att-grid-col-label">
-                                    <i class="bi bi-box-arrow-right text-gold"></i> Clock-out
+                                    <i class="bi bi-box-arrow-right"></i> Clock-out
                                 </div>
-                                <div class="att-grid-col-val" style="color:#b39b82;">${escapeHtml(r.time_out)}</div>
+                                <div class="att-grid-col-val" style="color:#D4C6CA;">${escapeHtml(r.time_out)}</div>
                             </div>` : ''}
                             ${r.remarks ? `
                             <div style="grid-column: 1 / -1;">
                                 <div class="att-grid-col-label">
-                                    <i class="bi bi-chat-left-text text-gold"></i> Remarks
+                                    <i class="bi bi-chat-left-text"></i> Remarks
                                 </div>
-                                <div style="font-size:0.82rem; font-weight:500; color:#ffd166;">${escapeHtml(r.remarks)}</div>
+                                <div style="font-size:0.82rem; font-weight:500; color:#FBD5DD;">${escapeHtml(r.remarks)}</div>
                             </div>` : ''}
                         </div>
 
@@ -1252,8 +1252,8 @@ function showAttDetail(dateKey, day) {
                 // Subject row (e.g. Mathematics for Exam)
                 if (evt.subject) {
                     metaRows += `
-                        <div style="font-size: 0.95rem; font-weight: 700; color: #ffd166; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
-                            <i class="bi bi-book-half" style="font-size: 0.85rem; color: #cfa46f;"></i>
+                        <div style="font-size: 0.92rem; font-weight: 700; color: #E898A8; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-book-half" style="font-size: 0.85rem; color: #E898A8;"></i>
                             <span>${escapeHtml(evt.subject)}</span>
                         </div>
                     `;
@@ -1262,8 +1262,8 @@ function showAttDetail(dateKey, day) {
                 // Time row (e.g. 9:00 AM – 4:00 PM or 8:00 AM – 10:00 AM)
                 if (evt.time) {
                     metaRows += `
-                        <div style="font-size: 0.85rem; font-weight: 600; color: #f3ede4; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
-                            <i class="bi bi-clock-fill" style="font-size: 0.8rem; color: #cfa46f;"></i>
+                        <div style="font-size: 0.84rem; font-weight: 600; color: #FAF7F8; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-clock-fill" style="font-size: 0.8rem; color: #9E8990;"></i>
                             <span>${escapeHtml(evt.time)}</span>
                         </div>
                     `;
@@ -1272,8 +1272,8 @@ function showAttDetail(dateKey, day) {
                 // Location row (e.g. School Gym)
                 if (evt.location) {
                     metaRows += `
-                        <div style="font-size: 0.85rem; font-weight: 600; color: #b39b82; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
-                            <i class="bi bi-geo-alt-fill" style="font-size: 0.8rem; color: #cfa46f;"></i>
+                        <div style="font-size: 0.84rem; font-weight: 600; color: #D4C6CA; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-geo-alt-fill" style="font-size: 0.8rem; color: #9E8990;"></i>
                             <span>${escapeHtml(evt.location)}</span>
                         </div>
                     `;
@@ -1282,21 +1282,21 @@ function showAttDetail(dateKey, day) {
                 // Description row (e.g. No classes)
                 if (evt.description && evt.description.trim() !== '') {
                     metaRows += `
-                        <div style="font-size: 0.82rem; color: #8f826f; margin-top: 6px; line-height: 1.45;">
+                        <div style="font-size: 0.82rem; color: #9E8990; margin-top: 6px; line-height: 1.45;">
                             ${escapeHtml(evt.description)}
                         </div>
                     `;
                 }
 
                 fullHtml += `
-                    <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); ${borderStyle} border-radius: 14px; padding: 16px 18px;">
+                    <div style="background: #1C0C11; border: 1px solid rgba(250,247,248,0.08); ${borderStyle} border-radius: 12px; padding: 14px 16px;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
                             <div style="flex: 1; min-width: 0;">
-                                <div style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 99px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; ${badgeStyle} margin-bottom: 6px;">
+                                <div style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; ${badgeStyle} margin-bottom: 6px;">
                                     <i class="bi ${iconClass}"></i>
                                     <span>${badgeText}</span>
                                 </div>
-                                <div style="font-weight: 800; color: #f3ede4; font-size: 1.1rem; line-height: 1.3;">
+                                <div style="font-weight: 700; color: #FAF7F8; font-size: 1.02rem; line-height: 1.3;">
                                     ${escapeHtml(evt.title)}
                                 </div>
                                 ${metaRows}
