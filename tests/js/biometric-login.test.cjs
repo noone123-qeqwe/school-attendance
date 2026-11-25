@@ -58,7 +58,6 @@ function createLogin({
         PublicKeyCredential: function PublicKeyCredential() {},
         AttendancePasskey: native ? bridge : undefined,
         AndroidDeviceBridge: androidBridgeExtra || undefined,
-        DevicePasskeys: { check: async () => ({ available: true, platformAvailable: true }) },
         document: {
             addEventListener() {},
             getElementById(id) {
@@ -121,6 +120,8 @@ function createLogin({
         }
     });
     context.window = context;
+    vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../public/js/device-passkey-capabilities.js'), 'utf8'), context);
+    context.DevicePasskeys.check = async () => ({ available: true, platformAvailable: true });
     vm.runInContext(loginScript, context);
     context.openBiometricModal = config => { modal = config; };
 
@@ -311,7 +312,7 @@ test('without the Android bridge browser WebAuthn targets internal platform auth
     assert.deepEqual(Array.from(login.browserRequests[0].publicKey.allowCredentials[0].transports), ['internal']);
 });
 
-test('selecting Fingerprint verification without an identifier always prompts for account ID first (DB-first)', async () => {
+test('fingerprint sign-in without an identifier requests a discoverable local key', async () => {
     const login = createLogin({
         native: true,
         account: '',
@@ -321,10 +322,26 @@ test('selecting Fingerprint verification without an identifier always prompts fo
     login.select('fingerprint');
     await settle();
 
-    assert.equal(login.modal.title, 'Fingerprint verification');
+    assert.equal(login.requests.find(({url}) => url === '/webauthn.login.options').body.identifier, '');
+    assert.deepEqual(login.nativeRequests[0].publicKey.allowCredentials, []);
+    login.reply({ id: login.nativeRequests[0].id, assertion: signedAssertion });
+    await settle();
+    assert.equal(login.requests.find(({url}) => url === '/webauthn.login').body.identifier, '');
+    assert.deepEqual(login.redirects, ['/dashboard']);
+});
+
+test('a discoverable miss offers targeted verification for older non-resident credentials', async () => {
+    const login = createLogin({ account: '', native: false });
+    await login.context.handleBiometricLogin();
+    login.select('fingerprint');
+    await settle();
+    assert.equal(login.browserRequests[0].publicKey.allowCredentials.length, 0);
+    login.select('account');
     assert.equal(login.modal.showIdentifier, true);
-    assert.equal(login.nativeRequests.length, 0);
-    assert.equal(login.browserRequests.length, 0);
+    login.modalIdentifier.value = identifier;
+    login.modal.onPrimaryClick();
+    await settle();
+    assert.equal(login.browserRequests[1].publicKey.allowCredentials.length, 1);
 });
 
 test('native Android APK does not fall back to WebView WebAuthn on NotSupportedError', async () => {
@@ -365,35 +382,30 @@ test('fingerprint lookup with no DB credentials never invokes device prompt and 
     );
 });
 
-test('native app delegates DB allowCredentials to Android bridge and offers direct device registration on NotFoundError', async () => {
-    const login = createLogin({
-        androidBridgeExtra: {
-            isNativeApp: () => true,
-            hasLocalPasskey: () => false,
-            isBiometricAvailable: () => true,
-            matchesLocalPasskey: () => false
+test('the APK selects the provider that owns the matching fingerprint credential', async () => {
+    for (const matches of [true, false]) {
+        const login = createLogin({
+            androidBridgeExtra: {
+                isNativeApp: () => true,
+                hasLocalPasskey: () => true,
+                isBiometricAvailable: () => true,
+                matchesLocalPasskey: json => {
+                    assert.equal(JSON.parse(json)[0].id, credentialId);
+                    return matches;
+                }
+            }
+        });
+        await login.context.handleBiometricLogin();
+        login.select('fingerprint');
+        await settle();
+        if (matches) {
+            assert.equal(login.nativeRequests[0].publicKey.allowCredentials[0].id, credentialId);
+            assert.equal(login.browserRequests.length, 0);
+        } else {
+            assert.deepEqual(Array.from(login.browserRequests[0].publicKey.allowCredentials[0].id), [1, 2, 3]);
+            assert.equal(login.nativeRequests.length, 0);
         }
-    });
-    await login.context.handleBiometricLogin();
-    login.select('fingerprint');
-    await settle();
-    await settle();
-
-    // Native bridge receives the exact DB allowCredentials with internal transport so NFC/USB chooser is never shown.
-    assert.equal(login.nativeRequests.length, 1);
-    assert.equal(login.nativeRequests[0].type, 'get');
-    assert.equal(login.nativeRequests[0].publicKey.allowCredentials[0].id, credentialId);
-    assert.deepEqual(login.nativeRequests[0].publicKey.allowCredentials[0].transports, ['internal']);
-
-    login.reply({ id: login.nativeRequests[0].id, error: 'NotFoundError' });
-    await settle();
-
-    assert.equal(login.modal.title, 'Link this device’s fingerprint');
-    assert.deepEqual(
-        Array.from(login.modal.methods, method => method.id),
-        ['setup_device', 'face', 'password']
-    );
-    assert.equal(login.modal.message.includes('registered on another browser or device'), false);
+    }
 });
 
 test('retrying fingerprint after cancellation fetches a fresh database challenge instead of reusing stale options', async () => {
@@ -463,7 +475,7 @@ test('Face verification opens camera capture only AFTER database confirms regist
     });
     // Provide faceGuidanceUrl dataset on modal element for this test
     login.context.document.getElementById = id => {
-        if (id === 'biometricModal') return { dataset: { faceGuidanceUrl: '/js/guidance.js' } };
+        if (id === 'biometricModal') return { toggleAttribute() {}, dataset: { faceGuidanceUrl: '/js/guidance.js' } };
         if (id === 'bioFaceCaptureCanvas') return { width: 0 };
         return null;
     };

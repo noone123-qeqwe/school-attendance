@@ -81,13 +81,70 @@ test('Android registration uses the native sensor independently of browser WebAu
     assert.equal((await passkeys.check('create')).reason, 'sensor-unavailable');
 });
 
+test('older APKs use their browser provider when it supports fingerprint enrollment', async () => {
+    const native = { isNativeApp: () => true, isBiometricAvailable: () => true };
+    const passkeys = loadPasskeys(platform(true), { native });
+    assert.equal((await passkeys.check('create')).available, true);
+    assert.equal(passkeys.useAndroidFingerprint('create'), false);
+    assert.equal(passkeys.useAndroidFingerprint('get', [{ id: 'AQID' }]), false);
+});
+
+test('browser enrollment supports platform credentials with optional residency and respects cancellation', async () => {
+    for (const firstError of ['ConstraintError', 'NotAllowedError']) {
+        const calls = [];
+        const credentials = {
+            async create(options) {
+                calls.push(options);
+                if (calls.length === 1) throw new DOMException('First request ended', firstError);
+                return 'registered';
+            }
+        };
+        const passkeys = loadPasskeys(platform(true), { credentials });
+        const signal = new AbortController().signal;
+        const registration = passkeys.createBrowserFingerprint({ challenge: 'fixture' }, signal);
+        if (firstError === 'NotAllowedError') {
+            await assert.rejects(registration, { name: firstError });
+            assert.equal(calls.length, 1);
+        } else {
+            assert.equal(await registration, 'registered');
+            assert.equal(calls[1].publicKey.authenticatorSelection.residentKey, 'discouraged');
+        }
+        assert.equal(calls[0].publicKey.authenticatorSelection.residentKey, 'preferred');
+        for (const call of calls) {
+            assert.equal(call.publicKey.authenticatorSelection.authenticatorAttachment, 'platform');
+            assert.equal(call.publicKey.authenticatorSelection.userVerification, 'required');
+            assert.equal(call.signal, signal);
+        }
+    }
+});
+
+test('profile enrollment submits the signed Android registration with no browser credential API', async () => {
+    const view = fs.readFileSync(path.resolve(__dirname, '../../resources/views/partials/profile-device-passkey-capability.blade.php'), 'utf8');
+    const handler = view.slice(view.indexOf('async function requestProfileFingerprint'), view.indexOf('function checkProfilePasskeyWhenVisible'));
+    const response = { clientDataJSON: 'AQI', attestationObject: 'AwQ', transports: ['internal'] };
+    const passkeys = {
+        useAndroidFingerprint: operation => operation === 'create',
+        async requestAndroidPasskey(operation, options) {
+            assert.equal(operation, 'create');
+            assert.equal(options.challenge, 'BQY');
+            assert.equal(options.authenticatorSelection.userVerification, 'required');
+            return { id: 'Bwg', rawId: 'Bwg', type: 'public-key', response };
+        }
+    };
+    const register = vm.runInNewContext(handler + '\nrequestProfileFingerprint', { window: { DevicePasskeys: passkeys } });
+    const result = await register({}, { challenge: 'BQY' });
+    assert.equal(result.credential_id, 'Bwg');
+    assert.equal(result.credential.response.attestationObject, response.attestationObject);
+    assert.equal(result.credential.response.clientDataJSON, response.clientDataJSON);
+});
+
 test('QR attendance requests a native signature when the WebView has no browser WebAuthn API', async () => {
     const view = fs.readFileSync(path.resolve(__dirname, '../../resources/views/qr/verify.blade.php'), 'utf8');
     const handler = view.slice(view.indexOf('async function requestFingerprintAssertion'), view.indexOf('async function submitAttendance'));
     const assertion = { rawId: 'AQID', type: 'public-key', response: { signature: 'fixture' } };
     const calls = [];
     const devicePasskeys = {
-        hasAndroidPasskeyBridge: () => true,
+        useAndroidFingerprint: () => true,
         requestAndroidPasskey(...args) { calls.push(args); return Promise.resolve(assertion); }
     };
     const request = vm.runInNewContext(handler + '\nrequestFingerprintAssertion', { window: { DevicePasskeys: devicePasskeys } });

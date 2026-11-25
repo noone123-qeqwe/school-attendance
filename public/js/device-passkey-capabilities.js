@@ -11,6 +11,41 @@
         );
     }
 
+    function useAndroidFingerprint(operation, credentials = []) {
+        if (!hasAndroidPasskeyBridge()) return false;
+        const native = window.AndroidDeviceBridge;
+        if (operation === 'create') {
+            return !native?.isNativeApp?.() || typeof native.hasLocalPasskey === 'function';
+        }
+        if (!window.PublicKeyCredential || typeof navigator.credentials?.get !== 'function') return true;
+        // Browser credentials from earlier releases belong to the WebView's provider.
+        if (typeof native?.matchesLocalPasskey === 'function') {
+            return native.matchesLocalPasskey(JSON.stringify(credentials));
+        }
+        return !native?.isNativeApp?.() || typeof native.hasLocalPasskey === 'function';
+    }
+
+    async function createBrowserFingerprint(publicKey, signal) {
+        const create = residentKey => navigator.credentials.create({
+            publicKey: {
+                ...publicKey,
+                authenticatorSelection: {
+                    authenticatorAttachment: 'platform',
+                    userVerification: 'required',
+                    residentKey,
+                    requireResidentKey: false
+                }
+            },
+            signal
+        });
+        try {
+            return await create('preferred');
+        } catch (error) {
+            if (signal?.aborted || !['NotSupportedError', 'ConstraintError', 'TypeError'].includes(error.name)) throw error;
+            return create('discouraged');
+        }
+    }
+
     function requestAndroidPasskey(type, publicKeyOptions, signal) {
         if (!hasAndroidPasskeyBridge()) {
             return null;
@@ -89,14 +124,16 @@
         const native = window.AndroidDeviceBridge;
         if (operation === 'create' && native?.isNativeApp?.()) {
             // Early APKs expose the message bridge but only handle sign-in requests.
-            if (typeof native.hasLocalPasskey !== 'function') {
+            if (typeof native.hasLocalPasskey !== 'function'
+                && (!window.PublicKeyCredential || typeof navigator.credentials?.create !== 'function')) {
                 return unavailable('update-app');
             }
             if (hasAndroidPasskeyBridge() && native.isBiometricAvailable?.() === false) {
                 return unavailable('sensor-unavailable');
             }
         }
-        if (hasAndroidPasskeyBridge() && native?.isBiometricAvailable?.() === true) {
+        if ((operation === 'create' ? useAndroidFingerprint('create') : hasAndroidPasskeyBridge())
+            && native?.isBiometricAvailable?.() === true) {
             return {
                 available: true,
                 platformAvailable: true,
@@ -234,6 +271,8 @@
         confirmOnClick,
         hasAndroidPasskeyBridge,
         requestAndroidPasskey,
+        useAndroidFingerprint,
+        createBrowserFingerprint,
         rememberBrowserPasskey,
         hasRememberedBrowserPasskey
     };

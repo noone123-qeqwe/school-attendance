@@ -662,70 +662,11 @@ async function registerDevicePasskey() {
             throw new Error(opts.message || 'Could not start passkey setup options.');
         }
 
-        const challenge = base64ToUint8Array(opts.challenge);
-        const userId = base64ToUint8Array(opts.user.id);
-        const hostname = window.location.hostname;
-        const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
-        const rp = { name: opts.rp?.name || 'School Attendance' };
-        if (!isIp) {
-            const sRp = (opts.rp?.id || '').toLowerCase().trim();
-            rp.id = sRp || hostname;
-        }
-
-        const excludeCredentials = (opts.excludeCredentials || []).map(c => ({
-            type: c.type || 'public-key',
-            id: base64ToUint8Array(c.id)
-        }));
-
-        const basePublicKey = {
-            challenge,
-            rp: rp,
-            user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
-            pubKeyCredParams: opts.pubKeyCredParams || [
-                { type: 'public-key', alg: -7 },
-                { type: 'public-key', alg: -257 }
-            ],
-            timeout: opts.timeout || 120000,
-            attestation: opts.attestation || 'none',
-            excludeCredentials,
-            hints: ['client-device']
-        };
-
-        basePublicKey.authenticatorSelection = {
-            authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred'
-        };
-        btn.textContent = 'Continue to device prompt';
-        const credential = await window.DevicePasskeys.confirmOnClick(btn, async () => {
-            btn.textContent = 'Waiting for your device…';
-            return navigator.credentials.create({ publicKey: basePublicKey });
-        });
-        if (!credential) {
-            throw new Error('Passkey setup was canceled.');
-        }
-
-        const rawId = bufferToBase64Url(credential.rawId);
-        const clientDataJSON = bufferToBase64Url(credential.response.clientDataJSON);
-        const attestationObject = bufferToBase64Url(credential.response.attestationObject);
-        const transports = (credential.response && typeof credential.response.getTransports === 'function')
-            ? credential.response.getTransports()
-            : [];
-
+        const registration = await requestProfileFingerprint(btn, opts);
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-            body: JSON.stringify({
-                credential_id: rawId,
-                transports: transports,
-                credential: {
-                    id: credential.id,
-                    type: credential.type,
-                    transports: transports,
-                    response: {
-                        attestationObject: attestationObject,
-                        clientDataJSON: clientDataJSON
-                    }
-                }
-            })
+            body: JSON.stringify(registration)
         });
         const result = await saveRes.json();
 

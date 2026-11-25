@@ -1,0 +1,136 @@
+.biometric-flow-page {
+    --gold-primary: #cfa46f;
+    --gold-border: #cfa46f3b;
+    --gold-subtle: #cfa46f20;
+    --surface-card: #1e1713;
+    --text-primary: #f3e7cd;
+    --text-muted: #c2ab93;
+    margin: 0;
+    min-height: 100dvh;
+    background: #120e0b;
+    color: var(--text-primary);
+    font: 1rem/1.55 Inter, system-ui, sans-serif;
+}
+
+.biometric-flow-page *, .biometric-flow-page *::before, .biometric-flow-page *::after { box-sizing: border-box; }
+.biometric-flow {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+.biometric-flow-back, .biometric-flow .flow-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--gold-border);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-weight: 650;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+}
+.biometric-flow-back { margin-bottom: 22px; }
+.biometric-flow .flow-primary { background: var(--gold-primary); border-color: var(--gold-primary); color: #20130c; }
+.biometric-flow .flow-button:disabled { opacity: .55; cursor: default; }
+.biometric-flow :is(a, button, input):focus-visible { outline: 2px solid var(--gold-primary); outline-offset: 3px; }
+.biometric-flow [hidden] { display: none !important; }
+.biometric-flow-heading { margin-bottom: 20px; }
+.biometric-flow-heading h1 { font-size: clamp(1.65rem, 5vw, 2.2rem); line-height: 1.2; margin: 0 0 8px; }
+.biometric-flow p { color: var(--text-muted); overflow-wrap: anywhere; }
+.biometric-flow-heading p { margin: 0; }
+.biometric-flow-card {
+    min-width: 0;
+    margin-bottom: 16px;
+    padding: clamp(14px, 4vw, 24px);
+    border: 1px solid var(--gold-border);
+    border-radius: 16px;
+    background: var(--surface-card);
+}
+.biometric-flow-card h2 { margin: 0 0 6px; font-size: 1.14rem; }
+.biometric-flow-card p { margin: 0 0 14px; }
+.biometric-flow-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.biometric-flow-actions > * { flex: 1 1 auto; }
+.biometric-flow-card .biometric-flow-status { min-height: 1.55em; font-size: .9rem; }
+.biometric-flow .device-item-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 12px; border: 1px solid var(--gold-border); border-radius: 10px; }
+.biometric-flow .device-item-left { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.biometric-flow .device-item-info { min-width: 0; overflow-wrap: anywhere; }
+.biometric-flow .device-item-name { font-weight: 650; }
+.biometric-flow .device-item-meta { color: var(--text-muted); font-size: .8rem; }
+.biometric-flow .bio-device-type-pill { color: var(--gold-primary); font-size: .8rem; }
+.biometric-flow .device-remove-btn { min-height: 44px; padding: 7px 12px; border: 1px solid var(--gold-border); border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.biometric-flow .device-count { margin: 0 0 10px; color: var(--text-muted); font-size: .9rem; }
+
+.bio-flow-kicker { display: flex; align-items: center; gap: 7px; margin-bottom: 12px; color: var(--gold-primary); font-size: .76rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.bio-flow-title-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
+.bio-flow-title-row > div { min-width: 0; }
+.bio-flow-title-row h2 { margin: 0 0 5px; font-size: clamp(1.15rem, 4vw, 1.4rem); line-height: 1.25; }
+.bio-flow-title-row p { margin: 0; font-size: .92rem; }
+.bio-flow-symbol { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--gold-border); border-radius: 13px; background: var(--gold-subtle); color: var(--gold-primary); font-size: 1.3rem; }
+.bio-privacy-note { display: flex; align-items: flex-start; gap: 9px; margin: 14px 0 18px !important; padding: 11px 12px; border: 1px solid var(--gold-border); border-radius: 10px; background: #cfa46f0b; color: var(--text-muted); font-size: .84rem; }
+.bio-privacy-note i { flex: none; margin-top: 2px; color: var(--gold-primary); }
+.bio-registration-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; list-style: none; padding: 0; margin: 0; }
+.bio-registration-steps li { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 9px 10px; border: 1px solid var(--gold-border); border-radius: 10px; color: var(--text-muted); font-size: .84rem; }
+.bio-registration-steps li > span:first-child { flex: none; display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #ffffff08; font-size: .76rem; font-weight: 750; }
+.bio-registration-steps li[aria-current="step"] { border-color: #cfa46f80; background: var(--gold-subtle); color: var(--text-primary); }
+.bio-registration-steps li[aria-current="step"] > span:first-child { background: var(--gold-primary); color: #20130c; }
+.bio-registration-steps li[data-complete="true"] { color: #86efac; }
+.bio-registration-steps li[data-complete="true"] > span:first-child { background: #86efac1c; }
+.biometric-flow #startBioBtn { width: 100%; min-height: 50px; }
+.bio-flow-waiting { display: grid; place-items: center; width: 56px; height: 56px; margin: 4px auto 14px; border: 1px solid var(--gold-border); border-radius: 16px; background: var(--gold-subtle); }
+.bio-flow-waiting .biometric-spinner { width: 24px; height: 24px; }
+.biometric-flow #bioScanningView, .biometric-flow #bioSuccessView, .biometric-flow #bioErrorView { text-align: center; }
+.biometric-flow #bioScanningView h2, .biometric-flow #bioSuccessView h2, .biometric-flow #bioErrorView h2 { margin: 0 0 8px; font-size: 1.2rem; }
+.biometric-flow #bioScanningView p, .biometric-flow #bioSuccessView p, .biometric-flow #bioErrorView p { margin: 0 0 16px; }
+.biometric-flow #bioScanningView .flow-button, .biometric-flow #bioSuccessView .flow-button, .biometric-flow #bioErrorView .flow-button { width: 100%; }
+.bio-flow-result-icon { display: grid; place-items: center; width: 54px; height: 54px; margin: 2px auto 14px; border: 1px solid currentColor; border-radius: 16px; font-size: 1.5rem; }
+.bio-flow-result-icon.is-success { color: #86efac; background: #86efac12; }
+.bio-flow-result-icon.is-error { color: #fca5a5; background: #fca5a512; }
+.bio-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bio-section-heading h2 { margin: 0 0 4px; }
+.bio-section-heading p { margin: 0; font-size: .88rem; }
+.bio-section-heading > i { flex: none; color: var(--gold-primary); font-size: 1.25rem; }
+.biometric-flow .device-item-card { background: #ffffff04; }
+.biometric-flow .device-remove-btn { min-width: 44px; }
+.fingerprint-registration-page .biometric-spinner {
+    flex: none;
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    border: 2px solid #cfa46f45;
+    border-top-color: var(--bio-accent, #cfa46f);
+    border-radius: 50%;
+    animation: biometric-spin .8s linear infinite;
+}
+@keyframes biometric-spin { to { transform: rotate(360deg); } }
+@media (max-width: 390px) {
+    .bio-registration-steps { gap: 5px; }
+    .bio-registration-steps li { justify-content: center; gap: 5px; padding: 8px 4px; font-size: .77rem; }
+    .bio-flow-title-row { gap: 10px; }
+    .bio-flow-symbol { width: 42px; height: 42px; }
+}
+.fingerprint-registration-page #bioErrorView {
+    padding: clamp(13px, 3vw, 20px);
+    border: 1px solid #fca5a54d;
+    border-radius: 14px;
+    background: #f871710b;
+    text-align: left;
+}
+.fingerprint-registration-page .bio-error-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.fingerprint-registration-page #bioErrorView .bio-flow-result-icon { flex: none; width: 44px; height: 44px; margin: 0; border-radius: 12px; font-size: 1.2rem; }
+.fingerprint-registration-page #bioErrorTitle { min-width: 0; margin: 0; font-size: clamp(1rem, 4vw, 1.2rem); line-height: 1.25; overflow-wrap: anywhere; }
+.fingerprint-registration-page #bioErrorDesc { margin: 9px 0 14px; font-size: .9rem; line-height: 1.5; }
+.fingerprint-registration-page .bio-error-actions { display: flex; justify-content: flex-end; }
+.fingerprint-registration-page #retryBtn { width: auto; min-width: 9rem; min-height: 46px; }
+@media (max-width: 575px) {
+    .fingerprint-registration-page .bio-error-actions { justify-content: stretch; }
+    .fingerprint-registration-page #retryBtn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fingerprint-registration-page .biometric-spinner { animation: none; }
+}

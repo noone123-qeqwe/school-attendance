@@ -255,10 +255,6 @@ function bufferToBase64Url(buffer) {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function getAndroidDevicePasskeyBridge() {
-    return window.DevicePasskeys?.hasAndroidPasskeyBridge?.() ? window.AttendancePasskey : null;
-}
-
 async function beginDevicePasskeyRegistration() {
     if (bioAbortController) return;
     const controller = new AbortController();
@@ -358,7 +354,7 @@ async function beginDevicePasskeyRegistration() {
 
         statusTitle.textContent = 'Confirm on your device';
         let credential;
-        if (getAndroidDevicePasskeyBridge()) {
+        if (window.DevicePasskeys.useAndroidFingerprint('create')) {
             statusText.textContent = 'Touch your fingerprint sensor to register this device.';
             credential = await window.DevicePasskeys.requestAndroidPasskey('create', androidCreateOptions, controller.signal);
         } else {
@@ -368,25 +364,9 @@ async function beginDevicePasskeyRegistration() {
                 confirmButton.hidden = true;
                 statusText.textContent = 'Follow your device’s biometric or screen lock prompt.';
                 focusBiometricHeading(statusTitle);
-                try {
-                    return await navigator.credentials.create({ publicKey, signal: controller.signal });
-                } catch (err) {
-                    if (err && (err.name === 'NotSupportedError' || err.name === 'TypeError' || err.name === 'ConstraintError')) {
-                        const fallbackPublicKey = {
-                            ...publicKey,
-                            authenticatorSelection: {
-                                authenticatorAttachment: 'platform',
-                                userVerification: 'required',
-                                residentKey: 'preferred',
-                                requireResidentKey: false
-                            }
-                        };
-                        return await navigator.credentials.create({ publicKey: fallbackPublicKey, signal: controller.signal });
-                    }
-                    throw err;
-                }
+                return window.DevicePasskeys.createBrowserFingerprint(publicKey, controller.signal);
             };
-            credential = navigator.userActivation?.isActive
+            credential = navigator.userActivation?.isActive !== false
                 ? await requestBrowserCredential()
                 : await window.DevicePasskeys.confirmOnClick(confirmButton, requestBrowserCredential, controller.signal);
         }
