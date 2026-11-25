@@ -1,7 +1,7 @@
 @extends('layouts.biometric-flow')
 
-@section('title', 'Device passkey registration')
-@section('description', 'Register a device passkey for secure passwordless sign-in.')
+@section('title', 'Fingerprint registration')
+@section('description', 'Register your fingerprint or device verification for secure sign-in and attendance.')
 @section('pageClass', 'fingerprint-registration-page')
 
 @section('content')
@@ -12,29 +12,29 @@
         <li data-bio-step="3"><span>3</span><span>Finish</span></li>
     </ol>
     <div id="bioIdleView">
-        <div class="bio-flow-kicker"><i class="bi bi-shield-lock" aria-hidden="true"></i> Biometric sign-in</div>
+        <div class="bio-flow-kicker"><i class="bi bi-fingerprint" aria-hidden="true"></i> Biometric verification</div>
         <div class="bio-flow-title-row">
-            <span class="bio-flow-symbol" aria-hidden="true"><i class="bi bi-shield-lock"></i></span>
+            <span class="bio-flow-symbol" aria-hidden="true"><i class="bi bi-fingerprint"></i></span>
             <div>
-                <h2>Register a device passkey</h2>
-                <p>Use your device’s supported verification to link a passkey to your account.</p>
+                <h2>Fingerprint registration</h2>
+                <p>Use your device’s fingerprint or supported biometric verification to link a passkey to your account.</p>
             </div>
         </div>
-        <p class="bio-privacy-note"><i class="bi bi-lock" aria-hidden="true"></i><span>Your device verifies you locally. The app saves a public key for sign-in.</span></p>
-        <button type="button" id="startBioBtn" class="flow-button flow-primary" aria-describedby="devicePasskeyStatus" disabled><i class="bi bi-shield-lock" aria-hidden="true"></i> Register a passkey</button>
+        <p class="bio-privacy-note"><i class="bi bi-lock" aria-hidden="true"></i><span>Your device verifies you locally. The app saves a public key for sign-in and verification.</span></p>
+        <button type="button" id="startBioBtn" class="flow-button flow-primary" aria-describedby="devicePasskeyStatus" disabled><i class="bi bi-fingerprint" aria-hidden="true"></i> Register fingerprint</button>
         <p id="devicePasskeyStatus" class="biometric-flow-status" role="status">Checking biometric support…</p>
     </div>
     <div id="bioScanningView" style="display:none" aria-live="polite" aria-atomic="false">
         <div class="bio-flow-waiting" aria-hidden="true"><span class="biometric-spinner"></span></div>
         <h2 id="fpScanningTitle">Confirm on your device</h2>
-        <p id="fpStatusSub">Follow your device’s prompt to finish passkey registration.</p>
+        <p id="fpStatusSub">Follow your device’s prompt to finish fingerprint registration.</p>
         <button type="button" id="confirmBioBtn" class="flow-button flow-primary" hidden>Continue to device prompt</button>
         <button type="button" id="cancelBioBtn" class="flow-button"><i class="bi bi-x-lg" aria-hidden="true"></i> Cancel</button>
     </div>
     <div id="bioSuccessView" style="display:none" role="status" aria-live="polite">
         <div class="bio-flow-result-icon is-success" aria-hidden="true"><i class="bi bi-check-lg"></i></div>
-        <h2 id="bioSuccessTitle">Passkey registered</h2>
-        <p>Your device passkey is linked to your account.</p>
+        <h2 id="bioSuccessTitle">Fingerprint registered</h2>
+        <p>Your fingerprint and device verification are linked to your account.</p>
         <a href="{{ route('settings') }}#tab-biometrics" class="flow-button flow-primary"><i class="bi bi-arrow-left" aria-hidden="true"></i> Done</a>
     </div>
     <div id="bioErrorView" style="display:none" role="alert">
