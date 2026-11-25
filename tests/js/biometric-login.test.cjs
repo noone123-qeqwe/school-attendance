@@ -140,7 +140,7 @@ function createLogin({
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
-test('Android fingerprint sign-in checks DB first, preserves registered transports, and submits assertion', async () => {
+test('Android fingerprint sign-in checks DB first, targets internal platform authenticator, and submits assertion', async () => {
     const login = createLogin();
     await login.context.handleBiometricLogin();
     // Chooser loads independent method availability without issuing a WebAuthn challenge yet.
@@ -164,8 +164,9 @@ test('Android fingerprint sign-in checks DB first, preserves registered transpor
     assert.equal(request.publicKey.challenge, 'DA0');
     assert.equal(request.publicKey.rpId, 'attendance.example.test');
     assert.equal(request.publicKey.userVerification, 'required');
+    assert.deepEqual(request.publicKey.hints, ['client-device']);
     assert.equal(request.publicKey.allowCredentials[0].id, credentialId);
-    assert.deepEqual(request.publicKey.allowCredentials[0].transports, ['internal', 'hybrid']);
+    assert.deepEqual(request.publicKey.allowCredentials[0].transports, ['internal']);
     assert.equal(login.browserRequests.length, 0);
     assert.deepEqual(login.redirects, []);
 
@@ -183,7 +184,7 @@ test('Android fingerprint sign-in checks DB first, preserves registered transpor
     assert.deepEqual(login.redirects, ['/dashboard']);
 });
 
-test('a local Android miss offers retry, face verification, and password without device-restriction copy', async () => {
+test('a local Android miss offers in-modal device registration, face verification, and password', async () => {
     const login = createLogin();
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
@@ -194,7 +195,7 @@ test('a local Android miss offers retry, face verification, and password without
 
     assert.deepEqual(
         Array.from(login.modal.methods, method => method.id),
-        ['retry_local', 'face', 'password']
+        ['setup_device', 'face', 'password']
     );
     assert.equal(login.modal.message.includes('registered on another browser or device'), false);
 });
@@ -271,7 +272,7 @@ test('a late Android assertion after cancellation cannot complete sign-in', asyn
     assert.deepEqual(login.redirects, []);
 });
 
-test('an unsupported Android provider falls back to browser WebAuthn preserving registered transports', async () => {
+test('an unsupported Android provider falls back to browser WebAuthn targeting internal authenticator', async () => {
     const login = createLogin();
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
@@ -281,11 +282,12 @@ test('an unsupported Android provider falls back to browser WebAuthn preserving 
     await settle();
 
     assert.equal(login.browserRequests.length, 1);
+    assert.equal(login.browserRequests[0].publicKey.hints[0], 'client-device');
     assert.deepEqual(Array.from(login.browserRequests[0].publicKey.allowCredentials[0].id), [1, 2, 3]);
-    assert.deepEqual(Array.from(login.browserRequests[0].publicKey.allowCredentials[0].transports), ['internal', 'hybrid']);
+    assert.deepEqual(Array.from(login.browserRequests[0].publicKey.allowCredentials[0].transports), ['internal']);
 });
 
-test('without the Android bridge browser WebAuthn preserves hybrid and internal transports', async () => {
+test('without the Android bridge browser WebAuthn targets internal platform authenticator to avoid NFC/USB chooser', async () => {
     const login = createLogin({ native: false });
     await login.context.handleBiometricLogin();
     login.select('fingerprint');
@@ -293,8 +295,9 @@ test('without the Android bridge browser WebAuthn preserves hybrid and internal 
     await settle();
 
     assert.equal(login.browserRequests.length, 1);
+    assert.equal(login.browserRequests[0].publicKey.hints[0], 'client-device');
     assert.deepEqual(Array.from(login.browserRequests[0].publicKey.allowCredentials[0].id), [1, 2, 3]);
-    assert.deepEqual(Array.from(login.browserRequests[0].publicKey.allowCredentials[0].transports), ['internal', 'hybrid']);
+    assert.deepEqual(Array.from(login.browserRequests[0].publicKey.allowCredentials[0].transports), ['internal']);
 });
 
 test('selecting Fingerprint verification without an identifier always prompts for account ID first (DB-first)', async () => {
@@ -347,11 +350,11 @@ test('fingerprint lookup with no DB credentials never invokes device prompt and 
     assert.equal(login.modal.title, 'No fingerprint passkey registered');
     assert.deepEqual(
         Array.from(login.modal.methods, method => method.id),
-        ['face', 'password']
+        ['setup_device', 'face', 'password']
     );
 });
 
-test('native app delegates DB allowCredentials to Android bridge and shows clear message on NotFoundError', async () => {
+test('native app delegates DB allowCredentials to Android bridge and offers direct device registration on NotFoundError', async () => {
     const login = createLogin({
         androidBridgeExtra: {
             isNativeApp: () => true,
@@ -365,15 +368,20 @@ test('native app delegates DB allowCredentials to Android bridge and shows clear
     await settle();
     await settle();
 
-    // Native bridge receives the exact DB allowCredentials so Credential Manager can also be checked.
+    // Native bridge receives the exact DB allowCredentials with internal transport so NFC/USB chooser is never shown.
     assert.equal(login.nativeRequests.length, 1);
     assert.equal(login.nativeRequests[0].type, 'get');
     assert.equal(login.nativeRequests[0].publicKey.allowCredentials[0].id, credentialId);
+    assert.deepEqual(login.nativeRequests[0].publicKey.allowCredentials[0].transports, ['internal']);
 
     login.reply({ id: login.nativeRequests[0].id, error: 'NotFoundError' });
     await settle();
 
-    assert.equal(login.modal.title, 'Passkey not found');
+    assert.equal(login.modal.title, 'Link this device’s fingerprint');
+    assert.deepEqual(
+        Array.from(login.modal.methods, method => method.id),
+        ['setup_device', 'face', 'password']
+    );
     assert.equal(login.modal.message.includes('registered on another browser or device'), false);
 });
 

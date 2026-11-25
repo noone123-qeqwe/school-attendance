@@ -669,9 +669,11 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        JSONObject localOptions = normalizeGetOptionsForLocalDevice(options);
         try {
             GetCredentialRequest credentialRequest = new GetCredentialRequest.Builder()
-                    .addCredentialOption(new GetPublicKeyCredentialOption(options.toString()))
+                    .addCredentialOption(new GetPublicKeyCredentialOption(localOptions.toString()))
+                    .setPreferImmediatelyAvailableCredentials(true)
                     .build();
             CredentialManager.create(this).getCredentialAsync(this, credentialRequest, cancellation,
                     ContextCompat.getMainExecutor(this),
@@ -732,6 +734,28 @@ public class MainActivity extends AppCompatActivity {
                 finishPasskeyRequest(cancellation, reply, id, null,
                         ex instanceof UnsupportedOperationException ? "NotSupportedError" : "UnknownError");
             }
+        }
+    }
+
+    private JSONObject normalizeGetOptionsForLocalDevice(JSONObject source) {
+        try {
+            JSONObject copy = new JSONObject(source.toString());
+            copy.put("hints", new JSONArray().put("client-device"));
+            JSONArray allow = copy.optJSONArray("allowCredentials");
+            if (allow != null) {
+                JSONArray internalOnly = new JSONArray();
+                for (int i = 0; i < allow.length(); i++) {
+                    JSONObject item = allow.optJSONObject(i);
+                    if (item == null) continue;
+                    JSONObject normalizedItem = new JSONObject(item.toString());
+                    normalizedItem.put("transports", new JSONArray().put("internal"));
+                    internalOnly.put(normalizedItem);
+                }
+                copy.put("allowCredentials", internalOnly);
+            }
+            return copy;
+        } catch (JSONException ignored) {
+            return source;
         }
     }
 
@@ -1352,7 +1376,7 @@ public class MainActivity extends AppCompatActivity {
             long legacy = info.versionCode;
             return legacy;
         } catch (Exception ignored) {
-            return 20929L;
+            return 20930L;
         }
     }
 
