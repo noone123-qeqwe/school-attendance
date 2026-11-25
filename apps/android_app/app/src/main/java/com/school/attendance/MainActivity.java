@@ -16,6 +16,7 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -44,12 +45,16 @@ import java.util.concurrent.Executor;
 public class MainActivity extends AppCompatActivity {
 
     private static final String APP_URL = "https://school-attendance-oxk7.onrender.com";
+    private static final Uri APP_ORIGIN = Uri.parse(APP_URL);
+    private static final String SIGN_IN_URL = APP_URL + "/login";
+    private static final String WEB_VIEW_ORIGIN_STATE = "attendance.webViewOrigin";
     private static final int PERMISSION_REQUEST_CODE = 1001;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 1002;
     private static final int FILE_CHOOSER_REQUEST_CODE = 1003;
 
     private WebView webView;
     private ProgressBar progressBar;
+    private View launchError;
     private ValueCallback<Uri[]> fileUploadCallback;
     private PermissionRequest pendingPermissionRequest;
 
@@ -63,6 +68,8 @@ public class MainActivity extends AppCompatActivity {
 
         webView = findViewById(R.id.webView);
         progressBar = findViewById(R.id.progressBar);
+        launchError = findViewById(R.id.launchError);
+        findViewById(R.id.retryLaunch).setOnClickListener(view -> openSignIn());
 
         // Adjust container padding for soft keyboard (IME) so inputs and modals are not covered
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (view, insets) -> {
@@ -88,11 +95,40 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        if (savedInstanceState != null) {
-            webView.restoreState(savedInstanceState);
-        } else {
-            webView.loadUrl(APP_URL);
+        // Saved history from an app pointed at a previous host must never drive startup.
+        if (savedInstanceState == null
+                || !APP_URL.equals(savedInstanceState.getString(WEB_VIEW_ORIGIN_STATE))
+                || webView.restoreState(savedInstanceState) == null) {
+            openSignIn();
         }
+    }
+
+    private void openSignIn() {
+        launchError.setVisibility(View.GONE);
+        webView.setVisibility(View.VISIBLE);
+        webView.loadUrl(SIGN_IN_URL);
+    }
+
+    private static boolean isAttendanceUrl(Uri url) {
+        return "https".equalsIgnoreCase(url.getScheme())
+                && APP_ORIGIN.getHost().equalsIgnoreCase(url.getHost())
+                && (url.getPort() == -1 || url.getPort() == 443);
+    }
+
+    private static boolean isAttendanceEntryRequest(WebResourceRequest request) {
+        Uri url = request.getUrl();
+        if (!request.isForMainFrame() || !"GET".equals(request.getMethod()) || !isAttendanceUrl(url)) {
+            return false;
+        }
+        String path = url.getPath();
+        return path == null || path.isEmpty() || "/".equals(path) || "/login".equals(path)
+                || "/home".equals(path);
+    }
+
+    private void showLaunchError() {
+        progressBar.setVisibility(View.GONE);
+        webView.setVisibility(View.INVISIBLE);
+        launchError.setVisibility(View.VISIBLE);
     }
 
     private void enterImmersiveMode() {
@@ -155,6 +191,8 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                launchError.setVisibility(View.GONE);
+                view.setVisibility(View.VISIBLE);
                 progressBar.setVisibility(View.VISIBLE);
                 super.onPageStarted(view, url, favicon);
             }
@@ -163,6 +201,9 @@ public class MainActivity extends AppCompatActivity {
             public void onPageFinished(WebView view, String url) {
                 progressBar.setVisibility(View.GONE);
                 super.onPageFinished(view, url);
+                if (launchError.getVisibility() == View.VISIBLE) {
+                    return;
+                }
 
                 // Auto-detect Render cold-start / waking-up screen and automatically retry until live
                 String pageTitle = view != null ? view.getTitle() : null;
@@ -170,8 +211,8 @@ public class MainActivity extends AppCompatActivity {
                         || pageTitle.toLowerCase().contains("render") 
                         || pageTitle.toLowerCase().contains("waking up"))) {
                     view.postDelayed(() -> {
-                        if (webView != null) {
-                            webView.reload();
+                        if (url.equals(view.getUrl()) && launchError.getVisibility() != View.VISIBLE) {
+                            view.reload();
                         }
                     }, 4000);
                 }
@@ -182,7 +223,20 @@ public class MainActivity extends AppCompatActivity {
                 if (request.isForMainFrame()) {
                     progressBar.setVisibility(View.GONE);
                 }
+                if (isAttendanceEntryRequest(request)) {
+                    showLaunchError();
+                }
                 super.onReceivedError(view, request, error);
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request,
+                                            WebResourceResponse response) {
+                if (isAttendanceEntryRequest(request)
+                        && (response.getStatusCode() == 404 || response.getStatusCode() >= 500)) {
+                    showLaunchError();
+                }
+                super.onReceivedHttpError(view, request, response);
             }
 
             @Override
@@ -201,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
                 progressBar.setProgress(newProgress);
-                if (newProgress == 100) {
+                if (newProgress == 100 || launchError.getVisibility() == View.VISIBLE) {
                     progressBar.setVisibility(View.GONE);
                 } else {
                     progressBar.setVisibility(View.VISIBLE);
@@ -353,7 +407,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        if (webView != null) {
+        String url = webView.getUrl();
+        if (launchError.getVisibility() != View.VISIBLE && url != null && isAttendanceUrl(Uri.parse(url))) {
+            outState.putString(WEB_VIEW_ORIGIN_STATE, APP_URL);
             webView.saveState(outState);
         }
     }

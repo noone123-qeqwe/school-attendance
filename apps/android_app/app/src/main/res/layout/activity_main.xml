@@ -10,6 +10,7 @@
         android:id="@+id/webView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:saveEnabled="false"
         android:fitsSystemWindows="false" />
 
     <ProgressBar
@@ -20,6 +21,44 @@
         android:max="100"
         android:progressDrawable="@color/accent"
         android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/launchError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="28dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityHeading="true"
+            android:gravity="center"
+            android:text="@string/launch_error_title"
+            android:textColor="@color/launch_error_text"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/launch_error_message"
+            android:textColor="@color/launch_error_text"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/retryLaunch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/launch_error_retry" />
+
+    </LinearLayout>
 
 </FrameLayout>
 
