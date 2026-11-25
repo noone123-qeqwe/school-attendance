@@ -131,6 +131,7 @@ test('Android local fingerprint sign-in restricts transports to internal and sub
         Array.from(login.modal.methods, method => method.id),
         ['fingerprint', 'face', 'password']
     );
+    assert.equal(login.modal.methods[0].name, 'Fingerprint verification');
 
     login.select('fingerprint');
     await settle();

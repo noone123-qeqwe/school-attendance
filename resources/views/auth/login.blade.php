@@ -2424,7 +2424,7 @@ async function openBiometricSignInChoices(identifier) {
         var readyAt = performance.now();
         var fingerprintOption = {
             id: 'fingerprint',
-            name: 'Fingerprint',
+            name: 'Fingerprint verification',
             desc: 'Use your device fingerprint sensor or screen lock to verify and sign in.',
             icon: 'bi-fingerprint',
             accentClass: 'bio-method-icon-box--fingerprint'
