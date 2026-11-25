@@ -257,7 +257,13 @@ Route::get('/terms', [App\Http\Controllers\LegalController::class, 'terms'])->na
 
 // Guest Routes (Public)
 Route::middleware('guest')->group(function () {
-    Route::get('/login', function () { return view('auth.login'); })->name('login');
+    Route::get('/login', function () {
+        return response()
+            ->view('auth.login')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
+    })->name('login');
     Route::post('/login', [PTController::class, 'login'])->middleware('throttle:login')->name('login.submit');
     Route::get('/csrf-token', function () { return response()->json(['token' => csrf_token()]); })->name('csrf.token');
 
