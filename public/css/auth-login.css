@@ -967,6 +967,26 @@
             color: #94a3b8;
             line-height: 1.35;
         }
+        .bio-method-card:focus-visible {
+            outline: 2px solid rgba(212, 175, 55, 0.85);
+            outline-offset: 2px;
+            border-color: rgba(212, 175, 55, 0.7);
+        }
+        .bio-method-icon-box--fingerprint {
+            background: rgba(16, 185, 129, 0.16);
+            border-color: rgba(52, 211, 153, 0.35);
+            color: #34d399;
+        }
+        .bio-method-icon-box--face {
+            background: rgba(14, 165, 233, 0.16);
+            border-color: rgba(56, 189, 248, 0.35);
+            color: #38bdf8;
+        }
+        .bio-method-icon-box--password {
+            background: rgba(212, 175, 55, 0.16);
+            border-color: rgba(212, 175, 55, 0.35);
+            color: #f5dfa8;
+        }
         .bio-method-arrow {
             font-size: 0.95rem;
             color: rgba(212, 175, 55, 0.6);
@@ -1340,6 +1360,18 @@
             .glass-link-row {
                 font-size: 0.86rem;
                 margin-top: 8px;
+            }
+            .bio-modal-dialog {
+                max-width: 470px;
+            }
+            .bio-method-card {
+                padding: 15px 18px;
+            }
+            .bio-method-name {
+                font-size: 0.96rem;
+            }
+            .bio-method-desc {
+                font-size: 0.78rem;
             }
         }
         @media (min-width: 1200px) {

@@ -9,7 +9,7 @@ class LoginPageUiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_login_page_renders_static_logo_and_required_form_controls(): void
+    public function test_login_page_renders_static_logo_biometric_button_and_method_options(): void
     {
         $response = $this->get(route('login'));
 
@@ -26,6 +26,19 @@ class LoginPageUiTest extends TestCase
         $response->assertSee('id="loginSubmitBtn"', false);
         $response->assertSee('class="glass-input-wrap glass-input-wrap--password anim-fade-up anim-d5"', false);
         $response->assertSee('class="d-flex align-items-center justify-content-between glass-remember-row anim-fade-up anim-d5"', false);
+
+        // Biometrics button is visible without waiting on passkey gating and renamed from passkey
+        $response->assertSee('<div id="passkeyControls">', false);
+        $response->assertSee('Sign in with biometrics', false);
+        $response->assertSee('Fingerprint, face verification, or password', false);
+        $response->assertDontSee('Sign in with a passkey', false);
+
+        // Clicking opens the biometric options list containing Fingerprint, Face verification, and Enter password
+        $response->assertSee('id="bioModalMethodsWrap"', false);
+        $response->assertSee('id="bioModalMethodsList"', false);
+        $response->assertSee("name: 'Fingerprint'", false);
+        $response->assertSee("name: 'Face verification'", false);
+        $response->assertSee("name: 'Enter password'", false);
     }
 
     public function test_login_css_removes_moving_logo_animation_and_enlarges_desktop_form(): void
@@ -47,5 +60,8 @@ class LoginPageUiTest extends TestCase
         $this->assertStringContainsString('@media (min-width: 1200px)', $css);
         $this->assertStringContainsString('max-width: 540px;', $css);
         $this->assertStringNotContainsString('max-width: 420px;', $css);
+        $this->assertStringContainsString('.bio-method-icon-box--fingerprint', $css);
+        $this->assertStringContainsString('.bio-method-icon-box--face', $css);
+        $this->assertStringContainsString('.bio-method-icon-box--password', $css);
     }
 }
