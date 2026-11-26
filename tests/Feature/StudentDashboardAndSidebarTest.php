@@ -194,21 +194,24 @@ class StudentDashboardAndSidebarTest extends TestCase
         $response = $this->actingAs($student)->get(route('home'));
         $response->assertOk();
 
-        $response->assertSee('Scan Attendance QR')
-            ->assertSee('Enter 6-Digit PIN')
-            ->assertSee('Weekly Schedule')
-            ->assertSee('My Classes')
-            ->assertSee('Attendance Log')
-            ->assertSee('Submit Excuse')
-            ->assertSee('Attendance Overview')
-            ->assertSee("Today's Schedule", false)
-            ->assertSee('Subject Attendance')
+        $response->assertSee('sd-identity-cluster', false)
+            ->assertSee('id="sdHeroSpotlight"', false)
+            ->assertSee('All classes completed today')
+            ->assertSee('View timetable')
             ->assertSee('Campus &amp; Class Announcements', false)
             ->assertSee('Lab Maintenance Notice')
             ->assertSee('Action Required: Attendance Warning')
-            ->assertSee('Operating Systems')
-            ->assertSee('Compiler Design')
-            ->assertSee('No records');
+            ->assertDontSee('sd-command-actions', false)
+            ->assertDontSee('Enter 6-Digit PIN')
+            ->assertDontSee('sd-quick-dock', false)
+            ->assertDontSee('Attendance Overview')
+            ->assertDontSee('Attendance Standing')
+            ->assertDontSee('7-Day Attendance Pulse')
+            ->assertDontSee("Today's Schedule", false)
+            ->assertDontSee('Subject Attendance')
+            ->assertDontSee('id="subjectBreakdownModal"', false)
+            ->assertDontSee('id="daySummaryModal"', false)
+            ->assertDontSee('id="attendanceRecordsModal"', false);
     }
 
     public function test_student_dashboard_shows_missing_section_notice_when_section_blank(): void
@@ -423,16 +426,14 @@ class StudentDashboardAndSidebarTest extends TestCase
             $response->assertOk()
                 ->assertSee('id="sdHeroSpotlight"', false)
                 ->assertSee('id="sdSpotlightTimer"', false)
-                ->assertSee("openAttendanceRecordsModal('present')", false)
-                ->assertSee("openAttendanceRecordsModal('late')", false)
-                ->assertSee("openAttendanceRecordsModal('absent')", false)
-                ->assertSee('openSubjectBreakdownModal()', false)
-                ->assertSee('All (3)', false)
-                ->assertSee('Remaining (2)', false)
-                ->assertSee('Done (1)', false)
+                ->assertSee('Check in now', false)
+                ->assertSee('View timetable', false)
                 ->assertSee('Read more', false)
                 ->assertSee('#cmdPaletteOverlay .cmd-palette-input:focus-visible', false)
-                ->assertSee('id="cmdPaletteCategories" role="group"', false);
+                ->assertSee('id="cmdPaletteCategories" role="group"', false)
+                ->assertDontSee("openAttendanceRecordsModal('present')", false)
+                ->assertDontSee('openSubjectBreakdownModal()', false)
+                ->assertDontSee('All (3)', false);
         } finally {
             \Carbon\Carbon::setTestNow();
         }
@@ -477,11 +478,16 @@ class StudentDashboardAndSidebarTest extends TestCase
         $response->assertOk()
             ->assertSee('student-dashboard.css', false)
             ->assertSee('class="sd-cockpit"', false)
-            ->assertSee('Attendance Standing')
-            ->assertSee('7-Day Attendance Pulse')
-            ->assertSee('Recent Activity')
-            ->assertSee('1 Pending Excuse')
-            ->assertSee('Software Architecture');
+            ->assertSee('sd-identity-cluster', false)
+            ->assertSee('sd-bento-hero--solo', false)
+            ->assertSee("Today's Status")
+            ->assertSee('Free schedule today')
+            ->assertDontSee('Attendance Standing')
+            ->assertDontSee('7-Day Attendance Pulse')
+            ->assertDontSee('Recent Activity')
+            ->assertDontSee('Attendance Overview')
+            ->assertDontSee("Today's Schedule", false)
+            ->assertDontSee('Subject Attendance');
     }
 
     public function test_reinvented_mobile_home_dashboard_renders_unified_cockpit_sections(): void
@@ -557,8 +563,7 @@ class StudentDashboardAndSidebarTest extends TestCase
 
         $response = $this->actingAs($student)->get(route('home'));
         $response->assertOk()
-            ->assertSee('id="recordsModalLiveStatus"', false)
-            ->assertSee('ds-skeleton-stack', false)
+            ->assertSee('aria-live="polite"', false)
             ->assertSee('document.hidden', false);
 
         $tokensCss = file_get_contents(public_path('css/design-tokens.css'));
@@ -567,6 +572,7 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertStringContainsString('touch-action: manipulation;', $tokensCss);
         $this->assertStringContainsString('--ds-dur-exit:', $tokensCss);
         $this->assertStringContainsString('.ds-error-summary', $tokensCss);
+        $this->assertStringContainsString('.ds-skeleton-stack', $tokensCss);
 
         $modernCss = file_get_contents(public_path('css/system-ui-modern.css'));
         $this->assertNotFalse($modernCss);

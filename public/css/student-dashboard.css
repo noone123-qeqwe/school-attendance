@@ -1961,6 +1961,10 @@ body.student-portal #mainContent .sd-cockpit #realStats.sd-kpi-grid,
         align-items: stretch;
     }
 
+    .sd-bento-hero.sd-bento-hero--solo {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     .sd-focus-stage,
     .sd-standing-card {
         padding: 20px 22px;
