@@ -11,6 +11,8 @@ phpunit.xml
 .phpunit.result.cache
 
 # Development tools
+.agent/
+.agents/
 .git/
 .gitignore
 .editorconfig

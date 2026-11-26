@@ -1,5 +1,7 @@
 .git
 .github
+.agent
+.agents
 node_modules
 vendor
 public/storage
