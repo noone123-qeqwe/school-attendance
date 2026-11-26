@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\RecoveryCode;
 use App\Models\User;
+use App\Models\WebauthnCredential;
 use App\Services\AccountLockoutService;
 use App\Services\BiometricVerificationAuditService;
 use App\Services\DeviceBindingService;
@@ -13,69 +15,74 @@ use App\Services\FeatureFlagService;
 use App\Services\LiveProfileFaceMatcher;
 use App\Services\ProfileFacePhotoService;
 use App\Services\WebauthnService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class WebAuthnController extends Controller
 {
-    private const LOGIN_CHALLENGE_LIFETIME_SECONDS = 120;
+    private const LOGIN_CHALLENGE_LIFETIME_SECONDS = WebauthnService::LOGIN_CHALLENGE_TTL_SECONDS;
 
-    public function registerOptions(Request $request, WebauthnService $webauthn)
+    public function registerOptions(Request $request, WebauthnService $webauthn): JsonResponse
     {
         $user = Auth::user();
         $options = $webauthn->registrationOptions($user);
-        $options['publicKey']['excludeCredentials'] = [];
 
-        return response()->json($options['publicKey'])->header('Cache-Control', 'no-store');
+        return response()->json($options['publicKey'])->header('Cache-Control', 'private, no-store');
     }
 
-    public function register(Request $request, WebauthnService $webauthn)
+    public function register(Request $request, WebauthnService $webauthn): JsonResponse
     {
         $user = Auth::user();
-        
-        $biometricType = $request->validate([
+
+        $validated = $request->validate([
             'biometric_type' => ['nullable', 'in:fingerprint,face,device_lock'],
-        ])['biometric_type'] ?? 'device_lock';
+            'device_name' => ['nullable', 'string', 'max:80'],
+            'consent_accepted' => ['nullable', 'boolean'],
+            'credential_id' => ['nullable', 'string', 'max:2048'],
+            'id' => ['nullable', 'string', 'max:2048'],
+            'rawId' => ['nullable', 'string', 'max:2048'],
+            'credential' => ['nullable', 'array'],
+            'transports' => ['nullable', 'array', 'max:6'],
+            'transports.*' => ['string', 'max:32'],
+        ]);
 
-        // Accept both nested credential format and flattened credential payload
-        $credentialId = $request->input('credential_id') ?? $request->input('id') ?? $request->input('rawId');
-        $credential = $request->input('credential') ?? [
-            'id' => $request->input('id') ?? $credentialId,
-            'type' => $request->input('type') ?? 'public-key',
-            'response' => $request->input('response') ?? [],
-        ];
-        $defaultDevice = $this->defaultDeviceName($request);
-        $deviceName = $request->input('device_name') ?? $defaultDevice;
-
-        if (!$credentialId || !is_string($credentialId)) {
-            return response()->json(["success" => false, "message" => "Credential ID is required."], 422);
-        }
-
-        $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
-
-        // Check for duplicate credential
-        $existingCred = \App\Models\WebauthnCredential::where(function ($query) use ($credentialId, $normalizedCredentialId) {
-            $query->where('credential_id', $credentialId)
-                  ->orWhere('credential_id', $normalizedCredentialId);
-        })->first();
-
-        if ($existingCred) {
+        if ($request->has('consent_accepted') && !$request->boolean('consent_accepted')) {
             return response()->json([
                 'success' => false,
-                'message' => 'This biometric credential is already registered.'
-            ], 409);
+                'code' => 'CONSENT_REQUIRED',
+                'message' => 'Explicit consent is required before registering a device credential.',
+            ], 422);
         }
 
         if ($request->has('face_descriptor') || $request->has('face_data')) {
             return response()->json([
                 'success' => false,
                 'code' => 'SECURE_FACE_CREDENTIAL_REQUIRED',
-                'message' => 'Camera-only face profiles cannot be used for sign-in. Register a device passkey in Settings to enable biometric sign-in.',
+                'message' => 'Camera-only face profiles cannot be used for passkey registration. Use the Face Registration page for camera enrollment.',
+            ], 422);
+        }
+
+        $biometricType = $validated['biometric_type'] ?? 'device_lock';
+
+        $credentialId = $request->input('credential_id') ?? $request->input('id') ?? $request->input('rawId');
+        $credential = $request->input('credential') ?? [
+            'id' => $request->input('id') ?? $credentialId,
+            'rawId' => $request->input('rawId') ?? $credentialId,
+            'type' => $request->input('type') ?? 'public-key',
+            'authenticatorAttachment' => $request->input('authenticatorAttachment'),
+            'response' => $request->input('response') ?? [],
+        ];
+
+        if (!is_string($credentialId) || trim($credentialId) === '') {
+            return response()->json([
+                'success' => false,
+                'code' => 'INVALID_CREDENTIAL',
+                'message' => 'Credential ID is required.',
             ], 422);
         }
 
@@ -91,8 +98,12 @@ class WebAuthnController extends Controller
             ], 422);
         }
 
-        if (!is_array($credential) || empty($credential['response'])) {
-            return response()->json(["success" => false, "message" => "Invalid credential data."], 422);
+        if (!is_array($credential) || !is_array($credential['response'] ?? null) || empty($credential['response'])) {
+            return response()->json([
+                'success' => false,
+                'code' => 'INVALID_CREDENTIAL',
+                'message' => 'Invalid credential attestation payload.',
+            ], 422);
         }
 
         $transports = $credential['transports'] ?? $request->input('transports');
@@ -100,47 +111,59 @@ class WebAuthnController extends Controller
             $credential['transports'] = $transports;
         }
 
-        try {
-            $stored = $webauthn->storeCredential($user, $credential);
-            $stored->forceFill([
-                'device_name' => $deviceName,
-                'biometric_type' => $biometricType,
-            ])->save();
+        $existingVariants = $webauthn->credentialIdVariants($credentialId);
+        $existingCred = WebauthnCredential::active()->whereIn('credential_id', $existingVariants)->first();
+        if ($existingCred) {
+            return response()->json([
+                'success' => false,
+                'code' => 'CREDENTIAL_ALREADY_REGISTERED',
+                'message' => 'This device credential is already registered.',
+            ], 409);
+        }
 
-            // Check if user already has recovery codes
-            $hasRecoveryCodes = \App\Models\RecoveryCode::where('user_id', $user->id)->exists();
+        try {
+            $stored = $webauthn->storeCredential($user, $credential, [
+                'device_name' => $validated['device_name'] ?? null,
+                'biometric_type' => $biometricType,
+                'user_agent' => $request->userAgent(),
+                'consent_given' => true,
+            ]);
+
+            $hasRecoveryCodes = RecoveryCode::where('user_id', $user->id)->exists();
             $recoveryCodes = [];
 
             if (!$hasRecoveryCodes) {
                 for ($i = 0; $i < 5; $i++) {
                     $rawCode = strtoupper(Str::random(4) . '-' . Str::random(4));
                     $recoveryCodes[] = $rawCode;
-                    
-                    \App\Models\RecoveryCode::create([
+
+                    RecoveryCode::create([
                         'user_id' => $user->id,
-                        'code' => \Illuminate\Support\Facades\Hash::make($rawCode),
+                        'code' => Hash::make($rawCode),
                     ]);
                 }
             }
         } catch (\Throwable $e) {
-            $isConflict = str_contains($e->getMessage(), 'already registered') || str_contains($e->getMessage(), 'another account');
-            \Illuminate\Support\Facades\Log::warning('WebAuthn credential registration failed', [
-                'user_id' => $user->id,
-                'biometric_type' => $biometricType,
-                'error_class' => get_class($e),
-            ]);
-            return response()->json(["success" => false, "message" => $isConflict ? 'This biometric credential is already registered.' : 'Biometric registration could not be completed. Please try again.'], $isConflict ? 409 : 422);
+            return $this->registrationFailureResponse($user, $biometricType, $e, 'WebAuthn credential registration failed');
         }
 
-        return response()->json([
-            "success" => true, 
-            "message" => 'Device passkey registered successfully.',
-            "biometric_type" => $biometricType,
-            "recovery_codes" => $recoveryCodes
+        Log::info('WebAuthn credential registered', [
+            'user_id' => $user->id,
+            'credential_pk' => $stored->id,
+            'attachment' => $stored->authenticator_attachment,
+            'transports' => $stored->transports,
         ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Device passkey registered successfully.',
+            'biometric_type' => $stored->biometric_type,
+            'device' => $this->serializeDevice($stored),
+            'recovery_codes' => $recoveryCodes,
+        ])->header('Cache-Control', 'private, no-store');
     }
 
-    public function loginOptions(Request $request, WebauthnService $webauthn)
+    public function loginOptions(Request $request, WebauthnService $webauthn): JsonResponse
     {
         $request->session()->forget('webauthn.login');
         $request->validate([
@@ -173,6 +196,7 @@ class WebAuthnController extends Controller
                 static fn (array $cred): string => (string) ($cred['id'] ?? ''),
                 $options['allowCredentials']
             )),
+            'issued_at' => now()->timestamp,
             'expires_at' => now()->timestamp + self::LOGIN_CHALLENGE_LIFETIME_SECONDS,
         ]);
 
@@ -185,7 +209,7 @@ class WebAuthnController extends Controller
         ])->header('Cache-Control', 'private, no-store');
     }
 
-    public function availableMethods()
+    public function availableMethods(): JsonResponse
     {
         return response()->json([
             'success' => true,
@@ -195,48 +219,51 @@ class WebAuthnController extends Controller
         ])->header('Cache-Control', 'private, no-store');
     }
 
-
-    public function setupOptions(Request $request, WebauthnService $webauthn, AccountLockoutService $lockout)
+    public function setupOptions(Request $request, WebauthnService $webauthn, AccountLockoutService $lockout): JsonResponse
     {
-        // Clear any earlier pending enrollment even when this request is malformed.
         session()->forget(['webauthn.setup_user_id', 'webauthn.register_challenge']);
         $request->validate([
             'student_number' => ['nullable', 'string', 'max:255'],
             'identifier' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'string', 'max:255'],
             'password' => ['required', 'string', 'max:1024'],
+            'consent_accepted' => ['nullable', 'boolean'],
         ]);
 
-        $raw = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
-        if (!is_string($raw) || trim($raw) === '') {
-            return response()->json(['success' => false, 'message' => 'Enter your account details and password to continue.'], 422);
-        }
-
-        $identifier = trim($raw);
-        $ip = $request->ip();
-        if ($lockout->isLocked($identifier, $ip)) {
-            $remaining = max(1, $lockout->getRemainingSeconds($identifier, $ip));
+        if ($request->has('consent_accepted') && !$request->boolean('consent_accepted')) {
             return response()->json([
                 'success' => false,
-                'message' => 'Too many unsuccessful attempts. Please wait before trying again.',
-            ], 429)->header('Retry-After', (string) $remaining);
+                'code' => 'CONSENT_REQUIRED',
+                'message' => 'Explicit consent is required before registering a device credential.',
+            ], 422);
+        }
+
+        $identifier = $this->resolveRequestIdentifier($request);
+        if ($identifier === '') {
+            return response()->json([
+                'success' => false,
+                'code' => 'IDENTIFIER_REQUIRED',
+                'message' => 'Enter your account details and password to continue.',
+            ], 422);
+        }
+
+        $ip = $request->ip() ?: 'unknown';
+        if ($lockout->isLocked($identifier, $ip)) {
+            return $this->lockedAccountResponse($lockout->getRemainingSeconds($identifier, $ip));
         }
 
         $user = $this->findUserByIdentifier($identifier);
-
         if (!$user || !$user->isActive() || !Hash::check((string) $request->input('password'), (string) $user->password)) {
             $attempt = $lockout->recordFailedAttempt($identifier, $ip);
-            $response = response()->json([
+            if ($attempt['locked']) {
+                return $this->lockedAccountResponse($attempt['lockout_seconds']);
+            }
+
+            return response()->json([
                 'success' => false,
                 'code' => 'ACCOUNT_VERIFICATION_FAILED',
-                'message' => $attempt['locked']
-                    ? 'Too many unsuccessful attempts. Please wait before trying again.'
-                    : 'Account verification failed. Check your details or sign in with your password.',
-            ], $attempt['locked'] ? 429 : 401);
-            if ($attempt['locked']) {
-                $response->header('Retry-After', (string) $attempt['lockout_seconds']);
-            }
-            return $response;
+                'message' => 'Account verification failed. Check your details or sign in with your password.',
+            ], 401);
         }
 
         $lockout->clear($identifier, null);
@@ -250,51 +277,74 @@ class WebAuthnController extends Controller
 
         session(['webauthn.setup_user_id' => $user->id]);
         $options = $webauthn->registrationOptions($user);
-        // Clear excludeCredentials so users can re-enroll or update their biometric passkey on this device
-        $options['publicKey']['excludeCredentials'] = [];
 
+        // Preserve excludeCredentials so the same authenticator cannot register duplicate active credentials.
         return response()->json(array_merge($options['publicKey'], [
-            "success" => true,
-            "user_id" => $user->id,
-            "identifier" => $user->student_number ?? $user->email ?? $identifier
-        ]));
+            'success' => true,
+            'user_id' => $user->id,
+            'identifier' => $user->student_number ?? $user->email ?? $identifier,
+        ]))->header('Cache-Control', 'private, no-store');
     }
 
-    public function setupRegister(Request $request, WebauthnService $webauthn)
+    public function setupRegister(Request $request, WebauthnService $webauthn): JsonResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'credential_id' => ['nullable', 'string', 'max:2048'],
             'id' => ['nullable', 'string', 'max:2048'],
             'rawId' => ['nullable', 'string', 'max:2048'],
             'credential' => ['nullable', 'array'],
             'biometric_type' => ['nullable', 'in:fingerprint,face,device_lock'],
-            'device_name' => ['nullable', 'string', 'max:120'],
+            'device_name' => ['nullable', 'string', 'max:80'],
+            'consent_accepted' => ['nullable', 'boolean'],
             'qr_token' => ['nullable', 'string', 'max:512'],
+            'transports' => ['nullable', 'array', 'max:6'],
+            'transports.*' => ['string', 'max:32'],
         ]);
+
+        if ($request->has('consent_accepted') && !$request->boolean('consent_accepted')) {
+            return response()->json([
+                'success' => false,
+                'code' => 'CONSENT_REQUIRED',
+                'message' => 'Explicit consent is required before registering a device credential.',
+            ], 422);
+        }
+
         $userId = session('webauthn.setup_user_id');
         if (!$userId) {
-            return response()->json(['success' => false, 'message' => 'Verification expired. Start device setup again.'], 401);
+            return response()->json([
+                'success' => false,
+                'code' => 'PASSKEY_CHALLENGE_EXPIRED',
+                'message' => 'Verification expired. Start device setup again.',
+            ], 401);
         }
 
         $user = User::find($userId);
         if (!$user || !$user->isActive()) {
             session()->forget(['webauthn.setup_user_id', 'webauthn.register_challenge']);
-            return response()->json(['success' => false, 'message' => 'Verification expired. Sign in again and restart device setup.'], 401);
+
+            return response()->json([
+                'success' => false,
+                'code' => 'PASSKEY_CHALLENGE_EXPIRED',
+                'message' => 'Verification expired. Sign in again and restart device setup.',
+            ], 401);
         }
 
         $credentialId = $request->input('credential_id') ?? $request->input('id') ?? $request->input('rawId');
         $credential = $request->input('credential') ?? [
             'id' => $request->input('id') ?? $credentialId,
+            'rawId' => $request->input('rawId') ?? $credentialId,
             'type' => $request->input('type') ?? 'public-key',
+            'authenticatorAttachment' => $request->input('authenticatorAttachment'),
             'response' => $request->input('response') ?? [],
         ];
-        $biometricType = $request->input('biometric_type') ?? 'device_lock';
+        $biometricType = $validated['biometric_type'] ?? 'device_lock';
 
-        $defaultDevice = $this->defaultDeviceName($request);
-        $deviceName = $request->input('device_name') ?? $defaultDevice;
-
-        if (!$credentialId || !is_string($credentialId)) {
-            return response()->json(["success" => false, "message" => "Credential ID is required."], 422);
+        if (!is_string($credentialId) || trim($credentialId) === '') {
+            return response()->json([
+                'success' => false,
+                'code' => 'INVALID_CREDENTIAL',
+                'message' => 'Credential ID is required.',
+            ], 422);
         }
 
         $transports = $credential['transports'] ?? $request->input('transports');
@@ -303,11 +353,12 @@ class WebAuthnController extends Controller
         }
 
         try {
-            $stored = $webauthn->storeCredential($user, $credential);
-            $stored->forceFill([
-                'device_name' => $deviceName,
+            $stored = $webauthn->storeCredential($user, $credential, [
+                'device_name' => $validated['device_name'] ?? null,
                 'biometric_type' => $biometricType,
-            ])->save();
+                'user_agent' => $request->userAgent(),
+                'consent_given' => true,
+            ]);
 
             session()->forget('webauthn.setup_user_id');
 
@@ -319,51 +370,20 @@ class WebAuthnController extends Controller
             );
 
             return response()->json([
-                "success" => true,
-                "message" => 'Passkey sign-in enabled for your account.',
-                "biometric_type" => $biometricType,
-                "redirect" => $redirectUrl,
-            ]);
+                'success' => true,
+                'message' => 'Device passkey enabled for your account.',
+                'biometric_type' => $stored->biometric_type,
+                'device' => $this->serializeDevice($stored),
+                'redirect' => $redirectUrl,
+            ])->header('Cache-Control', 'private, no-store');
         } catch (\Throwable $e) {
-            $isConflict = str_contains($e->getMessage(), 'already registered') || str_contains($e->getMessage(), 'another account');
-            \Illuminate\Support\Facades\Log::warning('WebAuthn setup registration failed', [
-                'user_id' => $user->id,
-                'biometric_type' => $biometricType,
-                'error_class' => get_class($e),
-            ]);
             session()->forget(['webauthn.setup_user_id', 'webauthn.register_challenge']);
-            return response()->json([
-                "success" => false,
-                "message" => $isConflict ? 'This biometric credential is already registered.' : 'Biometric setup could not be completed. Please restart setup and try again.'
-            ], $isConflict ? 409 : 422);
+
+            return $this->registrationFailureResponse($user, $biometricType, $e, 'WebAuthn setup registration failed');
         }
     }
 
-
-    /**
-     * Helper method to find user by various identifier formats
-     */
-    private function findUserByIdentifier(string $identifier): ?User
-    {
-        $raw = trim($identifier);
-        if ($raw === '') {
-            return null;
-        }
-        return User::findByIdentifier($raw);
-    }
-
-    private function biometricUnavailableResponse(): \Illuminate\Http\JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'code' => 'BIOMETRIC_UNAVAILABLE',
-            'message' => 'No passkey was found for those sign-in details. Check your account details or use your password.',
-            'available_methods' => $this->availableMethodNames(),
-            'face_login_enabled' => $this->faceLoginReady(),
-        ], 404)->header('Cache-Control', 'private, no-store');
-    }
-
-    public function login(Request $request, WebauthnService $webauthn)
+    public function login(Request $request, WebauthnService $webauthn, AccountLockoutService $lockout): JsonResponse
     {
         $isCameraFaceLogin = $request->has('face_descriptor')
             || $request->has('face_data')
@@ -374,7 +394,7 @@ class WebAuthnController extends Controller
             return response()->json([
                 'success' => false,
                 'code' => 'CAMERA_FACE_LOGIN_DISABLED',
-                'message' => 'Camera-only face sign-in is not supported. Sign in with your password, then register a device passkey in Settings.',
+                'message' => 'Camera-only face sign-in must use the dedicated Face Verification flow.',
             ], 422);
         }
 
@@ -382,144 +402,126 @@ class WebAuthnController extends Controller
             'credential_id' => ['required', 'string', 'max:2048'],
             'assertion' => ['required', 'array'],
             'assertion.id' => ['required', 'string', 'max:2048'],
+            'assertion.response' => ['required', 'array'],
+            'assertion.response.clientDataJSON' => ['required', 'string'],
+            'assertion.response.authenticatorData' => ['required', 'string'],
+            'assertion.response.signature' => ['required', 'string'],
             'assertion.response.userHandle' => ['nullable', 'string', 'max:128'],
             'qr_token' => ['nullable', 'string', 'max:512'],
         ]);
+
+        $ip = $request->ip() ?: 'unknown';
+        $rawIdentifier = $this->resolveRequestIdentifier($request);
+        $lockoutKey = $rawIdentifier !== '' ? $rawIdentifier : 'webauthn:' . $ip;
+
+        if ($lockout->isLocked($lockoutKey, $ip)) {
+            $request->session()->forget('webauthn.login');
+
+            return $this->lockedAccountResponse($lockout->getRemainingSeconds($lockoutKey, $ip));
+        }
+
+        // Single-use atomic pull prevents replay of the login ceremony.
         $ceremony = $request->session()->pull('webauthn.login');
-        if (!$ceremony || $ceremony['expires_at'] <= now()->timestamp) {
+        if (!is_array($ceremony) || ($ceremony['expires_at'] ?? 0) <= now()->timestamp || empty($ceremony['challenge'])) {
             return response()->json([
                 'success' => false,
                 'code' => 'PASSKEY_CHALLENGE_EXPIRED',
-                'message' => 'This passkey request expired. Start biometric sign-in again.',
+                'message' => 'This verification request expired. Start sign-in again.',
             ], 401);
         }
 
-        $credentialId = $request->input('credential_id');
-        $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
-        $paddedId = $normalizedCredentialId . str_repeat('=', (4 - strlen($normalizedCredentialId) % 4) % 4);
-        $credentialIds = array_unique([
-            $credentialId, $normalizedCredentialId, $paddedId,
-            strtr($normalizedCredentialId, '-_', '+/'), strtr($paddedId, '-_', '+/'),
-        ]);
+        $credentialId = (string) $request->input('credential_id');
+        $normalizedCredentialId = $webauthn->normalizeCredentialId($credentialId);
+        $credentialVariants = $webauthn->credentialIdVariants($credentialId);
 
-        $rawIdentifier = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
-        $hasExplicitIdentifier = is_string($rawIdentifier) && trim($rawIdentifier) !== '';
-        $submittedUser = $hasExplicitIdentifier ? $this->findUserByIdentifier(trim($rawIdentifier)) : null;
+        $hasExplicitIdentifier = $rawIdentifier !== '';
+        $submittedUser = $hasExplicitIdentifier ? $this->findUserByIdentifier($rawIdentifier) : null;
         $expectedUserId = $ceremony['user_id'] ?? $submittedUser?->id;
+
         if ($hasExplicitIdentifier && (!$submittedUser || $submittedUser->id !== $expectedUserId)) {
-            return response()->json([
-                'success' => false,
-                'code' => 'BIOMETRIC_UNAVAILABLE',
-                'message' => 'Biometric sign-in could not be completed. Check your details or use your password.',
-            ], 401);
+            return $this->recordFailedWebauthnLogin($lockout, $lockoutKey, $ip, 'BIOMETRIC_UNAVAILABLE', 'Biometric sign-in could not be completed. Check your details or use your password.');
         }
 
         $allowedFromCeremony = is_array($ceremony['allow_credential_ids'] ?? null)
             ? array_values(array_filter($ceremony['allow_credential_ids'], 'is_string'))
             : [];
+
         if ($allowedFromCeremony !== [] && !in_array($normalizedCredentialId, $allowedFromCeremony, true)) {
-            \Illuminate\Support\Facades\Log::warning('WebAuthn assertion credential not in database allow list', [
+            Log::warning('WebAuthn assertion credential not in issued allowCredentials list', [
                 'expected_user_id' => $expectedUserId,
                 'credential_fingerprint' => hash('sha256', $credentialId),
             ]);
-            return response()->json([
-                'success' => false,
-                'code' => 'BIOMETRIC_UNAVAILABLE',
-                'message' => 'Biometric sign-in could not be completed. Check your sign-in details or use your password.',
-            ], 401);
+
+            return $this->recordFailedWebauthnLogin($lockout, $lockoutKey, $ip, 'BIOMETRIC_UNAVAILABLE', 'Biometric sign-in could not be completed. Check your sign-in details or use your password.');
         }
 
-        // 2. Locate matching credential (prefer expected user's credential if targeted)
         $user = null;
         $dbCredential = null;
         $userHandle = $request->input('assertion.response.userHandle');
 
         if ($expectedUserId !== null) {
-            $dbCredential = \App\Models\WebauthnCredential::with('user')
+            // Strict account-bound lookup: NEVER fall through to another user's credential.
+            $dbCredential = WebauthnCredential::with('user')
                 ->where('user_id', $expectedUserId)
-                ->where('public_key', 'like', '%BEGIN PUBLIC KEY%')
-                ->whereIn('credential_id', $credentialIds)
+                ->whereIn('credential_id', $credentialVariants)
                 ->first();
-            $user = $dbCredential?->user;
-        }
 
-        // If userHandle is provided (from WebAuthn assertion response), use it to identify user
-        if (!$dbCredential && $userHandle) {
-            $candidateCredentials = \App\Models\WebauthnCredential::with('user')
-                ->whereIn('credential_id', $credentialIds)
+            if ($dbCredential && $dbCredential->revoked_at !== null) {
+                return $this->recordFailedWebauthnLogin($lockout, $lockoutKey, $ip, 'CREDENTIAL_REVOKED', 'This device credential was revoked. Register this device again or sign in with your password.');
+            }
+
+            if (!$dbCredential || !$dbCredential->isActive()) {
+                return $this->recordFailedWebauthnLogin($lockout, $lockoutKey, $ip, 'BIOMETRIC_UNAVAILABLE', 'Biometric sign-in could not be completed. Check your sign-in details or use your password.');
+            }
+
+            $user = $dbCredential->user;
+        } else {
+            // Discoverable flow: resolve strictly among active credentials.
+            $candidates = WebauthnCredential::with('user')
+                ->active()
+                ->whereIn('credential_id', $credentialVariants)
                 ->get();
 
-            foreach ($candidateCredentials as $cand) {
-                if ($cand->user) {
-                    $expectedHandle = rtrim(strtr(base64_encode(hash('sha256', (string) $cand->user->id, true)), '+/', '-_'), '=');
-                    $rawHandle = rtrim(strtr($userHandle, '+/', '-_'), '=');
-                    if ($expectedHandle === $rawHandle || (string)$cand->user->id === (string)$userHandle) {
-                        $dbCredential = $cand;
-                        $user = $cand->user;
+            if (is_string($userHandle) && trim($userHandle) !== '') {
+                $normalizedHandle = $webauthn->normalizeCredentialId($userHandle);
+                foreach ($candidates as $candidate) {
+                    if ($candidate->user
+                        && (hash_equals($webauthn->expectedUserHandle($candidate->user), $normalizedHandle)
+                            || (string) $candidate->user->id === $userHandle)) {
+                        $dbCredential = $candidate;
+                        $user = $candidate->user;
                         break;
                     }
                 }
+            } elseif ($candidates->count() === 1) {
+                $dbCredential = $candidates->first();
+                $user = $dbCredential?->user;
             }
         }
 
-        if (!$dbCredential) {
-            $dbCredential = \App\Models\WebauthnCredential::with('user')
-                ->whereIn('credential_id', $credentialIds)
-                ->first();
-
-            if ($dbCredential && $dbCredential->user) {
-                $user = $dbCredential->user;
-            }
-        }
-
-        // 3. Handle account mismatch
-        if ($expectedUserId !== null && $user && $expectedUserId !== $user->id) {
-            \Illuminate\Support\Facades\Log::warning('WebAuthn account mismatch attempt', [
-                'expected_user_id' => $expectedUserId,
-                'credential_user_id' => $user->id,
+        if (!$user || !$user->isActive() || !$dbCredential) {
+            Log::warning('WebAuthn login failed - unrecognized or inactive account', [
                 'credential_fingerprint' => hash('sha256', $credentialId),
             ]);
-            return response()->json([
-                'success' => false,
-                'code' => 'BIOMETRIC_UNAVAILABLE',
-                'message' => 'Biometric sign-in could not be completed. Check your sign-in details or use your password.',
-            ], 401);
-        }
 
-        \Illuminate\Support\Facades\Log::info('WebAuthn login attempt', [
-            'user_id' => $user?->id,
-            'credential_fingerprint' => hash('sha256', $credentialId),
-            'assertion_received' => !empty($request->assertion),
-        ]);
-
-        if (!$user) {
-            \Illuminate\Support\Facades\Log::error('WebAuthn login - unrecognized credential', [
-                'credential_fingerprint' => hash('sha256', $credentialId),
-            ]);
-            return response()->json([
-                "success" => false,
-                "code" => "BIOMETRIC_UNAVAILABLE",
-                "message" => "Biometric sign-in could not be completed. Try again or use your password."
-            ], 401);
-        }
-
-        if (!$user->isActive()) {
-            return response()->json([
-                "success" => false,
-                "code" => "BIOMETRIC_UNAVAILABLE",
-                "message" => "Biometric sign-in could not be completed. Try again or use your password."
-            ], 401);
+            return $this->recordFailedWebauthnLogin($lockout, $lockoutKey, $ip, 'BIOMETRIC_UNAVAILABLE', 'Biometric sign-in could not be completed. Try again or use your password.');
         }
 
         try {
-            $webauthn->verifyAssertion($user, $request->assertion, $ceremony['challenge'], $dbCredential);
+            $webauthn->verifyAssertion($user, (array) $request->input('assertion'), (string) $ceremony['challenge'], $dbCredential);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('WebAuthn verification failed', [
+            Log::warning('WebAuthn assertion verification failed', [
                 'user_id' => $user->id,
                 'error_class' => get_class($e),
+                'reason' => $e->getMessage(),
             ]);
-            return response()->json(["success" => false, "message" => "Biometric authentication could not be completed. Try again or use your password."], 401);
+
+            $code = str_contains(strtolower($e->getMessage()), 'revoked') ? 'CREDENTIAL_REVOKED' : 'VERIFICATION_FAILED';
+
+            return $this->recordFailedWebauthnLogin($lockout, $lockoutKey, $ip, $code, 'Biometric authentication could not be completed. Try again or use your password.');
         }
+
+        $lockout->clear($lockoutKey, null);
 
         $redirectUrl = $this->completeAuthenticatedLogin(
             $request,
@@ -527,7 +529,8 @@ class WebAuthnController extends Controller
             $request->input('qr_token')
         );
 
-        return response()->json($this->loginSuccessPayload($user, $redirectUrl));
+        return response()->json($this->loginSuccessPayload($user, $redirectUrl))
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function faceLoginOptions(Request $request, AccountLockoutService $lockout)
@@ -556,7 +559,7 @@ class WebAuthnController extends Controller
             return response()->json([
                 'success' => false,
                 'code' => 'FACE_VERIFICATION_UNAVAILABLE',
-                'message' => 'Live face verification is unavailable on this server right now. Sign in with your fingerprint or password.',
+                'message' => 'Live face verification is unavailable on this server right now. Sign in with your device passkey or password.',
             ], 503);
         }
 
@@ -612,7 +615,7 @@ class WebAuthnController extends Controller
             return response()->json([
                 'success' => false,
                 'code' => 'FACE_VERIFICATION_UNAVAILABLE',
-                'message' => 'Live face verification is unavailable on this server right now. Sign in with your fingerprint or password.',
+                'message' => 'Live face verification is unavailable on this server right now. Sign in with your device passkey or password.',
             ], 503);
         }
 
@@ -622,6 +625,7 @@ class WebAuthnController extends Controller
             if ($attempt['locked']) {
                 return $this->lockedAccountResponse($attempt['lockout_seconds']);
             }
+
             return response()->json([
                 'success' => false,
                 'code' => 'FACE_VERIFICATION_FAILED',
@@ -659,6 +663,7 @@ class WebAuthnController extends Controller
                 if ($attempt['locked']) {
                     return $this->lockedAccountResponse($attempt['lockout_seconds']);
                 }
+
                 return response()->json([
                     'success' => false,
                     'code' => 'FACE_CHALLENGE_INVALID',
@@ -709,7 +714,202 @@ class WebAuthnController extends Controller
         return $lockedResponse;
     }
 
-    private function lockedAccountResponse(int $retryAfterSeconds): \Illuminate\Http\JsonResponse
+    /** Reject legacy native biometric requests that cannot prove cryptographic device verification. */
+    public function nativeBiometricLogin(Request $request): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'code' => 'PASSKEY_REQUIRED',
+            'message' => 'Please sign in with a WebAuthn passkey or your password. After signing in, register this device in Settings.',
+        ], 403);
+    }
+
+    public function removeDevice(Request $request, WebauthnService $webauthn): JsonResponse
+    {
+        $validated = $request->validate([
+            'credential_id' => ['required', 'string', 'max:2048'],
+            'reason' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $variants = $webauthn->credentialIdVariants($validated['credential_id']);
+        $credential = WebauthnCredential::where('user_id', Auth::id())
+            ->whereNull('revoked_at')
+            ->whereIn('credential_id', $variants)
+            ->first();
+
+        if (!$credential) {
+            return response()->json([
+                'success' => false,
+                'code' => 'CREDENTIAL_NOT_FOUND',
+                'message' => 'Registered device credential not found on your account.',
+            ], 404);
+        }
+
+        $credential->revoke($validated['reason'] ?? 'user_revoked');
+
+        Log::info('WebAuthn credential revoked by owner', [
+            'user_id' => Auth::id(),
+            'credential_pk' => $credential->id,
+            'reason' => $credential->revoked_reason,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Device credential revoked. You can register this device again at any time.',
+        ]);
+    }
+
+    public function renameDevice(Request $request, WebauthnService $webauthn): JsonResponse
+    {
+        $validated = $request->validate([
+            'credential_id' => ['required', 'string', 'max:2048'],
+            'device_name' => ['required', 'string', 'min:1', 'max:80'],
+        ]);
+
+        $variants = $webauthn->credentialIdVariants($validated['credential_id']);
+        $credential = WebauthnCredential::active()
+            ->where('user_id', Auth::id())
+            ->whereIn('credential_id', $variants)
+            ->first();
+
+        if (!$credential) {
+            return response()->json([
+                'success' => false,
+                'code' => 'CREDENTIAL_NOT_FOUND',
+                'message' => 'Registered device credential not found on your account.',
+            ], 404);
+        }
+
+        $credential->forceFill([
+            'device_name' => $webauthn->sanitizeDeviceName($validated['device_name'], $request->userAgent()),
+        ])->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Device name updated.',
+            'device' => $this->serializeDevice($credential),
+        ]);
+    }
+
+    public function devices(): JsonResponse
+    {
+        $devices = WebauthnCredential::active()
+            ->where('user_id', Auth::id())
+            ->orderByDesc('last_used_at')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (WebauthnCredential $credential): array => $this->serializeDevice($credential))
+            ->values();
+
+        return response()->json($devices)->header('Cache-Control', 'private, no-store');
+    }
+
+    /**
+     * Serialize only safe credential metadata — never expose public_key PEMs or internal secrets.
+     *
+     * @return array<string, mixed>
+     */
+    private function serializeDevice(WebauthnCredential $credential): array
+    {
+        $transports = is_array($credential->transports) ? array_values($credential->transports) : [];
+
+        return [
+            'credential_id' => $credential->normalizedCredentialId(),
+            'name' => $credential->device_name ?: 'Device Passkey',
+            'device_name' => $credential->device_name ?: 'Device Passkey',
+            'biometric_type' => in_array($credential->biometric_type, ['face', 'fingerprint', 'device_lock'], true)
+                ? $credential->biometric_type
+                : 'device_lock',
+            'authenticator_attachment' => $credential->authenticator_attachment ?? (in_array('internal', $transports, true) ? 'platform' : 'cross-platform'),
+            'transports' => $transports,
+            'backed_up' => (bool) $credential->backed_up,
+            'user_agent_summary' => $credential->user_agent_summary,
+            'consent_given_at' => $credential->consent_given_at?->toIso8601String(),
+            'is_secure_face_credential' => $credential->biometric_type === 'face'
+                ? $credential->isActive()
+                : null,
+            'created_at' => $credential->created_at?->toIso8601String(),
+            'last_used_at' => $credential->last_used_at?->toIso8601String(),
+        ];
+    }
+
+    private function registrationFailureResponse(User $user, string $biometricType, \Throwable $e, string $logContext): JsonResponse
+    {
+        $msgLower = strtolower($e->getMessage());
+        $isConflict = str_contains($msgLower, 'already registered') || str_contains($msgLower, 'another account');
+        $isExpired = str_contains($msgLower, 'expired');
+
+        Log::warning($logContext, [
+            'user_id' => $user->id,
+            'biometric_type' => $biometricType,
+            'error_class' => get_class($e),
+            'reason' => $e->getMessage(),
+        ]);
+
+        if ($isConflict) {
+            return response()->json([
+                'success' => false,
+                'code' => 'CREDENTIAL_ALREADY_REGISTERED',
+                'message' => 'This device credential is already registered.',
+            ], 409);
+        }
+
+        if ($isExpired) {
+            return response()->json([
+                'success' => false,
+                'code' => 'PASSKEY_CHALLENGE_EXPIRED',
+                'message' => 'The registration challenge expired. Please start registration again.',
+            ], 401);
+        }
+
+        return response()->json([
+            'success' => false,
+            'code' => 'REGISTRATION_FAILED',
+            'message' => 'Device registration could not be verified. Please try again.',
+        ], 422);
+    }
+
+    private function recordFailedWebauthnLogin(
+        AccountLockoutService $lockout,
+        string $lockoutKey,
+        string $ip,
+        string $code,
+        string $message
+    ): JsonResponse {
+        $attempt = $lockout->recordFailedAttempt($lockoutKey, $ip);
+        if ($attempt['locked']) {
+            return $this->lockedAccountResponse($attempt['lockout_seconds']);
+        }
+
+        return response()->json([
+            'success' => false,
+            'code' => $code,
+            'message' => $message,
+        ], 401)->header('Cache-Control', 'private, no-store');
+    }
+
+    private function findUserByIdentifier(string $identifier): ?User
+    {
+        $raw = trim($identifier);
+        if ($raw === '') {
+            return null;
+        }
+
+        return User::findByIdentifier($raw);
+    }
+
+    private function biometricUnavailableResponse(): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'code' => 'BIOMETRIC_UNAVAILABLE',
+            'message' => 'No passkey was found for those sign-in details. Check your account details or use your password.',
+            'available_methods' => $this->availableMethodNames(),
+            'face_login_enabled' => $this->faceLoginReady(),
+        ], 404)->header('Cache-Control', 'private, no-store');
+    }
+
+    private function lockedAccountResponse(int $retryAfterSeconds): JsonResponse
     {
         return response()->json([
             'success' => false,
@@ -718,7 +918,7 @@ class WebAuthnController extends Controller
         ], 429)->header('Retry-After', (string) max(1, $retryAfterSeconds));
     }
 
-    private function faceCooldownResponse(FaceVerificationAttemptLimiter $limiter, User $user): \Illuminate\Http\JsonResponse
+    private function faceCooldownResponse(FaceVerificationAttemptLimiter $limiter, User $user): JsonResponse
     {
         return response()->json([
             'success' => false,
@@ -800,73 +1000,5 @@ class WebAuthnController extends Controller
             'redirect' => $redirectUrl,
             'dashboard_url' => $redirectUrl,
         ];
-    }
-
-    private function defaultDeviceName(Request $request): string
-    {
-        $ua = strtolower((string) $request->userAgent());
-        if (str_contains($ua, 'android')) {
-            return 'Android Device';
-        }
-        if (str_contains($ua, 'iphone') || str_contains($ua, 'ipad') || str_contains($ua, 'ipod')) {
-            return 'iPhone / iPad';
-        }
-        if (str_contains($ua, 'macintosh') || str_contains($ua, 'mac os x')) {
-            return 'Mac';
-        }
-        if (str_contains($ua, 'windows')) {
-            return 'Windows PC';
-        }
-        if (str_contains($ua, 'mobile')) {
-            return 'Mobile Device';
-        }
-
-        return 'Device Passkey';
-    }
-
-    /** Reject legacy native biometric requests that cannot prove device verification. */
-    public function nativeBiometricLogin(Request $request)
-    {
-        // A browser-supplied device ID does not prove that Android's biometric
-        // prompt succeeded. Only a signed WebAuthn assertion can authenticate.
-        return response()->json([
-            'success' => false,
-            'code' => 'PASSKEY_REQUIRED',
-            'message' => 'Please sign in with a passkey or your password. After signing in, add a passkey for this site in Settings.',
-        ], 403);
-    }
-
-    public function removeDevice(Request $request)
-    {
-        $request->validate(["credential_id" => "required|string"]);
-        DB::table("webauthn_credentials")->where("user_id", Auth::id())->where("credential_id", $request->credential_id)->delete();
-        return response()->json(["success" => true]);
-    }
-
-    public function devices()
-    {
-        $devices = DB::table("webauthn_credentials")
-            ->where("user_id", Auth::id())
-            ->select(["credential_id", "device_name", "biometric_type", "transports", "public_key", "created_at", "last_used_at"])
-            ->orderBy("created_at", "desc")
-            ->get()
-            ->map(function ($d) {
-                $transports = is_string($d->transports) ? json_decode($d->transports, true) : $d->transports;
-
-                return [
-                    'credential_id' => $d->credential_id,
-                    'name' => $d->device_name ?? 'My Device',
-                    'device_name' => $d->device_name ?? 'My Device',
-                    'biometric_type' => in_array($d->biometric_type, ['face', 'fingerprint', 'device_lock']) ? $d->biometric_type : 'device_lock',
-                    'transports' => is_array($transports) ? array_values($transports) : [],
-                    'is_secure_face_credential' => $d->biometric_type === 'face'
-                        ? str_contains((string) $d->public_key, 'BEGIN PUBLIC KEY')
-                        : null,
-                    'created_at' => $d->created_at,
-                    'last_used_at' => $d->last_used_at,
-                ];
-            });
-
-        return response()->json($devices);
     }
 }

@@ -27,6 +27,7 @@ const signedAssertion = {
 function createLogin({
     native = true,
     account = identifier,
+    remembered = !native,
     androidBridgeExtra = null,
     setupReply = [401, { success: false, message: 'Incorrect password' }],
     availableMethodsReply = [200, { success: true, discoverable: true, available_methods: ['fingerprint', 'face'], face_login_enabled: true }],
@@ -47,7 +48,7 @@ function createLogin({
     bridge.postMessage = message => nativeRequests.push(JSON.parse(message));
 
     const context = vm.createContext({
-        AbortController,
+        AbortController, DOMException,
         atob,
         btoa,
         performance,
@@ -55,10 +56,10 @@ function createLogin({
         clearTimeout,
         console: { error() {} },
         isSecureContext: true,
+        localStorage: { getItem(key) { return key === 'attendance_browser_passkeys' && remembered ? JSON.stringify([credentialId]) : null; } },
         PublicKeyCredential: function PublicKeyCredential() {},
         AttendancePasskey: native ? bridge : undefined,
         AndroidDeviceBridge: androidBridgeExtra || undefined,
-        DevicePasskeys: { check: async () => ({ available: true, platformAvailable: true }) },
         document: {
             addEventListener() {},
             getElementById(id) {
@@ -121,6 +122,7 @@ function createLogin({
         }
     });
     context.window = context;
+    vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../public/js/device-passkey-capabilities.js'), 'utf8'), context);
     vm.runInContext(loginScript, context);
     context.openBiometricModal = config => { modal = config; };
 
@@ -190,6 +192,7 @@ test('Android fingerprint sign-in checks DB first, targets internal platform aut
     assert.equal(submitted.body.credential_id, credentialId);
     assert.deepEqual(submitted.body.assertion, {
         id: signedAssertion.id,
+        rawId: signedAssertion.id,
         type: signedAssertion.type,
         response: signedAssertion.response
     });
@@ -365,7 +368,7 @@ test('fingerprint lookup with no DB credentials never invokes device prompt and 
     );
 });
 
-test('native app delegates DB allowCredentials to Android bridge and offers direct device registration on NotFoundError', async () => {
+test('native app shows registration before consulting other providers for an unmatched fingerprint', async () => {
     const login = createLogin({
         androidBridgeExtra: {
             isNativeApp: () => true,
@@ -379,21 +382,28 @@ test('native app delegates DB allowCredentials to Android bridge and offers dire
     await settle();
     await settle();
 
-    // Native bridge receives the exact DB allowCredentials with internal transport so NFC/USB chooser is never shown.
-    assert.equal(login.nativeRequests.length, 1);
-    assert.equal(login.nativeRequests[0].type, 'get');
-    assert.equal(login.nativeRequests[0].publicKey.allowCredentials[0].id, credentialId);
-    assert.deepEqual(login.nativeRequests[0].publicKey.allowCredentials[0].transports, ['internal']);
-
-    login.reply({ id: login.nativeRequests[0].id, error: 'NotFoundError' });
-    await settle();
-
+    assert.equal(login.nativeRequests.length, 0);
+    assert.equal(login.browserRequests.length, 0);
     assert.equal(login.modal.title, 'Link this device’s fingerprint');
-    assert.deepEqual(
-        Array.from(login.modal.methods, method => method.id),
-        ['setup_device', 'face', 'password']
-    );
-    assert.equal(login.modal.message.includes('registered on another browser or device'), false);
+    assert.deepEqual(Array.from(login.modal.methods, method => method.id),
+        ['setup_device', 'saved_passkey', 'face', 'password']);
+    login.select('saved_passkey');
+    await settle();
+    assert.equal(login.nativeRequests.length, 1);
+    assert.equal(login.nativeRequests[0].publicKey.allowCredentials[0].id, credentialId);
+    assert.equal(login.requests.filter(request => request.url === '/webauthn.login.options').length, 2);
+});
+
+test('an unfamiliar browser offers setup before asking the OS for a saved passkey', async () => {
+    const login = createLogin({ native: false, remembered: false });
+    await login.context.startFingerprintWithIdentifier(identifier);
+    await settle();
+    assert.equal(login.browserRequests.length, 0);
+    assert.equal(login.modal.methods.some(method => method.id === 'setup_device'), true);
+    login.select('saved_passkey');
+    await settle();
+    assert.equal(login.browserRequests.length, 1);
+    assert.equal(login.browserRequests[0].publicKey.allowCredentials.length, 1);
 });
 
 test('retrying fingerprint after cancellation fetches a fresh database challenge instead of reusing stale options', async () => {
@@ -475,4 +485,53 @@ test('Face verification opens camera capture only AFTER database confirms regist
 
     assert.equal(login.requests.some(({ url }) => url === '/webauthn.face.options'), true);
     assert.equal(login.cameraRequests.length, 1);
+});
+
+test('first-time setup modal requires explicit consent checkbox before requesting setup options', async () => {
+    const consentBox = { checked: false };
+    const login = createLogin();
+    login.password.value = 'fixture-password';
+    const origGetById = login.context.document.getElementById;
+    login.context.document.getElementById = id => (id === 'bioModalConsentCheckbox' ? consentBox : origGetById(id));
+
+    await login.context.openBiometricSetupModal(identifier);
+    assert.equal(login.modal.showConsent, true);
+
+    await login.context.handleSetupBiometricsClick();
+    assert.equal(login.modal.title, 'Consent required');
+    assert.equal(login.requests.some(({ url }) => url === '/webauthn.setup.options'), false);
+
+    consentBox.checked = true;
+    await login.context.handleSetupBiometricsClick();
+    assert.equal(login.requests.some(({ url }) => url === '/webauthn.setup.options'), true);
+});
+
+test('revoked credential response during login clears remembered passkey and offers device setup fallback', async () => {
+    const login = createLogin({
+        native: false,
+        remembered: true
+    });
+    const origFetch = login.context.fetch;
+    login.context.fetch = async (url, options) => {
+        if (url === '/webauthn.login') {
+            return {
+                ok: false,
+                status: 401,
+                text: async () => JSON.stringify({
+                    success: false,
+                    code: 'CREDENTIAL_REVOKED',
+                    message: 'This device credential was revoked.'
+                })
+            };
+        }
+        return origFetch(url, options);
+    };
+    login.context.navigator.credentials.get = async () => signedAssertion;
+
+    await login.context.startFingerprintWithIdentifier(identifier);
+    await settle();
+    await settle();
+
+    assert.equal(login.redirects.length, 0);
+    assert.equal(login.modal.methods.some(m => m.id === 'setup_device'), true);
 });

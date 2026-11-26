@@ -189,7 +189,23 @@ class AppServiceProvider extends ServiceProvider
                     return response()->json([
                         'status' => 'error',
                         'success' => false,
+                        'code' => 'RATE_LIMITED',
                         'message' => 'Too many requests. Please wait a moment and try again.',
+                        'retry_after' => (int) ($headers['Retry-After'] ?? 10),
+                    ], 429, $headers);
+                }),
+            ];
+        });
+
+        RateLimiter::for('webauthn.manage', function (Request $request) {
+            $identity = (string) ($request->user()?->getAuthIdentifier() ?? $request->ip() ?? 'unknown');
+            return [
+                Limit::perMinute(30)->by($this->rateLimitKey('webauthn_manage', $identity))->response(function (Request $request, array $headers) {
+                    return response()->json([
+                        'status' => 'error',
+                        'success' => false,
+                        'code' => 'RATE_LIMITED',
+                        'message' => 'Too many passkey management requests. Please wait a moment and try again.',
                         'retry_after' => (int) ($headers['Retry-After'] ?? 10),
                     ], 429, $headers);
                 }),

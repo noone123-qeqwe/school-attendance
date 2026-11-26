@@ -157,14 +157,8 @@ class QrAttendanceController extends Controller
 
     private function getRpId(Request $request): string
     {
-        $host = trim((string) $request->header('x-forwarded-host', $request->getHost()));
-        $host = preg_replace('/:\d+$/', '', $host);
-
-        if ($host === '') {
-            $host = parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost';
-        }
-
-        return strtolower($host);
+        // Always bind WebAuthn RP ID to deployment configuration, never to untrusted request headers.
+        return app(WebauthnService::class)->rpId();
     }
     private const QR_SCAN_BUFFER_SECONDS = 90; // Fingerprint prompt (60s), fresh GPS (15s), and network latency
 
@@ -1817,25 +1811,35 @@ class QrAttendanceController extends Controller
             $availableMethods[] = 'fingerprint';
         }
 
-        $makeOptions = function () use ($request, $user, $session, $availableMethods, $hasCustomPhoto, $validCredentials, $face, $faceChallenge) {
-            $challenge = $this->base64UrlEncode(random_bytes(32));
+        $makeOptions = function () use ($request, $user, $session, $availableMethods, $hasCustomPhoto, $face, $faceChallenge) {
+            $webauthn = app(WebauthnService::class);
+            $authOptions = $webauthn->authenticationOptions($user)['publicKey'];
+            $challenge = $authOptions['challenge'];
+            $allowIds = array_values(array_map(
+                static fn (array $cred): string => (string) ($cred['id'] ?? ''),
+                $authOptions['allowCredentials']
+            ));
+
             $cacheKey = "webauthn_qr_challenge_{$user->id}_{$session->id}";
-            Cache::put($cacheKey, $challenge, self::QR_SCAN_BUFFER_SECONDS);
+            Cache::put($cacheKey, [
+                'challenge' => $challenge,
+                'allow_credential_ids' => $allowIds,
+                'issued_at' => now()->timestamp,
+                'expires_at' => now()->timestamp + self::QR_SCAN_BUFFER_SECONDS,
+            ], self::QR_SCAN_BUFFER_SECONDS);
             $scanKey = "webauthn_qr_scan_{$user->id}_".hash('sha256', $request->token);
             Cache::put($scanKey, $session->id, self::QR_SCAN_BUFFER_SECONDS);
 
             return response()->json([
                 'success' => true,
                 'challenge' => $challenge,
-                'rpId' => $this->getRpId($request),
+                'rpId' => $authOptions['rpId'],
+                'hints' => $authOptions['hints'],
                 'available_methods' => $availableMethods,
                 'has_profile_photo' => $hasCustomPhoto,
                 'student_name' => $user->name,
                 'student_number' => $user->student_number,
-                'allowCredentials' => $validCredentials->map(fn ($credential) => [
-                    'type' => 'public-key',
-                    'id' => $credential->credential_id,
-                ])->values(),
+                'allowCredentials' => $authOptions['allowCredentials'],
                 'userVerification' => 'required',
                 'timeout' => 60000,
                 'face_challenge' => $face ? $faceChallenge->issue($request, $session) : null,
@@ -1927,10 +1931,17 @@ class QrAttendanceController extends Controller
 
         // The per-student cached challenge has a bounded lifetime. A session
         // column may contain an older student's challenge and must not extend it.
-        $challenge = Cache::get($cacheKey);
-        if (!is_string($challenge) || $challenge === '') {
+        $cachedChallenge = Cache::get($cacheKey);
+        $challenge = is_array($cachedChallenge) ? ($cachedChallenge['challenge'] ?? null) : $cachedChallenge;
+        $allowedCredentialIds = is_array($cachedChallenge) && is_array($cachedChallenge['allow_credential_ids'] ?? null)
+            ? $cachedChallenge['allow_credential_ids']
+            : [];
+        $challengeExpired = is_array($cachedChallenge) && (($cachedChallenge['expires_at'] ?? 0) <= now()->timestamp);
+        if (!is_string($challenge) || $challenge === '' || $challengeExpired) {
+            Cache::forget($cacheKey);
             return response()->json([
                 'success' => false,
+                'code' => 'CHALLENGE_EXPIRED',
                 'message' => 'The verification challenge expired. Start another check or scan the current QR.',
             ], 422);
         }
@@ -2147,19 +2158,29 @@ class QrAttendanceController extends Controller
             }
 
             try {
-                $this->verifyQrFingerprintAssertion($user, $credential, $challenge, $webauthn);
+                $this->verifyQrFingerprintAssertion($user, $credential, $challenge, $webauthn, $allowedCredentialIds);
                 Log::debug('QR completeVerification - verification successful', [
                     'user_id' => $user->id,
                     'attendance_session_id' => $session->id,
                 ]);
 
             } catch (RuntimeException $e) {
-                Log::debug('QR completeVerification failure', [
+                // Consume the single-use challenge on invalid assertion to prevent brute-force/replay on the same challenge.
+                Cache::forget($cacheKey);
+                Log::warning('QR completeVerification failure', [
                     'failure_category' => 'fingerprint_assertion_failed',
                     'attendance_session_id' => $session->id,
                     'user_id' => $user->id,
+                    'reason' => $e->getMessage(),
                 ]);
-                return response()->json(['success' => false, 'message' => 'Fingerprint verification failed. Please retry or use another enabled verification method.'], 422);
+                $isRevoked = str_contains(strtolower($e->getMessage()), 'revoked');
+                return response()->json([
+                    'success' => false,
+                    'code' => $isRevoked ? 'CREDENTIAL_REVOKED' : 'VERIFICATION_FAILED',
+                    'message' => $isRevoked
+                        ? 'This device credential was revoked. Register your device again in Settings or use another verification method.'
+                        : 'Device verification failed. Please retry or use another enabled verification method.',
+                ], 422);
             }
         }
         // Determine status and persist atomically via shared QR attendance action
@@ -2292,7 +2313,7 @@ class QrAttendanceController extends Controller
 
     private function attendanceCredentials(User $student)
     {
-        return $student->webauthnCredentials()->where('public_key', 'like', '%BEGIN PUBLIC KEY%');
+        return $student->webauthnCredentials()->active();
     }
 
     private function faceVerificationBusy(): \Illuminate\Http\JsonResponse
@@ -2966,10 +2987,19 @@ class QrAttendanceController extends Controller
     // ─────────────────────────────────────────
     // HELPER METHODS
     // ─────────────────────────────────────────
-    private function verifyQrFingerprintAssertion(User $user, array $credential, ?string $challenge, WebauthnService $webauthn): void
+    private function verifyQrFingerprintAssertion(User $user, array $credential, ?string $challenge, WebauthnService $webauthn, array $allowedCredentialIds = []): void
     {
         if (!$challenge) {
             throw new RuntimeException('The biometric challenge expired. Please scan the QR code again.');
+        }
+
+        if ($allowedCredentialIds !== []) {
+            $presentedId = is_string($credential['id'] ?? null)
+                ? $webauthn->normalizeCredentialId($credential['id'])
+                : '';
+            if ($presentedId === '' || !in_array($presentedId, $allowedCredentialIds, true)) {
+                throw new RuntimeException('The presented credential is not authorized for this verification challenge.');
+            }
         }
 
         $webauthn->verifyAssertion($user, $credential, $challenge);

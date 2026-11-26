@@ -484,67 +484,7 @@
 
 @include('partials.profile-device-passkey-capability')
 <script @cspNonce>
-async function loadDevices() {
-    try {
-        const res = await fetch('{{ route("webauthn.devices") }}');
-        const devices = await res.json();
-        const list = document.getElementById('deviceList');
-        const noDevices = document.getElementById('noDevices');
-        if (!list) return;
-
-        if (devices.length > 0) {
-            if (noDevices) noDevices.style.display = 'none';
-            list.innerHTML = '';
-            
-            const successNote = document.createElement('div');
-            successNote.style.cssText = 'text-align:center;padding:12px;color:#4ade80;font-size:.85rem;background:rgba(22,163,74,0.1);border-radius:10px;border:1px solid rgba(22,163,74,0.2);margin-bottom:12px;font-weight:600;';
-            successNote.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Credentials linked to this account.';
-            list.appendChild(successNote);
-
-            devices.forEach(d => {
-                const div = document.createElement('div');
-                div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:8px;';
-                div.innerHTML = `
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <div style="width:34px;height:34px;border-radius:8px;background:rgba(74,222,128,0.1);display:flex;align-items:center;justify-content:center;color:#4ade80;">
-                            <i class="bi bi-shield-lock"></i>
-                        </div>
-                        <div>
-                            <div style="font-size:.85rem;font-weight:600;color:#FAF7F8;">${d.name || d.device_name || "My Device"}</div>
-                            <div style="font-size:.72rem;color:#9E8990;">Registered ${new Date(d.created_at).toLocaleDateString()}</div>
-                        </div>
-                    </div>
-                    <button type="button" onclick="removeDevice('${d.credential_id}', this)"
-                        style="min-height:36px;padding:4px 12px;border-radius:7px;background:rgba(251,113,133,0.12);color:#FB7185;border:1px solid rgba(251,113,133,0.28);font-size:.75rem;font-weight:600;cursor:pointer;">
-                        Remove
-                    </button>`;
-                list.appendChild(div);
-            });
-        } else {
-            if (noDevices) noDevices.style.display = 'block';
-        }
-    } catch(e) {
-        console.error('Error loading devices:', e);
-    }
-}
-
-async function removeDevice(id, btn) {
-    if (!confirm('Remove this device credential?')) return;
-    try {
-        await fetch('{{ route("webauthn.remove") }}', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-            body: JSON.stringify({ credential_id: id })
-        });
-        loadDevices();
-    } catch(e) {}
-}
-
-
-
 document.addEventListener('DOMContentLoaded', () => {
-    loadDevices();
-
     // Hide the APK download card if the app is already installed (running as PWA/standalone)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
         || window.navigator.standalone === true

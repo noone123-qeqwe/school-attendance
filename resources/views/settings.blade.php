@@ -1212,30 +1212,34 @@
                             <div class="bio-stage-view" id="bioIdleView">
                                 <div class="bio-preview-container">
                                     <div class="bio-method-preview active">
-                                        <div class="bio-idle-sensor-ring" aria-hidden="true">
-                                            <div class="bio-radar-ring"></div>
-                                            <div class="bio-radar-ring delay-1"></div>
-                                            <i class="bi bi-shield-lock bio-idle-sensor-icon"></i>
+                                        <div class="bio-sensor-pad" id="bioSensorPad" aria-hidden="true" style="margin:0 auto 14px;">
+                                            <i class="bi bi-shield-lock" id="bioSensorPadIcon"></i>
                                         </div>
-                                        <div class="bio-preview-title">Add a device passkey</div>
-                                        <div class="bio-preview-sub">Follow the secure prompt on the device you use to sign in.</div>
+                                        <div class="bio-preview-title" id="bioCapabilityTitle">Add a device passkey</div>
+                                        <div class="bio-preview-sub" id="bioCapabilityDesc">Use your operating system’s built-in biometric sensor or screen lock to register a WebAuthn passkey. Only a cryptographic public key is stored.</div>
                                     </div>
+                                </div>
+                                <div style="max-width:460px;margin:14px auto;text-align:left;">
+                                    <label for="bioDeviceNameInput" style="display:block;font-size:.78rem;font-weight:700;color:#cbd5e1;margin-bottom:6px;">Device name (optional)</label>
+                                    <input type="text" id="bioDeviceNameInput" class="si" maxlength="80" autocomplete="off" placeholder="e.g., Office Laptop or Phone" style="margin-bottom:12px;">
+                                    <label for="bioConsentCheckbox" style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(15,23,42,0.45);font-size:.8rem;line-height:1.45;color:#cbd5e1;cursor:pointer;">
+                                        <input type="checkbox" id="bioConsentCheckbox" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;">
+                                        <span>I consent to linking this device’s platform passkey to my account. My biometric data stays on my device and is never sent to the server.</span>
+                                    </label>
                                 </div>
                                 <div class="bio-action-row">
                                     <button type="button" id="startBioBtn" class="sbtn btn-emerald bio-primary-cta" aria-describedby="devicePasskeyStatus" disabled>
-                                        <i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Register this device
+                                        <i class="bi bi-shield-check me-2" id="startBioBtnIcon" aria-hidden="true"></i><span id="startBioBtnText">Register this device</span>
                                     </button>
                                 </div>
-                                <p id="devicePasskeyStatus" class="bio-preview-sub" role="status">Checking device passkey support…</p>
+                                <p id="devicePasskeyStatus" class="bio-preview-sub" role="status">Checking device compatibility…</p>
                             </div>
                             <!-- Device verification -->
                             <div class="bio-stage-view" id="bioScanningView" style="display:none;">
                                 <div class="bio-scan-hud-container">
-
                                     <div class="bio-scanner-display active">
-                                        <div class="fp-scan-frame" id="devicePasskeyFrame" aria-hidden="true">
-                                            <div class="fp-pulse-wave"></div>
-                                            <i class="bi bi-shield-lock bio-idle-sensor-icon"></i>
+                                        <div class="bio-sensor-pad is-awaiting" id="devicePasskeyFrame" aria-hidden="true" style="margin:0 auto 14px;">
+                                            <i class="bi bi-shield-lock"></i>
                                         </div>
                                         <div class="bio-scanning-title" id="fpScanningTitle">Preparing device prompt</div>
                                         <div class="bio-scanning-sub" id="fpStatusSub" role="status">Setting up the passkey request.</div>

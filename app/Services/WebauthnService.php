@@ -5,67 +5,102 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\WebauthnCredential;
 use Illuminate\Support\Facades\Log;
-
 use RuntimeException;
 
 class WebauthnService
 {
+    public const REGISTER_CHALLENGE_TTL_SECONDS = 180;
+    public const LOGIN_CHALLENGE_TTL_SECONDS = 120;
+
+    private const MAX_CBOR_DEPTH = 16;
+    private const MAX_CBOR_ITEMS = 128;
+    private const MAX_CBOR_BYTES = 65536;
+
     public function registrationOptions(User $user): array
     {
         $challenge = random_bytes(32);
+        $encodedChallenge = $this->base64UrlEncode($challenge);
+
         session(['webauthn.register_challenge' => [
-            'value' => $this->base64UrlEncode($challenge),
+            'value' => $encodedChallenge,
             'user_id' => $user->id,
-            'expires_at' => now()->addMinutes(5)->timestamp,
+            'issued_at' => now()->timestamp,
+            'expires_at' => now()->timestamp + self::REGISTER_CHALLENGE_TTL_SECONDS,
         ]]);
 
         $userIdentifier = $user->email ?: ($user->student_number ?: ($user->employee_id ?: 'user_' . $user->id));
         $displayName = $user->name ?: $userIdentifier;
 
+        $excludeCredentials = $user->webauthnCredentials()
+            ->active()
+            ->orderByDesc('last_used_at')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (WebauthnCredential $credential): array => array_filter([
+                'type' => 'public-key',
+                'id' => $this->normalizeCredentialId($credential->credential_id),
+                'transports' => $this->sanitizeTransports($credential->transports),
+            ], fn (mixed $value): bool => $value !== null))
+            ->values()
+            ->all();
+
         return [
             'publicKey' => [
-                'challenge' => $this->base64UrlEncode($challenge),
-                'rp' => ['name' => config('app.name'), 'id' => $this->rpId()],
+                'challenge' => $encodedChallenge,
+                'rp' => [
+                    'name' => config('app.name', 'Smart Attendance'),
+                    'id' => $this->rpId(),
+                ],
                 'user' => [
-                    // Hash user ID to 32 bytes (some Android authenticators throw NotReadableError for short IDs)
-                    'id' => $this->base64UrlEncode(hash('sha256', (string) $user->id, true)),
+                    // 32-byte deterministic handle derived from user ID (avoids short-handle authenticator issues and leaks no PII).
+                    'id' => $this->expectedUserHandle($user),
                     'name' => $userIdentifier,
                     'displayName' => $displayName,
                 ],
                 'pubKeyCredParams' => [
-                    ['type' => 'public-key', 'alg' => -7],
-                    ['type' => 'public-key', 'alg' => -257],
+                    ['type' => 'public-key', 'alg' => -7],   // ES256 (ECDSA w/ SHA-256)
+                    ['type' => 'public-key', 'alg' => -257], // RS256 (RSASSA-PKCS1-v1_5 w/ SHA-256)
                 ],
                 'authenticatorSelection' => [
+                    'authenticatorAttachment' => 'platform',
                     'userVerification' => 'required',
                     'residentKey' => 'preferred',
                     'requireResidentKey' => false,
                 ],
+                'hints' => ['client-device'],
                 'timeout' => 60000,
                 'attestation' => 'none',
-                'excludeCredentials' => $user->webauthnCredentials
-                    ->whereNotNull('public_key')
-                    ->filter(fn ($c) => str_contains((string)$c->public_key, 'BEGIN PUBLIC KEY'))
-                    ->map(fn ($credential) => [
-                        'type' => 'public-key',
-                        'id' => $credential->credential_id,
-                    ])
-                    ->values(),
+                'excludeCredentials' => $excludeCredentials,
             ],
         ];
     }
 
-    public function storeCredential(User $user, array $credential): WebauthnCredential
+    /**
+     * Validate a WebAuthn registration attestation and persist only the public key and safe metadata.
+     *
+     * @param  array<string, mixed>  $credential
+     * @param  array{device_name?: ?string, biometric_type?: ?string, user_agent?: ?string, consent_given?: bool}  $metadata
+     */
+    public function storeCredential(User $user, array $credential, array $metadata = []): WebauthnCredential
     {
-        $clientData = $this->decodeJson($credential['response']['clientDataJSON'] ?? null);
         $challenge = session()->pull('webauthn.register_challenge');
-        if (!is_array($challenge) || $challenge['user_id'] !== $user->id || $challenge['expires_at'] <= now()->timestamp) {
-            throw new RuntimeException('Passkey registration expired. Start device setup again.');
+        if (!is_array($challenge)
+            || ($challenge['user_id'] ?? null) !== $user->id
+            || ($challenge['expires_at'] ?? 0) <= now()->timestamp
+            || empty($challenge['value'])) {
+            throw new RuntimeException('Registration challenge expired. Please start registration again.');
         }
-        $this->assertClientData($clientData, 'webauthn.create', $challenge['value']);
 
-        $attestation = $this->decodeCbor($this->base64UrlDecode($credential['response']['attestationObject'] ?? ''));
-        $authData = $attestation['authData'] ?? null;
+        $clientData = $this->decodeJson($credential['response']['clientDataJSON'] ?? null);
+        $this->assertClientData($clientData, 'webauthn.create', (string) $challenge['value']);
+
+        $attestationRaw = $this->base64UrlDecode($credential['response']['attestationObject'] ?? '');
+        if ($attestationRaw === '' || strlen($attestationRaw) > self::MAX_CBOR_BYTES) {
+            throw new RuntimeException('Invalid or oversized attestation response.');
+        }
+
+        $attestation = $this->decodeCbor($attestationRaw);
+        $authData = is_array($attestation) ? ($attestation['authData'] ?? null) : null;
 
         if (!is_string($authData) || strlen($authData) < 55) {
             throw new RuntimeException('Invalid authenticator data.');
@@ -73,71 +108,111 @@ class WebauthnService
 
         $parsed = $this->parseAuthenticatorData($authData, true);
         $this->assertRpIdHash($parsed);
-        if (($parsed['flags'] & 0x01) !== 0x01 || ($parsed['flags'] & 0x04) !== 0x04) {
+
+        if (!$parsed['up'] || !$parsed['uv']) {
             throw new RuntimeException('Device verification was not completed. Complete your device biometric or screen lock prompt and try again.');
         }
+
         $credentialId = $this->base64UrlEncode($parsed['credential_id']);
+        if ($credentialId === '' || strlen($parsed['credential_id']) > 1023) {
+            throw new RuntimeException('Invalid credential identifier returned by authenticator.');
+        }
+
         $submittedCredentialId = $credential['rawId'] ?? $credential['id'] ?? null;
         if (!is_string($submittedCredentialId)
             || $this->normalizeCredentialId($submittedCredentialId) !== $this->normalizeCredentialId($credentialId)) {
             throw new RuntimeException('The credential ID does not match the verified authenticator response. Please try registering this device again.');
         }
+
         $publicKey = $this->coseKeyToPem($parsed['credential_public_key']);
+        $variants = $this->credentialIdVariants($credentialId);
 
-
-        $normalizedCredentialId = $this->normalizeCredentialId($credentialId);
-
-        // Check if already registered by the same user -> update it
-        $existing = WebauthnCredential::where('user_id', $user->id)
-            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
-                $query->where('credential_id', $credentialId);
-                if ($normalizedCredentialId !== $credentialId) {
-                    $query->orWhere('credential_id', $normalizedCredentialId);
-                }
-            })
+        // Enforce global ownership and prevent duplicate registration across all active credentials.
+        $existingActive = WebauthnCredential::active()
+            ->whereIn('credential_id', $variants)
             ->first();
 
-        $transports = $this->sanitizeTransports($credential['transports'] ?? null) ?? ['internal'];
+        if ($existingActive) {
+            if ($existingActive->user_id !== $user->id) {
+                Log::warning('WebAuthn cross-account credential registration blocked', [
+                    'requesting_user_id' => $user->id,
+                    'owner_user_id' => $existingActive->user_id,
+                    'credential_fingerprint' => hash('sha256', $credentialId),
+                ]);
+                throw new RuntimeException('This credential is already registered to another account.');
+            }
 
-        if ($existing) {
-            $existing->forceFill([
-                'credential_id' => $credentialId,
-                'public_key' => $publicKey,
-                'sign_count' => $parsed['sign_count'],
-                'transports' => $transports,
-                'last_used_at' => now(),
-            ])->save();
-
-            return $existing;
+            throw new RuntimeException('This credential is already registered on your account.');
         }
 
-        return WebauthnCredential::create([
-            'user_id' => $user->id,
+        $transports = $this->sanitizeTransports(
+            $credential['transports'] ?? ($credential['response']['transports'] ?? null)
+        ) ?? ['internal'];
+
+        $attachment = $this->sanitizeAttachment(
+            $credential['authenticatorAttachment'] ?? null,
+            $transports
+        );
+
+        $deviceName = $this->sanitizeDeviceName(
+            $metadata['device_name'] ?? null,
+            $metadata['user_agent'] ?? null
+        );
+
+        $biometricType = in_array($metadata['biometric_type'] ?? null, ['fingerprint', 'face', 'device_lock'], true)
+            ? (string) $metadata['biometric_type']
+            : 'device_lock';
+
+        $userAgentSummary = $this->summarizeUserAgent($metadata['user_agent'] ?? null);
+
+        // If this user previously revoked this exact credential ID, reactivate with the newly attested key material.
+        $revokedOwn = WebauthnCredential::where('user_id', $user->id)
+            ->whereNotNull('revoked_at')
+            ->whereIn('credential_id', $variants)
+            ->first();
+
+        $attributes = [
             'credential_id' => $credentialId,
             'public_key' => $publicKey,
             'sign_count' => $parsed['sign_count'],
-            'device_name' => 'Biometric Device',
-            'biometric_type' => 'device_lock',
+            'device_name' => $deviceName,
+            'biometric_type' => $biometricType,
             'transports' => $transports,
+            'aaguid' => $parsed['aaguid'],
+            'authenticator_attachment' => $attachment,
+            'backed_up' => $parsed['bs'],
+            'user_agent_summary' => $userAgentSummary,
+            'consent_given_at' => ($metadata['consent_given'] ?? true) ? now() : null,
             'last_used_at' => now(),
-        ]);
+            'revoked_at' => null,
+            'revoked_reason' => null,
+        ];
+
+        if ($revokedOwn) {
+            $revokedOwn->forceFill($attributes)->save();
+
+            return $revokedOwn;
+        }
+
+        return WebauthnCredential::create($attributes + ['user_id' => $user->id]);
     }
 
     public function authenticationOptions(?User $user = null): array
     {
         $challenge = random_bytes(32);
         $allowCredentials = [];
+
         if ($user) {
             $allowCredentials = $user->webauthnCredentials()
-                ->where('public_key', 'like', '%BEGIN PUBLIC KEY%')
+                ->active()
                 ->orderByDesc('last_used_at')
                 ->orderByDesc('created_at')
                 ->get()
-                ->map(fn ($credential) => array_filter([
+                ->map(fn (WebauthnCredential $credential): array => array_filter([
                     'type' => 'public-key',
                     'id' => $this->normalizeCredentialId($credential->credential_id),
                     'transports' => $this->sanitizeTransports($credential->transports),
-                ], fn ($value) => $value !== null))
+                ], fn (mixed $value): bool => $value !== null))
                 ->values()
                 ->toArray();
         }
@@ -152,6 +227,247 @@ class WebauthnService
                 'timeout' => 60000,
             ],
         ];
+    }
+
+    public function verifyAssertion(User $user, array $assertion, string $challenge, ?WebauthnCredential $credential = null): WebauthnCredential
+    {
+        $credentialId = $assertion['id'] ?? null;
+        if (!is_string($credentialId) || trim($credentialId) === '') {
+            throw new RuntimeException('Missing credential identifier in assertion.');
+        }
+
+        if (isset($assertion['rawId']) && is_string($assertion['rawId']) && $assertion['rawId'] !== '') {
+            if ($this->normalizeCredentialId($assertion['rawId']) !== $this->normalizeCredentialId($credentialId)) {
+                throw new RuntimeException('Credential identifier mismatch in assertion payload.');
+            }
+        }
+
+        $normalizedCredentialId = $this->normalizeCredentialId($credentialId);
+        $variants = $this->credentialIdVariants($credentialId);
+
+        if (!$credential) {
+            $credential = $user->webauthnCredentials()
+                ->whereIn('credential_id', $variants)
+                ->first();
+        }
+
+        if (!$credential) {
+            $otherCredential = WebauthnCredential::active()
+                ->whereIn('credential_id', $variants)
+                ->first();
+
+            if ($otherCredential && $otherCredential->user_id !== $user->id) {
+                Log::warning('WebAuthn assertion attempted with another user credential', [
+                    'expected_user_id' => $user->id,
+                    'credential_user_id' => $otherCredential->user_id,
+                ]);
+                throw new RuntimeException('This biometric credential belongs to a different account.');
+            }
+
+            throw new RuntimeException('Unknown biometric credential.');
+        }
+
+        if ($credential->user_id !== $user->id) {
+            throw new RuntimeException('This biometric credential belongs to a different account.');
+        }
+
+        if ($credential->revoked_at !== null) {
+            Log::warning('WebAuthn assertion attempted with revoked credential', [
+                'user_id' => $user->id,
+                'credential_id' => $credential->id,
+            ]);
+            throw new RuntimeException('This biometric credential has been revoked. Please register a new device credential.');
+        }
+
+        if (!$credential->isActive()) {
+            throw new RuntimeException('Stored passkey public key is invalid. Please register a new passkey.');
+        }
+
+        if ($normalizedCredentialId !== $this->normalizeCredentialId($credential->credential_id)) {
+            throw new RuntimeException('The authenticator returned a different credential.');
+        }
+
+        $userHandle = $assertion['response']['userHandle'] ?? null;
+        if (is_string($userHandle) && trim($userHandle) !== '') {
+            $expectedHandle = $this->expectedUserHandle($user);
+            $normalizedHandle = $this->normalizeCredentialId($userHandle);
+            if (!hash_equals($expectedHandle, $normalizedHandle) && (string) $user->id !== $userHandle) {
+                Log::warning('WebAuthn assertion userHandle mismatch', [
+                    'expected_user_id' => $user->id,
+                ]);
+                throw new RuntimeException('The authenticator user handle does not match this account.');
+            }
+        }
+
+        $clientDataEncoded = $assertion['response']['clientDataJSON'] ?? null;
+        $clientDataJson = $this->base64UrlDecode(is_string($clientDataEncoded) ? $clientDataEncoded : '');
+        $clientData = $this->decodeJson(is_string($clientDataEncoded) ? $clientDataEncoded : null);
+        $this->assertClientData($clientData, 'webauthn.get', $challenge);
+
+        $authenticatorDataEncoded = $assertion['response']['authenticatorData'] ?? null;
+        $authenticatorData = $this->base64UrlDecode(is_string($authenticatorDataEncoded) ? $authenticatorDataEncoded : '');
+        $parsed = $this->parseAuthenticatorData($authenticatorData, false);
+        $this->assertRpIdHash($parsed);
+
+        if (!$parsed['up']) {
+            Log::warning('WebAuthn UP flag not set', ['flags' => $parsed['flags'], 'user_id' => $user->id]);
+            throw new RuntimeException('User presence was not confirmed by the authenticator.');
+        }
+
+        if (!$parsed['uv']) {
+            Log::warning('WebAuthn UV flag not set', ['flags' => $parsed['flags'], 'user_id' => $user->id]);
+            throw new RuntimeException('Device verification was not completed. Complete your device biometric or screen lock prompt and try again.');
+        }
+
+        $signatureEncoded = $assertion['response']['signature'] ?? null;
+        $signature = $this->base64UrlDecode(is_string($signatureEncoded) ? $signatureEncoded : '');
+        if ($signature === '') {
+            throw new RuntimeException('Missing cryptographic signature in assertion.');
+        }
+
+        $signedData = $authenticatorData . hash('sha256', $clientDataJson, true);
+        $publicKey = openssl_pkey_get_public($credential->public_key);
+        if ($publicKey === false) {
+            throw new RuntimeException('Stored passkey public key is invalid. Please register a new passkey.');
+        }
+
+        $verification = openssl_verify($signedData, $signature, $publicKey, OPENSSL_ALGO_SHA256);
+        if ($verification !== 1) {
+            throw new RuntimeException('Biometric signature verification failed.');
+        }
+
+        // W3C WebAuthn §7.2 step 21: if either stored or incoming signCount is non-zero,
+        // incoming MUST strictly exceed stored to detect cloned or replayed authenticators.
+        $storedSignCount = (int) $credential->sign_count;
+        $incomingSignCount = (int) $parsed['sign_count'];
+        if (($storedSignCount > 0 || $incomingSignCount > 0) && $incomingSignCount <= $storedSignCount) {
+            Log::warning('WebAuthn possible replay/clone detected via sign_count', [
+                'user_id' => $user->id,
+                'credential_pk' => $credential->id,
+                'stored_sign_count' => $storedSignCount,
+                'incoming_sign_count' => $incomingSignCount,
+            ]);
+            throw new RuntimeException('Possible replayed or cloned biometric response.');
+        }
+
+        $credential->forceFill([
+            'sign_count' => max($storedSignCount, $incomingSignCount),
+            'backed_up' => $credential->backed_up || $parsed['bs'],
+            'last_used_at' => now(),
+        ])->save();
+
+        return $credential;
+    }
+
+    public function expectedUserHandle(User $user): string
+    {
+        return $this->base64UrlEncode(hash('sha256', (string) $user->id, true));
+    }
+
+    /**
+     * Return all base64/base64url encoding variants of a credential ID for safe lookup.
+     *
+     * @return array<int, string>
+     */
+    public function credentialIdVariants(string $credentialId): array
+    {
+        $normalized = $this->normalizeCredentialId($credentialId);
+        $paddedUrl = $normalized . str_repeat('=', (4 - strlen($normalized) % 4) % 4);
+        $stdUnpadded = strtr($normalized, '-_', '+/');
+        $stdPadded = strtr($paddedUrl, '-_', '+/');
+
+        return array_values(array_unique(array_filter([
+            $credentialId,
+            $normalized,
+            $paddedUrl,
+            $stdUnpadded,
+            $stdPadded,
+        ], fn (string $value): bool => $value !== '')));
+    }
+
+    public function normalizeCredentialId(string $credentialId): string
+    {
+        return rtrim(strtr(trim($credentialId), '+/', '-_'), '=');
+    }
+
+    public function base64UrlEncode(string $value): string
+    {
+        return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
+    }
+
+    public function rpId(): string
+    {
+        $cleanHost = strtolower(trim((string) config('webauthn.rp_id', '')));
+        if ($cleanHost === '') {
+            $cleanHost = strtolower((string) (parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'localhost'));
+        }
+
+        $cleanHost = trim($cleanHost, '.');
+        if ($cleanHost === '127.0.0.1' || $cleanHost === '::1' || $cleanHost === '') {
+            return 'localhost';
+        }
+
+        return $cleanHost;
+    }
+
+    public function sanitizeDeviceName(?string $deviceName, ?string $userAgent = null): string
+    {
+        $clean = trim(preg_replace('/[\x00-\x1F\x7F]+/u', '', (string) $deviceName) ?? '');
+        if ($clean !== '') {
+            return mb_substr($clean, 0, 80);
+        }
+
+        return $this->defaultDeviceNameFromUserAgent($userAgent);
+    }
+
+    public function defaultDeviceNameFromUserAgent(?string $userAgent): string
+    {
+        $ua = strtolower((string) $userAgent);
+        if (str_contains($ua, 'android')) {
+            return 'Android Device';
+        }
+        if (str_contains($ua, 'iphone') || str_contains($ua, 'ipad') || str_contains($ua, 'ipod')) {
+            return 'iPhone / iPad';
+        }
+        if (str_contains($ua, 'macintosh') || str_contains($ua, 'mac os x')) {
+            return 'Mac';
+        }
+        if (str_contains($ua, 'windows')) {
+            return 'Windows PC';
+        }
+        if (str_contains($ua, 'cros')) {
+            return 'Chromebook';
+        }
+        if (str_contains($ua, 'linux')) {
+            return 'Linux Device';
+        }
+        if (str_contains($ua, 'mobile')) {
+            return 'Mobile Device';
+        }
+
+        return 'Device Passkey';
+    }
+
+    public function summarizeUserAgent(?string $userAgent): ?string
+    {
+        $ua = trim((string) $userAgent);
+        if ($ua === '') {
+            return null;
+        }
+
+        $lower = strtolower($ua);
+        $browser = match (true) {
+            str_contains($lower, 'edg/') || str_contains($lower, 'edga/') || str_contains($lower, 'edgios/') => 'Edge',
+            str_contains($lower, 'opr/') || str_contains($lower, 'opera') => 'Opera',
+            str_contains($lower, 'firefox') || str_contains($lower, 'fxios') => 'Firefox',
+            str_contains($lower, 'chrome') || str_contains($lower, 'crios') => 'Chrome',
+            str_contains($lower, 'safari') => 'Safari',
+            default => 'Browser',
+        };
+
+        $os = $this->defaultDeviceNameFromUserAgent($ua);
+
+        return mb_substr("{$browser} on {$os}", 0, 160);
     }
 
     /**
@@ -176,7 +492,6 @@ class WebauthnService
             return null;
         }
 
-        // Prefer 'internal' first so Credential Manager favors native platform biometrics.
         if (in_array('internal', $filtered, true)) {
             $filtered = array_values(array_unique(array_merge(['internal'], $filtered)));
         }
@@ -184,136 +499,34 @@ class WebauthnService
         return $filtered;
     }
 
-    public function verifyAssertion(User $user, array $assertion, string $challenge, ?WebauthnCredential $credential = null): WebauthnCredential
+    /**
+     * @param  array<int, string>  $transports
+     */
+    private function sanitizeAttachment(?string $attachment, array $transports): string
     {
-        $credentialId = $assertion['id'] ?? null;
-        $normalizedCredentialId = $this->normalizeCredentialId($credentialId);
-        
-        Log::debug('WebAuthn verifyAssertion starting', [
-            'user_id' => $user->id,
-            'credential_id_present' => is_string($credentialId) && $credentialId !== '',
-        ]);
-        
-        if (!$credential) {
-            $credential = $user->webauthnCredentials()
-                ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
-                    $query->where('credential_id', $credentialId);
-                    if ($normalizedCredentialId !== $credentialId) {
-                        $query->orWhere('credential_id', $normalizedCredentialId);
-                    }
-                })
-                ->first();
+        $clean = strtolower(trim((string) $attachment));
+        if (in_array($clean, ['platform', 'cross-platform'], true)) {
+            return $clean;
         }
 
-        if (!$credential) {
-            // Also check global lookup to see if credential belongs to another account
-            $otherCredential = WebauthnCredential::where(function ($query) use ($credentialId, $normalizedCredentialId) {
-                $query->where('credential_id', $credentialId);
-                if ($normalizedCredentialId !== $credentialId) {
-                    $query->orWhere('credential_id', $normalizedCredentialId);
-                }
-            })->first();
-
-            if ($otherCredential && $otherCredential->user_id !== $user->id) {
-                Log::warning('WebAuthn credential belongs to another user', [
-                    'expected_user_id' => $user->id,
-                    'credential_user_id' => $otherCredential->user_id,
-                ]);
-                throw new RuntimeException('This biometric credential belongs to a different account.');
-            }
-
-            Log::error('WebAuthn credential not found', [
-                'user_id' => $user->id,
-            ]);
-            throw new RuntimeException('Unknown biometric credential.');
-        }
-
-        if ($credential->user_id !== $user->id) {
-            throw new RuntimeException('This biometric credential belongs to a different account.');
-        }
-        if ($normalizedCredentialId !== $this->normalizeCredentialId($credential->credential_id)) {
-            throw new RuntimeException('The authenticator returned a different credential.');
-        }
-
-        Log::debug('WebAuthn credential found', [
-            'user_id' => $user->id,
-            'credential_match' => true,
-        ]);
-
-        $clientDataJson = $this->base64UrlDecode($assertion['response']['clientDataJSON'] ?? '');
-        $clientData = $this->decodeJson($assertion['response']['clientDataJSON'] ?? null);
-        $this->assertClientData($clientData, 'webauthn.get', $challenge);
-
-        $authenticatorData = $this->base64UrlDecode($assertion['response']['authenticatorData'] ?? '');
-        $parsed = $this->parseAuthenticatorData($authenticatorData, false);
-        $this->assertRpIdHash($parsed);
-
-        // A biometric/passkey sign-in must include local device verification.
-        // Presence alone could be a security-key touch without a fingerprint or PIN.
-        if (($parsed['flags'] & 0x01) !== 0x01) {
-            Log::warning('WebAuthn UP flag not set', ['flags' => $parsed['flags'], 'user_id' => $user->id]);
-            throw new RuntimeException('User presence was not confirmed by the authenticator.');
-        }
-        if (($parsed['flags'] & 0x04) !== 0x04) {
-            Log::warning('WebAuthn UV flag not set', ['flags' => $parsed['flags'], 'user_id' => $user->id]);
-            throw new RuntimeException('Device verification was not completed. Complete your device biometric or screen lock prompt and try again.');
-        }
-        
-        Log::debug('WebAuthn flags OK', ['flags' => $parsed['flags'], 'up' => true, 'uv' => true]);
-
-        $signedData = $authenticatorData . hash('sha256', $clientDataJson, true);
-        $signature = $this->base64UrlDecode($assertion['response']['signature'] ?? '');
-
-        $publicKey = openssl_pkey_get_public($credential->public_key);
-        if ($publicKey === false) {
-            throw new RuntimeException('Stored passkey public key is invalid. Please register a new passkey.');
-        }
-
-        $verification = openssl_verify($signedData, $signature, $publicKey, OPENSSL_ALGO_SHA256);
-        openssl_free_key($publicKey);
-
-        if ($verification !== 1) {
-            throw new RuntimeException('Biometric signature verification failed.');
-        }
-
-        if ($parsed['sign_count'] > 0 && $credential->sign_count > 0 && $parsed['sign_count'] <= $credential->sign_count) {
-            throw new RuntimeException('Possible replayed biometric response.');
-        }
-
-        $credential->forceFill([
-            'sign_count' => max($credential->sign_count, $parsed['sign_count']),
-            'last_used_at' => now(),
-        ])->save();
-
-        return $credential;
-    }
-
-    public function base64UrlEncode(string $value): string
-    {
-        return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
-    }
-
-    private function normalizeCredentialId(string $credentialId): string
-    {
-        $raw = $this->base64UrlDecode($credentialId);
-
-        if ($raw === '') {
-            return $credentialId;
-        }
-
-        return rtrim(strtr(base64_encode($raw), '+/', '-_'), '=');
+        return in_array('internal', $transports, true) ? 'platform' : 'cross-platform';
     }
 
     private function base64UrlDecode(?string $value): string
     {
-        $value = (string) $value;
-        $padding = strlen($value) % 4;
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
 
+        $padding = strlen($value) % 4;
         if ($padding) {
             $value .= str_repeat('=', 4 - $padding);
         }
 
-        return base64_decode(strtr($value, '-_', '+/'), true) ?: '';
+        $decoded = base64_decode(strtr($value, '-_', '+/'), true);
+
+        return $decoded === false ? '' : $decoded;
     }
 
     private function decodeJson(?string $encoded): array
@@ -331,38 +544,21 @@ class WebauthnService
     private function assertClientData(array $clientData, string $type, ?string $challenge): void
     {
         if (($clientData['type'] ?? null) !== $type) {
-            Log::debug('WebAuthn clientData type mismatch', [
-                'expected' => $type,
-                'actual' => $clientData['type'] ?? null,
-                'challenge_present' => !empty($clientData['challenge']),
-                'session_challenge_present' => !empty($challenge),
-            ]);
             throw new RuntimeException('Invalid WebAuthn challenge - type mismatch.');
         }
 
         if ($challenge === null || $challenge === '') {
-            Log::error('WebAuthn challenge missing from session', [
-                'type' => $type,
-            ]);
             throw new RuntimeException('WebAuthn session expired. Challenge not found. Please try again.');
         }
 
         $expectedChallenge = $this->base64UrlDecode($challenge);
-        $actualChallenge = $this->base64UrlDecode($clientData['challenge'] ?? '');
+        $actualChallenge = $this->base64UrlDecode(is_string($clientData['challenge'] ?? null) ? $clientData['challenge'] : '');
 
         if ($expectedChallenge === '' || $actualChallenge === '') {
-            Log::error('WebAuthn challenge encoding issue', [
-                'expected_decoded_length' => strlen($expectedChallenge),
-                'actual_decoded_length' => strlen($actualChallenge),
-            ]);
-            throw new RuntimeException('Invalid challenge encoding - unable to decode base64.');
+            throw new RuntimeException('Invalid challenge encoding.');
         }
 
         if (!hash_equals($expectedChallenge, $actualChallenge)) {
-            Log::debug('WebAuthn challenge mismatch', [
-                'expected_length' => strlen($expectedChallenge),
-                'actual_length' => strlen($actualChallenge),
-            ]);
             throw new RuntimeException('Invalid WebAuthn challenge - challenge values do not match.');
         }
 
@@ -376,6 +572,7 @@ class WebauthnService
             (array) config('webauthn.allowed_android_origins', []),
             'is_string'
         ));
+
         $isAllowedWebOrigin = $normalizedOrigin !== null
             && in_array($normalizedOrigin, array_filter($allowedOrigins), true);
         $originHost = $normalizedOrigin !== null ? strtolower((string) parse_url($normalizedOrigin, PHP_URL_HOST)) : '';
@@ -386,6 +583,7 @@ class WebauthnService
             || str_ends_with($originHost, '.' . $rpId)
             || $isLocalOriginForLocalRp;
         $isAllowedWebOrigin = $isAllowedWebOrigin && $originBelongsToRp;
+
         $isAllowedAndroidOrigin = is_string($origin)
             && in_array($origin, $allowedAndroidOrigins, true);
         $isCrossOrigin = array_key_exists('crossOrigin', $clientData)
@@ -399,21 +597,6 @@ class WebauthnService
             ]);
             throw new RuntimeException('The sign-in origin is not trusted.');
         }
-    }
-
-    public function rpId(): string
-    {
-        $cleanHost = strtolower(trim((string) config('webauthn.rp_id', '')));
-        if ($cleanHost === '') {
-            $cleanHost = strtolower((string) (parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'localhost'));
-        }
-
-        $cleanHost = trim($cleanHost, '.');
-        if ($cleanHost === '127.0.0.1' || $cleanHost === '::1' || $cleanHost === '') {
-            return 'localhost';
-        }
-
-        return $cleanHost;
     }
 
     private function normalizeWebOrigin(string $origin): ?string
@@ -448,9 +631,13 @@ class WebauthnService
         return $scheme . '://' . $host . ($port === null ? '' : ':' . $port);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function parseAuthenticatorData(string $authData, bool $requireAttestedCredential): array
     {
-        if (strlen($authData) < 37) {
+        $totalLength = strlen($authData);
+        if ($totalLength < 37) {
             throw new RuntimeException('Invalid authenticator data.');
         }
 
@@ -459,6 +646,12 @@ class WebauthnService
         $result = [
             'rp_id_hash' => substr($authData, 0, 32),
             'flags' => $flags,
+            'up' => ($flags & 0x01) === 0x01,
+            'uv' => ($flags & 0x04) === 0x04,
+            'be' => ($flags & 0x08) === 0x08,
+            'bs' => ($flags & 0x10) === 0x10,
+            'at' => ($flags & 0x40) === 0x40,
+            'ed' => ($flags & 0x80) === 0x80,
             'sign_count' => $signCount,
         ];
 
@@ -466,19 +659,44 @@ class WebauthnService
             return $result;
         }
 
-        if (($flags & 0x40) !== 0x40) {
+        if (!$result['at']) {
             throw new RuntimeException('Missing attested credential data.');
         }
 
-        $offset = 37 + 16;
+        if ($totalLength < 55) {
+            throw new RuntimeException('Truncated attested credential data.');
+        }
+
+        $aaguidBytes = substr($authData, 37, 16);
+        $result['aaguid'] = $this->formatAaguid($aaguidBytes);
+
+        $offset = 53;
         $credentialLength = unpack('n', substr($authData, $offset, 2))[1];
         $offset += 2;
+
+        if ($credentialLength <= 0 || ($offset + $credentialLength) >= $totalLength) {
+            throw new RuntimeException('Invalid attested credential ID length.');
+        }
 
         $result['credential_id'] = substr($authData, $offset, $credentialLength);
         $offset += $credentialLength;
         $result['credential_public_key'] = substr($authData, $offset);
 
         return $result;
+    }
+
+    private function formatAaguid(string $bytes): string
+    {
+        $hex = bin2hex($bytes);
+
+        return sprintf(
+            '%s-%s-%s-%s-%s',
+            substr($hex, 0, 8),
+            substr($hex, 8, 4),
+            substr($hex, 12, 4),
+            substr($hex, 16, 4),
+            substr($hex, 20, 12)
+        );
     }
 
     private function assertRpIdHash(array $authenticatorData): void
@@ -494,15 +712,21 @@ class WebauthnService
     private function coseKeyToPem(string $coseKey): string
     {
         $key = $this->decodeCbor($coseKey);
+        if (!is_array($key)) {
+            throw new RuntimeException('Invalid COSE public key structure.');
+        }
+
         $kty = $key[1] ?? null;
         $alg = $key[3] ?? null;
 
+        // EC2 P-256 (ES256)
         if ($kty === 2 && $alg === -7) {
+            $crv = $key[-1] ?? null;
             $x = $key[-2] ?? null;
             $y = $key[-3] ?? null;
 
-            if (!is_string($x) || !is_string($y)) {
-                throw new RuntimeException('Invalid EC credential key.');
+            if ($crv !== 1 || !is_string($x) || !is_string($y) || strlen($x) !== 32 || strlen($y) !== 32) {
+                throw new RuntimeException('Invalid EC P-256 credential key.');
             }
 
             $pem = $this->ecPublicKeyToPem($x, $y);
@@ -513,11 +737,12 @@ class WebauthnService
             return $pem;
         }
 
+        // RSA (RS256)
         if ($kty === 3 && $alg === -257) {
             $n = $key[-1] ?? null;
             $e = $key[-2] ?? null;
 
-            if (!is_string($n) || !is_string($e)) {
+            if (!is_string($n) || !is_string($e) || strlen($n) < 128 || strlen($e) < 1) {
                 throw new RuntimeException('Invalid RSA credential key.');
             }
 
@@ -554,25 +779,48 @@ class WebauthnService
 
     private function decodeCbor(string $bytes): mixed
     {
+        if ($bytes === '' || strlen($bytes) > self::MAX_CBOR_BYTES) {
+            throw new RuntimeException('Invalid CBOR payload size.');
+        }
+
         $offset = 0;
-        return $this->readCbor($bytes, $offset);
+
+        return $this->readCbor($bytes, $offset, 0);
     }
 
-    private function readCbor(string $bytes, int &$offset): mixed
+    private function readCbor(string $bytes, int &$offset, int $depth): mixed
     {
+        if ($depth > self::MAX_CBOR_DEPTH) {
+            throw new RuntimeException('CBOR nesting depth exceeded.');
+        }
+
+        $totalLength = strlen($bytes);
+        if ($offset >= $totalLength) {
+            throw new RuntimeException('Unexpected end of CBOR data.');
+        }
+
         $initial = ord($bytes[$offset++]);
         $major = $initial >> 5;
         $additional = $initial & 0x1f;
+
+        if ($major === 7) {
+            return match ($additional) {
+                20 => false,
+                21 => true,
+                22, 23 => null,
+                default => throw new RuntimeException('Unsupported CBOR simple value.'),
+            };
+        }
+
         $length = $this->readCborLength($bytes, $offset, $additional);
 
         return match ($major) {
             0 => $length,
             1 => -1 - $length,
-            2 => $this->readBytes($bytes, $offset, $length),
-            3 => $this->readBytes($bytes, $offset, $length),
-            4 => $this->readArray($bytes, $offset, $length),
-            5 => $this->readMap($bytes, $offset, $length),
-            7 => $additional === 20 ? false : ($additional === 21 ? true : null),
+            2, 3 => $this->readBytes($bytes, $offset, $length),
+            4 => $this->readArray($bytes, $offset, $length, $depth + 1),
+            5 => $this->readMap($bytes, $offset, $length, $depth + 1),
+            6 => $this->readCbor($bytes, $offset, $depth + 1),
             default => throw new RuntimeException('Unsupported CBOR value.'),
         };
     }
@@ -584,7 +832,7 @@ class WebauthnService
         }
 
         return match ($additional) {
-            24 => ord($bytes[$offset++]),
+            24 => ord($this->readBytes($bytes, $offset, 1)),
             25 => unpack('n', $this->readBytes($bytes, $offset, 2))[1],
             26 => unpack('N', $this->readBytes($bytes, $offset, 4))[1],
             default => throw new RuntimeException('Unsupported CBOR length.'),
@@ -593,30 +841,43 @@ class WebauthnService
 
     private function readBytes(string $bytes, int &$offset, int $length): string
     {
+        if ($length < 0 || $length > self::MAX_CBOR_BYTES || ($offset + $length) > strlen($bytes)) {
+            throw new RuntimeException('Truncated or oversized CBOR byte string.');
+        }
+
         $chunk = substr($bytes, $offset, $length);
         $offset += $length;
 
         return $chunk;
     }
 
-    private function readArray(string $bytes, int &$offset, int $length): array
+    private function readArray(string $bytes, int &$offset, int $length, int $depth): array
     {
-        $items = [];
+        if ($length < 0 || $length > self::MAX_CBOR_ITEMS) {
+            throw new RuntimeException('CBOR array exceeds safe item limit.');
+        }
 
+        $items = [];
         for ($i = 0; $i < $length; $i++) {
-            $items[] = $this->readCbor($bytes, $offset);
+            $items[] = $this->readCbor($bytes, $offset, $depth);
         }
 
         return $items;
     }
 
-    private function readMap(string $bytes, int &$offset, int $length): array
+    private function readMap(string $bytes, int &$offset, int $length, int $depth): array
     {
-        $map = [];
+        if ($length < 0 || $length > self::MAX_CBOR_ITEMS) {
+            throw new RuntimeException('CBOR map exceeds safe item limit.');
+        }
 
+        $map = [];
         for ($i = 0; $i < $length; $i++) {
-            $key = $this->readCbor($bytes, $offset);
-            $map[$key] = $this->readCbor($bytes, $offset);
+            $key = $this->readCbor($bytes, $offset, $depth);
+            if (!is_int($key) && !is_string($key)) {
+                throw new RuntimeException('Unsupported CBOR map key type.');
+            }
+            $map[$key] = $this->readCbor($bytes, $offset, $depth);
         }
 
         return $map;
@@ -666,7 +927,6 @@ class WebauthnService
         }
 
         $bytes = '';
-
         while ($length > 0) {
             $bytes = chr($length & 0xff) . $bytes;
             $length >>= 8;

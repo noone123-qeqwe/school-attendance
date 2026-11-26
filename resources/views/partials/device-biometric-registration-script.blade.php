@@ -1,26 +1,122 @@
 let bioAbortController = null;
 let passkeySupportCheck = 0;
+let lastCapabilityResult = null;
 
-async function refreshDevicePasskeySupport() {
-    const check = ++passkeySupportCheck;
-    const result = await (window.DevicePasskeys?.check('create') || { available: false, reason: 'unsupported' });
-    const available = result.available === true;
-    if (check === passkeySupportCheck) {
-        const button = document.getElementById('startBioBtn');
-        const status = document.getElementById('devicePasskeyStatus');
-        button.disabled = !available;
-        status.hidden = available;
-        status.textContent = available
-            ? ''
-            : (window.DevicePasskeys?.message(result, 'create') || 'Device passkeys are unavailable in this browser.');
-        if (result.reason === 'update-app') {
+function isConsentSatisfied() {
+    const consentBox = document.getElementById('bioConsentCheckbox');
+    return !consentBox || consentBox.checked === true;
+}
+
+function syncRegistrationButtonState() {
+    const button = document.getElementById('startBioBtn');
+    const status = document.getElementById('devicePasskeyStatus');
+    if (!button) return;
+
+    const available = Boolean(lastCapabilityResult && lastCapabilityResult.available === true);
+    const consentOk = isConsentSatisfied();
+    button.disabled = !available || !consentOk || Boolean(bioAbortController);
+
+    if (!status) return;
+    if (!lastCapabilityResult) {
+        status.hidden = false;
+        status.textContent = 'Checking device compatibility…';
+        return;
+    }
+
+    if (!available) {
+        status.hidden = false;
+        status.textContent = window.DevicePasskeys?.message(lastCapabilityResult, 'create')
+            || 'Device passkey registration is unavailable in this browser.';
+        if (lastCapabilityResult.reason === 'update-app') {
             const update = document.createElement('a');
             update.href = '{{ route("pwa.download.apk") }}';
             update.textContent = 'Download the Android update';
             status.append(' ', update);
         }
+        return;
     }
-    return available;
+
+    if (!consentOk) {
+        status.hidden = false;
+        status.textContent = 'Confirm your consent above to enable registration.';
+        return;
+    }
+
+    status.hidden = false;
+    status.textContent = 'Ready for registration. Your operating system will open its native verification prompt.';
+}
+
+function updateCapabilityPresentation(result) {
+    const stage = document.getElementById('bioCapabilityStage');
+    const pill = document.getElementById('bioStatePill');
+    const pillText = document.getElementById('bioStatePillText');
+    const spinner = document.getElementById('bioCapabilitySpinner');
+    const pad = document.getElementById('bioSensorPad');
+    const padIcon = document.getElementById('bioSensorPadIcon');
+    const heroIcon = document.getElementById('bioMethodHeroIcon');
+    const capTitle = document.getElementById('bioCapabilityTitle');
+    const capDesc = document.getElementById('bioCapabilityDesc');
+    const unsupportedPanel = document.getElementById('bioUnsupportedPanel');
+    const unsupportedDetail = document.getElementById('bioUnsupportedDetail');
+    const controlsWrap = document.getElementById('bioRegistrationControls');
+    const btnText = document.getElementById('startBioBtnText');
+    const btnIcon = document.getElementById('startBioBtnIcon');
+    const nameInput = document.getElementById('bioDeviceNameInput');
+
+    if (spinner) spinner.hidden = true;
+
+    const available = Boolean(result && result.available === true);
+    const fpUi = Boolean(result && result.supportsFingerprintSpecificUi === true);
+
+    if (nameInput && !nameInput.value && result?.defaultDeviceName) {
+        nameInput.value = result.defaultDeviceName;
+    }
+
+    if (available) {
+        if (stage) stage.dataset.state = 'ready';
+        if (pill) pill.dataset.tone = 'ready';
+        if (pillText) pillText.textContent = 'Compatible device detected';
+        if (pad) {
+            pad.classList.remove('is-unsupported', 'is-awaiting');
+            pad.classList.add('is-ready');
+        }
+        const iconClass = fpUi ? 'bi bi-fingerprint' : 'bi bi-shield-check';
+        if (padIcon) padIcon.className = iconClass;
+        if (heroIcon) heroIcon.className = fpUi ? 'bi bi-fingerprint' : 'bi bi-shield-lock';
+        if (capTitle) capTitle.textContent = result.authenticatorLabel || 'Platform authenticator ready';
+        if (capDesc) capDesc.textContent = result.disclaimer || 'Your operating system will verify you locally and share only a cryptographic public key.';
+        if (btnText) btnText.textContent = fpUi ? 'Register fingerprint / biometrics' : 'Register this device';
+        if (btnIcon) btnIcon.className = fpUi ? 'bi bi-fingerprint' : 'bi bi-shield-check';
+        if (unsupportedPanel) unsupportedPanel.hidden = true;
+        if (controlsWrap) controlsWrap.hidden = false;
+    } else {
+        if (stage) stage.dataset.state = 'unsupported';
+        if (pill) pill.dataset.tone = 'warning';
+        if (pillText) pillText.textContent = 'Unsupported device or browser';
+        if (pad) {
+            pad.classList.remove('is-ready', 'is-awaiting');
+            pad.classList.add('is-unsupported');
+        }
+        if (padIcon) padIcon.className = 'bi bi-exclamation-triangle';
+        if (capTitle) capTitle.textContent = 'Platform authentication unavailable';
+        const reasonMsg = window.DevicePasskeys?.message(result || { reason: 'unsupported' }, 'create')
+            || 'This browser cannot create a platform passkey.';
+        if (capDesc) capDesc.textContent = reasonMsg;
+        if (unsupportedDetail) unsupportedDetail.textContent = reasonMsg;
+        if (unsupportedPanel) unsupportedPanel.hidden = false;
+        if (controlsWrap) controlsWrap.hidden = false;
+    }
+}
+
+async function refreshDevicePasskeySupport() {
+    const check = ++passkeySupportCheck;
+    const result = await (window.DevicePasskeys?.check('create') || { available: false, reason: 'unsupported' });
+    if (check === passkeySupportCheck) {
+        lastCapabilityResult = result;
+        updateCapabilityPresentation(result);
+        syncRegistrationButtonState();
+    }
+    return Boolean(result && result.available === true);
 }
 
 function initializeDevicePasskeyRegistration() {
@@ -31,10 +127,14 @@ function initializeDevicePasskeyRegistration() {
     document.getElementById('retryBtn')?.addEventListener('click', beginDevicePasskeyRegistration);
     document.getElementById('cancelBioBtn')?.addEventListener('click', cancelBiometricRegistration);
     document.getElementById('doneBioBtn')?.addEventListener('click', cancelBiometricRegistration);
+    document.getElementById('backToIdleBtn')?.addEventListener('click', cancelBiometricRegistration);
+    document.getElementById('bioConsentCheckbox')?.addEventListener('change', syncRegistrationButtonState);
+
     window.addEventListener('pagehide', cancelBiometricRegistration);
     window.addEventListener('focus', () => {
         if (!bioAbortController) refreshDevicePasskeySupport();
     });
+
     refreshDevicePasskeySupport();
     loadDevices();
 }
@@ -62,13 +162,27 @@ function showRegistrationView(id) {
     });
 }
 
+function showDeviceActionStatus(message, isError = false) {
+    const el = document.getElementById('deviceActionStatus');
+    if (!el) return;
+    if (!message) {
+        el.hidden = true;
+        el.textContent = '';
+        return;
+    }
+    el.hidden = false;
+    el.textContent = message;
+    el.style.color = isError ? '#ffb3bc' : '#6ee7b7';
+}
+
 function cancelBiometricRegistration() {
     bioAbortController?.abort();
     bioAbortController = null;
-    document.getElementById('confirmBioBtn').hidden = true;
-    document.getElementById('devicePasskeyFrame')?.classList.remove('bio-detected');
+    const confirmBtn = document.getElementById('confirmBioBtn');
+    if (confirmBtn) confirmBtn.hidden = true;
     showRegistrationView('bioIdleView');
     setBioRegistrationStage(1);
+    syncRegistrationButtonState();
     if (document.visibilityState !== 'hidden') {
         document.getElementById('startBioBtn')?.focus({ preventScroll: true });
     }
@@ -80,6 +194,7 @@ async function loadDevices() {
     if (!list) return;
     list.setAttribute('aria-busy', 'true');
     list.innerHTML = '';
+
     const loadingState = document.createElement('div');
     loadingState.className = 'device-list-loading bio-device-loading';
     loadingState.setAttribute('role', 'status');
@@ -105,45 +220,55 @@ async function loadDevices() {
 
         if (devices.length > 0) {
             if (badge) {
-                badge.textContent = `${devices.length} Registered`;
+                badge.textContent = `${devices.length} Active`;
                 badge.classList.remove('is-error');
                 badge.classList.add('is-active');
             }
 
             const activeSummary = document.createElement('div');
-            const hasUsableCredential = devices.some(device => device.biometric_type !== 'face' || device.is_secure_face_credential);
-            activeSummary.className = `bio-device-banner ${hasUsableCredential ? 'is-active' : 'is-warn'}`;
+            activeSummary.className = 'bio-device-banner is-active';
             activeSummary.innerHTML = `
-                <i class="bi ${hasUsableCredential ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'}" aria-hidden="true" style="font-size:1.15rem;"></i>
-                <div>${hasUsableCredential ? 'Device sign-in is <strong>active</strong> on your account.' : 'Register a device passkey to enable sign-in.'}</div>`;
+                <i class="bi bi-check-circle-fill" aria-hidden="true" style="font-size:1.15rem;"></i>
+                <div>WebAuthn device verification is <strong>active</strong> on your account.</div>`;
             list.appendChild(activeSummary);
 
             devices.forEach(d => {
-                const isLegacyFace = d.biometric_type === 'face' && !d.is_secure_face_credential;
                 const div = document.createElement('div');
                 div.className = 'device-item-card';
+                const createdStr = d.created_at
+                    ? new Date(d.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                    : 'Registered';
+                const lastUsedStr = d.last_used_at
+                    ? 'Last used ' + new Date(d.last_used_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                    : 'Not used yet';
+
                 div.innerHTML = `
                     <div class="device-item-left">
                         <div class="device-item-icon">
-                            <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                            <i class="bi ${d.biometric_type === 'fingerprint' ? 'bi-fingerprint' : 'bi-shield-lock'}" aria-hidden="true"></i>
                         </div>
                         <div class="device-item-info">
                             <div class="device-item-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                 <span data-device-name></span>
                             </div>
                             <div class="device-item-meta">
-                                <span class="device-meta-verified"><i class="bi ${isLegacyFace ? 'bi-exclamation-triangle' : 'bi-shield-check'} me-1" aria-hidden="true"></i>${isLegacyFace ? 'Camera-only legacy profile · re-enroll' : 'Device-protected credential'}</span>
+                                <span class="device-meta-verified"><i class="bi bi-shield-check me-1" aria-hidden="true"></i><span data-device-meta></span></span>
                                 <span class="device-meta-dot" aria-hidden="true">•</span>
-                                <span class="device-meta-date">${d.created_at ? new Date(d.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Registered'}</span>
+                                <span class="device-meta-date">Added ${createdStr} · ${lastUsedStr}</span>
                             </div>
                         </div>
                     </div>
-                    <button class="device-remove-btn" type="button" title="Remove sign-in method">
-                        <i class="bi bi-trash3 me-1" aria-hidden="true"></i>Remove
+                    <button class="device-remove-btn" type="button" title="Revoke credential">
+                        <i class="bi bi-trash3 me-1" aria-hidden="true"></i>Revoke
                     </button>`;
-                div.querySelector('[data-device-name]').textContent = d.name || d.device_name || 'Device passkey';
+                const displayName = d.name || d.device_name || 'Device passkey';
+                div.querySelector('[data-device-name]').textContent = displayName;
+                const attachmentLabel = d.authenticator_attachment === 'platform' ? 'Platform passkey' : 'Security key';
+                div.querySelector('[data-device-meta]').textContent = d.user_agent_summary
+                    ? `${attachmentLabel} · ${d.user_agent_summary}`
+                    : attachmentLabel;
                 const removeButton = div.querySelector('.device-remove-btn');
-                removeButton.setAttribute('aria-label', 'Remove ' + (d.name || d.device_name || 'registered device'));
+                removeButton.setAttribute('aria-label', 'Revoke ' + displayName);
                 removeButton.addEventListener('click', () => removeDevice(d.credential_id, removeButton));
                 list.appendChild(div);
             });
@@ -157,12 +282,11 @@ async function loadDevices() {
             emptyDiv.className = 'bio-device-empty';
             emptyDiv.innerHTML = `
                 <i class="bi bi-shield-lock" aria-hidden="true"></i>
-                <strong>No passkeys registered on this account yet</strong>
-                <div style="font-size:.82rem;">Use the registration button above to link this device’s fingerprint or passkey.</div>
-            `;
+                <strong>No credentials registered on this account yet</strong>
+                <div style="font-size:.82rem;">Confirm your consent above and register this device to enable passkey sign-in and attendance verification.</div>`;
             list.appendChild(emptyDiv);
         }
-    } catch(e) {
+    } catch (e) {
         console.error('Failed to load biometric devices', e);
         list.innerHTML = '';
         list.removeAttribute('aria-busy');
@@ -180,13 +304,9 @@ async function loadDevices() {
         retryButton.type = 'button';
         retryButton.className = 'device-load-retry flow-button';
         retryButton.innerHTML = '<i class="bi bi-arrow-repeat" aria-hidden="true"></i> Try again';
-        retryButton.addEventListener('click', function() {
+        retryButton.addEventListener('click', function () {
             retryButton.disabled = true;
             retryButton.textContent = 'Checking again…';
-            if (badge) {
-                badge.setAttribute('tabindex', '-1');
-                badge.focus({ preventScroll: true });
-            }
             return loadDevices();
         });
         errorState.appendChild(errorText);
@@ -196,84 +316,73 @@ async function loadDevices() {
 }
 
 async function removeDevice(credentialId, btn) {
-    if (!confirm('Remove this sign-in method from your account?')) return;
+    if (!confirm('Revoke this device credential? It will immediately stop working for sign-in and attendance until re-registered.')) return;
+    showDeviceActionStatus('');
     try {
         if (btn) {
             btn.disabled = true;
             btn.setAttribute('aria-busy', 'true');
-            btn.textContent = 'Removing…';
+            btn.textContent = 'Revoking…';
         }
         const res = await fetch('{{ route("webauthn.remove") }}', {
             method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ credential_id: credentialId })
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ credential_id: credentialId, reason: 'user_revoked' })
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok || data.success === false) {
-            throw new Error(data.message || 'Could not remove this sign-in method. Please try again.');
+            throw new Error(data.message || 'Could not revoke this credential. Please try again.');
         }
+        window.DevicePasskeys?.forgetBrowserPasskey?.(credentialId);
         await loadDevices();
+        showDeviceActionStatus(data.message || 'Device credential revoked.');
         if (typeof showToast === 'function') {
-            showToast(data.message || 'Device passkey removed.', 'info');
+            showToast(data.message || 'Device credential revoked.', 'info');
         }
-    } catch(err) {
-        console.error('Failed to remove biometric device', err);
+    } catch (err) {
+        console.error('Failed to revoke biometric device', err);
         if (btn) {
             btn.disabled = false;
             btn.removeAttribute('aria-busy');
-            btn.innerHTML = '<i class="bi bi-trash3 me-1"></i>Remove';
+            btn.innerHTML = '<i class="bi bi-trash3 me-1"></i>Revoke';
         }
-        const badge = document.getElementById('deviceCountBadge');
-        if (typeof showToast === 'function') showToast(err.message || 'Could not remove this sign-in method. Please try again.', 'error');
-        else if (badge) badge.textContent = 'Could not remove device. Try again.';
+        showDeviceActionStatus(err.message || 'Could not revoke this credential. Please try again.', true);
+        if (typeof showToast === 'function') {
+            showToast(err.message || 'Could not revoke this credential. Please try again.', 'error');
+        }
     }
-}
-
-function normalizeBase64(base64) {
-    base64 = (base64 || '').replace(/-/g, '+').replace(/_/g, '/');
-    var padding = base64.length % 4;
-    if (padding) base64 += '===='.slice(padding);
-    return base64;
-}
-
-function base64ToUint8Array(base64) {
-    base64 = normalizeBase64(base64);
-    var binary = atob(base64);
-    var bytes = new Uint8Array(binary.length);
-    for (var i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes;
-}
-
-function bufferToBase64Url(buffer) {
-    var bytes = new Uint8Array(buffer);
-    var binary = '';
-    for (var i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function getAndroidDevicePasskeyBridge() {
-    return window.DevicePasskeys?.hasAndroidPasskeyBridge?.() ? window.AttendancePasskey : null;
 }
 
 async function beginDevicePasskeyRegistration() {
     if (bioAbortController) return;
+    if (!isConsentSatisfied()) {
+        syncRegistrationButtonState();
+        document.getElementById('bioConsentCheckbox')?.focus({ preventScroll: true });
+        return;
+    }
+
     const controller = new AbortController();
     bioAbortController = controller;
+    syncRegistrationButtonState();
 
     const statusTitle = document.getElementById('fpScanningTitle');
     const statusText = document.getElementById('fpStatusSub');
-    const frame = document.getElementById('devicePasskeyFrame');
+    const activeLabel = document.getElementById('bioActiveStateLabel');
     const confirmButton = document.getElementById('confirmBioBtn');
+    const deviceNameInput = document.getElementById('bioDeviceNameInput');
 
-    function showError(title, message) {
-        frame?.classList.remove('bio-detected');
+    function showClassifiedError(classified) {
         const errorTitle = document.getElementById('bioErrorTitle');
-        errorTitle.textContent = title;
-        document.getElementById('bioErrorDesc').textContent = message;
+        const errorDesc = document.getElementById('bioErrorDesc');
+        const retryBtn = document.getElementById('retryBtn');
+        if (errorTitle) errorTitle.textContent = classified.title || 'Registration could not finish';
+        if (errorDesc) errorDesc.textContent = classified.message || 'Please try again.';
+        if (retryBtn) retryBtn.hidden = classified.retryable === false;
         showRegistrationView('bioErrorView');
         focusBiometricHeading(errorTitle);
     }
@@ -287,13 +396,15 @@ async function beginDevicePasskeyRegistration() {
             return;
         }
 
-        statusTitle.textContent = 'Preparing device prompt';
-        statusText.textContent = 'Setting up the passkey request.';
+        if (activeLabel) activeLabel.textContent = 'Preparing registration challenge…';
+        if (statusTitle) statusTitle.textContent = 'Preparing secure challenge';
+        if (statusText) statusText.textContent = 'Requesting a one-time cryptographic challenge from the server.';
         showRegistrationView('bioScanningView');
         setBioRegistrationStage(2);
         focusBiometricHeading(statusTitle);
 
         const optRes = await fetch('{{ route("webauthn.register.options") }}', {
+            credentials: 'same-origin',
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Accept': 'application/json',
@@ -301,175 +412,95 @@ async function beginDevicePasskeyRegistration() {
             },
             signal: controller.signal
         });
-        const options = await optRes.json();
+        const options = await optRes.json().catch(() => ({}));
         if (controller.signal.aborted) return;
         if (!optRes.ok || !options.challenge || !options.user) {
-            throw new Error(options.message || 'Could not start passkey registration. Try again.');
+            const err = new Error(options.message || 'Could not start registration. Please try again.');
+            err.status = optRes.status;
+            err.code = options.code;
+            throw err;
         }
 
-        const hostname = window.location.hostname.toLowerCase().trim();
-        const rp = { name: options.rp?.name || 'School Attendance' };
-        const serverRp = (options.rp?.id || '').toLowerCase().trim();
-        if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) && !hostname.includes(':')) {
-            rp.id = serverRp || hostname;
-        }
-
-        const publicKey = {
-            challenge: base64ToUint8Array(options.challenge),
-            rp,
-            user: {
-                id: base64ToUint8Array(options.user.id),
-                name: options.user.name,
-                displayName: options.user.displayName
-            },
-            pubKeyCredParams: options.pubKeyCredParams || [
-                { type: 'public-key', alg: -7 },
-                { type: 'public-key', alg: -257 }
-            ],
-            timeout: options.timeout || 120000,
-            attestation: options.attestation || 'none',
-            excludeCredentials: (options.excludeCredentials || []).map(credential => ({
-                type: credential.type || 'public-key',
-                id: base64ToUint8Array(credential.id)
-            })),
-            hints: ['client-device'],
-            authenticatorSelection: {
-                authenticatorAttachment: 'platform',
-                userVerification: 'required',
-                residentKey: 'required',
-                requireResidentKey: true
+        const scan = () => {
+            if (confirmButton) confirmButton.hidden = true;
+            if (activeLabel) activeLabel.textContent = 'Awaiting device authentication';
+            if (statusTitle) statusTitle.textContent = 'Complete your device prompt';
+            if (statusText) {
+                statusText.textContent = lastCapabilityResult?.supportsFingerprintSpecificUi
+                    ? 'Touch your fingerprint sensor or complete Android’s biometric prompt.'
+                    : 'Your operating system is handling verification. Follow the native prompt on this device.';
             }
+            return window.DevicePasskeys.registerCredential(options, controller.signal);
         };
 
-        const androidCreateOptions = {
-            challenge: options.challenge,
-            rp,
-            user: {
-                id: options.user.id,
-                name: options.user.name,
-                displayName: options.user.displayName
-            },
-            pubKeyCredParams: publicKey.pubKeyCredParams,
-            timeout: publicKey.timeout,
-            attestation: publicKey.attestation,
-            excludeCredentials: options.excludeCredentials || [],
-            authenticatorSelection: publicKey.authenticatorSelection
-        };
-
-        statusTitle.textContent = 'Confirm on your device';
-        let credential;
-        if (getAndroidDevicePasskeyBridge()) {
-            statusText.textContent = 'Touch your fingerprint sensor to register this device.';
-            credential = await window.DevicePasskeys.requestAndroidPasskey('create', androidCreateOptions, controller.signal);
+        let registration;
+        if (window.DevicePasskeys.needsTap('create')) {
+            if (activeLabel) activeLabel.textContent = 'Ready for device prompt';
+            if (statusTitle) statusTitle.textContent = 'Open device prompt';
+            if (statusText) statusText.textContent = 'Tap below to open your operating system’s authentication prompt.';
+            if (confirmButton) confirmButton.hidden = false;
+            registration = await window.DevicePasskeys.confirmOnClick(confirmButton, scan, controller.signal);
         } else {
-            statusText.textContent = 'Continue to open your device’s passkey prompt.';
-            confirmButton.hidden = false;
-            const requestBrowserCredential = async () => {
-                confirmButton.hidden = true;
-                statusText.textContent = 'Follow your device’s biometric or screen lock prompt.';
-                focusBiometricHeading(statusTitle);
-                try {
-                    return await navigator.credentials.create({ publicKey, signal: controller.signal });
-                } catch (err) {
-                    if (err && (err.name === 'NotSupportedError' || err.name === 'TypeError' || err.name === 'ConstraintError')) {
-                        const fallbackPublicKey = {
-                            ...publicKey,
-                            authenticatorSelection: {
-                                authenticatorAttachment: 'platform',
-                                userVerification: 'required',
-                                residentKey: 'preferred',
-                                requireResidentKey: false
-                            }
-                        };
-                        return await navigator.credentials.create({ publicKey: fallbackPublicKey, signal: controller.signal });
-                    }
-                    throw err;
-                }
-            };
-            credential = navigator.userActivation?.isActive
-                ? await requestBrowserCredential()
-                : await window.DevicePasskeys.confirmOnClick(confirmButton, requestBrowserCredential, controller.signal);
+            registration = await scan();
         }
-        if (controller.signal.aborted) return;
-        if (!credential) throw new Error('The passkey request ended before registration finished.');
+        if (controller.signal.aborted || !registration) return;
 
         setBioRegistrationStage(3);
-        frame?.classList.add('bio-detected');
-        statusTitle.textContent = 'Saving your passkey';
-        statusText.textContent = 'Linking the passkey to your account.';
+        if (activeLabel) activeLabel.textContent = 'Verifying cryptographic response…';
+        if (statusTitle) statusTitle.textContent = 'Validating on server';
+        if (statusText) statusText.textContent = 'Confirming your public key and linking it securely to your account.';
 
-        const isBridgePayload = typeof credential.rawId === 'string';
-        const credentialId = isBridgePayload ? credential.rawId : bufferToBase64Url(credential.rawId);
-        const transports = Array.isArray(credential.response?.transports)
-            ? credential.response.transports
-            : ((credential.response && typeof credential.response.getTransports === 'function')
-                ? credential.response.getTransports()
-                : []);
+        const chosenName = (deviceNameInput && deviceNameInput.value.trim())
+            || lastCapabilityResult?.defaultDeviceName
+            || undefined;
 
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
             method: 'POST',
+            credentials: 'same-origin',
             signal: controller.signal,
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
-                credential_id: credentialId,
-                transports,
-                credential: {
-                    id: credential.id || credentialId,
-                    type: credential.type || 'public-key',
-                    transports,
-                    response: {
-                        attestationObject: isBridgePayload
-                            ? credential.response.attestationObject
-                            : bufferToBase64Url(credential.response.attestationObject),
-                        clientDataJSON: isBridgePayload
-                            ? credential.response.clientDataJSON
-                            : bufferToBase64Url(credential.response.clientDataJSON)
-                    }
-                }
+                ...registration,
+                device_name: chosenName,
+                biometric_type: lastCapabilityResult?.biometricType || 'device_lock',
+                consent_accepted: true
             })
         });
-
-        const result = await saveRes.json();
+        const result = await saveRes.json().catch(() => ({}));
         if (controller.signal.aborted) return;
-        if (saveRes.status === 409) {
-            showError('Passkey already registered', 'This passkey is already registered.');
-            return;
-        }
+
         if (!saveRes.ok || !result.success) {
-            throw new Error(result.message || 'Could not save the passkey. Try again.');
+            const saveErr = new Error(result.message || 'Server validation failed. Please try again.');
+            saveErr.status = saveRes.status;
+            saveErr.code = result.code;
+            throw saveErr;
         }
 
-        if (!isBridgePayload) {
-            window.DevicePasskeys?.rememberBrowserPasskey?.(credentialId);
-        }
-
+        // Only show registration success AFTER server-side cryptographic validation returns 200 OK.
         setBioRegistrationStage(4);
+        const successDesc = document.getElementById('bioSuccessDesc');
+        if (successDesc && result.device?.device_name) {
+            successDesc.textContent = `"${result.device.device_name}" passed cryptographic verification and is now linked to your account.`;
+        }
         showRegistrationView('bioSuccessView');
         focusBiometricHeading(document.getElementById('bioSuccessTitle'));
         window.triggerHaptic?.('success');
         await loadDevices();
     } catch (error) {
         if (controller.signal.aborted) return;
-        if (error.name === 'AbortError') {
-            cancelBiometricRegistration();
-        } else if (error.name === 'NotAllowedError') {
-            showError('Device prompt ended', 'The device prompt was closed or expired before registration finished. Try again when you are ready.');
-        } else if (error.name === 'InvalidStateError') {
-            showError('Passkey already registered', 'This passkey is already registered.');
-        } else if (error.name === 'NotSupportedError' || error.name === 'NotReadableError') {
-            showError('Device verification unavailable', 'Check the sign-in settings on this device and try again.');
-        } else {
-            showError('Registration could not finish', error.message || 'Try registering the device again.');
-        }
+        const classified = window.DevicePasskeys?.classifyError
+            ? window.DevicePasskeys.classifyError(error, 'register')
+            : { title: 'Registration failed', message: error.message || 'Please try again.', retryable: true };
+        showClassifiedError(classified);
     } finally {
         if (bioAbortController === controller) {
-            confirmButton.hidden = true;
+            if (confirmButton) confirmButton.hidden = true;
             bioAbortController = null;
+            syncRegistrationButtonState();
         }
     }
 }

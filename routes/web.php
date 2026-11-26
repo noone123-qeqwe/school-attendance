@@ -14,8 +14,8 @@ Route::post('/webauthn/available-methods', [App\Http\Controllers\WebAuthnControl
 Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 'login'])->middleware('throttle:login')->block(10, 10)->name('webauthn.login');
 Route::post('/webauthn/face-login-options', [App\Http\Controllers\WebAuthnController::class, 'faceLoginOptions'])->middleware('throttle:webauthn.options')->block(10, 10)->name('webauthn.face.options');
 Route::post('/webauthn/face-login', [App\Http\Controllers\WebAuthnController::class, 'faceLogin'])->middleware('throttle:login')->block(10, 10)->name('webauthn.face.login');
-Route::post('/webauthn/setup-options', [App\Http\Controllers\WebAuthnController::class, 'setupOptions'])->middleware('throttle:webauthn.options')->name('webauthn.setup.options');
-Route::post('/webauthn/setup-register', [App\Http\Controllers\WebAuthnController::class, 'setupRegister'])->middleware('throttle:login')->name('webauthn.setup.register');
+Route::post('/webauthn/setup-options', [App\Http\Controllers\WebAuthnController::class, 'setupOptions'])->middleware('throttle:webauthn.options')->block(10, 10)->name('webauthn.setup.options');
+Route::post('/webauthn/setup-register', [App\Http\Controllers\WebAuthnController::class, 'setupRegister'])->middleware('throttle:login')->block(10, 10)->name('webauthn.setup.register');
 Route::post('/webauthn/native-biometric-login', [App\Http\Controllers\WebAuthnController::class, 'nativeBiometricLogin'])->middleware('throttle:login')->name('webauthn.native.login');
 
 // Web Push Notification Subscriptions & Testing
@@ -440,12 +440,13 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::post('/student/parent-link/unlink', [App\Http\Controllers\HomeController::class, 'unlinkParent'])->name('student.parent_link.unlink');
 });
 
-// WebAuthn (Fingerprint / Biometric Management for all authenticated users)
-Route::middleware('auth')->group(function () {
-    Route::get('/webauthn/register-options', [App\Http\Controllers\WebAuthnController::class, 'registerOptions'])->name('webauthn.register.options');
-    Route::post('/webauthn/register', [App\Http\Controllers\WebAuthnController::class, 'register'])->name('webauthn.register');
+// WebAuthn (Device Biometric / Passkey Management for all authenticated users)
+Route::middleware(['auth', 'throttle:webauthn.manage'])->group(function () {
+    Route::get('/webauthn/register-options', [App\Http\Controllers\WebAuthnController::class, 'registerOptions'])->block(10, 10)->name('webauthn.register.options');
+    Route::post('/webauthn/register', [App\Http\Controllers\WebAuthnController::class, 'register'])->block(10, 10)->name('webauthn.register');
     Route::get('/webauthn/devices', [App\Http\Controllers\WebAuthnController::class, 'devices'])->name('webauthn.devices');
-    Route::match(['delete', 'post'], '/webauthn/device', [App\Http\Controllers\WebAuthnController::class, 'removeDevice'])->name('webauthn.remove');
+    Route::patch('/webauthn/device', [App\Http\Controllers\WebAuthnController::class, 'renameDevice'])->block(10, 10)->name('webauthn.rename');
+    Route::match(['delete', 'post'], '/webauthn/device', [App\Http\Controllers\WebAuthnController::class, 'removeDevice'])->block(10, 10)->name('webauthn.remove');
 });
 
 // Teacher Routes (Teachers only)

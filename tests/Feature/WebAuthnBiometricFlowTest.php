@@ -354,17 +354,21 @@ class WebAuthnBiometricFlowTest extends TestCase
             ->assertJsonPath('0.transports', ['internal', 'hybrid'])
             ->assertJsonPath('0.biometric_type', 'fingerprint');
 
+        $this->getJson(route('webauthn.register.options'))
+            ->assertOk()
+            ->assertJsonPath('excludeCredentials.0.id', 'cred-transport-test');
+
         auth()->logout();
 
         $loginHtml = $this->get(route('login'))->assertOk()->getContent();
         $this->assertStringNotContainsString('Face ID', $loginHtml);
         $this->assertStringNotContainsString('Windows Hello', $loginHtml);
-        $this->assertStringContainsString('buildAllowCredentials', $loginHtml);
+        $this->assertStringContainsString('device-passkey-capabilities.js', $loginHtml);
+        $this->assertStringContainsString('DevicePasskeys.verifyFingerprint', $loginHtml);
+        $this->assertStringContainsString('DevicePasskeys.registerFingerprint', $loginHtml);
         $this->assertStringContainsString('runWithCredentialWatchdog', $loginHtml);
         $this->assertStringContainsString('fetchJsonWithTimeout', $loginHtml);
         $this->assertStringContainsString('abortActiveBiometricAttempt', $loginHtml);
-        $this->assertStringContainsString('client-device', $loginHtml);
-        $this->assertStringContainsString('getTransports', $loginHtml);
         $this->assertStringNotContainsString('Use passkey from another device', $loginHtml);
         $this->assertStringNotContainsString('Set up fingerprint on this device', $loginHtml);
         $this->assertStringContainsString('on this account', $loginHtml);
@@ -447,5 +451,347 @@ class WebAuthnBiometricFlowTest extends TestCase
         ])->assertStatus(401)
             ->assertJsonPath('code', 'BIOMETRIC_UNAVAILABLE');
         $this->assertGuest();
+    }
+
+    public function test_authenticated_registration_requires_consent_blocks_duplicates_and_prevents_cross_account_hijack(): void
+    {
+        $webauthn = app(WebauthnService::class);
+        $origin = 'https://attendance.example';
+        config([
+            'webauthn.rp_id' => 'attendance.example',
+            'webauthn.allowed_origins' => [$origin],
+        ]);
+
+        $studentA = $this->createStudent('2026-8810', 'owner-a@example.test');
+        $studentB = $this->createStudent('2026-8811', 'attacker-b@example.test');
+        $key = $this->createEcKeyPair();
+        $rawCredId = random_bytes(32);
+        $credId = $webauthn->base64UrlEncode($rawCredId);
+
+        // 1. Explicit consent_accepted = false is rejected
+        $optsA = $this->actingAs($studentA)->getJson(route('webauthn.register.options'))
+            ->assertOk()
+            ->assertJsonPath('authenticatorSelection.authenticatorAttachment', 'platform')
+            ->assertJsonPath('authenticatorSelection.userVerification', 'required')
+            ->json();
+
+        $clientDataA = json_encode([
+            'type' => 'webauthn.create',
+            'challenge' => $optsA['challenge'],
+            'origin' => $origin,
+        ], JSON_THROW_ON_ERROR);
+        $attestation = $this->buildAttestationObject($key, 'attendance.example', $rawCredId, 1);
+
+        $this->actingAs($studentA)->postJson(route('webauthn.register'), [
+            'credential_id' => $credId,
+            'consent_accepted' => false,
+            'credential' => [
+                'id' => $credId,
+                'rawId' => $credId,
+                'type' => 'public-key',
+                'response' => [
+                    'attestationObject' => $webauthn->base64UrlEncode($attestation),
+                    'clientDataJSON' => $webauthn->base64UrlEncode($clientDataA),
+                ],
+            ],
+        ])->assertStatus(422)
+            ->assertJsonPath('code', 'CONSENT_REQUIRED');
+
+        // 2. First-time registration with consent succeeds and records safe metadata (never raw biometric data)
+        $optsA = $this->actingAs($studentA)->getJson(route('webauthn.register.options'))->assertOk()->json();
+        $clientDataA = json_encode([
+            'type' => 'webauthn.create',
+            'challenge' => $optsA['challenge'],
+            'origin' => $origin,
+        ], JSON_THROW_ON_ERROR);
+
+        $this->actingAs($studentA)
+            ->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/128.0'])
+            ->postJson(route('webauthn.register'), [
+                'credential_id' => $credId,
+                'device_name' => 'Study Laptop',
+                'biometric_type' => 'device_lock',
+                'consent_accepted' => true,
+                'credential' => [
+                    'id' => $credId,
+                    'rawId' => $credId,
+                    'type' => 'public-key',
+                    'authenticatorAttachment' => 'platform',
+                    'transports' => ['internal'],
+                    'response' => [
+                        'attestationObject' => $webauthn->base64UrlEncode($attestation),
+                        'clientDataJSON' => $webauthn->base64UrlEncode($clientDataA),
+                    ],
+                ],
+            ])->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('device.device_name', 'Study Laptop')
+            ->assertJsonPath('device.authenticator_attachment', 'platform')
+            ->assertJsonMissingPath('device.public_key');
+
+        $stored = $studentA->webauthnCredentials()->firstOrFail();
+        $this->assertNotNull($stored->consent_given_at);
+        $this->assertSame('00000000-0000-0000-0000-000000000000', $stored->aaguid);
+        $this->assertSame('Chrome on Windows PC', $stored->user_agent_summary);
+
+        // 3. Duplicate registration by the same user is blocked (409) AND setupOptions preserves excludeCredentials
+        $setupOpts = $this->postJson(route('webauthn.setup.options'), [
+            'identifier' => $studentA->email,
+            'password' => 'StrongStudentPass123!',
+            'consent_accepted' => true,
+        ])->assertOk()->json();
+        $this->assertSame($credId, $setupOpts['excludeCredentials'][0]['id'] ?? null);
+
+        $optsDup = $this->actingAs($studentA)->getJson(route('webauthn.register.options'))->assertOk()->json();
+        $clientDataDup = json_encode([
+            'type' => 'webauthn.create',
+            'challenge' => $optsDup['challenge'],
+            'origin' => $origin,
+        ], JSON_THROW_ON_ERROR);
+
+        $this->actingAs($studentA)->postJson(route('webauthn.register'), [
+            'credential_id' => $credId,
+            'consent_accepted' => true,
+            'credential' => [
+                'id' => $credId,
+                'rawId' => $credId,
+                'type' => 'public-key',
+                'response' => [
+                    'attestationObject' => $webauthn->base64UrlEncode($attestation),
+                    'clientDataJSON' => $webauthn->base64UrlEncode($clientDataDup),
+                ],
+            ],
+        ])->assertStatus(409)
+            ->assertJsonPath('code', 'CREDENTIAL_ALREADY_REGISTERED');
+
+        // 4. Cross-account hijack attempt: studentB tries to register studentA's credential ID -> 409
+        auth()->logout();
+        $this->flushSession();
+        $optsB = $this->actingAs($studentB)->getJson(route('webauthn.register.options'))->assertOk()->json();
+        $clientDataB = json_encode([
+            'type' => 'webauthn.create',
+            'challenge' => $optsB['challenge'],
+            'origin' => $origin,
+        ], JSON_THROW_ON_ERROR);
+
+        $this->actingAs($studentB)->postJson(route('webauthn.register'), [
+            'credential_id' => $credId,
+            'consent_accepted' => true,
+            'credential' => [
+                'id' => $credId,
+                'rawId' => $credId,
+                'type' => 'public-key',
+                'response' => [
+                    'attestationObject' => $webauthn->base64UrlEncode($attestation),
+                    'clientDataJSON' => $webauthn->base64UrlEncode($clientDataB),
+                ],
+            ],
+        ])->assertStatus(409)
+            ->assertJsonPath('code', 'CREDENTIAL_ALREADY_REGISTERED');
+
+        $this->assertSame(0, $studentB->webauthnCredentials()->count());
+    }
+
+    public function test_credential_revocation_blocks_login_prevents_unauthorized_deletion_and_allows_reenrollment(): void
+    {
+        $webauthn = app(WebauthnService::class);
+        $origin = 'https://attendance.example';
+        config([
+            'webauthn.rp_id' => 'attendance.example',
+            'webauthn.allowed_origins' => [$origin],
+        ]);
+
+        $owner = $this->createStudent('2026-8812', 'revoke-owner@example.test');
+        $other = $this->createStudent('2026-8813', 'revoke-other@example.test');
+        $key = $this->createEcKeyPair();
+        $rawId = random_bytes(20);
+        $credId = $webauthn->base64UrlEncode($rawId);
+
+        $cred = $owner->webauthnCredentials()->create([
+            'credential_id' => $credId,
+            'public_key' => openssl_pkey_get_details($key)['key'],
+            'sign_count' => 3,
+            'device_name' => 'Original Phone',
+            'biometric_type' => 'fingerprint',
+            'transports' => ['internal'],
+        ]);
+
+        // Unauthorized user cannot revoke or rename owner's credential
+        $this->actingAs($other)->deleteJson(route('webauthn.remove'), [
+            'credential_id' => $credId,
+        ])->assertNotFound()->assertJsonPath('code', 'CREDENTIAL_NOT_FOUND');
+
+        $this->actingAs($other)->patchJson(route('webauthn.rename'), [
+            'credential_id' => $credId,
+            'device_name' => 'Hacked Device',
+        ])->assertNotFound();
+
+        // Owner can rename their own credential
+        auth()->logout();
+        $this->flushSession();
+        $this->actingAs($owner)->patchJson(route('webauthn.rename'), [
+            'credential_id' => $credId,
+            'device_name' => 'Renamed Phone',
+        ])->assertOk()->assertJsonPath('device.device_name', 'Renamed Phone');
+
+        // Owner revokes their credential
+        $this->actingAs($owner)->deleteJson(route('webauthn.remove'), [
+            'credential_id' => $credId,
+            'reason' => 'lost_device',
+        ])->assertOk()->assertJsonPath('success', true);
+
+        $cred->refresh();
+        $this->assertNotNull($cred->revoked_at);
+        $this->assertSame('lost_device', $cred->revoked_reason);
+
+        // Revoked credential is no longer returned in /webauthn/devices or login options
+        $this->actingAs($owner)->getJson(route('webauthn.devices'))
+            ->assertOk()
+            ->assertJsonCount(0);
+
+        auth()->logout();
+        $this->postJson(route('webauthn.login.options'), ['identifier' => $owner->email])
+            ->assertNotFound()
+            ->assertJsonPath('code', 'BIOMETRIC_UNAVAILABLE');
+
+        // Even if someone forces a discoverable challenge and presents the revoked credential, login is rejected
+        $discOpts = $this->postJson(route('webauthn.login.options'), [])->assertOk()->json();
+        $clientData = json_encode([
+            'type' => 'webauthn.get',
+            'challenge' => $discOpts['challenge'],
+            'origin' => $origin,
+        ], JSON_THROW_ON_ERROR);
+        $authData = hash('sha256', 'attendance.example', true) . chr(0x05) . pack('N', 4);
+        openssl_sign($authData . hash('sha256', $clientData, true), $sig, $key, OPENSSL_ALGO_SHA256);
+
+        $this->postJson(route('webauthn.login'), [
+            'credential_id' => $credId,
+            'assertion' => [
+                'id' => $credId,
+                'response' => [
+                    'clientDataJSON' => $webauthn->base64UrlEncode($clientData),
+                    'authenticatorData' => $webauthn->base64UrlEncode($authData),
+                    'signature' => $webauthn->base64UrlEncode($sig),
+                ],
+            ],
+        ])->assertStatus(401);
+        $this->assertGuest();
+
+        // Owner can cleanly re-register a new credential after revoking the old one
+        $newKey = $this->createEcKeyPair();
+        $newRawId = random_bytes(20);
+        $newCredId = $webauthn->base64UrlEncode($newRawId);
+        $regOpts = $this->actingAs($owner)->getJson(route('webauthn.register.options'))
+            ->assertOk()
+            ->assertJsonCount(0, 'excludeCredentials')
+            ->json();
+
+        $regClientData = json_encode([
+            'type' => 'webauthn.create',
+            'challenge' => $regOpts['challenge'],
+            'origin' => $origin,
+        ], JSON_THROW_ON_ERROR);
+        $attestation = $this->buildAttestationObject($newKey, 'attendance.example', $newRawId, 1);
+
+        $this->actingAs($owner)->postJson(route('webauthn.register'), [
+            'credential_id' => $newCredId,
+            'consent_accepted' => true,
+            'credential' => [
+                'id' => $newCredId,
+                'rawId' => $newCredId,
+                'type' => 'public-key',
+                'response' => [
+                    'attestationObject' => $webauthn->base64UrlEncode($attestation),
+                    'clientDataJSON' => $webauthn->base64UrlEncode($regClientData),
+                ],
+            ],
+        ])->assertOk()->assertJsonPath('success', true);
+
+        $this->actingAs($owner)->getJson(route('webauthn.devices'))
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.credential_id', $newCredId);
+    }
+
+    public function test_sign_count_zero_downgrade_and_malformed_cbor_are_safely_rejected(): void
+    {
+        $webauthn = app(WebauthnService::class);
+        $origin = 'https://attendance.example';
+        config([
+            'webauthn.rp_id' => 'attendance.example',
+            'webauthn.allowed_origins' => [$origin],
+        ]);
+
+        $student = $this->createStudent('2026-8814', 'hardening@example.test');
+        $key = $this->createEcKeyPair();
+        $rawId = random_bytes(16);
+        $credId = $webauthn->base64UrlEncode($rawId);
+
+        $student->webauthnCredentials()->create([
+            'credential_id' => $credId,
+            'public_key' => openssl_pkey_get_details($key)['key'],
+            'sign_count' => 10,
+            'biometric_type' => 'device_lock',
+            'transports' => ['internal'],
+        ]);
+
+        // 1. Sign-count downgrade to 0 when stored sign_count > 0 must be rejected (W3C §7.2 step 21)
+        $opts = $this->postJson(route('webauthn.login.options'), ['identifier' => $student->email])->assertOk()->json();
+        $clientData = json_encode([
+            'type' => 'webauthn.get',
+            'challenge' => $opts['challenge'],
+            'origin' => $origin,
+        ], JSON_THROW_ON_ERROR);
+        $authDataZero = hash('sha256', 'attendance.example', true) . chr(0x05) . pack('N', 0);
+        openssl_sign($authDataZero . hash('sha256', $clientData, true), $sigZero, $key, OPENSSL_ALGO_SHA256);
+
+        $this->postJson(route('webauthn.login'), [
+            'identifier' => $student->email,
+            'credential_id' => $credId,
+            'assertion' => [
+                'id' => $credId,
+                'response' => [
+                    'clientDataJSON' => $webauthn->base64UrlEncode($clientData),
+                    'authenticatorData' => $webauthn->base64UrlEncode($authDataZero),
+                    'signature' => $webauthn->base64UrlEncode($sigZero),
+                ],
+            ],
+        ])->assertStatus(401)->assertJsonPath('code', 'VERIFICATION_FAILED');
+        $this->assertGuest();
+
+        // 2. Malformed / DoS CBOR payload (huge map count 0xba 0xff 0xff 0xff 0xff) is rejected cleanly without crashing
+        $regOpts = $this->actingAs($student)->getJson(route('webauthn.register.options'))->assertOk()->json();
+        $regClientData = json_encode([
+            'type' => 'webauthn.create',
+            'challenge' => $regOpts['challenge'],
+            'origin' => $origin,
+        ], JSON_THROW_ON_ERROR);
+        $dosCbor = "\xba\xff\xff\xff\xff";
+
+        $this->actingAs($student)->postJson(route('webauthn.register'), [
+            'credential_id' => 'dos-test-cred',
+            'consent_accepted' => true,
+            'credential' => [
+                'id' => 'dos-test-cred',
+                'rawId' => 'dos-test-cred',
+                'type' => 'public-key',
+                'response' => [
+                    'attestationObject' => $webauthn->base64UrlEncode($dosCbor),
+                    'clientDataJSON' => $webauthn->base64UrlEncode($regClientData),
+                ],
+            ],
+        ])->assertStatus(422)->assertJsonPath('code', 'REGISTRATION_FAILED');
+    }
+
+    public function test_fingerprint_registration_view_enforces_explicit_consent_and_has_no_fake_scan_animation(): void
+    {
+        $student = $this->createStudent('2026-8815', 'ui-check@example.test');
+        $html = $this->actingAs($student)->get(route('settings.biometrics.fingerprint'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('id="bioConsentCheckbox"', $html);
+        $this->assertStringContainsString('id="bioDeviceNameInput"', $html);
+        $this->assertStringContainsString('id="bioUnsupportedPanel"', $html);
+        $this->assertStringNotContainsString('bio-sensor-pad is-scanning', $html);
+        $this->assertStringNotContainsString('bio-radar-ring', $html);
     }
 }

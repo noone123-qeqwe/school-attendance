@@ -561,6 +561,14 @@ if (document.readyState === 'loading') {
                 </div>
             </div>
 
+            <!-- Explicit Consent for Device Credential Registration -->
+            <div id="bioModalConsentWrap" style="display:none;margin-bottom:14px;">
+                <label for="bioModalConsentCheckbox" style="display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border-radius:12px;border:1px solid rgba(255,255,255,0.16);background:rgba(15,4,7,0.52);font-size:0.78rem;line-height:1.45;color:#e3d5d9;cursor:pointer;text-align:left;">
+                    <input type="checkbox" id="bioModalConsentCheckbox" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;cursor:pointer;">
+                    <span>I consent to registering this device’s built-in biometric or screen-lock passkey on my account. Only a cryptographic public key is stored — never raw fingerprint or biometric data.</span>
+                </label>
+            </div>
+
             <!-- Inline Alert Message -->
             <!-- Action Buttons -->
             <div class="bio-modal-actions">
@@ -1214,7 +1222,7 @@ function passkeyAvailabilityMessage(result, operation) {
     if (result && result.reason === 'unavailable') {
         return operation === 'create'
             ? 'This browser couldn’t find an active biometric or device screen lock method. Check your device settings.'
-            : 'This browser did not report a local platform biometric authenticator. Check your device lock settings or use a passkey from another device.';
+            : 'Set up fingerprint or screen lock on this device, then try again.';
     }
     if (result && result.reason === 'unsupported') {
         return 'This browser does not support device biometric sign-in. Sign in with your password.';
@@ -1274,38 +1282,6 @@ function completeBiometricLogin(result) {
             });
         } catch (e) {}
     }
-}
-
-function normalizeBase64(base64) {
-    base64 = String(base64 || '').replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
-    var padding = base64.length % 4;
-    if (padding) base64 += '===='.slice(padding);
-    return base64;
-}
-
-function base64ToUint8Array(base64) {
-    base64 = normalizeBase64(base64);
-    if (!base64) return new Uint8Array(0);
-    var binary = atob(base64);
-    var bytes = new Uint8Array(binary.length);
-    for (var i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes;
-}
-
-function bufferToBase64Url(buffer) {
-    if (!buffer) return '';
-    var bytes = buffer instanceof Uint8Array
-        ? buffer
-        : (ArrayBuffer.isView(buffer)
-            ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
-            : new Uint8Array(buffer));
-    var binary = '';
-    for (var i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 function resetBiometricButton() {
@@ -1385,6 +1361,8 @@ function openBiometricModal(config) {
     var secondaryBtn = document.getElementById('bioModalSecondaryBtn');
     var cancelBtn = document.getElementById('bioModalCancelBtn');
     var passWrap = document.getElementById('bioModalPasswordWrap');
+    var consentWrap = document.getElementById('bioModalConsentWrap');
+    var consentBox = document.getElementById('bioModalConsentCheckbox');
     var idWrap = document.getElementById('bioModalIdentifierWrap');
     var faceWrap = document.getElementById('bioModalFaceWrap');
     var progress = document.getElementById('bioModalProgress');
@@ -1432,6 +1410,12 @@ function openBiometricModal(config) {
     }
     if (passWrap) {
         passWrap.style.display = config.showPassword ? 'block' : 'none';
+    }
+    if (consentWrap) {
+        consentWrap.style.display = config.showConsent ? 'block' : 'none';
+        if (consentBox && config.resetConsent) {
+            consentBox.checked = false;
+        }
     }
 
     if (methodsWrap && methodsList) {
@@ -1632,12 +1616,14 @@ async function openBiometricSetupModal(identifier, signal) {
     }
     openBiometricModal({
         title: 'Register this device',
-        headerIcon: 'bi-fingerprint',
+        headerIcon: capability.supportsFingerprintSpecificUi ? 'bi-fingerprint' : 'bi-shield-lock',
         identifier: activeSetupIdentifier,
-        message: 'Confirm your password once to open your fingerprint sensor and link this device to your account.',
+        message: 'Confirm your password and consent below. ' + (capability.disclaimer || 'Your operating system will verify you locally and share only a cryptographic public key.'),
         showPassword: true,
+        showConsent: true,
+        resetConsent: true,
         badgeType: 'info',
-        primaryBtnText: 'Verify & scan fingerprint',
+        primaryBtnText: capability.supportsFingerprintSpecificUi ? 'Verify & register fingerprint' : 'Verify & register device',
         secondaryBtnText: 'Enter password',
         showCancelBtn: true,
         onPrimaryClick: handleSetupBiometricsClick,
@@ -1649,8 +1635,26 @@ async function handleSetupBiometricsClick() {
     if (isBioPending) return;
     var passInputInForm = document.getElementById('loginPassword');
     var passInputInModal = document.getElementById('bioModalPasswordInput');
+    var consentBox = document.getElementById('bioModalConsentCheckbox');
     
     var password = passInputInModal?.value || passInputInForm?.value || '';
+
+    if (consentBox && !consentBox.checked) {
+        openBiometricModal({
+            title: 'Consent required',
+            identifier: activeSetupIdentifier,
+            message: 'Please check the consent box below to confirm you want to link this device’s passkey to your account.',
+            showPassword: true,
+            showConsent: true,
+            badgeType: 'warning',
+            primaryBtnText: 'Verify and set up biometrics',
+            secondaryBtnText: 'Enter password',
+            showCancelBtn: true,
+            onPrimaryClick: handleSetupBiometricsClick,
+            onSecondaryClick: closeBiometricModalAndFocusPassword
+        });
+        return;
+    }
 
     if (!password) {
         openBiometricModal({
@@ -1658,9 +1662,11 @@ async function handleSetupBiometricsClick() {
             identifier: activeSetupIdentifier,
             message: 'Confirm your account password to register a passkey on this account for this device.',
             showPassword: true,
+            showConsent: true,
             badgeType: 'warning',
             primaryBtnText: 'Verify and set up biometrics',
             secondaryBtnText: 'Enter password',
+            showCancelBtn: true,
             onPrimaryClick: handleSetupBiometricsClick,
             onSecondaryClick: closeBiometricModalAndFocusPassword
         });
@@ -1699,7 +1705,7 @@ async function startBiometricRegistration(identifier, password) {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ identifier: identifier, password: password })
+            body: JSON.stringify({ identifier: identifier, password: password, consent_accepted: true })
         }, 15000, attemptObj);
         if (isStaleBiometricAttempt(attemptObj)) return;
 
@@ -1738,97 +1744,36 @@ async function startBiometricRegistration(identifier, password) {
             return;
         }
 
-        var challenge = base64ToUint8Array(opts.challenge);
-        var userId = base64ToUint8Array(opts.user.id);
-        var excludeCredentials = (opts.excludeCredentials || []).map(function(c) {
-            return { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
-        });
-
-        var basePublicKey = {
-            challenge: challenge,
-            rp: opts.rp,
-            user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
-            pubKeyCredParams: opts.pubKeyCredParams || [
-                { type: 'public-key', alg: -7 },
-                { type: 'public-key', alg: -257 }
-            ],
-            timeout: Math.min(Math.max(Number(opts.timeout) || 60000, 15000), 65000),
-            attestation: opts.attestation || 'none',
-            excludeCredentials: excludeCredentials,
-            hints: ['client-device'],
-            authenticatorSelection: {
-                authenticatorAttachment: 'platform',
-                userVerification: 'required',
-                residentKey: 'required',
-                requireResidentKey: true
-            }
+        const scan = () => {
+            showBiometricProgress('Confirm on your device', 'Use your fingerprint sensor or follow the device unlock prompt.', identifier, 'Waiting for your device…', { icon: 'bi-fingerprint' });
+            return runWithCredentialWatchdog(
+                () => window.DevicePasskeys.registerFingerprint(opts, attemptObj.signal), opts.timeout, attemptObj
+            );
         };
-
-        var androidCreateOptions = {
-            challenge: opts.challenge,
-            rp: opts.rp,
-            user: { id: opts.user.id, name: opts.user.name, displayName: opts.user.displayName },
-            pubKeyCredParams: basePublicKey.pubKeyCredParams,
-            timeout: basePublicKey.timeout,
-            attestation: basePublicKey.attestation,
-            excludeCredentials: opts.excludeCredentials || [],
-            authenticatorSelection: basePublicKey.authenticatorSelection
-        };
-
-        var androidBridge = getAndroidPasskeyBridge();
-        var credential;
-        if (androidBridge) {
-            showBiometricProgress('Confirm on your device', 'Touch your fingerprint sensor to register this device.', identifier, 'Waiting for fingerprint…', { icon: 'bi-fingerprint' });
-            credential = await runWithCredentialWatchdog(function() {
-                return requestAndroidPasskey(androidBridge, 'create', androidCreateOptions, attemptObj);
-            }, basePublicKey.timeout, attemptObj);
-        } else {
-            credential = await new Promise(function(resolve, reject) {
-                var cancelBeforePrompt = function() { resolve(null); };
-                attemptObj.signal.addEventListener('abort', cancelBeforePrompt, { once: true });
+        let registration;
+        if (window.DevicePasskeys.needsTap('create')) {
+            registration = await new Promise((resolve, reject) => {
+                const cancel = () => resolve(null);
+                attemptObj.signal.addEventListener('abort', cancel, { once: true });
                 openBiometricModal({
-                    title: 'Confirm on your device',
-                    identifier: identifier,
-                    message: 'Continue to open your device’s fingerprint or passkey prompt.',
-                    primaryBtnText: 'Continue to device prompt',
+                    title: 'Ready to register',
+                    identifier,
+                    message: 'Open the fingerprint prompt on this device.',
+                    primaryBtnText: 'Register fingerprint',
                     secondaryBtnText: 'Enter password',
                     showCancelBtn: true,
-                    onPrimaryClick: function() {
-                        attemptObj.signal.removeEventListener('abort', cancelBeforePrompt);
-                        showBiometricProgress('Confirm on your device', 'Complete your device verification to save a passkey.', identifier, 'Waiting for device verification…', { icon: 'bi-fingerprint' });
-                        runWithCredentialWatchdog(async function() {
-                            try {
-                                return await navigator.credentials.create({ publicKey: basePublicKey, signal: attemptObj.signal });
-                            } catch (err) {
-                                if (!['NotSupportedError', 'TypeError', 'ConstraintError'].includes(err.name)) throw err;
-                                var options = Object.assign({}, basePublicKey, {
-                                    authenticatorSelection: Object.assign({}, basePublicKey.authenticatorSelection, {
-                                        residentKey: 'preferred', requireResidentKey: false
-                                    })
-                                });
-                                return navigator.credentials.create({ publicKey: options, signal: attemptObj.signal });
-                            }
-                        }, basePublicKey.timeout, attemptObj).then(resolve, reject);
+                    onSecondaryClick: closeBiometricModalAndFocusPassword,
+                    onPrimaryClick: () => {
+                        attemptObj.signal.removeEventListener('abort', cancel);
+                        scan().then(resolve, reject);
                     }
                 });
             });
+        } else {
+            registration = await scan();
         }
-        if (isStaleBiometricAttempt(attemptObj)) return;
-        if (!credential) {
-            throw createWebAuthnError('NotAllowedError', 'Biometric setup was cancelled.');
-        }
-
-        showBiometricProgress('Saving biometric sign-in', 'Your device confirmed setup. We’re linking this passkey to your account.', identifier, 'Saving credential to your account…');
-        var isRawB64 = typeof credential.rawId === 'string';
-        var rawId = isRawB64 ? credential.rawId : bufferToBase64Url(credential.rawId);
-        var clientDataJSON = isRawB64 ? credential.response.clientDataJSON : bufferToBase64Url(credential.response.clientDataJSON);
-        var attestationObject = isRawB64 ? credential.response.attestationObject : bufferToBase64Url(credential.response.attestationObject);
-        var transports = Array.isArray(credential.response?.transports)
-            ? credential.response.transports
-            : ((credential.response && typeof credential.response.getTransports === 'function')
-                ? credential.response.getTransports()
-                : []);
-
+        if (isStaleBiometricAttempt(attemptObj) || !registration) return;
+        showBiometricProgress('Saving biometric sign-in', 'Linking this device to your account.', identifier, 'Saving credential…');
         var saveFetch = await fetchJsonWithTimeout('{{ route("webauthn.setup.register") }}', {
             method: 'POST',
             credentials: 'same-origin',
@@ -1838,19 +1783,11 @@ async function startBiometricRegistration(identifier, password) {
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
-                credential_id: rawId,
-                biometric_type: 'fingerprint',
-                qr_token: biometricQrToken,
-                transports: transports,
-                credential: {
-                    id: credential.id || rawId,
-                    type: credential.type || 'public-key',
-                    transports: transports,
-                    response: {
-                        attestationObject: attestationObject,
-                        clientDataJSON: clientDataJSON
-                    }
-                }
+                ...registration,
+                device_name: capability?.defaultDeviceName || undefined,
+                biometric_type: capability?.biometricType || 'fingerprint',
+                consent_accepted: true,
+                qr_token: biometricQrToken
             })
         }, 15000, attemptObj);
         if (isStaleBiometricAttempt(attemptObj)) return;
@@ -1859,9 +1796,6 @@ async function startBiometricRegistration(identifier, password) {
         var regResult = saveFetch.data;
 
         if (saveRes.ok && regResult && regResult.success) {
-            if (!isRawB64) {
-                window.DevicePasskeys?.rememberBrowserPasskey?.(rawId);
-            }
             resetBiometricButton();
             try {
                 saveAccount({ identifier: identifier, name: identifier });
@@ -1982,93 +1916,6 @@ async function handleBiometricLogin() {
     return openBiometricSignInChoices(idInput ? idInput.value.trim() : '');
 }
 
-function canRequestDeviceSignIn(capability) {
-    // A local authenticator probe cannot rule out a synced passkey or a security key.
-    return window.isSecureContext && typeof window.PublicKeyCredential === 'function'
-        && typeof navigator.credentials?.get === 'function'
-        && capability && !['insecure', 'unsupported'].includes(capability.reason);
-}
-
-function getAndroidPasskeyBridge() {
-    var bridge = window.AttendancePasskey;
-    return window.isSecureContext && typeof bridge?.postMessage === 'function'
-        && typeof bridge.addEventListener === 'function' ? bridge : null;
-}
-
-function requestAndroidPasskey(bridge, typeOrPublicKey, publicKeyOrAttempt, maybeAttempt) {
-    var type = typeof typeOrPublicKey === 'string' ? typeOrPublicKey : 'get';
-    var publicKey = typeof typeOrPublicKey === 'string' ? publicKeyOrAttempt : typeOrPublicKey;
-    var attemptObj = typeof typeOrPublicKey === 'string' ? maybeAttempt : publicKeyOrAttempt;
-    var id = String(attemptObj.id);
-    var signal = attemptObj.signal;
-
-    return new Promise(function(resolve, reject) {
-        function cleanup() {
-            bridge.removeEventListener('message', onMessage);
-            signal.removeEventListener('abort', onAbort);
-        }
-
-        function onMessage(event) {
-            var result;
-            try { result = JSON.parse(event.data); } catch (err) { return; }
-            if (result?.id !== id) return;
-            cleanup();
-            var credentialPayload = result.credential || result.assertion;
-            if (result.error || !credentialPayload) {
-                reject(createWebAuthnError(result.error || 'UnknownError', 'Android could not complete passkey verification.'));
-            } else {
-                resolve(credentialPayload);
-            }
-        }
-
-        function onAbort() {
-            cleanup();
-            try { bridge.postMessage(JSON.stringify({ type: 'cancel', id: id })); } catch (err) {}
-            reject(createWebAuthnError('AbortError', 'Verification was cancelled.'));
-        }
-
-        bridge.addEventListener('message', onMessage);
-        signal.addEventListener('abort', onAbort, { once: true });
-        try {
-            bridge.postMessage(JSON.stringify({ type: type, id: id, publicKey: publicKey }));
-        } catch (err) {
-            cleanup();
-            reject(err);
-        }
-    });
-}
-
-function buildAllowCredentials(serverCredentials, allowHybrid) {
-    var list = serverCredentials || [];
-    if (!allowHybrid) {
-        return list.map(function(credential) {
-            return {
-                type: credential.type || 'public-key',
-                id: base64ToUint8Array(credential.id),
-                transports: ['internal']
-            };
-        });
-    }
-    return list.map(function(credential) {
-        var descriptor = {
-            type: credential.type || 'public-key',
-            id: base64ToUint8Array(credential.id)
-        };
-        if (credential.transports?.length) descriptor.transports = credential.transports;
-        return descriptor;
-    });
-}
-
-function buildAndroidAllowCredentials(serverCredentials) {
-    return (serverCredentials || []).map(function(credential) {
-        return {
-            type: credential.type || 'public-key',
-            id: credential.id,
-            transports: ['internal']
-        };
-    });
-}
-
 function canRequestFaceSignIn(serverOpts) {
     if (serverOpts && serverOpts.face_login_enabled === false) return false;
     return Boolean(
@@ -2178,7 +2025,7 @@ async function fetchFingerprintLoginOptions(identifier, attemptObj) {
     }, 15000, attemptObj);
 }
 
-async function startFingerprintWithIdentifier(identifier) {
+async function startFingerprintWithIdentifier(identifier, allowSavedPasskey = false) {
     if (biometricRedirectStarted || isBioPending) return;
     var resolvedIdentifier = (identifier || (idInput ? idInput.value : '') || '').trim();
     if (!resolvedIdentifier) {
@@ -2237,7 +2084,7 @@ async function startFingerprintWithIdentifier(identifier) {
             }
             throw new Error((opts && opts.message) || 'Device sign-in could not be started.');
         }
-        if (!getAndroidPasskeyBridge() && navigator.userActivation?.isActive === false) {
+        if (window.DevicePasskeys.needsTap('get', opts, allowSavedPasskey)) {
             var readyAt = performance.now();
             openBiometricModal({
                 title: 'Verify with fingerprint',
@@ -2247,14 +2094,14 @@ async function startFingerprintWithIdentifier(identifier) {
                 secondaryBtnText: 'Enter password',
                 showCancelBtn: true,
                 onPrimaryClick: function() {
-                    if (performance.now() - readyAt > 45000) startFingerprintWithIdentifier(resolvedIdentifier);
-                    else performBiometricLogin(resolvedIdentifier, opts);
+                    if (performance.now() - readyAt > 45000) startFingerprintWithIdentifier(resolvedIdentifier, allowSavedPasskey);
+                    else performBiometricLogin(resolvedIdentifier, opts, allowSavedPasskey);
                 },
                 onSecondaryClick: closeBiometricModalAndFocusPassword
             });
             return;
         }
-        performBiometricLogin(resolvedIdentifier, opts);
+        performBiometricLogin(resolvedIdentifier, opts, allowSavedPasskey);
     } catch (err) {
         if (!isStaleBiometricAttempt(attemptObj)) handleBiometricSignInError(err, resolvedIdentifier, null);
     }
@@ -2526,8 +2373,7 @@ async function openBiometricSignInChoices(identifier) {
 
         var capability = results[0];
         var serverMethods = results[1];
-        var browserPasskeys = canRequestDeviceSignIn(capability);
-        var hasDevicePasskeys = browserPasskeys || Boolean(getAndroidPasskeyBridge());
+        var hasDevicePasskeys = capability.available;
         var cameraFaceSupported = canRequestFaceSignIn(serverMethods);
 
         if (!hasDevicePasskeys && !cameraFaceSupported) {
@@ -2538,8 +2384,10 @@ async function openBiometricSignInChoices(identifier) {
         var fingerprintOption = {
             id: 'fingerprint',
             name: 'Fingerprint verification',
-            desc: 'Use your device fingerprint sensor or screen lock to verify and sign in.',
-            icon: 'bi-fingerprint',
+            desc: capability.supportsFingerprintSpecificUi
+                ? 'Use your device’s native fingerprint or biometric prompt to verify and sign in.'
+                : 'Use your device’s built-in biometric sensor, facial recognition, or screen lock/PIN (WebAuthn passkey).',
+            icon: capability.supportsFingerprintSpecificUi ? 'bi-fingerprint' : 'bi-shield-lock',
             accentClass: 'bio-method-icon-box--fingerprint'
         };
         var methods = [];
@@ -2550,7 +2398,8 @@ async function openBiometricSignInChoices(identifier) {
             methods.push(faceSignInOption);
         }
 
-        showChoices('Choose how to verify your identity.', methods, function(method) {
+        const choiceMessage = hasDevicePasskeys ? 'Choose how to verify your identity.' : passkeyAvailabilityMessage(capability, 'get');
+        showChoices(choiceMessage, methods, function(method) {
             if (method.id === 'fingerprint') {
                 startFingerprintWithIdentifier(identifier);
             }
@@ -2560,83 +2409,19 @@ async function openBiometricSignInChoices(identifier) {
     }
 }
 
-async function performBiometricLogin(studentNumber, opts) {
+async function performBiometricLogin(studentNumber, opts, allowSavedPasskey) {
     if (biometricRedirectStarted || isBioPending) return;
     var attemptObj = startNewBiometricAttempt();
     isBioPending = true;
 
     try {
-        var promptTimeout = Math.min(Math.max(Number(opts.timeout) || 45000, 15000), 60000);
-        var browserTimeout = Math.min(promptTimeout, 25000);
-        var inNativeApk = Boolean(window.AndroidDeviceBridge?.isNativeApp?.());
-        var androidBridge = getAndroidPasskeyBridge();
-        var serverAllow = opts.allowCredentials || [];
-        var browserAllow = buildAllowCredentials(serverAllow, false);
-        var androidAllow = buildAndroidAllowCredentials(serverAllow);
-
-        var effectiveTimeout = androidBridge ? promptTimeout : browserTimeout;
-        var publicKeyOptions = {
-            challenge: opts.challenge,
-            userVerification: 'required',
-            timeout: effectiveTimeout,
-            rpId: opts.rpId,
-            hints: ['client-device'],
-            allowCredentials: androidBridge ? androidAllow : serverAllow
-        };
-
-        showBiometricProgress(
-            'Verify with fingerprint',
-            androidBridge
-                ? 'Touch your device fingerprint sensor to verify your identity.'
-                : 'Touch your device fingerprint sensor or complete your device verification prompt.',
-            studentNumber,
-            androidBridge ? 'Waiting for fingerprint sensor…' : 'Waiting for fingerprint prompt…',
-            { icon: 'bi-fingerprint' }
+        showBiometricProgress('Verify with fingerprint', 'Use your fingerprint sensor or follow the device unlock prompt.', studentNumber, 'Waiting for your device…', { icon: 'bi-fingerprint' });
+        const assertionData = await runWithCredentialWatchdog(
+            () => window.DevicePasskeys.verifyFingerprint(opts, attemptObj.signal, allowSavedPasskey), opts.timeout, attemptObj
         );
-
-        var assertion = await runWithCredentialWatchdog(async function() {
-            if (androidBridge) {
-                try {
-                    return await requestAndroidPasskey(androidBridge, 'get', publicKeyOptions, attemptObj);
-                } catch (err) {
-                    if (err.name !== 'NotSupportedError' || inNativeApk || typeof navigator.credentials?.get !== 'function') {
-                        throw err;
-                    }
-                    androidBridge = null;
-                }
-            }
-            return navigator.credentials.get({
-                publicKey: Object.assign({}, publicKeyOptions, {
-                    challenge: base64ToUint8Array(publicKeyOptions.challenge),
-                    allowCredentials: browserAllow
-                }),
-                signal: attemptObj.signal
-            });
-        }, effectiveTimeout, attemptObj);
-
         if (isStaleBiometricAttempt(attemptObj)) return;
-        if (!assertion) {
-            throw createWebAuthnError('NotAllowedError', 'Device verification did not return a credential.');
-        }
-
-        showBiometricProgress('Finishing sign-in', 'Checking your passkey response.', studentNumber, 'Completing sign-in…', { dismissible: false });
-
-        var isRawB64 = typeof assertion.rawId === 'string';
-        var encode = isRawB64 ? function(value) { return value; } : bufferToBase64Url;
-        var credentialId = encode(assertion.rawId);
-        var assertionResponse = {
-            clientDataJSON: encode(assertion.response.clientDataJSON),
-            authenticatorData: encode(assertion.response.authenticatorData),
-            signature: encode(assertion.response.signature)
-        };
-        if (assertion.response.userHandle) {
-            assertionResponse.userHandle = encode(assertion.response.userHandle);
-        }
-        var assertionData = {
-            id: credentialId,
-            type: assertion.type || 'public-key',
-            response: assertionResponse
-        };
+        const credentialId = assertionData.id;
+        showBiometricProgress('Finishing sign-in', 'Checking your device verification.', studentNumber, 'Completing sign-in…', { dismissible: false });
 
         var devKey = (typeof window.getOrCreateDeviceKey === 'function')
             ? window.getOrCreateDeviceKey()
@@ -2673,12 +2458,19 @@ async function performBiometricLogin(studentNumber, opts) {
                 throw createWebAuthnError('SessionExpiredError', 'Your session security token expired. Refresh the page and try again.');
             }
             if (loginRes.status === 429) {
-                throw createWebAuthnError('RateLimitError', 'Too many sign-in attempts. Wait a moment and try again.');
+                throw createWebAuthnError('RateLimitError', (result && result.message) || 'Too many sign-in attempts. Wait a moment and try again.');
             }
-            throw new Error((result && result.message) || 'Device sign-in could not be completed.');
-        }
-        if (!isRawB64) {
-            window.DevicePasskeys?.rememberBrowserPasskey?.(credentialId);
+            if (result && result.code === 'CREDENTIAL_REVOKED') {
+                window.DevicePasskeys?.forgetBrowserPasskey?.(credentialId);
+                throw createWebAuthnError('NotFoundError', result.message || 'This device credential was revoked. Register this device again or sign in with your password.', { code: 'CREDENTIAL_REVOKED' });
+            }
+            if (result && result.code === 'PASSKEY_CHALLENGE_EXPIRED') {
+                throw createWebAuthnError('TimeoutError', result.message || 'The verification challenge expired. Start sign-in again.', { code: 'PASSKEY_CHALLENGE_EXPIRED' });
+            }
+            throw createWebAuthnError('VerificationFailedError', (result && result.message) || 'Device sign-in could not be completed.', {
+                status: loginRes.status,
+                code: result && result.code
+            });
         }
         completeBiometricLogin(result);
     } catch (err) {
@@ -2775,6 +2567,13 @@ function handleBiometricSignInError(err, studentNumber, opts) {
                     accentClass: 'bio-method-icon-box--fingerprint'
                 });
             }
+            if (err.canCheckSavedPasskey) {
+                fallbackMethods.push({
+                    id: 'saved_passkey', name: 'Use a previously saved passkey',
+                    desc: 'Open the device prompt for an earlier registration.',
+                    icon: 'bi-key', accentClass: 'bio-method-icon-box--fingerprint'
+                });
+            }
             if (canRequestFaceSignIn(opts)) {
                 fallbackMethods.push(faceSignInOption);
             }
@@ -2790,7 +2589,7 @@ function handleBiometricSignInError(err, studentNumber, opts) {
                 ? 'Link this device’s fingerprint'
                 : 'Fingerprint verification incomplete';
             var noLocalMsg = err.name === 'NotFoundError'
-                ? 'This device does not have a matching fingerprint key saved yet. Register this device to enable one-tap fingerprint sign-in, or use Face verification or your password.'
+                ? 'We couldn’t find a fingerprint registration for this account on this device. Register this device or choose another sign-in option.'
                 : 'Fingerprint verification was cancelled or timed out. Try again, register this device, use Face verification, or sign in with your password.';
             openBiometricModal({
                 title: noLocalTitle,
@@ -2805,6 +2604,8 @@ function handleBiometricSignInError(err, studentNumber, opts) {
                 onMethodSelect: function(selected) {
                     if (selected.id === 'retry_local') {
                         startFingerprintWithIdentifier(studentNumber);
+                    } else if (selected.id === 'saved_passkey') {
+                        startFingerprintWithIdentifier(studentNumber, true);
                     } else if (selected.id === 'setup_device') {
                         openBiometricSetupModal(studentNumber);
                     } else if (selected.id === 'face') {
