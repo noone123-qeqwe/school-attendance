@@ -961,4 +961,37 @@ class StudentDashboardAndSidebarTest extends TestCase
             $masterCss
         );
     }
+
+    public function test_student_settings_profile_photo_card_avoids_profile_summary_collision_and_provides_change_photo_action(): void
+    {
+        $student = $this->createStudent([
+            'email' => 'student.photocard@gmail.com',
+            'student_number' => '2310823',
+        ]);
+
+        $response = $this->actingAs($student)
+            ->get(route('settings'))
+            ->assertOk()
+            ->assertSee('class="student-photo-change-btn"', false)
+            ->assertSee('for="ppmFileInput"', false)
+            ->assertSee('Change photo', false);
+
+        $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
+        $this->assertNotFalse($masterCss);
+        $this->assertStringContainsString('.student-profile-summary:not(.sc)', $masterCss);
+        $this->assertMatchesRegularExpression(
+            '/\.sp\.student-settings\[data-student-settings\]\s+\.sc\.student-profile-summary\s*\{[^}]*display:\s*block\s*!important;[^}]*padding:\s*0\s*!important;/s',
+            $masterCss
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.sp\.student-settings\[data-student-settings\]\s+\.ppm-badge-btn\s*\{[^}]*background:\s*var\(--sdc-cta-grad\)\s*!important;[^}]*color:\s*var\(--sdc-cta-text\)\s*!important;/s',
+            $masterCss
+        );
+
+        // Standalone student profile page still keeps its summary layout intact
+        $this->actingAs($student)
+            ->get(route('profile'))
+            ->assertOk()
+            ->assertSee('<section class="student-profile-summary"', false);
+    }
 }

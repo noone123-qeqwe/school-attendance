@@ -808,6 +808,14 @@
                                 <span class="profile-badge-year">Year {{ Auth::user()->year_level }}</span>
                             @endif
                         </div>
+                        @if($user->isStudent())
+                        <div class="student-profile-photo-actions">
+                            <label for="ppmFileInput" class="student-photo-change-btn">
+                                <i class="bi bi-camera-fill" aria-hidden="true"></i>
+                                <span>Change photo</span>
+                            </label>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
