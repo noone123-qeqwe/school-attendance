@@ -6,8 +6,6 @@
     $teacherUser = Auth::user();
     $todayCollection = collect($todayClasses ?? []);
     $subjectsCollection = collect($teacherSubjects ?? []);
-    $recentCollection = collect($recentAttendance ?? []);
-    $atRiskCollection = collect($atRiskStudents ?? []);
 
     $greetHour = now()->hour;
     $greeting = $greetHour < 12 ? 'Good Morning' : ($greetHour < 17 ? 'Good Afternoon' : 'Good Evening');
@@ -262,212 +260,10 @@
             </div>
         </section>
     </div>
-
-    {{-- ── 4. Asymmetric Operational Workspace ───────────────────────────── --}}
-    <div class="portal-workspace">
-        <div class="portal-col-main">
-            {{-- School Calendar Panel --}}
-            <section class="portal-panel teacher-dashboard-calendar" aria-labelledby="teacherCalendarHeading">
-                <header class="portal-panel-head">
-                    <div class="portal-panel-title-group">
-                        <h2 id="teacherCalendarHeading" class="portal-panel-title">School Calendar</h2>
-                        <span id="calendarTitle" class="portal-panel-meta portal-tabular">{{ now()->format('F Y') }}</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Calendar navigation">
-                            <button type="button" id="calPrevBtn" class="btn btn-sm tch-btn-secondary" aria-label="Previous calendar period">
-                                <i class="bi bi-chevron-left" aria-hidden="true"></i>
-                            </button>
-                            <button type="button" id="calTodayBtn" class="btn btn-sm tch-btn-secondary">Today</button>
-                            <button type="button" id="calNextBtn" class="btn btn-sm tch-btn-secondary" aria-label="Next calendar period">
-                                <i class="bi bi-chevron-right" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                        <a href="{{ route('teacher.calendar') }}" class="portal-panel-link ms-1">
-                            Full calendar <i class="bi bi-arrow-right" aria-hidden="true"></i>
-                        </a>
-                    </div>
-                </header>
-
-                <div class="portal-panel-body">
-                    <div class="d-flex gap-3 flex-wrap mb-3" style="font-size: 0.76rem; font-weight: 600; color: var(--portal-muted);">
-                        <span class="d-inline-flex align-items-center gap-1"><span style="width:8px;height:8px;border-radius:50%;background:#60a5fa;"></span> Class</span>
-                        <span class="d-inline-flex align-items-center gap-1"><span style="width:8px;height:8px;border-radius:50%;background:#ec4899;"></span> Exam</span>
-                        <span class="d-inline-flex align-items-center gap-1"><span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;"></span> Meeting</span>
-                        <span class="d-inline-flex align-items-center gap-1"><span style="width:8px;height:8px;border-radius:50%;background:#a78bfa;"></span> School Event</span>
-                        <span class="d-inline-flex align-items-center gap-1"><span style="width:8px;height:8px;border-radius:50%;background:#4ade80;"></span> Holiday</span>
-                    </div>
-                    <div id="schoolCalendar"></div>
-                </div>
-            </section>
-
-            {{-- Recent Attendance Ledger --}}
-            <section class="portal-panel" aria-labelledby="teacherRecentHeading">
-                <header class="portal-panel-head">
-                    <div class="portal-panel-title-group">
-                        <h2 id="teacherRecentHeading" class="portal-panel-title">Recent Attendance</h2>
-                        <span class="portal-panel-meta">Latest check-ins across your subjects</span>
-                    </div>
-                    <a href="{{ route('teacher.attendance') }}" class="portal-panel-link">View all <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                </header>
-
-                <div class="portal-panel-body" style="padding-bottom: 10px; border-bottom: 1px solid var(--portal-border-subtle);">
-                    <input type="text" id="recentLogsSearch" class="td-search-input" placeholder="Search student name or class..." aria-label="Search recent attendance">
-                </div>
-
-                <div id="recentAttendanceRows" class="td-ledger-list">
-                    @forelse($recentCollection->take(8) as $record)
-                        @php
-                            $recordStatus = strtolower((string) ($record->status ?? 'absent'));
-                            $recordTone = $recordStatus === 'present' ? 'present' : ($recordStatus === 'late' ? 'late' : 'absent');
-                            $studentName = $record->user->name ?? 'Unknown Student';
-                            $initials = mb_strtoupper(mb_substr($studentName, 0, 2));
-                            $loggedAt = $record->time_in
-                                ? \Carbon\Carbon::parse($record->time_in)->format('g:i A')
-                                : ($record->created_at ? $record->created_at->format('M j, g:i A') : '');
-                        @endphp
-                        <div class="attendance-row">
-                            <div class="d-flex align-items-center gap-3" style="min-width: 0; flex: 1 1 200px;">
-                                <div class="td-avatar-monogram portal-mono" aria-hidden="true">{{ $initials }}</div>
-                                <div style="min-width: 0;">
-                                    <div style="font-weight: 700; color: #ffffff; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis;">{{ $studentName }}</div>
-                                    <div style="color: var(--portal-muted); font-size: 0.76rem;" class="portal-tabular">
-                                        <span class="portal-code-tag portal-mono">{{ $record->subject_code }}</span>
-                                        <span>{{ $record->subject->name ?? '' }}</span>
-                                        @if($loggedAt)<span>&middot; {{ $loggedAt }}</span>@endif
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="portal-status-pill is-{{ $recordTone }}">{{ ucfirst($recordStatus) }}</span>
-                        </div>
-                    @empty
-                        <div class="empty-state portal-inline-empty">
-                            <span>No check-in activity yet for your classes.</span>
-                        </div>
-                    @endforelse
-                </div>
-            </section>
-        </div>
-
-        <div class="portal-col-aside">
-            {{-- Early Warning / At-Risk Students --}}
-            <section class="portal-panel" aria-labelledby="teacherAtRiskHeading">
-                <header class="portal-panel-head">
-                    <div class="portal-panel-title-group">
-                        <h2 id="teacherAtRiskHeading" class="portal-panel-title">Early Warning</h2>
-                        <span class="portal-panel-meta">Students below 80% attendance across your classes</span>
-                    </div>
-                    <a href="{{ route('teacher.absent') }}" class="portal-panel-link">Absent report <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                </header>
-
-                @if($atRiskCollection->isNotEmpty())
-                    <div>
-                        @foreach($atRiskCollection->take(5) as $stat)
-                            @php
-                                $atRiskUser = $stat->user;
-                                $rateVal = (int) ($stat->rate ?? 0);
-                            @endphp
-                            @if($atRiskUser)
-                            <a href="{{ route('teacher.student', $stat->user_id) }}" class="td-atrisk-row">
-                                <div class="d-flex align-items-center justify-content-between gap-2">
-                                    <span style="font-size: 0.86rem; font-weight: 700; color: #ffffff;">{{ $atRiskUser->name }}</span>
-                                    <span class="portal-mono" style="font-size: 0.82rem; font-weight: 800; color: var(--portal-rose);">{{ $rateVal }}%</span>
-                                </div>
-                                <div style="height: 5px; width: 100%; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden;" aria-hidden="true">
-                                    <span style="display: block; height: 100%; width: {{ min(100, max(4, $rateVal)) }}%; background: var(--portal-rose); border-radius: 999px;"></span>
-                                </div>
-                                <div class="d-flex justify-content-between" style="font-size: 0.72rem; color: var(--portal-muted);">
-                                    <span>{{ $atRiskUser->student_number ?? ($atRiskUser->course ?? 'Student') }}</span>
-                                    <span class="portal-mono">{{ (int) ($stat->present_sessions ?? 0) }}/{{ (int) ($stat->total_sessions ?? 0) }} sessions</span>
-                                </div>
-                            </a>
-                            @endif
-                        @endforeach
-                    </div>
-                @else
-                    <div class="portal-inline-empty">
-                        <span>All students are currently at or above 80% attendance.</span>
-                    </div>
-                @endif
-            </section>
-
-            {{-- Post Class Announcement --}}
-            <section class="portal-panel" aria-labelledby="teacherAnnounceHeading">
-                <header class="portal-panel-head">
-                    <div class="portal-panel-title-group">
-                        <h2 id="teacherAnnounceHeading" class="portal-panel-title">Post Class Announcement</h2>
-                        <span class="portal-panel-meta">Notify students enrolled in a specific subject</span>
-                    </div>
-                </header>
-
-                <div class="portal-panel-body">
-                    <form action="{{ route('teacher.announcements.store') }}" method="POST" class="td-announce-form">
-                        @csrf
-                        <div class="mb-3">
-                            <label class="form-label" for="teacherAnnouncementClass" style="font-size: 0.78rem; font-weight: 700; color: var(--portal-text-soft);">Class *</label>
-                            <select id="teacherAnnouncementClass" name="target_id" class="form-select" required>
-                                <option value="">Select a class...</option>
-                                @foreach($subjectsCollection as $sub)
-                                    <option value="{{ $sub->id }}">{{ $sub->name }} ({{ $sub->code }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="teacherAnnouncementTitle" style="font-size: 0.78rem; font-weight: 700; color: var(--portal-text-soft);">Title *</label>
-                            <input id="teacherAnnouncementTitle" type="text" name="title" class="form-control" placeholder="e.g. Quiz Schedule Update" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" for="teacherAnnouncementMessage" style="font-size: 0.78rem; font-weight: 700; color: var(--portal-text-soft);">Message *</label>
-                            <textarea id="teacherAnnouncementMessage" name="content" class="form-control" rows="3" placeholder="Write your notice for students..." required></textarea>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label" for="teacherAnnouncementSchedule" style="font-size: 0.78rem; font-weight: 700; color: var(--portal-text-soft);">Publish later (optional)</label>
-                            <input id="teacherAnnouncementSchedule" type="datetime-local" name="scheduled_for" class="form-control">
-                        </div>
-                        <button type="submit" class="portal-cta-primary w-100">
-                            <i class="bi bi-send-fill" aria-hidden="true"></i>
-                            <span>Publish Announcement</span>
-                        </button>
-                    </form>
-                </div>
-            </section>
-        </div>
-    </div>
 </div>
 @endsection
 
 @section('scripts')
-<!-- Event Detail Modal -->
-<div class="modal fade" id="eventDetailModal" tabindex="-1" aria-labelledby="eventTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content w-100">
-            <div class="modal-header">
-                <h5 class="modal-title" id="eventTitle">Event Details</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--portal-muted); font-weight: 700; margin-bottom: 4px;">Event Type</div>
-                    <span id="eventTypeBadge" class="portal-code-tag">Event</span>
-                </div>
-                <div class="mb-3">
-                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--portal-muted); font-weight: 700; margin-bottom: 4px;">Date</div>
-                    <div id="eventDateText" style="color: #ffffff; font-weight: 600;">Date</div>
-                </div>
-                <div id="eventDescriptionContainer" class="mb-3" style="display: none;">
-                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--portal-muted); font-weight: 700; margin-bottom: 4px;">Description</div>
-                    <div id="eventDescription" style="color: var(--portal-text-soft); font-size: 0.9rem;"></div>
-                </div>
-                <div id="eventLocationContainer" style="display: none;">
-                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--portal-muted); font-weight: 700; margin-bottom: 4px;">Location</div>
-                    <div id="eventLocation" style="color: var(--portal-text-soft); font-size: 0.9rem;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
 <script @cspNonce>
 // Real-time campus clock (paused when tab is backgrounded)
 (function() {
@@ -484,19 +280,6 @@
     setInterval(tick, 1000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
     tick();
-})();
-
-// Recent Attendance live search
-(function() {
-    const searchInput = document.getElementById('recentLogsSearch');
-    if (!searchInput) return;
-    searchInput.addEventListener('input', function() {
-        const query = this.value.toLowerCase().trim();
-        document.querySelectorAll('#recentAttendanceRows .attendance-row').forEach(row => {
-            const text = (row.textContent || '').toLowerCase();
-            row.style.display = text.includes(query) ? 'flex' : 'none';
-        });
-    });
 })();
 
 // Peer verification events update this dashboard without a page reload.
@@ -557,23 +340,6 @@
                     setBannerMessage(notice, `${payload.student_name} checked in by Peer Biometric for ${payload.subject_code}. Vouched by ${payload.voucher_student_name}.`);
                     notice.hidden = false;
                 }
-
-                const list = document.getElementById('recentAttendanceRows');
-                if (list) {
-                    const empty = list.querySelector('.empty-state');
-                    if (empty) empty.remove();
-                    const row = document.createElement('div');
-                    row.className = 'attendance-row';
-                    const name = document.createElement('strong');
-                    name.style.color = '#ffffff';
-                    name.textContent = payload.student_name;
-                    const detail = document.createElement('div');
-                    detail.style.cssText = 'color:var(--portal-muted);font-size:.78rem;margin-top:3px;';
-                    detail.textContent = `${payload.subject_code} · Peer Biometric · Vouched by ${payload.voucher_student_name}`;
-                    row.append(name, detail);
-                    list.prepend(row);
-                    while (list.children.length > 8) list.lastElementChild.remove();
-                }
             });
             const connection = echo.connector?.pusher?.connection;
             connection?.bind('state_change', state => setConnectionMessage(connectionMessageFor(state.current)));
@@ -584,104 +350,5 @@
     }
     connect();
 })();
-
-// School Calendar Initialization
-let schoolCalendar;
-function updateCalendarTitle() {
-    if (schoolCalendar && schoolCalendar.view) {
-        const titleEl = document.getElementById('calendarTitle');
-        if (titleEl) {
-            titleEl.textContent = schoolCalendar.view.title;
-        }
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const calendarEl = document.getElementById('schoolCalendar');
-    if (!calendarEl || typeof FullCalendar === 'undefined') return;
-
-    schoolCalendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: window.matchMedia('(max-width: 767.98px)').matches ? 'listMonth' : 'dayGridMonth',
-        headerToolbar: false,
-        height: 'auto',
-        firstDay: 0,
-        weekends: true,
-        fixedWeekCount: false,
-        events: function(fetchInfo, successCallback, failureCallback) {
-            fetch(`{{ route('teacher.calendar.data') }}?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`)
-                .then(response => response.json())
-                .then(data => {
-                    const events = data.map(event => ({
-                        id: event.id,
-                        title: event.name || event.title,
-                        start: event.date || event.start,
-                        end: event.end,
-                        backgroundColor: event.color || '#4ade80',
-                        borderColor: event.color || '#4ade80',
-                        textColor: '#ffffff',
-                        extendedProps: {
-                            type: event.type_label || event.type,
-                            description: event.description,
-                            location: event.location,
-                            status: event.status
-                        }
-                    }));
-                    successCallback(events);
-                })
-                .catch(error => {
-                    console.error('Error fetching calendar data:', error);
-                    failureCallback(error);
-                });
-        },
-        eventClick: function(info) {
-            const event = info.event;
-            const props = event.extendedProps || {};
-
-            document.getElementById('eventTitle').textContent = event.title;
-            document.getElementById('eventTypeBadge').textContent = props.type || 'Event';
-            document.getElementById('eventDateText').textContent = event.start
-                ? event.start.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-                : '';
-
-            const descEl = document.getElementById('eventDescription');
-            const descContainer = document.getElementById('eventDescriptionContainer');
-            if (props.description) {
-                descEl.textContent = props.description;
-                descContainer.style.display = 'block';
-            } else {
-                descContainer.style.display = 'none';
-            }
-
-            const locEl = document.getElementById('eventLocation');
-            const locContainer = document.getElementById('eventLocationContainer');
-            if (props.location) {
-                locEl.textContent = props.location;
-                locContainer.style.display = 'block';
-            } else {
-                locContainer.style.display = 'none';
-            }
-
-            const modalEl = document.getElementById('eventDetailModal');
-            if (modalEl && typeof bootstrap !== 'undefined') {
-                const modal = new bootstrap.Modal(modalEl);
-                modal.show();
-            }
-        },
-        dayCellClassNames: function(arg) {
-            const today = new Date();
-            if (arg.date.toDateString() === today.toDateString()) {
-                return ['fc-day-today'];
-            }
-            return [];
-        }
-    });
-
-    schoolCalendar.render();
-    updateCalendarTitle();
-
-    document.getElementById('calPrevBtn')?.addEventListener('click', () => { schoolCalendar.prev(); updateCalendarTitle(); });
-    document.getElementById('calTodayBtn')?.addEventListener('click', () => { schoolCalendar.today(); updateCalendarTitle(); });
-    document.getElementById('calNextBtn')?.addEventListener('click', () => { schoolCalendar.next(); updateCalendarTitle(); });
-});
 </script>
 @endsection

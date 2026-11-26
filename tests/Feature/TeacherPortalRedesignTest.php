@@ -92,7 +92,7 @@ class TeacherPortalRedesignTest extends TestCase
         $this->assertStringContainsString('mbn-item-featured', $html);
         $this->assertStringContainsString(route('teacher.classroom.index', ['task' => 'attendance']), $html);
 
-        // Academic Command Canvas sections + Editorial Schedule Stage + At-risk warning
+        // Focused Command Canvas + Editorial Schedule Stage (removed secondary workspace widgets)
         $this->assertStringContainsString('portal-masthead', $html);
         $this->assertStringContainsString('portal-hero-grid', $html);
         $this->assertStringContainsString('portal-stage', $html);
@@ -101,28 +101,25 @@ class TeacherPortalRedesignTest extends TestCase
         $this->assertStringNotContainsString('portal-telemetry', $html);
         $this->assertStringNotContainsString('id="tdWeeklyTrend"', $html);
         $this->assertStringNotContainsString('id="realStats"', $html);
+        $this->assertStringNotContainsString('portal-workspace', $html);
+        $this->assertStringNotContainsString('id="schoolCalendar"', $html);
+        $this->assertStringNotContainsString('id="recentAttendanceRows"', $html);
+        $this->assertStringNotContainsString('id="recentLogsSearch"', $html);
+        $this->assertStringNotContainsString('teacherAtRiskHeading', $html);
+        $this->assertStringNotContainsString('teacherAnnounceHeading', $html);
         $this->assertStringContainsString('td-today-time', $html);
         $this->assertStringContainsString('td-today-status', $html);
         $this->assertStringContainsString('portal-stage-foot', $html);
-        $this->assertStringContainsString('portal-workspace', $html);
         $this->assertStringContainsString('Prof. Clara Mendoza', $html);
         $this->assertStringContainsString('FAC-2026-900', $html);
         $this->assertStringContainsString('CS301', $html);
-        $this->assertStringContainsString('Synthetic Student One', $html);
-        $this->assertStringContainsString(route('teacher.student', $student), $html);
 
-        // Preserved real-time Echo & Calendar DOM hooks
+        // Preserved real-time Echo DOM hooks
         $this->assertStringContainsString('id="peerLiveNotice"', $html);
         $this->assertStringContainsString('id="peerLiveConnection"', $html);
         $this->assertStringContainsString('data-banner-dismiss="peerLiveConnection"', $html);
         $this->assertStringContainsString('data-banner-dismiss="peerLiveNotice"', $html);
         $this->assertStringContainsString('data-banner-message', $html);
-        $this->assertStringContainsString('id="recentAttendanceRows"', $html);
-        $this->assertStringContainsString('id="recentLogsSearch"', $html);
-        $this->assertStringContainsString('id="schoolCalendar"', $html);
-
-        // FullCalendar loaded exactly once (duplicate CDN tag removed)
-        $this->assertSame(1, substr_count($html, 'fullcalendar@6.1.21/index.global.min.js'));
 
         // Command palette points Live QR directly to attendance picker & includes Corrections
         $this->assertStringContainsString("label: 'Correction Requests'", $html);
