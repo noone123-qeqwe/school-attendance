@@ -1806,12 +1806,21 @@
     }
 
     /* ═════════════════════════════════════════════
-       NOTIFICATION DROPDOWN — Mobile Full-Width
+       NOTIFICATION DROPDOWN — Mobile Symmetrical Card
        ═════════════════════════════════════════════ */
-    .dropdown-menu[style*="width:340px"] {
-        width: 100% !important;
-        max-width: calc(100vw - var(--m-space-xl)) !important;
-        right: -8px !important;
+    .top-header .top-notif-dropdown {
+        position: static !important;
+    }
+
+    .top-header .top-notif-dropdown-menu,
+    .top-header .top-notif-dropdown-menu[data-bs-popper] {
+        position: absolute !important;
+        inset: calc(100% + 8px) 12px auto 12px !important;
+        width: auto !important;
+        max-width: 420px !important;
+        margin: 0 auto !important;
+        transform: none !important;
+        z-index: 1060 !important;
     }
 
     /* ═════════════════════════════════════════════

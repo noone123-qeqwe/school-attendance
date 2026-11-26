@@ -213,7 +213,7 @@
                         $unreadCount = 0;
                     @endphp
 
-                    <div class="dropdown">
+                    <div class="dropdown top-notif-dropdown">
                         <button type="button" class="notif-btn position-relative" data-bs-toggle="dropdown" aria-label="Notifications{{ $unreadCount > 0 ? ': '.$unreadCount.' unread' : '' }}" aria-expanded="false" id="topNavNotifBtn">
                             <i class="bi bi-bell-fill" style="font-size:0.95rem;" aria-hidden="true"></i>
                             @if($unreadCount > 0)
@@ -222,13 +222,13 @@
                             </span>
                             @endif
                         </button>
-                        <div class="dropdown-menu dropdown-menu-end mt-2 top-notif-dropdown-menu" style="width:340px;max-width:calc(100vw - 32px);border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(25,15,15,0.95);backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,0.5);padding:0;overflow:hidden;">
-                            <div class="top-notif-header" style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
-                                <span class="top-notif-title" style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Notifications</span>
+                        <div class="dropdown-menu dropdown-menu-end mt-2 top-notif-dropdown-menu">
+                            <div class="top-notif-header">
+                                <span class="top-notif-title">Notifications</span>
                                 <div id="topNavNotifHeaderActions" style="display:flex;align-items:center;gap:10px;">
                                     @if($unreadCount > 0)
                                     <span id="topNavNotifCountBadge" style="background:#fef2f2;color:#dc2626;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;">{{ $unreadCount }} new</span>
-                                    <button onclick="markAllRead()" class="mark-all-read-btn">Mark all read</button>
+                                    <button type="button" onclick="markAllRead()" class="mark-all-read-btn">Mark all read</button>
                                     @endif
                                 </div>
                             </div>
@@ -265,7 +265,7 @@
                                     }
                                 };
                             @endphp
-                            <div id="topNavNotifList" style="max-height:360px;overflow-y:auto;">
+                            <div id="topNavNotifList" class="top-notif-list">
                                 @if($notifications->count() > 0)
                                     @if($todayNotifs->count() > 0)
                                     <div class="notif-group-label">Today</div>
@@ -323,9 +323,9 @@
                                     @endforeach
                                     @endif
                                 @else
-                                <div style="text-align:center;padding:32px 20px;color:#94a3b8;">
-                                    <i class="bi bi-bell-slash" style="font-size:1.8rem;display:block;margin-bottom:8px;opacity:.3;"></i>
-                                    <span style="font-size:.85rem;">Loading notifications…</span>
+                                <div class="top-notif-empty">
+                                    <i class="bi bi-bell-slash" aria-hidden="true"></i>
+                                    <span>Loading notifications…</span>
                                 </div>
                                 @endif
                             </div>
@@ -768,12 +768,11 @@
                 if (listEl && Array.isArray(data.notifications) && data.notifications.length === 0) {
                     listEl.replaceChildren();
                     const emptyBox = document.createElement('div');
-                    emptyBox.style.cssText = 'text-align:center;padding:32px 20px;color:#94a3b8;';
+                    emptyBox.className = 'top-notif-empty';
                     const emptyIcon = document.createElement('i');
                     emptyIcon.className = 'bi bi-bell-slash';
-                    emptyIcon.style.cssText = 'font-size:1.8rem;display:block;margin-bottom:8px;opacity:.3;';
+                    emptyIcon.setAttribute('aria-hidden', 'true');
                     const emptyLabel = document.createElement('span');
-                    emptyLabel.style.fontSize = '.85rem';
                     emptyLabel.textContent = 'No notifications yet';
                     emptyBox.append(emptyIcon, emptyLabel);
                     listEl.appendChild(emptyBox);
