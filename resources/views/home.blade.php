@@ -21,15 +21,7 @@
 
 <div class="sd-cockpit">
     {{-- ── Missing Section / Error / Active Warnings ────────────────────── --}}
-    @if(blank(auth()->user()->section))
-    <div role="status" class="sd-notice-banner">
-        <span class="sd-notice-icon" aria-hidden="true"><i class="bi bi-info-circle-fill"></i></span>
-        <div class="sd-notice-copy">
-            <strong>Class section not assigned</strong>
-            <span>Your section timetable will appear after the school assigns your section. Contact the registrar or school administrator to update your profile.</span>
-        </div>
-    </div>
-    @endif
+    @include('partials.missing-section-notice')
 
     @if(session('error'))
     <div class="sd-error-banner" role="alert">

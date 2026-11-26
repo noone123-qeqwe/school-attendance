@@ -34,15 +34,9 @@
 @endphp
 
 <div class="sd-mobile-cockpit mobile-home">
-    @if(blank($studentUser?->section))
-    <div role="status" class="sd-notice-banner">
-        <span class="sd-notice-icon" aria-hidden="true"><i class="bi bi-info-circle-fill"></i></span>
-        <div class="sd-notice-copy">
-            <strong>Class section not assigned</strong>
-            <span>Contact the registrar or school administrator to add your section and timetable.</span>
-        </div>
-    </div>
-    @endif
+    @include('partials.missing-section-notice', [
+        'message' => 'Contact the registrar or school administrator to add your section and timetable.',
+    ])
 
     @if(isset($activeWarnings) && $activeWarnings->count() > 0)
     <section class="sd-warning-panel" role="region" aria-label="Attendance Warnings">
