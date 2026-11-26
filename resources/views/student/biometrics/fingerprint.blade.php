@@ -41,9 +41,6 @@
                 <a href="{{ route('settings.biometrics.face') }}" class="flow-button">
                     <i class="bi bi-camera-video" aria-hidden="true"></i> Set up Face Verification
                 </a>
-                <a href="{{ route('settings') }}#tab-biometrics" class="flow-button">
-                    <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Settings
-                </a>
             </div>
         </div>
 

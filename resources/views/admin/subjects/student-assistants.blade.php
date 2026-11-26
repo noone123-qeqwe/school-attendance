@@ -13,9 +13,7 @@
             @endif
         </p>
     </div>
-    <a href="{{ route('admin.subjects') }}" class="saas-btn saas-btn-secondary">
-        <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to Subjects
-    </a>
+    <x-back-link :href="route('admin.subjects')" label="Back to Subjects" variant="saas" />
 </div>
 
 @if(session('success'))

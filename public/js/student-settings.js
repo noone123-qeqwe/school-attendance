@@ -127,9 +127,7 @@
             } catch (e) {}
         }
 
-        if (options.push) {
-            history.pushState(null, '', '#tab-' + page);
-        } else if (!options.fromHistory && started) {
+        if ((options.push || (!options.fromHistory && started))) {
             history.replaceState(null, '', '#tab-' + page);
         }
 

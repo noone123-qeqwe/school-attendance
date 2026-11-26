@@ -95,11 +95,6 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
     <aside class="sidebar" id="sidebar">
-        <div class="d-md-none" style="padding: 16px 16px 0 16px; display: flex; align-items: center;">
-            <button type="button" onclick="closeSidebar()" class="btn btn-sm mobile-sidebar-back-btn" style="color: #cfa46f; background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.2); border-radius: 8px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="bi bi-chevron-left" aria-hidden="true"></i> Back
-            </button>
-        </div>
         @section('role-sidebar')
 
 
@@ -129,12 +124,40 @@
                     @php
                         $isRootPage = request()->routeIs('home') || request()->routeIs('admin.dashboard') || request()->routeIs('teacher.dashboard') || request()->routeIs('parent.dashboard');
                         $fallbackBackUrl = route('home');
-                        if (Auth::user()->isAdmin()) $fallbackBackUrl = route('admin.dashboard');
-                        elseif (Auth::user()->isTeacher()) $fallbackBackUrl = route('teacher.dashboard');
-                        elseif (Auth::user()->isParent()) $fallbackBackUrl = route('parent.dashboard');
+                        if (Auth::user()->isAdmin()) {
+                            $fallbackBackUrl = match (true) {
+                                request()->routeIs('admin.attendance.preview') => route('admin.attendance'),
+                                request()->routeIs('admin.students.preview', 'admin.student*') => route('admin.students'),
+                                request()->routeIs('admin.teacher.*') => route('admin.teachers'),
+                                request()->routeIs('admin.admin.*') => route('admin.admins'),
+                                request()->routeIs('admin.subjects.*', 'admin.enrollments.*') => route('admin.subjects'),
+                                default => route('admin.dashboard'),
+                            };
+                        } elseif (Auth::user()->isTeacher()) {
+                            $fallbackBackUrl = match (true) {
+                                request()->routeIs('teacher.attendance.preview') => route('teacher.attendance'),
+                                request()->routeIs('teacher.students.preview', 'teacher.student') => route('teacher.students'),
+                                request()->routeIs('teacher.classroom.assistant-attendance.*', 'teacher.classroom.show') => route('teacher.classroom.index'),
+                                request()->routeIs('teacher.subjects.*') => route('teacher.classroom.index'),
+                                request()->routeIs('teacher.excuses.*') => route('teacher.excuses'),
+                                default => route('teacher.dashboard'),
+                            };
+                        } elseif (Auth::user()->isParent()) {
+                            $fallbackBackUrl = match (true) {
+                                request()->routeIs('parent.excuse*') => route('parent.excuses'),
+                                default => route('parent.dashboard'),
+                            };
+                        } else {
+                            $fallbackBackUrl = match (true) {
+                                request()->routeIs('excuses.*') => route('excuses'),
+                                request()->routeIs('settings.biometrics.*') => route('settings') . '#tab-biometrics',
+                                request()->routeIs('student-assistant.sessions.*') => route('student-assistant.classes'),
+                                default => route('home'),
+                            };
+                        }
                     @endphp
                     @if(!$isRootPage)
-                        <button type="button" class="mobile-back-btn d-md-none" onclick="if(window.history.length > 1) { window.history.back(); } else { window.location.href='{{ $fallbackBackUrl }}'; }" aria-label="Go back" title="Back">
+                        <button type="button" class="mobile-back-btn d-md-none" onclick="(function(fallback){var settingsBack=document.querySelector('.student-settings[data-student-view^=&quot;change-&quot;] [data-account-back]:not([hidden])');if(settingsBack){settingsBack.click();return;}var sameOrigin=document.referrer&amp;&amp;document.referrer.indexOf(window.location.origin)===0&amp;&amp;document.referrer.split('#')[0]!==window.location.href.split('#')[0];if(sameOrigin&amp;&amp;window.history.length&gt;1){window.history.back();}else{window.location.href=fallback;}})('{{ $fallbackBackUrl }}')" aria-label="Go back" title="Back">
                             <i class="bi bi-chevron-left"></i>
                         </button>
                     @endif

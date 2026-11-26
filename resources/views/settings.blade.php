@@ -380,7 +380,6 @@
         border: 1px solid rgba(255,255,255,.08);
     }
     .student-settings .stab.active { background: linear-gradient(135deg, rgba(207,164,111,.25), rgba(143,39,31,.2)); border-color: rgba(207,164,111,.4); }
-    .student-settings .stabs-floating-hint { display: none !important; }
     .student-settings .settings-layout-grid { display: block; margin-top: 0; }
     .student-settings .settings-sidebar { display: none; }
     .student-settings .sc { border-radius: 17px; }
@@ -650,16 +649,8 @@
 
     @if($user->isStudent())
     <header class="student-settings-heading">
-        <div class="settings-heading-row">
-            <div>
-                <h1>Your settings</h1>
-                <p>Manage your account and attendance access.</p>
-            </div>
-            <a href="{{ \App\Support\SettingsNavigation::dashboardUrl($user) }}" class="settings-mobile-back-chip d-md-none">
-                <i class="bi bi-arrow-left" aria-hidden="true"></i>
-                <span>Back to Dashboard</span>
-            </a>
-        </div>
+        <h1>Your settings</h1>
+        <p>Manage your account and attendance access.</p>
     </header>
     @else
     <!-- Mobile Search Backdrop Overlay -->

@@ -4,9 +4,7 @@
 @section('content')
 <div class="mx-auto" style="max-width: 880px;">
     <div class="d-flex flex-wrap gap-2 mb-3">
-        <a href="{{ route('teacher.classroom.show', $subject->code) }}" class="tch-btn tch-btn-secondary">
-            <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to class
-        </a>
+        <x-back-link :href="route('teacher.classroom.show', $subject->code)" label="Back to class" variant="teacher" />
         <a href="{{ route('teacher.qr', $subject->code) }}" class="tch-btn tch-btn-secondary">Attendance QR</a>
     </div>
 

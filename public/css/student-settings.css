@@ -103,6 +103,24 @@
     }
 }
 @media (max-width: 767.98px) {
+    /* On mobile root sections, the active pill already identifies the tab; avoid repeating the heading text directly underneath. */
+    .sp.student-settings[data-student-settings]:not([data-student-view^="change-"]) .student-settings-detail-heading {
+        margin-bottom: 14px;
+    }
+    .sp.student-settings[data-student-settings]:not([data-student-view^="change-"]) .student-settings-detail-heading h2 {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+    .settings-mobile-nav {
+        margin-bottom: 10px !important;
+    }
     /* Keep guardian actions and their status labels readable on narrow screens. */
     .sp.student-settings[data-student-settings] #tab-family .sec-cards-grid {
         grid-template-columns: minmax(0, 1fr) !important;

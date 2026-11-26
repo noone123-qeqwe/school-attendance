@@ -3,11 +3,7 @@
 
 @section('content')
 <div class="ent-section ent-fade-up" style="max-width: 800px; margin: 0 auto;">
-    <div style="margin-bottom: 24px;">
-        <a href="{{ route('teacher.excuses') }}" style="color: #b39b82; text-decoration: none; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 4px; transition: color 0.2s;" onmouseover="this.style.color='#f3e7cd'" onmouseout="this.style.color='#b39b82'">
-            <i class="bi bi-arrow-left"></i> Back to My Excuses
-        </a>
-    </div>
+    <x-back-link :href="route('teacher.excuses')" label="Back to My Excuses" variant="plain" style="color: #b39b82; text-decoration: none; font-size: 0.9rem; gap: 6px; margin-bottom: 24px;" />
 
     <div style="background: rgba(30,21,21,0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(212,175,55,0.15); border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);">
         <div style="padding: 24px; border-bottom: 1px solid rgba(212,175,55,0.1); background: rgba(0,0,0,0.25);">

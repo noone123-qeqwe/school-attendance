@@ -4,9 +4,7 @@
 @section('content')
 <div class="parent-page">
     {{-- Back Link --}}
-    <a href="{{ route('parent.calendar', ['child_id' => $child->id]) }}#attendance-records" class="student-back-link">
-        <i class="bi bi-arrow-left"></i> Back to {{ $child->name }}'s Records
-    </a>
+    <x-back-link :href="route('parent.calendar', ['child_id' => $child->id]) . '#attendance-records'" :label="'Back to ' . $child->name . '\'s Records'" variant="plain" class="student-back-link" />
 
     <h3 style="color: #f3e7cd; font-weight: 800; margin-bottom: 24px;">
         <i class="bi bi-file-earmark-text" style="color: #cfa46f;"></i> Submit Excuse Letter

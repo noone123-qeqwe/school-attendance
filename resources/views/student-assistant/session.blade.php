@@ -3,9 +3,7 @@
 @section('assistant-content')
 @php $showReports = $canSubmitAttendance || $attendanceReports->isNotEmpty(); @endphp
 
-<a class="assistant-text-link assistant-back" href="{{ route('student-assistant.classes') }}">
-    <i class="bi bi-arrow-left" aria-hidden="true"></i> Assigned classes
-</a>
+<x-back-link :href="route('student-assistant.classes')" label="Assigned classes" variant="plain" class="assistant-text-link assistant-back" />
 
 <header class="assistant-page-head">
     <div>

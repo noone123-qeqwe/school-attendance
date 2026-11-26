@@ -176,7 +176,7 @@
         border-radius: 9px !important;
     }
     body.parent-portal .stab.active { background: rgba(207, 164, 111, .13); border-color: rgba(207, 164, 111, .5) !important; }
-    body.parent-portal :is(.stabs-arrow, .stabs-floating-hint) { display: none !important; }
+    body.parent-portal .stabs-arrow { display: none !important; }
     body.parent-portal .link-wizard-container { max-width: 900px; }
     body.parent-portal :is(.link-wizard-card, .linked-children-card) { padding: 26px !important; }
 }

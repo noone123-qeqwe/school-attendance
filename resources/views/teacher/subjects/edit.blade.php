@@ -2,9 +2,7 @@
 @section('page-title', 'Edit Subject')
 
 @section('content')
-<a href="{{ route('teacher.classroom.index') }}" style="display:inline-flex;align-items:center;gap:7px;font-size:.85rem;font-weight:600;color:#64748b;text-decoration:none;padding:8px 14px;border:1.5px solid #e2e8f0;border-radius:9px;background:white;margin-bottom:20px;" onmouseover="this.style.color='#059669';this.style.borderColor='#059669';" onmouseout="this.style.color='#64748b';this.style.borderColor='#e2e8f0';">
-    <i class="bi bi-arrow-left"></i> Back
-</a>
+<x-back-link :href="route('teacher.classroom.index')" variant="teacher-ghost" style="margin-bottom:20px;" />
 
 <div class="tch-card" style="max-width:680px;">
     <div class="tch-card-head">

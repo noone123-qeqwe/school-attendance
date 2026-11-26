@@ -94,7 +94,7 @@
     body.parent-portal .stabs-wrapper { margin-top: 0; }
     body.parent-portal .stabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; overflow: visible; padding: 0; margin-bottom: 24px; }
     body.parent-portal .stab { min-height: 46px; border-radius: 9px; white-space: normal; font-size: .85rem; padding: 10px 14px; }
-    body.parent-portal :is(.stabs-arrow, .stabs-floating-hint),
+    body.parent-portal .stabs-arrow,
     body.parent-portal .stabs-wrapper::before,
     body.parent-portal .stabs-wrapper::after { display: none !important; }
     body.parent-portal .sc-icon { width: 36px; height: 36px; flex: none; font-size: 1rem; }

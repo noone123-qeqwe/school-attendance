@@ -2531,14 +2531,6 @@
         font-weight: 750 !important;
     }
 
-    body.student-portal .settings-mobile-back-chip {
-        background: var(--sdc-surface-2) !important;
-        border: 1px solid var(--sdc-border) !important;
-        color: var(--sdc-text) !important;
-        min-height: 40px;
-        border-radius: 10px !important;
-    }
-
     body.student-portal #mainContent .sp.student-settings[data-student-settings] :is(.sc, .sec-card, .student-phone-shortcut, .student-account-shortcut, .sec-group-panel, .sec-health-hero) {
         background: var(--sdc-surface) !important;
         border: 1px solid var(--sdc-border) !important;
@@ -2944,13 +2936,6 @@
     body.student-portal .skip-to-main-link {
         background: var(--sdc-silver) !important;
         color: #14080c !important;
-    }
-
-    body.student-portal .mobile-sidebar-back-btn {
-        color: var(--sdc-text) !important;
-        background: var(--sdc-surface-2) !important;
-        border: 1px solid var(--sdc-border) !important;
-        min-height: 40px;
     }
 
     body.student-portal .top-notif-dropdown-menu {

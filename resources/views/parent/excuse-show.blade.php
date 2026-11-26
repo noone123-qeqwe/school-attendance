@@ -7,7 +7,7 @@
         <h2 style="color: #f3e7cd; font-weight: 800; margin: 0;">
             <i class="bi bi-file-earmark-text" style="color: #cfa46f; margin-right: 8px;"></i>Excuse Details
         </h2>
-        <a href="{{ route('parent.excuses') }}" class="adm-btn adm-btn-ghost"><i class="bi bi-arrow-left"></i> Back to Excuses</a>
+        <x-back-link :href="route('parent.excuses')" label="Back to Excuses" variant="admin" />
     </div>
 
     @if(session('success'))

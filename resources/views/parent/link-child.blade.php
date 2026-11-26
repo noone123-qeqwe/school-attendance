@@ -212,9 +212,7 @@
 
 <div class="link-wizard-container">
     {{-- Back to Dashboard Link --}}
-    <a href="{{ route('parent.dashboard') }}" class="student-back-link mb-3 d-inline-flex align-items-center gap-2" style="color: #b39b82; text-decoration: none; font-size: 0.88rem; font-weight: 600;">
-        <i class="bi bi-arrow-left"></i> Back to Dashboard
-    </a>
+    <x-back-link :href="route('parent.dashboard')" label="Back to Dashboard" variant="plain" class="student-back-link mb-3 align-items-center gap-2" style="color: #b39b82; text-decoration: none; font-size: 0.88rem; font-weight: 600;" />
 
     {{-- Currently Linked Children (if any) --}}
     @if(isset($linkedChildren) && $linkedChildren->isNotEmpty())

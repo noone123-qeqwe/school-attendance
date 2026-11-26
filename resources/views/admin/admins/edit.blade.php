@@ -2,9 +2,7 @@
 @section('page-title', 'Edit Admin')
 
 @section('content')
-<a href="{{ route('admin.admins') }}" class="adm-btn adm-btn-ghost" style="margin-bottom:20px;text-decoration:none;">
-    <i class="bi bi-arrow-left"></i> Back
-</a>
+<x-back-link :href="route('admin.admins')" variant="admin" style="margin-bottom:20px;" />
 
 <div class="adm-card" style="max-width:680px;">
     <div class="adm-card-head">

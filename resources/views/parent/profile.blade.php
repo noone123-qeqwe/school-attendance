@@ -125,90 +125,6 @@
     pointer-events: none;
     z-index: 5;
 }
-.stabs-floating-hint {
-    position: absolute;
-    top: -26px;
-    right: 4px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 10px;
-    border-radius: 99px;
-    background: rgba(26, 20, 16, 0.94);
-    border: 1px solid rgba(207, 164, 111, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: #f3e7cd;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55), 0 0 10px rgba(207, 164, 111, 0.25);
-    z-index: 12;
-    cursor: pointer;
-    user-select: none;
-    transition: all 0.25s ease;
-    animation: stabsFloatHint 3s ease-in-out infinite;
-}
-.stabs-floating-hint:hover {
-    background: rgba(45, 36, 30, 0.98);
-    border-color: #cfa46f;
-    color: #ffd700;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.65), 0 0 14px rgba(207, 164, 111, 0.4);
-    transform: translateY(-2px) scale(1.04);
-}
-.stabs-floating-hint i {
-    color: #cfa46f;
-    font-size: 0.76rem;
-    transition: color 0.2s ease;
-}
-.stabs-floating-hint:hover i {
-    color: #ffd700;
-}
-.stabs-floating-hint::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    right: 14px;
-    width: 7px;
-    height: 7px;
-    background: rgba(26, 20, 16, 0.94);
-    border-right: 1px solid rgba(207, 164, 111, 0.4);
-    border-bottom: 1px solid rgba(207, 164, 111, 0.4);
-    transform: rotate(45deg);
-    transition: all 0.25s ease;
-}
-.stabs-floating-hint:hover::after {
-    background: rgba(45, 36, 30, 0.98);
-    border-color: #cfa46f;
-}
-.stabs-floating-pulse {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #cfa46f;
-    box-shadow: 0 0 6px #ffd700;
-    display: inline-block;
-    animation: stabsPulseDot 1.8s infinite ease-in-out;
-}
-@keyframes stabsPulseDot {
-    0%, 100% {
-        transform: scale(0.9);
-        opacity: 0.6;
-    }
-    50% {
-        transform: scale(1.3);
-        opacity: 1;
-    }
-}
-@keyframes stabsFloatHint {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-4px);
-    }
-}
 .spanel{display:none;}.spanel.active{display:block;}
 .sc{background:rgba(255,235,190,0.02);border-radius:16px;border:1px solid rgba(255,215,145,0.08);box-shadow:0 4px 15px rgba(0,0,0,.2);overflow:hidden;margin-bottom:20px;transition:all .25s;}
 .sc:hover{box-shadow:0 8px 25px rgba(0,0,0,.3);border-color:rgba(255,215,145,0.15);}
@@ -261,12 +177,6 @@
         margin-top: 10px;
         margin-bottom: 20px;
     }
-    .stabs-floating-hint {
-        top: -24px;
-        right: 2px;
-        font-size: 0.64rem;
-        padding: 2px 8px;
-    }
     .stabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding: 4px 44px 4px 4px; margin-bottom: 0; }
     .stabs::-webkit-scrollbar { display: none; }
     .stab { white-space: nowrap; padding: 8px 16px; font-size: 0.85rem; }
@@ -300,11 +210,6 @@
 
     <!-- TABS -->
     <div class="stabs-wrapper">
-        <div class="stabs-floating-hint" id="stabsFloatingHint" onclick="scrollStabs('right')" title="Scroll tabs" aria-label="Scrollable horizontal tabs">
-            <span class="stabs-floating-pulse"></span>
-            <i class="bi bi-arrow-left-right"></i>
-            <span>Scrollable</span>
-        </div>
         <button type="button" class="stabs-arrow stabs-arrow-left" id="stabsArrowLeft" onclick="scrollStabs('left')" aria-label="Scroll left">
             <i class="bi bi-chevron-left"></i>
         </button>
@@ -446,25 +351,6 @@
                     </div>
                 </div>
 
-                <!-- ── Passkey sign-in ── -->
-                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.06);">
-                    <div style="font-size:.78rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Passkey sign-in</div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:rgba(255,235,190,0.03);padding:16px 20px;border-radius:12px;border:1px solid rgba(255,215,145,0.08);">
-                        <div style="display:flex;align-items:center;gap:14px;">
-                            <div style="width:40px;height:40px;border-radius:10px;background:rgba(34,197,94,0.12);color:#4ade80;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">
-                                <i class="bi bi-shield-lock"></i>
-                            </div>
-                            <div>
-                                <div style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Device passkeys</div>
-                                <div style="font-size:.78rem;color:#b39b82;">Use a passkey to sign in securely</div>
-                            </div>
-                        </div>
-                        <button type="button" onclick="switchTab('fingerprint', document.querySelectorAll('.stab')[2])" class="sbtn" style="padding:9px 18px;font-size:.82rem;background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);">
-                            <i class="bi bi-shield-lock me-1"></i> Manage passkeys
-                        </button>
-                    </div>
-                </div>
-
                 <!-- ── Recovery Codes ── -->
                 <div>
                     <div style="font-size:.78rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Recovery Codes</div>
@@ -583,7 +469,6 @@ function updateStabsScrollArrows() {
     const nav = document.getElementById('stabsNav');
     const leftBtn = document.getElementById('stabsArrowLeft');
     const rightBtn = document.getElementById('stabsArrowRight');
-    const hint = document.getElementById('stabsFloatingHint');
     const wrapper = nav?.closest('.stabs-wrapper');
     if (!nav || !leftBtn || !rightBtn) return;
 
@@ -592,12 +477,10 @@ function updateStabsScrollArrows() {
     if (maxScrollLeft <= 8) {
         leftBtn.classList.remove('visible');
         rightBtn.style.display = 'none';
-        if (hint) hint.style.display = 'none';
         wrapper?.classList.remove('has-scroll-left', 'has-scroll-right');
         return;
     }
 
-    if (hint) hint.style.display = 'inline-flex';
     rightBtn.style.display = '';
 
     // Toggle left button visibility when scrolled right
@@ -613,12 +496,10 @@ function updateStabsScrollArrows() {
     if (nav.scrollLeft >= maxScrollLeft - 8) {
         rightBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
         rightBtn.setAttribute('title', 'Scroll to start');
-        if (hint) hint.setAttribute('title', 'Scroll to start');
         wrapper?.classList.remove('has-scroll-right');
     } else {
         rightBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
         rightBtn.setAttribute('title', 'Scroll tabs');
-        if (hint) hint.setAttribute('title', 'Scroll tabs');
         wrapper?.classList.add('has-scroll-right');
     }
 }

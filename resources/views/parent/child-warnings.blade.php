@@ -4,9 +4,7 @@
 @section('content')
 <div class="parent-page">
     {{-- Back Link --}}
-    <a href="{{ route('parent.dashboard') }}" class="student-back-link">
-        <i class="bi bi-arrow-left"></i> Back to Dashboard
-    </a>
+    <x-back-link :href="route('parent.dashboard')" label="Back to Dashboard" variant="plain" class="student-back-link" />
 
     {{-- Header --}}
     <div class="d-flex align-items-center gap-3 mb-4">

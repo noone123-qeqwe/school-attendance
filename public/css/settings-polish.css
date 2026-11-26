@@ -66,7 +66,6 @@
 .sp .si { min-height: 44px; box-shadow: none !important; }
 .sp .sbtn { min-height: 44px; box-shadow: none !important; }
 .sp .sbtn:hover { box-shadow: 0 4px 14px rgba(207, 164, 111, 0.22) !important; }
-.sp .stabs-floating-hint { display: none !important; }
 .sp .stabs-arrow-right { animation: none !important; }
 .sp .stabs-arrow { box-shadow: none !important; }
 .sp .stab.active { box-shadow: none !important; background: rgba(207, 164, 111, 0.18) !important; }

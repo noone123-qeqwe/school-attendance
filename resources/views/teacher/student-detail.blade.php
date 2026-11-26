@@ -3,11 +3,7 @@
 @section('page-title', 'Student Details')
 
 @section('content')
-<div style="margin-bottom: 20px;">
-    <a href="{{ route('teacher.students') }}" class="tch-btn tch-btn-ghost">
-        <i class="bi bi-arrow-left"></i> Back to Students
-    </a>
-</div>
+<x-back-link :href="route('teacher.students')" label="Back to Students" variant="teacher-ghost" style="margin-bottom: 20px;" />
 
 <!-- Student Info Card -->
 <div class="tch-card" style="margin-bottom: 24px;">

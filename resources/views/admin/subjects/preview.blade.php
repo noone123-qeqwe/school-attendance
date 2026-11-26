@@ -2,9 +2,7 @@
 @section('page-title', 'Subjects PDF Preview')
 
 @section('content')
-<a href="{{ route('admin.subjects', request()->query()) }}" style="display:inline-flex;align-items:center;gap:7px;font-size:.85rem;font-weight:600;color:#64748b;text-decoration:none;padding:8px 14px;border:1.5px solid #e2e8f0;border-radius:9px;background:white;margin-bottom:20px;" onmouseover="this.style.color='#800000';this.style.borderColor='#800000';" onmouseout="this.style.color='#64748b';this.style.borderColor='#e2e8f0';">
-    <i class="bi bi-arrow-left"></i> Back to Subjects
-</a>
+<x-back-link :href="route('admin.subjects', request()->query())" label="Back to Subjects" variant="admin" style="margin-bottom:20px;" />
 
 <div class="adm-card">
     <div class="adm-card-head">

@@ -11,9 +11,7 @@
             </h1>
             <p>Provide details for your absence and choose which subject(s) this excuse letter covers.</p>
         </div>
-        <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary">
-            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i> Back to Excuses
-        </a>
+        <x-back-link :href="route('excuses')" label="Back to Excuses" variant="entity" />
     </header>
 
     <x-error-summary title="Please review your excuse submission" />

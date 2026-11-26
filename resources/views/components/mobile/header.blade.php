@@ -356,6 +356,15 @@
         const menuLinks = document.getElementById('mobileMenuLinks');
         if (backBtn && menu && backdrop && menuLinks) {
             const bottomNav = document.getElementById('mobileBottomNav');
+            const seenPaths = new Set();
+            const normalizeMenuPath = function(rawHref) {
+                try {
+                    const parsed = new URL(rawHref, window.location.origin);
+                    return parsed.pathname + (parsed.hash || '');
+                } catch (e) {
+                    return String(rawHref || '');
+                }
+            };
             bottomNav?.querySelectorAll('.nav-item').forEach(function(item) {
                 const link = item.tagName === 'BUTTON' ? document.createElement('a') : item.cloneNode(true);
                 if (item.tagName === 'BUTTON') {
@@ -367,6 +376,7 @@
                 link.removeAttribute('id');
                 link.classList.remove('nav-item-primary');
                 link.classList.add('mobile-menu-link');
+                seenPaths.add(normalizeMenuPath(link.getAttribute('href') || link.href));
                 menuLinks.appendChild(link);
             });
             @if(auth()->user()?->isStudent())
@@ -377,6 +387,10 @@
                 ['Notifications', @json(route('notifications')), 'bell'],
                 ['Settings & Biometrics', @json(route('settings')), 'gear'],
             ].forEach(([label, url, icon]) => {
+                if (seenPaths.has(normalizeMenuPath(url))) {
+                    return;
+                }
+                seenPaths.add(normalizeMenuPath(url));
                 const link = document.createElement('a');
                 link.href = url;
                 link.className = 'nav-item mobile-menu-link';

@@ -4,9 +4,7 @@
 @section('content')
 
 
-<a href="{{ route('admin.students') }}" class="student-back-link">
-    <i class="bi bi-arrow-left"></i> Back to Students
-</a>
+<x-back-link :href="route('admin.students')" label="Back to Students" variant="plain" class="student-back-link" />
 
 <!-- Profile header -->
 <div class="adm-card" style="margin-bottom:20px;">

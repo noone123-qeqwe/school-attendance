@@ -3,9 +3,7 @@
 
 @section('content')
 <div class="parent-page parent-form-page" style="max-width: 800px; margin: 0 auto;">
-    <a href="{{ route('parent.excuses') }}" style="color: #b39b82; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; margin-bottom: 24px; transition: color 0.2s;" onmouseover="this.style.color='#f3e7cd'" onmouseout="this.style.color='#b39b82'">
-        <i class="bi bi-arrow-left"></i> Back to Excuse Letters
-    </a>
+    <x-back-link :href="route('parent.excuses')" label="Back to Excuse Letters" variant="plain" style="color: #b39b82; text-decoration: none; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; margin-bottom: 24px;" />
 
     <h2 style="color: #f3e7cd; font-weight: 800; margin-bottom: 24px;">
         <i class="bi bi-pencil-square" style="color: #cfa46f; margin-right: 8px;"></i>Submit Excuse Letter

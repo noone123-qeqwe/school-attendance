@@ -457,31 +457,6 @@
     min-width: 0;
     width: 100%;
 }
-.settings-heading-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-}
-.settings-mobile-back-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    min-height: 40px;
-    padding: 7px 13px;
-    border-radius: 10px;
-    border: 1px solid rgba(207, 164, 111, 0.28);
-    background: rgba(207, 164, 111, 0.1);
-    color: #f5dfa8;
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-decoration: none;
-}
-.settings-mobile-back-chip:hover {
-    background: rgba(207, 164, 111, 0.18);
-    color: #fff8eb;
-}
 .settings-mobile-nav {
     display: flex;
     flex-wrap: nowrap;
@@ -798,8 +773,7 @@
 /* Desktop and Tablet visibility rules */
 @media (min-width: 768px) {
     .stabs-wrapper,
-    .settings-mobile-nav,
-    .settings-mobile-back-chip {
+    .settings-mobile-nav {
         display: none !important;
     }
 }

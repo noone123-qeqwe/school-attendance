@@ -2,9 +2,7 @@
 @section('page-title', 'Attendance PDF Preview')
 
 @section('content')
-<a href="{{ route('teacher.attendance', request()->query()) }}" style="display:inline-flex;align-items:center;gap:7px;font-size:.85rem;font-weight:600;color:#64748b;text-decoration:none;padding:8px 14px;border:1.5px solid #e2e8f0;border-radius:9px;background:white;margin-bottom:20px;" onmouseover="this.style.color='#059669';this.style.borderColor='#059669';" onmouseout="this.style.color='#64748b';this.style.borderColor='#e2e8f0';">
-    <i class="bi bi-arrow-left"></i> Back to Attendance
-</a>
+<x-back-link :href="route('teacher.attendance', request()->query())" label="Back to Attendance" variant="teacher-ghost" style="margin-bottom:20px;" />
 
 <div class="tch-card">
     <div class="tch-card-head">
@@ -160,19 +158,9 @@
         </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div style="padding:16px 24px;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:.8rem;color:#64748b;">
-            Preview shows the first 10 records. The complete PDF will contain all {{ $attendanceRecords->count() }} attendance records.
-        </div>
-        <div style="display:flex;gap:8px;">
-            <a href="{{ route('teacher.attendance', request()->query()) }}" class="tch-btn tch-btn-ghost">
-                <i class="bi bi-arrow-left me-1"></i> Back to List
-            </a>
-            <a href="{{ route('teacher.attendance.pdf', request()->query()) }}" class="tch-btn tch-btn-primary">
-                <i class="bi bi-download me-1"></i> Download PDF
-            </a>
-        </div>
+    <!-- Preview Note -->
+    <div style="padding:14px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:.8rem;color:#64748b;">
+        Preview shows the first 10 records. The complete PDF will contain all {{ $attendanceRecords->count() }} attendance records.
     </div>
 </div>
 @endsection

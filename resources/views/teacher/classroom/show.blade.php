@@ -274,9 +274,7 @@
 <div class="classroom-header">
     <div class="d-flex justify-content-between align-items-start">
         <div>
-            <a href="{{ route('teacher.classroom.index') }}" class="btn-secondary btn-action mb-3" style="font-size: 0.9rem;">
-                <i class="bi bi-arrow-left"></i> Back to My Classes
-            </a>
+            <x-back-link :href="route('teacher.classroom.index')" label="Back to My Classes" variant="plain" class="btn-secondary btn-action mb-3" style="font-size: 0.9rem;" />
             <div class="subject-badge">{{ $subject->code }}</div>
             <h1 class="subject-title">{{ $subject->name }}</h1>
         </div>

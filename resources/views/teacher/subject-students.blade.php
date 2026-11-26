@@ -28,9 +28,7 @@
                 <a href="{{ route('teacher.qr', $subject->code) }}" class="tch-btn tch-btn-primary" style="background:#800000;border-color:#8a3b2e;color:white;">
                     <i class="bi bi-qr-code me-1"></i> Start QR Attendance
                 </a>
-                <a href="{{ route('teacher.subjects') }}" class="tch-btn tch-btn-ghost" style="color:#e7d4b8;border-color:rgba(207,164,111,0.2);">
-                    <i class="bi bi-arrow-left me-1"></i> Back to Subjects
-                </a>
+                <x-back-link :href="route('teacher.subjects')" label="Back to Subjects" variant="teacher-ghost" style="color:#e7d4b8;border-color:rgba(207,164,111,0.2);" />
             </div>
         </div>
     </div>
