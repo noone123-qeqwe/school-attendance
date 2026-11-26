@@ -116,8 +116,18 @@
             </div>
         @endif
 
-        <div id="peerLiveNotice" class="portal-banner is-live" role="status" aria-live="polite" hidden></div>
-        <div id="peerLiveConnection" class="portal-banner is-info" role="status" hidden></div>
+        <div id="peerLiveNotice" class="portal-banner is-live portal-banner-dismissible" role="status" aria-live="polite" hidden>
+            <span class="portal-banner-message" data-banner-message></span>
+            <button type="button" class="portal-banner-close" data-banner-dismiss="peerLiveNotice" aria-label="Dismiss live notification" title="Close">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div id="peerLiveConnection" class="portal-banner is-info portal-banner-dismissible" role="status" hidden>
+            <span class="portal-banner-message" data-banner-message></span>
+            <button type="button" class="portal-banner-close" data-banner-dismiss="peerLiveConnection" aria-label="Dismiss live updates notice" title="Close">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+        </div>
 
         @if(isset($pendingExcuses) && $pendingExcuses > 0)
             <div class="portal-banner is-warning" role="region" aria-label="Pending excuse reviews">
@@ -562,12 +572,35 @@
 // Peer verification events update this dashboard without a page reload.
 (function subscribeToPeerAttendance() {
     let attempts = 0;
+    let connectionDismissed = false;
     const status = document.getElementById('peerLiveConnection');
     const seen = new Set();
+    function setBannerMessage(bannerEl, message) {
+        if (!bannerEl) return;
+        const messageEl = bannerEl.querySelector('[data-banner-message]') || bannerEl;
+        messageEl.textContent = message || '';
+    }
+    document.querySelectorAll('[data-banner-dismiss]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-banner-dismiss');
+            const banner = targetId ? document.getElementById(targetId) : btn.closest('.portal-banner');
+            if (!banner) return;
+            if (banner === status) {
+                connectionDismissed = true;
+            }
+            banner.hidden = true;
+        });
+    });
     function setConnectionMessage(message) {
         if (!status) return;
-        status.textContent = message;
-        status.hidden = !message;
+        if (!message) {
+            connectionDismissed = false;
+            setBannerMessage(status, '');
+            status.hidden = true;
+            return;
+        }
+        setBannerMessage(status, message);
+        status.hidden = connectionDismissed;
     }
     function connectionMessageFor(state) {
         if (state === 'connected') return '';
@@ -591,7 +624,7 @@
                 seen.add(payload.attendance_id);
                 const notice = document.getElementById('peerLiveNotice');
                 if (notice) {
-                    notice.textContent = `${payload.student_name} checked in by Peer Biometric for ${payload.subject_code}. Vouched by ${payload.voucher_student_name}.`;
+                    setBannerMessage(notice, `${payload.student_name} checked in by Peer Biometric for ${payload.subject_code}. Vouched by ${payload.voucher_student_name}.`);
                     notice.hidden = false;
                 }
 

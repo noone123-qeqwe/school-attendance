@@ -111,6 +111,9 @@ class TeacherPortalRedesignTest extends TestCase
         $this->assertStringContainsString('data-accent="danger"', $html);
         $this->assertStringContainsString('id="peerLiveNotice"', $html);
         $this->assertStringContainsString('id="peerLiveConnection"', $html);
+        $this->assertStringContainsString('data-banner-dismiss="peerLiveConnection"', $html);
+        $this->assertStringContainsString('data-banner-dismiss="peerLiveNotice"', $html);
+        $this->assertStringContainsString('data-banner-message', $html);
         $this->assertStringContainsString('id="recentAttendanceRows"', $html);
         $this->assertStringContainsString('id="recentLogsSearch"', $html);
         $this->assertStringContainsString('id="schoolCalendar"', $html);

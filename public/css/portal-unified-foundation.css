@@ -354,6 +354,40 @@
         color: var(--portal-maroon-core);
     }
 
+    .portal-banner-dismissible {
+        flex-wrap: nowrap;
+        align-items: center;
+    }
+
+    .portal-banner-message {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .portal-banner-close {
+        flex: 0 0 auto;
+        display: inline-grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        margin: -4px -4px -4px 4px;
+        padding: 0;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--portal-text-soft);
+        font-size: 0.85rem;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .portal-banner-close:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.14);
+        color: var(--portal-white);
+    }
+
     /* ── 3. Signature Asymmetric Hero Grid ───────────────────────────────── */
     .portal-hero-grid {
         display: grid;
