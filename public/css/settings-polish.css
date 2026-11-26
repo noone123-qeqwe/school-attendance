@@ -455,15 +455,24 @@
         margin-top: 4px !important;
     }
 
-    /* Toggle switches - larger touch targets */
-    .pref-tile .form-check.form-switch {
+    /* Toggle switches - centered in their flex track without Bootstrap negative margin overlap */
+    .pref-tile .form-check.form-switch,
+    .trow .form-check.form-switch {
         padding-left: 0 !important;
-        margin-top: 2px !important;
+        margin: 0 !important;
+        min-height: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        flex-shrink: 0 !important;
     }
-    .pref-tile .form-check-input {
+    .pref-tile .form-check.form-switch .form-check-input,
+    .trow .form-check.form-switch .form-check-input {
         width: 2.6em !important;
         height: 1.4em !important;
-        margin-top: 0 !important;
+        margin: 0 !important;
+        float: none !important;
+        flex-shrink: 0 !important;
         cursor: pointer !important;
     }
 

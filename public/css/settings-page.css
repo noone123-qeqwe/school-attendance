@@ -3071,6 +3071,21 @@
     background: rgba(255, 235, 190, 0.045) !important;
     border-color: rgba(255, 215, 145, 0.18) !important;
 }
+.pref-tile .form-check.form-switch:not(:has(.form-check-label)),
+.trow .form-check.form-switch:not(:has(.form-check-label)) {
+    padding-left: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+.pref-tile .form-check.form-switch:not(:has(.form-check-label)) .form-check-input,
+.trow .form-check.form-switch:not(:has(.form-check-label)) .form-check-input {
+    margin: 0 !important;
+    float: none !important;
+    flex-shrink: 0 !important;
+}
 .pref-tile-icon {
     width: 38px !important;
     height: 38px !important;

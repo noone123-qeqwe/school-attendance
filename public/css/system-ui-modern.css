@@ -383,6 +383,21 @@ body.student-portal .sp.student-settings[data-student-settings] :is(.sc-icon, .s
     padding: 0;
 }
 
+:is(.pref-tile, .trow, .sp, .tch-card) .form-check.form-switch:not(:has(.form-check-label)) {
+    padding-left: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+
+:is(.pref-tile, .trow, .sp, .tch-card) .form-check.form-switch:not(:has(.form-check-label)) .form-check-input {
+    margin: 0 !important;
+    float: none !important;
+    flex-shrink: 0 !important;
+}
+
 .mobile-app-layout .mobile-bottom-nav {
     align-items: center;
     backdrop-filter: blur(14px);

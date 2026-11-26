@@ -975,6 +975,24 @@ class StudentDashboardAndSidebarTest extends TestCase
             '/\.sp\.student-settings\[data-student-settings\]\s+\.pref-tile\s*\{[^}]*padding:\s*16px\s+18px\s*!important;/s',
             $masterCss
         );
+
+        $polishCss = file_get_contents(public_path('css/settings-polish.css'));
+        $this->assertNotFalse($polishCss);
+        $this->assertMatchesRegularExpression(
+            '/\.pref-tile\s+\.form-check\.form-switch[^{]*\{[^}]*padding-left:\s*0\s*!important;/s',
+            $polishCss
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.pref-tile\s+\.form-check\.form-switch\s+\.form-check-input[^{]*\{[^}]*margin:\s*0\s*!important;\s*float:\s*none\s*!important;/s',
+            $polishCss
+        );
+
+        $studentSettingsCss = file_get_contents(public_path('css/student-settings.css'));
+        $this->assertNotFalse($studentSettingsCss);
+        $this->assertMatchesRegularExpression(
+            '/\.pref-tile\s+\.form-check\.form-switch\s+\.form-check-input\s*\{[^}]*margin:\s*0\s*!important;\s*float:\s*none\s*!important;/s',
+            $studentSettingsCss
+        );
     }
 
     public function test_student_settings_profile_photo_card_avoids_profile_summary_collision_and_provides_change_photo_action(): void

@@ -428,9 +428,10 @@
     .student-settings .bio-method-grid { grid-template-columns: 1fr; gap: 18px; }
     .student-settings .bio-method-card { padding: 22px 16px 20px; }
     .student-settings .bio-action-row { align-items: stretch; flex-direction: column; gap: 12px; }
-    .student-settings .pref-tile { align-items: flex-start; flex-wrap: wrap; gap: 12px; padding: 18px 14px; }
+    .student-settings .pref-tile { align-items: center; flex-wrap: wrap; gap: 14px; padding: 18px 14px; }
     .student-settings .pref-tile > * { min-width: 0; }
-    .student-settings .pref-tile .form-check { padding-top: 4px; }
+    .student-settings .pref-tile .form-check.form-switch { padding: 0; margin: 0; min-height: 0; display: inline-flex; align-items: center; flex-shrink: 0; }
+    .student-settings .pref-tile .form-check.form-switch .form-check-input { margin: 0; float: none; }
     .student-settings .pref-tile select { width: 100% !important; min-width: 0 !important; margin-top: 8px; }
     .student-settings .sbtn, .student-settings .sec-action-btn { width: 100%; justify-content: center; }
     .student-settings #tabDeviceBoundTile > div:last-child,

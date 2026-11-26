@@ -53,7 +53,9 @@
 .sp.student-settings[data-student-settings] .bio-method-meta { display: none !important; }
 .sp.student-settings[data-student-settings] .bio-method-grid { grid-template-columns: minmax(0, 1fr) !important; }
 .sp.student-settings[data-student-settings] .bio-method-card { padding: 18px !important; box-shadow: none !important; border-radius: 12px !important; }
-.sp.student-settings[data-student-settings] .pref-tile { padding: 18px 0 !important; margin: 0 !important; border: 0 !important; border-bottom: 1px solid var(--gold-border) !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; transform: none !important; gap: 18px !important; }
+.sp.student-settings[data-student-settings] .pref-tile { padding: 18px 0 !important; margin: 0 !important; border: 0 !important; border-bottom: 1px solid var(--gold-border) !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; transform: none !important; gap: 16px !important; }
+.sp.student-settings[data-student-settings] .pref-tile .form-check.form-switch { padding-left: 0 !important; margin: 0 !important; min-height: 0 !important; display: inline-flex !important; align-items: center !important; flex-shrink: 0 !important; }
+.sp.student-settings[data-student-settings] .pref-tile .form-check.form-switch .form-check-input { margin: 0 !important; float: none !important; flex-shrink: 0 !important; }
 .sp.student-settings[data-student-settings] .tlabel { font-size: .88rem !important; font-weight: 600; }
 .sp.student-settings[data-student-settings] .tsub { font-size: .8rem !important; line-height: 1.6 !important; margin-top: 5px; }
 .student-device-details { margin-top: 12px; border-top: 1px solid var(--gold-border); }
