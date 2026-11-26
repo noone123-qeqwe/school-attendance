@@ -52,9 +52,9 @@
             min-height: 44px;
             padding: 8px 15px;
             border-radius: 10px;
-            border: 1px solid rgba(250, 247, 248, 0.1);
-            background: #14080C;
-            color: #9E8990;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #1E1515;
+            color: #A49890;
             font-size: 0.84rem;
             font-weight: 700;
             display: flex;
@@ -68,21 +68,21 @@
             transform: scale(0.96);
         }
         .schedule-day-pill.active {
-            background: #6B192B !important;
-            border-color: rgba(232, 152, 168, 0.42) !important;
-            color: #FAF7F8 !important;
+            background: rgba(122, 26, 26, 0.28) !important;
+            border-color: rgba(212, 175, 55, 0.42) !important;
+            color: #FAF8F5 !important;
         }
         .schedule-day-pill-badge {
             font-size: 0.7rem;
             padding: 2px 7px;
             border-radius: 6px;
-            background: rgba(232, 152, 168, 0.14);
-            color: #E898A8;
+            background: rgba(212, 175, 55, 0.14);
+            color: #D4AF37;
             font-weight: 700;
         }
         .schedule-day-pill.active .schedule-day-pill-badge {
-            background: #FAF7F8;
-            color: #14080C;
+            background: #FAF8F5;
+            color: #800000;
         }
         .schedule-day-today-dot {
             width: 6px;
@@ -92,11 +92,11 @@
             flex-shrink: 0;
         }
         .sched-mobile-card {
-            border-left: 3px solid #E898A8;
-            background: #1C0C11;
-            border-top: 1px solid rgba(250, 247, 248, 0.08);
-            border-right: 1px solid rgba(250, 247, 248, 0.08);
-            border-bottom: 1px solid rgba(250, 247, 248, 0.08);
+            border-left: 3px solid #D4AF37;
+            background: #261B1B;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 10px;
             padding: 14px;
             margin-bottom: 10px;
@@ -222,8 +222,8 @@
                     </div>
                 @else
                     <div class="text-center py-4">
-                        <i class="bi bi-cup-hot" aria-hidden="true" style="font-size: 2.2rem; color: rgba(250,247,248,0.16); margin-bottom: 12px; display: block;"></i>
-                        <div style="color: #9E8990; font-size: 0.88rem; margin-top: 6px;">No classes scheduled for this day.</div>
+                        <i class="bi bi-cup-hot" aria-hidden="true" style="font-size: 2.2rem; color: rgba(255, 255, 255,0.16); margin-bottom: 12px; display: block;"></i>
+                        <div style="color: #A49890; font-size: 0.88rem; margin-top: 6px;">No classes scheduled for this day.</div>
                     </div>
                 @endif
             </x-card>

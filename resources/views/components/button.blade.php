@@ -16,7 +16,7 @@
 
     $variants = [
         'primary'   => 'background: linear-gradient(135deg, var(--ds-maroon, #7A1A1A) 0%, var(--ds-maroon-light, #9c2727) 100%); color: #ffffff; border-color: rgba(255, 255, 255, 0.15); box-shadow: 0 4px 14px rgba(122, 26, 26, 0.35);',
-        'gold'      => 'background: linear-gradient(135deg, var(--ds-gold, #D4AF37) 0%, var(--ds-gold-dark, #A68822) 100%); color: #110A0A; border-color: rgba(212, 175, 55, 0.3); font-weight: 700; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.25);',
+        'gold'      => 'background: linear-gradient(135deg, var(--ds-gold, #D4AF37) 0%, var(--ds-gold-dark, #A68822) 100%); color: #141010; border-color: rgba(212, 175, 55, 0.3); font-weight: 700; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.25);',
         'secondary' => 'background: rgba(255, 255, 255, 0.05); color: var(--ds-text-primary, #FCF8F2); border-color: rgba(212, 175, 55, 0.25); backdrop-filter: blur(8px);',
         'outline'   => 'background: transparent; color: var(--ds-gold-soft, #F9E596); border-color: rgba(212, 175, 55, 0.35);',
         'danger'    => 'background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: #ffffff; border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);',

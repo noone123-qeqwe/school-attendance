@@ -15,7 +15,7 @@
             @if($user->isStudent())
                 <span class="d-inline-flex align-items-center gap-2 flex-wrap justify-content-center">
                     <span class="d-inline-flex align-items-center gap-1">
-                        <i class="bi bi-person-badge" style="color:#e48fa0;" aria-hidden="true"></i>
+                        <i class="bi bi-person-badge" style="color:#D4AF37;" aria-hidden="true"></i>
                         <span>Student ID: <strong class="mobile-id-strong">{{ $user->student_number ?? 'Not Assigned' }}</strong></span>
                     </span>
                     @if($user->student_number)
@@ -39,7 +39,7 @@
                 @elseif($user->isParent())
                     <i class="bi bi-people-fill text-info me-1"></i> Parent
                 @else
-                    <i class="bi bi-mortarboard-fill me-1" style="color:#ece4e7;" aria-hidden="true"></i> Student
+                    <i class="bi bi-mortarboard-fill me-1" style="color:#FAF8F5;" aria-hidden="true"></i> Student
                 @endif
             </span>
 
@@ -116,7 +116,7 @@
         <h3 class="mobile-section-title">QUICK LINKS</h3>
         <div class="mobile-card p-2">
             <a href="{{ route('mobile.home') }}" class="mobile-menu-item">
-                <div class="mobile-menu-icon" style="background: rgba(138,36,57,0.34); color: #fcf9fa;">
+                <div class="mobile-menu-icon" style="background: rgba(122, 26, 26, 0.24); color: #FAF8F5;">
                     <i class="bi bi-house-door-fill" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">Home Dashboard</span>
@@ -133,7 +133,7 @@
             </a>
 
             <a href="{{ route('student.classes') }}" class="mobile-menu-item">
-                <div class="mobile-menu-icon" style="background: rgba(228,143,160,0.16); color: #f8d5dd;">
+                <div class="mobile-menu-icon" style="background: rgba(212, 175, 55,0.16); color: #F5DFA8;">
                     <i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i>
                 </div>
                 <span class="flex-grow-1 fw-semibold">My Classes &amp; COR</span>
@@ -192,22 +192,22 @@
     padding: 8px 0 32px;
 }
 .mobile-profile-hero {
-    background: #14080C;
-    border: 1px solid rgba(250, 247, 248, 0.11);
-    border-top: 2px solid #6B192B;
+    background: #1E1515;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-top: 2px solid #7A1A1A;
     border-radius: 14px;
     padding: 22px 16px;
 }
 .mobile-user-name {
     font-size: 1.24rem;
     letter-spacing: -0.02em;
-    color: #FAF7F8;
+    color: #FAF8F5;
 }
 .mobile-user-sub {
-    color: #D4C6CA;
+    color: #D6CCC6;
 }
 .mobile-id-strong {
-    color: #FAF7F8;
+    color: #FAF8F5;
 }
 .mobile-copy-id-btn {
     display: inline-flex;
@@ -217,9 +217,9 @@
     min-height: 36px;
     padding: 4px 11px;
     border-radius: 8px;
-    border: 1px solid rgba(232, 152, 168, 0.3);
-    background: #1C0C11;
-    color: #E898A8;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    background: #261B1B;
+    color: #D4AF37;
     font-size: 0.74rem;
     font-weight: 700;
     cursor: pointer;
@@ -228,22 +228,22 @@
     transform: scale(0.96);
 }
 .mobile-link-chevron {
-    color: #9E8990;
+    color: #A49890;
     font-size: 0.9rem;
 }
 .ppm-role-pill {
-    background: rgba(107, 25, 43, 0.36);
-    color: #FAF7F8;
-    border: 1px solid rgba(232, 152, 168, 0.28);
+    background: rgba(122, 26, 26, 0.24);
+    color: #FAF8F5;
+    border: 1px solid rgba(212, 175, 55, 0.28);
     font-weight: 600;
     font-size: 0.74rem;
     padding: 4px 10px;
     border-radius: 7px;
 }
 .ppm-course-pill, .ppm-year-pill {
-    background: #1C0C11;
-    color: #D4C6CA;
-    border: 1px solid rgba(250, 247, 248, 0.1);
+    background: #261B1B;
+    color: #D6CCC6;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     font-weight: 600;
     font-size: 0.74rem;
     padding: 4px 10px;
@@ -253,13 +253,13 @@
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: #9E8990;
+    color: #A49890;
     margin-bottom: 8px;
     padding-left: 2px;
 }
 .mobile-card {
-    background: #14080C;
-    border: 1px solid rgba(250, 247, 248, 0.1);
+    background: #1E1515;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 14px;
     overflow: hidden;
 }
@@ -268,7 +268,7 @@
     align-items: center;
     gap: 14px;
     padding: 13px 16px;
-    border-bottom: 1px solid rgba(250, 247, 248, 0.075);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.075);
 }
 .mobile-info-row:last-child {
     border-bottom: none;
@@ -277,9 +277,9 @@
     width: 34px;
     height: 34px;
     border-radius: 9px;
-    background: #1C0C11;
-    border: 1px solid rgba(250, 247, 248, 0.08);
-    color: #E898A8;
+    background: #261B1B;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #D4AF37;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -288,14 +288,14 @@
 }
 .mobile-info-label {
     font-size: 0.71rem;
-    color: #9E8990;
+    color: #A49890;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 .mobile-info-val {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #FAF7F8;
+    color: #FAF8F5;
     overflow-wrap: anywhere;
 }
 .mobile-menu-item {
@@ -305,12 +305,12 @@
     min-height: 50px;
     padding: 11px 14px;
     border-radius: 10px;
-    color: #FAF7F8;
+    color: #FAF8F5;
     text-decoration: none;
     transition: background-color 0.15s ease;
 }
 .mobile-menu-item:hover, .mobile-menu-item:active {
-    background: #1C0C11;
+    background: #261B1B;
     color: #FFFFFF;
 }
 .mobile-menu-icon {

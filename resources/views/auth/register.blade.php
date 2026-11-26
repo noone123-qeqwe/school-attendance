@@ -14,8 +14,8 @@
             --primary-hover: #a11f1f;
             --accent: #e8c064;
             --accent-hover: #fce096;
-            --bg-dark: #0a0305;
-            --glass-bg: rgba(25, 10, 15, 0.4);
+            --bg-dark: #141010;
+            --glass-bg: rgba(28, 18, 18, 0.88);
             --glass-border: rgba(255, 255, 255, 0.1);
             --text-main: #fcfcfc;
             --text-muted: #a39b9d;
@@ -76,8 +76,8 @@
             position: fixed; filter: blur(80px); z-index: 2; opacity: 0.5;
             animation: float 20s infinite alternate ease-in-out;
         }
-        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: rgba(138, 21, 21, 0.3); }
-        .blob-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: rgba(232, 192, 100, 0.15); animation-delay: -10s; }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: rgba(122, 26, 26, 0.16); }
+        .blob-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: rgba(212, 175, 55, 0.08); animation-delay: -10s; }
 
         @keyframes float {
             0% { transform: translate(0, 0) scale(1); }

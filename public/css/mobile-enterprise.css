@@ -144,10 +144,10 @@
         width: 100% !important;
         top: 0 !important;
         position: fixed !important;
-        background: rgba(15, 10, 8, 0.94) !important;
-        backdrop-filter: blur(28px) saturate(180%) !important;
-        -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-        box-shadow: 0 1px 0 rgba(207, 164, 111, 0.08), 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+        background: rgba(20, 14, 14, 0.9) !important;
+        backdrop-filter: blur(20px) saturate(160%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+        box-shadow: 0 1px 0 rgba(212, 175, 55, 0.14) !important;
         border-bottom: none !important;
         display: flex !important;
         align-items: center !important;
@@ -340,13 +340,13 @@
 
     .modal-content {
         border-radius: 24px 24px 0 0 !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(212, 175, 55, 0.18) !important;
         border-bottom: none !important;
-        background: #140d0a !important;
+        background: #1E1515 !important;
         padding-top: var(--m-space-sm) !important;
         padding-bottom: calc(var(--m-space-lg) + env(safe-area-inset-bottom, 16px)) !important;
         position: relative !important;
-        box-shadow: 0 -8px 36px rgba(0, 0, 0, 0.65) !important;
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.45) !important;
         max-height: calc(var(--app-height, 100dvh) - env(safe-area-inset-top, 0px) - 20px) !important;
         display: flex !important;
         flex-direction: column !important;

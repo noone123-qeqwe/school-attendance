@@ -357,7 +357,7 @@
                     <div class="sd-timeline">
                         @foreach($todaySchedCollection as $item)
                             @php
-                                $statusColor = $item->status === 'completed' ? '#34d399' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#ff6b7a' : '#e48fa0'));
+                                $statusColor = $item->status === 'completed' ? '#34d399' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#ff6b7a' : '#D4AF37'));
                                 $roomName = trim((string) ($item->schedule?->room ?? ''));
                             @endphp
                             <div class="sd-timeline-row is-status-{{ $item->status }}" style="--tl-color: {{ $statusColor }};">
@@ -447,7 +447,7 @@
                             @php
                                 $hasRecords = $sub->total > 0;
                                 $rateClass = !$hasRecords ? '' : ($sub->rate >= 85 ? 'is-good' : ($sub->rate >= 75 ? 'is-warn' : 'is-risk'));
-                                $barColor = !$hasRecords ? 'rgba(236,224,228,0.16)' : ($sub->rate >= 85 ? '#34d399' : ($sub->rate >= 75 ? '#fbbf24' : '#ff6b7a'));
+                                $barColor = !$hasRecords ? 'rgba(255, 255, 255,0.16)' : ($sub->rate >= 85 ? '#34d399' : ($sub->rate >= 75 ? '#fbbf24' : '#ff6b7a'));
                             @endphp
                             <a href="{{ route('student.classes') }}" class="sd-subject-card" style="text-decoration:none;display:block;">
                                 <div class="sd-subject-top">

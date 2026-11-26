@@ -86,7 +86,7 @@
     @endphp
 
     <!-- Skip to main content link for keyboard/screen readers -->
-    <a href="#mainContent" class="visually-hidden-focusable skip-to-main-link" style="position: absolute; top: 8px; left: 8px; background: #cfa46f; color: #110A0A; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
+    <a href="#mainContent" class="visually-hidden-focusable skip-to-main-link" style="position: absolute; top: 8px; left: 8px; background: #cfa46f; color: #141010; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
         Skip to main content
     </a>
 
@@ -459,7 +459,7 @@
                 warning_3: { border: '#f87171', icon: 'exclamation-octagon-fill', bg: 'rgba(239,68,68,0.15)' },
                 warning_2: { border: '#fbbf24', icon: 'exclamation-triangle-fill', bg: 'rgba(245,158,11,0.15)' },
                 custom:    isStudentToast
-                    ? { border: '#E898A8', icon: 'bell-fill', bg: 'rgba(232,152,168,0.16)' }
+                    ? { border: '#D4AF37', icon: 'bell-fill', bg: 'rgba(212, 175, 55,0.16)' }
                     : { border: '#cfa46f', icon: 'bell-fill', bg: 'rgba(207,164,111,0.15)' }
             };
 
@@ -801,15 +801,15 @@
                     const buildNotifNode = (n) => {
                         const row = document.createElement('div');
                         row.id = `notif-${n.id}`;
-                        const unreadDefaultBg = isStudentPortal ? 'rgba(107, 25, 43, 0.24)' : 'rgba(212, 175, 55, 0.08)';
+                        const unreadDefaultBg = isStudentPortal ? 'rgba(122, 26, 26, 0.24)' : 'rgba(212, 175, 55, 0.08)';
                         const bgRow = n.is_read ? 'transparent' : (n.type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : unreadDefaultBg);
-                        row.style.cssText = `padding:13px 18px;border-bottom:1px solid rgba(250,247,248,0.06);background:${bgRow};transition:all .2s;`;
+                        row.style.cssText = `padding:13px 18px;border-bottom:1px solid rgba(255, 255, 255,0.06);background:${bgRow};transition:all .2s;`;
 
                         const inner = document.createElement('div');
                         inner.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
 
                         const defaultIconStyle = isStudentPortal
-                            ? 'background:rgba(107, 25, 43, 0.34);color:#E898A8;'
+                            ? 'background:rgba(122, 26, 26, 0.24);color:#D4AF37;'
                             : 'background:rgba(207, 164, 111, 0.15);color:#f3e7cd;';
                         const badgeWrap = document.createElement('div');
                         badgeWrap.style.cssText = `width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;${colorMap[n.type] || defaultIconStyle}`;
@@ -820,10 +820,10 @@
                         const bodyCol = document.createElement('div');
                         bodyCol.style.cssText = 'flex:1;min-width:0;';
                         const msgEl = document.createElement('div');
-                        msgEl.style.cssText = `font-size:.82rem;color:${isStudentPortal ? '#FAF7F8' : '#f3e7cd'};line-height:1.4;`;
+                        msgEl.style.cssText = `font-size:.82rem;color:${isStudentPortal ? '#FAF8F5' : '#f3e7cd'};line-height:1.4;`;
                         msgEl.textContent = String(n.message ?? '');
                         const timeEl = document.createElement('div');
-                        timeEl.style.cssText = `font-size:.72rem;color:${isStudentPortal ? '#9E8990' : 'rgba(255,255,255,0.5)'};margin-top:4px;`;
+                        timeEl.style.cssText = `font-size:.72rem;color:${isStudentPortal ? '#A49890' : 'rgba(255,255,255,0.5)'};margin-top:4px;`;
                         timeEl.textContent = String(n.created_at_human ?? '');
                         bodyCol.append(msgEl, timeEl);
 
@@ -831,7 +831,7 @@
                         rightCol.style.cssText = 'display:flex;align-items:center;gap:4px;flex-shrink:0;';
                         if (!n.is_read) {
                             const dot = document.createElement('div');
-                            const dotColor = n.type === 'system_update' ? '#10b981' : (isStudentPortal ? '#E898A8' : '#f59e0b');
+                            const dotColor = n.type === 'system_update' ? '#10b981' : (isStudentPortal ? '#D4AF37' : '#f59e0b');
                             dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${dotColor};`;
                             rightCol.appendChild(dot);
                         }
@@ -1165,7 +1165,7 @@
     </script>
 
     <!-- Global Loading Overlay -->
-    <div id="global-loader" style="display: none; position: fixed; inset: 0; background: rgba(17,10,10,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column;">
+    <div id="global-loader" style="display: none; position: fixed; inset: 0; background: rgba(20, 14, 14, 0.88); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column;">
         <div style="width: 56px; height: 56px; border: 3px solid rgba(212,175,55,0.15); border-top-color: #cfa46f; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
         <p style="color: #cfa46f; margin-top: 16px; font-weight: 600; font-size: 0.9rem; letter-spacing: 0.02em;">Processing...</p>
     </div>

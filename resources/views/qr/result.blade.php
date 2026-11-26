@@ -17,11 +17,11 @@
         width: 100%;
         border-radius: 16px;
         padding: 34px 28px;
-        background: #14080C;
-        border: 1px solid rgba(250, 247, 248, 0.12);
-        border-top: 2px solid #6B192B;
+        background: #1E1515;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-top: 2px solid #7A1A1A;
         text-align: center;
-        color: #FAF7F8;
+        color: #FAF8F5;
     }
     .result-icon {
         width: 68px;
@@ -36,13 +36,13 @@
     .result-title {
         font-size: 1.38rem;
         font-weight: 700;
-        color: #FAF7F8;
+        color: #FAF8F5;
         margin-bottom: 8px;
         letter-spacing: -0.02em;
     }
     .result-sub {
         font-size: 0.88rem;
-        color: #D4C6CA;
+        color: #D6CCC6;
         margin-bottom: 20px;
         line-height: 1.55;
     }
@@ -58,19 +58,19 @@
         font-variant-numeric: tabular-nums;
     }
     .subject-box {
-        background: #0B0406;
-        border: 1px solid rgba(250, 247, 248, 0.08);
+        background: #141010;
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         padding: 14px 16px;
         margin-bottom: 22px;
         font-size: 0.85rem;
-        color: #D4C6CA;
+        color: #D6CCC6;
     }
     .subject-box strong {
-        color: #FAF7F8;
+        color: #FAF8F5;
     }
     .subject-box i {
-        color: #E898A8 !important;
+        color: #D4AF37 !important;
     }
     .action-btn {
         display: inline-flex;
@@ -80,18 +80,18 @@
         width: 100%;
         min-height: 46px;
         padding: 12px 20px;
-        background: #FAF7F8;
-        color: #14080C;
+        background: #FAF8F5;
+        color: #800000;
         border-radius: 10px;
         text-decoration: none;
         font-weight: 700;
         font-size: 0.9rem;
         transition: background 0.15s ease;
-        border: 1px solid #FAF7F8;
+        border: 1px solid #FAF8F5;
     }
     .action-btn:hover {
         background: #FFFFFF;
-        color: #0B0406;
+        color: #800000;
     }
     .secondary-btn {
         display: inline-flex;
@@ -101,19 +101,19 @@
         width: 100%;
         min-height: 44px;
         padding: 11px 20px;
-        background: #1C0C11;
-        color: #FAF7F8;
+        background: #261B1B;
+        color: #FAF8F5;
         border-radius: 10px;
         text-decoration: none;
         font-weight: 600;
         font-size: 0.88rem;
         transition: background 0.15s ease, border-color 0.15s ease;
         margin-top: 10px;
-        border: 1px solid rgba(250, 247, 248, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.16);
     }
     .secondary-btn:hover {
-        background: #261118;
-        border-color: rgba(250, 247, 248, 0.28);
+        background: #2F2222;
+        border-color: rgba(255, 255, 255, 0.28);
         color: #FFFFFF;
     }
     @media (max-width: 480px) {

@@ -230,11 +230,11 @@
                         <div class="flex-grow-1">
                             <div class="info-row-label">Student ID Number</div>
                             <div class="info-row-value d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.02rem; letter-spacing: 0.04em; color: #fcf9fa; font-weight: 700;">
+                                <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.02rem; letter-spacing: 0.04em; color: #FAF8F5; font-weight: 700;">
                                     {{ Auth::user()->student_number ?: 'Not Assigned' }}
                                 </span>
                                 @if(Auth::user()->student_number)
-                                    <button type="button" class="btn btn-sm py-1 px-2 copy-student-id-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}'); this.innerHTML='<i class=\'bi bi-check2 me-1\' aria-hidden=\'true\'></i>Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-clipboard me-1\' aria-hidden=\'true\'></i>Copy'; }, 1500);" style="font-size:0.75rem; background: rgba(255,255,255,0.06); border:1px solid rgba(236,224,228,0.2); color:#fcf9fa; border-radius: 8px;">
+                                    <button type="button" class="btn btn-sm py-1 px-2 copy-student-id-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}'); this.innerHTML='<i class=\'bi bi-check2 me-1\' aria-hidden=\'true\'></i>Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-clipboard me-1\' aria-hidden=\'true\'></i>Copy'; }, 1500);" style="font-size:0.75rem; background: rgba(255,255,255,0.06); border:1px solid rgba(255, 255, 255,0.2); color:#FAF8F5; border-radius: 8px;">
                                         <i class="bi bi-clipboard me-1" aria-hidden="true"></i>Copy
                                     </button>
                                 @endif
@@ -367,10 +367,10 @@
                     @php $rate = round((($totalPresent + $totalLate) / $totalAll) * 100); @endphp
                     <div style="margin-top:4px;">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span style="font-size:0.78rem;font-weight:600;color:#9E8990;">Attendance Rate</span>
+                            <span style="font-size:0.78rem;font-weight:600;color:#A49890;">Attendance Rate</span>
                             <span style="font-size:0.84rem;font-weight:700;color:{{ $rate >= 75 ? '#34D399' : '#FB7185' }};">{{ $rate }}%</span>
                         </div>
-                        <div style="height:6px;background:rgba(250,247,248,0.08);border-radius:99px;overflow:hidden;">
+                        <div style="height:6px;background:rgba(255, 255, 255,0.08);border-radius:99px;overflow:hidden;">
                             <div style="height:100%;width:{{ $rate }}%;background:{{ $rate >= 75 ? '#34D399' : '#FB7185' }};border-radius:99px;transition:width 0.6s ease;"></div>
                         </div>
                     </div>
@@ -391,42 +391,42 @@
                         $binding = $user->deviceBinding;
                     @endphp
                     @if($binding)
-                    <div style="background:rgba(15,4,7,0.52);border:1px solid rgba(236,224,228,0.16);border-radius:14px;padding:16px;margin-bottom:14px;">
+                    <div style="background:rgba(28, 18, 18,0.52);border:1px solid rgba(255, 255, 255,0.16);border-radius:14px;padding:16px;margin-bottom:14px;">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap;">
                             <div style="display:flex;align-items:center;gap:10px;">
                                 <div style="width:40px;height:40px;border-radius:10px;background:rgba(52,211,153,0.14);color:#34d399;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
                                     <i class="bi {{ $binding->getDeviceIcon() }}" aria-hidden="true"></i>
                                 </div>
                                 <div>
-                                    <div style="font-weight:700;font-size:0.95rem;color:#fcf9fa;">{{ $binding->device_name ?: 'Registered Mobile Device' }}</div>
+                                    <div style="font-weight:700;font-size:0.95rem;color:#FAF8F5;">{{ $binding->device_name ?: 'Registered Mobile Device' }}</div>
                                     <div style="font-size:0.75rem;color:#baa3ab;">Bound on {{ $binding->created_at?->format('M d, Y') ?? 'N/A' }}</div>
                                 </div>
                             </div>
                             <x-badge variant="success" size="sm" :dot="true">Verified</x-badge>
                         </div>
 
-                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:0.78rem;padding-top:10px;border-top:1px solid rgba(236,224,228,0.09);">
+                        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:0.78rem;padding-top:10px;border-top:1px solid rgba(255, 255, 255,0.09);">
                             <div style="min-width:0;overflow-wrap:anywhere;">
                                 <span style="color:#baa3ab;">Last Active:</span>
-                                <span style="color:#fcf9fa;font-weight:600;margin-left:4px;">{{ $binding->last_seen_at?->diffForHumans() ?? 'Just now' }}</span>
+                                <span style="color:#FAF8F5;font-weight:600;margin-left:4px;">{{ $binding->last_seen_at?->diffForHumans() ?? 'Just now' }}</span>
                             </div>
                             <div style="min-width:0;overflow-wrap:anywhere;">
                                 <span style="color:#baa3ab;">IP Address:</span>
-                                <span style="color:#fcf9fa;font-weight:600;margin-left:4px;">{{ $binding->ip_address ?: 'Protected' }}</span>
+                                <span style="color:#FAF8F5;font-weight:600;margin-left:4px;">{{ $binding->ip_address ?: 'Protected' }}</span>
                             </div>
                         </div>
                     </div>
 
-                    <div style="display:flex;align-items:flex-start;gap:8px;background:rgba(138,36,57,0.22);border:1px solid rgba(228,143,160,0.26);border-radius:12px;padding:10px 14px;font-size:0.78rem;color:#e3d5d9;line-height:1.45;">
-                        <i class="bi bi-info-circle-fill" style="color:#e48fa0;margin-top:2px;flex-shrink:0;" aria-hidden="true"></i>
+                    <div style="display:flex;align-items:flex-start;gap:8px;background:rgba(122, 26, 26, 0.22);border:1px solid rgba(212, 175, 55,0.26);border-radius:12px;padding:10px 14px;font-size:0.78rem;color:#D6CCC6;line-height:1.45;">
+                        <i class="bi bi-info-circle-fill" style="color:#D4AF37;margin-top:2px;flex-shrink:0;" aria-hidden="true"></i>
                         <div>
                             Anti-proxy protection active. Your student account is strictly bound to this personal device for attendance clock-ins.
                         </div>
                     </div>
                     @else
-                    <div style="text-align:center;padding:18px 14px;background:rgba(15,4,7,0.45);border:1px dashed rgba(236,224,228,0.2);border-radius:14px;color:#baa3ab;font-size:0.85rem;">
-                        <i class="bi bi-phone" style="font-size:2rem;opacity:0.5;display:block;margin-bottom:8px;color:#e48fa0;" aria-hidden="true"></i>
-                        <div style="font-weight:700;color:#fcf9fa;margin-bottom:4px;">No Device Bound Yet</div>
+                    <div style="text-align:center;padding:18px 14px;background:rgba(28, 18, 18,0.45);border:1px dashed rgba(255, 255, 255,0.2);border-radius:14px;color:#baa3ab;font-size:0.85rem;">
+                        <i class="bi bi-phone" style="font-size:2rem;opacity:0.5;display:block;margin-bottom:8px;color:#D4AF37;" aria-hidden="true"></i>
+                        <div style="font-weight:700;color:#FAF8F5;margin-bottom:4px;">No Device Bound Yet</div>
                         <div style="font-size:0.78rem;line-height:1.45;">Your personal device will be automatically and securely bound to your student account when you sign in or record attendance.</div>
                     </div>
                     @endif
@@ -452,24 +452,24 @@
                     </div>
 
                     <div style="margin-bottom:16px;">
-                        <div style="font-size:.72rem;font-weight:700;color:#9E8990;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Registered devices</div>
+                        <div style="font-size:.72rem;font-weight:700;color:#A49890;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Registered devices</div>
                         <div id="deviceList">
-                            <div style="text-align:center;padding:16px;color:#9E8990;font-size:.84rem;background:#0B0406;border-radius:10px;border:1px dashed rgba(250,247,248,0.14);" id="noDevices">
-                                <i class="bi bi-shield-lock" style="font-size:1.6rem;display:block;margin-bottom:6px;opacity:.6;color:#E898A8;" aria-hidden="true"></i>
+                            <div style="text-align:center;padding:16px;color:#A49890;font-size:.84rem;background:#141010;border-radius:10px;border:1px dashed rgba(255, 255, 255,0.14);" id="noDevices">
+                                <i class="bi bi-shield-lock" style="font-size:1.6rem;display:block;margin-bottom:6px;opacity:.6;color:#D4AF37;" aria-hidden="true"></i>
                                 No passkeys registered yet.
                             </div>
                         </div>
                     </div>
 
-                    <button type="button" onclick="registerDevicePasskey()" id="registerFpBtn" disabled class="btn w-100" style="background:#FAF7F8;color:#14080C;font-weight:700;min-height:44px;padding:10px 18px;border-radius:10px;border:1px solid #FAF7F8;">
+                    <button type="button" onclick="registerDevicePasskey()" id="registerFpBtn" disabled class="btn w-100" style="background:#FAF8F5;color:#800000;font-weight:700;min-height:44px;padding:10px 18px;border-radius:10px;border:1px solid #FAF8F5;">
                         <i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Set up a passkey
                     </button>
                     <div id="fpMessage" style="margin-top:12px;font-size:.82rem;display:none;"></div>
-                    <div class="mt-3 pt-3 d-flex align-items-center justify-content-between gap-2 flex-wrap" style="border-top: 1px solid rgba(250,247,248,0.08);">
-                        <a href="{{ route('settings.biometrics.face') }}" style="color:#E898A8;font-size:0.8rem;font-weight:700;text-decoration:none;">
+                    <div class="mt-3 pt-3 d-flex align-items-center justify-content-between gap-2 flex-wrap" style="border-top: 1px solid rgba(255, 255, 255,0.08);">
+                        <a href="{{ route('settings.biometrics.face') }}" style="color:#D4AF37;font-size:0.8rem;font-weight:700;text-decoration:none;">
                             <i class="bi bi-camera-video me-1" aria-hidden="true"></i>Face Recognition Setup
                         </a>
-                        <a href="{{ route('settings') }}#tab-biometrics" style="color:#D4C6CA;font-size:0.8rem;font-weight:600;text-decoration:none;">
+                        <a href="{{ route('settings') }}#tab-biometrics" style="color:#D6CCC6;font-size:0.8rem;font-weight:600;text-decoration:none;">
                             Security Hub <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
                         </a>
                     </div>

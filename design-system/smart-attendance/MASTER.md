@@ -7,7 +7,7 @@
 ---
 
 **Project:** Smart Attendance (Osmeña Colleges)
-**System Version:** v3.0 — Obsidian Oxblood & Crisp Alabaster
+**System Version:** v4.0 — Login-Matched Smoked Charcoal Glass, Warm Gold & Subtle Maroon
 **Pattern:** Commercial Operational SaaS + Native-Grade Mobile App
 **Quality Benchmarks:** Linear (surface clarity & hairline discipline), Apple (mobile ergonomics & typography), Stripe (information density & contrast)
 
@@ -15,33 +15,33 @@
 
 ## Global Rules
 
-### Brand Color Palette (Matched to `public/images/logo.png`)
+### Brand Color Palette (Matched to Login UI & Osmeña Seal)
 
 | Role | Hex / Value | CSS Variable | Contrast Target |
 |------|-------------|--------------|-----------------|
-| Canvas Background | `#0B0406` | `--sdc-canvas` | Base |
-| Surface (Primary) | `#14080C` | `--sdc-surface` | Elevated layer |
-| Surface Raised | `#1C0C11` | `--sdc-surface-2` | Hover / input / well |
-| Surface Interactive | `#261118` | `--sdc-surface-3` | Active / selected |
-| Seal Oxblood Core | `#3D0F1B` | `--sdc-seal-core` | Institutional badge |
-| Seal Oxblood Mid | `#6B192B` | `--sdc-seal-mid` | Active nav / indicators |
-| Seal Crimson Bright | `#9E2A42` | `--sdc-seal-bright` | Interactive emphasis |
-| Primary CTA (Crisp Alabaster) | `#FAF7F8` -> `#EBE4E6` | `--sdc-cta-grad` | `16.2:1` vs `#24060D` |
-| On Primary CTA | `#24060D` | `--sdc-cta-text` | WCAG AAA |
-| Primary Text | `#FAF7F8` | `--sdc-text` | `> 17:1` vs `#14080C` |
-| Secondary Text | `#D4C6CA` | `--sdc-text-soft` | `> 11.5:1` vs `#14080C` |
-| Muted Text | `#9E8990` | `--sdc-muted` | `> 5.8:1` vs `#14080C` |
-| Rose Quartz Accent | `#E898A8` | `--sdc-rose-accent` | `> 7.8:1` vs `#14080C` |
-| Present / Live | `#34D399` | `--sdc-emerald` | `> 9.8:1` vs `#14080C` |
-| Late / Warning | `#FBBF24` | `--sdc-amber` | `> 11.0:1` vs `#14080C` |
-| Absent / Destructive | `#FB7185` | `--sdc-rose` | `> 7.2:1` vs `#14080C` |
-| Info / Excused | `#38BDF8` | `--sdc-sky` | `> 9.2:1` vs `#14080C` |
-| Hairline Border | `rgba(250, 244, 246, 0.11)` | `--sdc-border` | Structural separation |
-| Hairline Subtle | `rgba(250, 244, 246, 0.07)` | `--sdc-border-subtle` | Row dividers |
-| Focus Ring | `#FAF7F8` | `--ds-focus-ring` | WCAG 2.2 AA/AAA |
+| Canvas Background | `#141010` | `--sdc-canvas` / `--ds-bg` | Base |
+| Surface (Primary Glass Card) | `#1E1515` (`rgba(28, 18, 18, 0.88)`) | `--sdc-surface` / `--ds-surface` | Elevated layer |
+| Surface Raised | `#261B1B` | `--sdc-surface-2` | Hover / input / well |
+| Surface Interactive | `#2F2222` | `--sdc-surface-3` | Active / selected |
+| Seal Maroon Deep | `#561313` | `--sdc-seal-core` | Institutional badge |
+| Seal Maroon Accent | `#7A1A1A` | `--sdc-seal-mid` | Active nav wash / subtle border |
+| Osmeña Primary Maroon | `#800000` | `--sdc-seal-bright` / `--ds-maroon` | Interactive emphasis / button ink |
+| Primary CTA (Crisp Ivory Glass) | `#FFFFFF` -> `#F5F5F5` | `--sdc-cta-grad` | `10.95:1` vs `#800000` |
+| On Primary CTA | `#800000` | `--sdc-cta-text` | WCAG AAA |
+| Primary Text | `#FAF8F5` | `--sdc-text` | `> 16.5:1` vs `#1E1515` |
+| Secondary Text | `#D6CCC6` | `--sdc-text-soft` | `> 11.2:1` vs `#1E1515` |
+| Muted Text | `#A49890` | `--sdc-muted` | `> 5.8:1` vs `#1E1515` |
+| Warm Gold Accent | `#D4AF37` | `--sdc-rose-accent` / `--ds-gold` | `> 7.8:1` vs `#1E1515` |
+| Present / Live | `#34D399` | `--sdc-emerald` | `> 9.4:1` vs `#1E1515` |
+| Late / Warning | `#FBBF24` | `--sdc-amber` | `> 10.6:1` vs `#1E1515` |
+| Absent / Destructive | `#FB7185` | `--sdc-rose` | `> 6.9:1` vs `#1E1515` |
+| Info / Excused | `#38BDF8` | `--sdc-sky` | `> 8.8:1` vs `#1E1515` |
+| Hairline Border | `rgba(212, 175, 55, 0.16)` | `--sdc-border` | Structural separation |
+| Hairline Subtle | `rgba(255, 255, 255, 0.08)` | `--sdc-border-subtle` | Row dividers |
+| Focus Ring | `#D4AF37` / `#FAF8F5` | `--ds-focus-ring` | WCAG 2.2 AA/AAA |
 
 ### Surface & Anti-Clutter Discipline
-- **Elevation via Luminance & Hairlines:** Prefer solid elevated surfaces (`#14080C` -> `#1C0C11` -> `#261118`) and `1px solid` hairlines over heavy blurred fog shadows.
+- **Elevation via Luminance & Smoked Glass Hairlines:** Prefer translucent smoked charcoal surfaces (`#141010` -> `#1E1515` -> `#261B1B` / `rgba(28, 18, 18, 0.88)`) and `1px solid` warm gold/neutral hairlines over heavy saturated maroon walls or deep fog shadows.
 - **No Cards Inside Cards:** Inside surface panels, separate items with clean `1px solid var(--sdc-border-subtle)` hairline dividers or compact tonal rows instead of nested boxed cards.
 - **Restrained Blur:** Reserve `backdrop-filter: blur(16px)` strictly for floating chrome (top header, mobile bottom navigation bar, modals, command palette) to protect mobile GPU frame rates.
 - **No `background-attachment: fixed`:** Avoid full-viewport scroll repaints for 60fps mobile and desktop scrolling.

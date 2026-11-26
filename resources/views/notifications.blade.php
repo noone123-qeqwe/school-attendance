@@ -780,7 +780,7 @@
                 <span class="notif-stat-num" id="statActiveCount">{{ $counts['active'] ?? 0 }}</span>
                 <span class="notif-stat-label">Active Notices</span>
             </div>
-            <div class="notif-stat-icon" style="background:rgba(107,25,43,0.34); color:#E898A8;">
+            <div class="notif-stat-icon" style="background:rgba(122, 26, 26, 0.24); color:#D4AF37;">
                 <i class="bi bi-bell" aria-hidden="true"></i>
             </div>
         </a>
@@ -966,7 +966,7 @@
                                 @endif
                                 @if($notification->subject_code)
                                     <span class="notif-meta-item">
-                                        <i class="bi bi-book-fill" style="color:#E898A8;" aria-hidden="true"></i>
+                                        <i class="bi bi-book-fill" style="color:#D4AF37;" aria-hidden="true"></i>
                                         {{ $notification->subject_code }}
                                     </span>
                                 @endif

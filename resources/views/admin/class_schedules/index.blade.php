@@ -213,7 +213,7 @@
     }
     .sch-input {
         width: 100%;
-        background: rgba(17, 10, 10, 0.85);
+        background: rgba(20, 14, 14, 0.88);
         border: 1px solid rgba(212, 175, 55, 0.18);
         color: #FCF8F2;
         padding: 9px 14px 9px 38px;
@@ -225,10 +225,10 @@
     .sch-input:focus {
         border-color: #D4AF37;
         box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
-        background: rgba(17, 10, 10, 0.95);
+        background: rgba(28, 18, 18, 0.95);
     }
     .sch-select {
-        background: rgba(17, 10, 10, 0.85);
+        background: rgba(20, 14, 14, 0.88);
         border: 1px solid rgba(212, 175, 55, 0.18);
         color: #FCF8F2;
         padding: 9px 34px 9px 14px;
@@ -299,7 +299,7 @@
         text-align: left;
     }
     .sch-table th {
-        background: rgba(17, 10, 10, 0.6);
+        background: rgba(28, 18, 18, 0.6);
         padding: 14px 20px;
         font-size: 0.74rem;
         font-weight: 700;

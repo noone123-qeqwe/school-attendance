@@ -10,13 +10,13 @@
     $initialChangelog = app(\App\Services\ChangelogService::class)->getRelease((string)$latestVersion);
 @endphp
 <!-- PWA Head Meta Tags -->
-<meta name="theme-color" content="#110A0A">
+<meta name="theme-color" content="#141010">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Smart Attendance">
 <meta name="application-name" content="Smart Attendance">
-<meta name="msapplication-TileColor" content="#110A0A">
+<meta name="msapplication-TileColor" content="#141010">
 <meta name="msapplication-TileImage" content="/images/icons/icon-144x144.png">
 <meta name="app-installed-version" content="{{ $installedVersion }}">
 <meta name="app-installed-version-tag" content="v{{ ltrim($installedVersion, 'vV ') }}">
@@ -83,7 +83,7 @@
         width: 48px;
         height: 48px;
         border-radius: 14px;
-        background: #110A0A;
+        background: #141010;
         border: 1px solid rgba(207, 164, 111, 0.3);
         display: flex;
         align-items: center;
@@ -127,7 +127,7 @@
 
     .pwa-btn-install {
         background: linear-gradient(135deg, #CFA46F 0%, #8F6E4A 100%);
-        color: #110A0A;
+        color: #141010;
         border: none;
         border-radius: 10px;
         padding: 9px 18px;
@@ -379,7 +379,7 @@
         width: 100%;
         min-height: 48px;
         background: linear-gradient(135deg, #E8C064 0%, #CFA46F 100%);
-        color: #110A0A;
+        color: #141010;
         border: none;
         border-radius: 12px;
         font-size: 0.92rem;
@@ -403,7 +403,7 @@
         bottom: 0;
         left: 0;
         height: 3.5px;
-        background: rgba(17, 10, 10, 0.8);
+        background: rgba(20, 14, 14, 0.85);
         width: 0%;
         transition: width 0.3s ease;
     }
@@ -470,7 +470,7 @@
         height: 20px;
         border-radius: 50%;
         background: #CFA46F;
-        color: #110A0A;
+        color: #141010;
         font-weight: 800;
         font-size: 0.72rem;
         display: flex;
@@ -884,7 +884,7 @@
     }
     .pwa-pill-text strong { color: #E8C064; }
     .pwa-pill-btn {
-        background: linear-gradient(135deg, #E8C064 0%, #CFA46F 100%); color: #110A0A;
+        background: linear-gradient(135deg, #E8C064 0%, #CFA46F 100%); color: #141010;
         font-size: 0.72rem; font-weight: 800; padding: 3px 10px;
         border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px;
     }

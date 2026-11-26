@@ -407,13 +407,13 @@
                 <span class="badge rounded-pill" id="sdInspectorStatusBadge" style="display:none; font-size:0.72rem; font-weight:700; padding:4px 10px;"></span>
             </div>
             <div class="sd-day-inspector-list" id="sdInspectorContent">
-                <p style="color:#9E8990; font-size:0.84rem; margin:0;">Loading calendar activity…</p>
+                <p style="color:#A49890; font-size:0.84rem; margin:0;">Loading calendar activity…</p>
             </div>
-            <div class="d-flex align-items-center justify-content-between gap-2 mt-3 pt-2" style="border-top: 1px solid rgba(250, 247, 248, 0.08);">
-                <a href="{{ route('student.calendar') }}#attendance-records" id="sdInspectorRecordsLink" class="d-none" style="color:#E898A8; font-size:0.8rem; font-weight:700; text-decoration:none;">
+            <div class="d-flex align-items-center justify-content-between gap-2 mt-3 pt-2" style="border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                <a href="{{ route('student.calendar') }}#attendance-records" id="sdInspectorRecordsLink" class="d-none" style="color:#D4AF37; font-size:0.8rem; font-weight:700; text-decoration:none;">
                     <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filter records
                 </a>
-                <button type="button" id="sdInspectorModalBtn" class="btn btn-sm ms-auto" style="background: #1C0C11; border: 1px solid rgba(250,247,248,0.16); color:#FAF7F8; font-size:0.76rem; font-weight:700; border-radius:8px; padding:6px 12px;">
+                <button type="button" id="sdInspectorModalBtn" class="btn btn-sm ms-auto" style="background: #261B1B; border: 1px solid rgba(255, 255, 255,0.16); color:#FAF8F5; font-size:0.76rem; font-weight:700; border-radius:8px; padding:6px 12px;">
                     <i class="bi bi-arrows-angle-expand me-1" aria-hidden="true"></i>Details
                 </button>
             </div>
@@ -483,14 +483,14 @@
                 <div class="ent-modal-row">
                     <div class="ent-modal-label">Date &amp; Time</div>
                     <div class="ent-modal-value">
-                        <i class="bi bi-clock" style="color:#E898A8;" aria-hidden="true"></i>
+                        <i class="bi bi-clock" style="color:#D4AF37;" aria-hidden="true"></i>
                         <span id="eventTime">Date</span>
                     </div>
                 </div>
                 <div class="ent-modal-row" id="eventLocationContainer">
                     <div class="ent-modal-label">Location</div>
                     <div class="ent-modal-value">
-                        <i class="bi bi-geo-alt" style="color:#E898A8;" aria-hidden="true"></i>
+                        <i class="bi bi-geo-alt" style="color:#D4AF37;" aria-hidden="true"></i>
                         <span id="eventLocation">Location</span>
                     </div>
                 </div>
@@ -504,10 +504,10 @@
     <div class="modal-dialog modal-dialog-bottom modal-dialog-scrollable">
         <div class="modal-content bottom-sheet-content">
             <div class="bottom-sheet-handle"></div>
-            <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(250,247,248,0.08)!important;">
+            <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(255, 255, 255,0.08)!important;">
                 <div>
-                    <h3 style="font-weight:700;font-size:1.15rem;color:#FAF7F8;margin:0;padding-right:36px;" id="daySummaryTitle">Date</h3>
-                    <div style="font-size:0.84rem;color:#9E8990;display:flex;align-items:center;gap:6px;margin-top:4px;" id="daySummarySubtitle">
+                    <h3 style="font-weight:700;font-size:1.15rem;color:#FAF8F5;margin:0;padding-right:36px;" id="daySummaryTitle">Date</h3>
+                    <div style="font-size:0.84rem;color:#A49890;display:flex;align-items:center;gap:6px;margin-top:4px;" id="daySummarySubtitle">
                         <span id="daySummaryStatusDot" style="width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
                         <span id="daySummaryStatusText">Status</span>
                     </div>
@@ -515,7 +515,7 @@
                 <button type="button" class="btn-close btn-close-white" aria-label="Close details" data-bs-dismiss="modal" onclick="closeDaySummaryModal()" style="position:absolute;top:16px;right:16px;min-width:44px;min-height:44px;"></button>
             </div>
             <div class="px-4 pb-4">
-                <h6 style="font-size:0.76rem;font-weight:700;color:#9E8990;text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px 0;" id="daySummarySectionTitle">Subjects</h6>
+                <h6 style="font-size:0.76rem;font-weight:700;color:#A49890;text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px 0;" id="daySummarySectionTitle">Subjects</h6>
                 <div id="daySummaryContent" class="d-flex flex-column gap-2">
                     <!-- dynamically populated -->
                 </div>
@@ -668,7 +668,7 @@ function scalRenderDesktopInspector(dateStr, evts, summaryText, summaryBg, summa
 
     listEl.replaceChildren();
     if (scalDataState === 'loading') {
-        listEl.innerHTML = '<p style="color:#9E8990;font-size:0.83rem;margin:0;">Loading day activity…</p>';
+        listEl.innerHTML = '<p style="color:#A49890;font-size:0.83rem;margin:0;">Loading day activity…</p>';
         return;
     }
     if (scalDataState === 'error') {
@@ -676,7 +676,7 @@ function scalRenderDesktopInspector(dateStr, evts, summaryText, summaryBg, summa
         return;
     }
     if (!evts.length) {
-        listEl.innerHTML = '<p style="color:#9E8990;font-size:0.83rem;margin:0;">No attendance or school events recorded on this date.</p>';
+        listEl.innerHTML = '<p style="color:#A49890;font-size:0.83rem;margin:0;">No attendance or school events recorded on this date.</p>';
         return;
     }
     evts.forEach(ev => {
@@ -687,10 +687,10 @@ function scalRenderDesktopInspector(dateStr, evts, summaryText, summaryBg, summa
         item.className = 'sd-day-inspector-item';
         item.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-                <strong style="color:#FAF7F8;font-size:0.85rem;">${recordText(isAtt ? (ev.subject_name || ev.title) : ev.title)}</strong>
+                <strong style="color:#FAF8F5;font-size:0.85rem;">${recordText(isAtt ? (ev.subject_name || ev.title) : ev.title)}</strong>
                 <span style="color:${badgeColor};font-size:0.72rem;font-weight:700;text-transform:uppercase;flex-shrink:0;">${recordText(isAtt ? ev.status : (ev.type || 'event').replace('_', ' '))}</span>
             </div>
-            <div style="color:#9E8990;font-size:0.76rem;margin-top:4px;">${recordText(ev.time_string || (isAtt ? 'Time not set' : 'All Day'))}${ev.instructor_name ? ' · ' + recordText(ev.instructor_name) : ''}</div>
+            <div style="color:#A49890;font-size:0.76rem;margin-top:4px;">${recordText(ev.time_string || (isAtt ? 'Time not set' : 'All Day'))}${ev.instructor_name ? ' · ' + recordText(ev.instructor_name) : ''}</div>
         `;
         listEl.appendChild(item);
     });

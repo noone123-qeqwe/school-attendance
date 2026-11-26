@@ -1,10 +1,10 @@
 .camera-light-controls {
     margin: 14px 0;
     padding: 14px 16px;
-    border: 1px solid rgba(236, 224, 228, 0.16);
+    border: 1px solid rgba(212, 175, 55, 0.18);
     border-radius: 14px;
-    background: rgba(15, 4, 7, 0.56);
-    color: #fcf9fa;
+    background: rgba(30, 21, 21, 0.86);
+    color: #FAF8F5;
     text-align: left;
     min-width: 0;
 }
@@ -25,7 +25,7 @@
     border: 1px solid rgba(236, 224, 228, 0.24);
     border-radius: 11px;
     background: rgba(255, 255, 255, 0.05);
-    color: #fcf9fa;
+    color: #FAF8F5;
     font: inherit;
     font-size: 0.86rem;
     font-weight: 700;
@@ -35,9 +35,9 @@
 }
 
 .camera-light-controls button[aria-pressed="true"] {
-    background: linear-gradient(135deg, #ffffff 0%, #eae0e3 55%, #d7c7cc 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
     border-color: rgba(255, 255, 255, 0.6);
-    color: #300810;
+    color: #800000;
     font-weight: 800;
 }
 
@@ -55,7 +55,7 @@
     margin: 12px 0 4px !important;
     font-size: 0.84rem;
     font-weight: 600;
-    color: #e3d5d9;
+    color: #D6CCC6;
 }
 
 .camera-light-controls input[type="range"] {
@@ -65,26 +65,26 @@
     min-height: 44px;
     margin: 0;
     padding: 0 !important;
-    accent-color: #e48fa0;
+    accent-color: #D4AF37;
 }
 
 .camera-light-controls output {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
-    color: #fcf9fa;
+    color: #FAF8F5;
     flex-shrink: 0;
 }
 
 .camera-light-controls p {
     margin: 6px 0 0;
-    color: #baa3ab;
+    color: #A49890;
     line-height: 1.5;
     font-size: 0.78rem;
     overflow-wrap: anywhere;
 }
 
 .camera-light-controls :is(button, input):focus-visible {
-    outline: 2px solid #ece4e7;
+    outline: 2px solid #D4AF37;
     outline-offset: 3px;
 }
 

@@ -30,7 +30,7 @@
             --gold-primary: var(--ds-gold, #D4AF37);
             --gold-light: #F3E7CD;
             --gold-dark: var(--ds-gold-dark, #A68822);
-            --bg-dark: var(--ds-bg, #110A0A);
+            --bg-dark: var(--ds-bg, #141010);
             --bg-surface: rgba(28, 19, 19, 0.92);
             --bg-card: rgba(207, 164, 111, 0.08);
             --bg-card-hover: rgba(207, 164, 111, 0.14);
@@ -100,19 +100,19 @@
         }
 
         body.student-mobile-portal {
-            --gold-primary: #E898A8;
-            --gold-light: #FAF7F8;
-            --gold-dark: #6B192B;
-            --bg-dark: #0B0406;
-            --bg-surface: #14080C;
-            --bg-card: #1C0C11;
-            --bg-card-hover: #261118;
-            --border-subtle: rgba(250, 247, 248, 0.08);
-            --border-gold: rgba(232, 152, 168, 0.24);
-            --text-primary: #FAF7F8;
-            --text-secondary: #D4C6CA;
-            --text-muted: #9E8990;
-            background-color: #0B0406;
+            --gold-primary: #D4AF37;
+            --gold-light: #F5DFA8;
+            --gold-dark: #A68822;
+            --bg-dark: #141010;
+            --bg-surface: #1A1212;
+            --bg-card: #1E1515;
+            --bg-card-hover: #261B1B;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-gold: rgba(212, 175, 55, 0.22);
+            --text-primary: #FAF8F5;
+            --text-secondary: #D6CCC6;
+            --text-muted: #A49890;
+            background-color: #141010;
             background-image: none;
         }
 

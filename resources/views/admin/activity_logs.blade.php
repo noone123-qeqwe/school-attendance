@@ -152,7 +152,7 @@
 
     .audit-pill-btn.active {
         background: linear-gradient(135deg, #CFA46F 0%, #8F6E4A 100%);
-        color: #110A0A;
+        color: #141010;
         border-color: transparent;
         font-weight: 700;
         box-shadow: 0 4px 12px rgba(207, 164, 111, 0.35);
@@ -183,7 +183,7 @@
     .audit-search-input {
         width: 100%;
         padding: 9px 14px 9px 38px;
-        background: rgba(17, 10, 10, 0.75);
+        background: rgba(28, 18, 18, 0.75);
         border: 1px solid rgba(207, 164, 111, 0.25);
         border-radius: 10px;
         color: #F3E7CD;
@@ -199,7 +199,7 @@
 
     .audit-select {
         padding: 9px 32px 9px 14px;
-        background: rgba(17, 10, 10, 0.75) url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23cfa46f\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'m2 5 6 6 6-6\'/%3e%3c/svg%3e') no-repeat right 12px center;
+        background: rgba(28, 18, 18, 0.75) url('data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23cfa46f\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'m2 5 6 6 6-6\'/%3e%3c/svg%3e') no-repeat right 12px center;
         background-size: 14px 10px;
         border: 1px solid rgba(207, 164, 111, 0.25);
         border-radius: 10px;
@@ -216,7 +216,7 @@
 
     .audit-date-input {
         padding: 9px 14px;
-        background: rgba(17, 10, 10, 0.75);
+        background: rgba(28, 18, 18, 0.75);
         border: 1px solid rgba(207, 164, 111, 0.25);
         border-radius: 10px;
         color: #F3E7CD;
@@ -244,7 +244,7 @@
     }
 
     .audit-table th {
-        background: rgba(17, 10, 10, 0.95);
+        background: rgba(28, 18, 18, 0.95);
         color: #B39B82;
         font-weight: 700;
         font-size: 0.78rem;
@@ -360,7 +360,7 @@
 
     .audit-inspect-btn:hover {
         background: linear-gradient(135deg, #CFA46F 0%, #8F6E4A 100%);
-        color: #110A0A;
+        color: #141010;
         border-color: transparent;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(207, 164, 111, 0.3);
@@ -414,7 +414,7 @@
         display: flex;
         justify-content: flex-end;
         gap: 12px;
-        background: rgba(17, 10, 10, 0.6);
+        background: rgba(28, 18, 18, 0.6);
     }
 
     .diff-table {

@@ -7,7 +7,7 @@
     <header class="sd-excuse-hero">
         <div>
             <h1>
-                <i class="bi bi-file-earmark-medical me-2" style="color: #e48fa0;" aria-hidden="true"></i>Submit Excuse Letter
+                <i class="bi bi-file-earmark-medical me-2" style="color: #D4AF37;" aria-hidden="true"></i>Submit Excuse Letter
             </h1>
             <p>Provide details for your absence and choose which subject(s) this excuse letter covers.</p>
         </div>
@@ -20,13 +20,13 @@
         {{-- Absent Record Context Header --}}
         <div class="sd-excuse-context-bar">
             <div>
-                <div style="font-size: 0.72rem; font-weight: 800; color: #e48fa0; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">
+                <div style="font-size: 0.72rem; font-weight: 800; color: #D4AF37; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;">
                     Absence Record Details
                 </div>
-                <h2 style="font-size: 1.18rem; font-weight: 800; color: #fcf9fa; margin: 0 0 4px;">
+                <h2 style="font-size: 1.18rem; font-weight: 800; color: #FAF8F5; margin: 0 0 4px;">
                     {{ $attendance->subject->name ?? $attendance->subject_code }} ({{ $attendance->subject_code }})
                 </h2>
-                <div style="font-size: 0.84rem; color: #e3d5d9; font-weight: 500;">
+                <div style="font-size: 0.84rem; color: #D6CCC6; font-weight: 500;">
                     <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>{{ \Carbon\Carbon::parse($attendance->date)->format('F j, Y (l)') }}
                     <span class="mx-2 opacity-50" aria-hidden="true">|</span>
                     <span style="color: #ff8e9b; font-weight: 700;">Unexcused Absent</span>
@@ -46,7 +46,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <div>
                             <label class="sd-form-label mb-1">
-                                <i class="bi bi-journal-check" style="color: #e48fa0;" aria-hidden="true"></i>
+                                <i class="bi bi-journal-check" style="color: #D4AF37;" aria-hidden="true"></i>
                                 Choose Subjects Covered By This Excuse <span class="text-danger">*</span>
                             </label>
                             <span style="font-size: 0.8rem; color: #baa3ab;">Select this subject or check additional classes you missed on {{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}</span>
@@ -122,8 +122,8 @@
                                class="visually-hidden">
 
                         <label for="attachments" id="dropZone" class="sd-dropzone">
-                            <i class="bi bi-cloud-arrow-up" style="font-size: 2.2rem; color: #e48fa0; margin-bottom: 8px;" aria-hidden="true"></i>
-                            <span style="font-size: 0.95rem; font-weight: 700; color: #fcf9fa;">Click or drag &amp; drop files here</span>
+                            <i class="bi bi-cloud-arrow-up" style="font-size: 2.2rem; color: #D4AF37; margin-bottom: 8px;" aria-hidden="true"></i>
+                            <span style="font-size: 0.95rem; font-weight: 700; color: #FAF8F5;">Click or drag &amp; drop files here</span>
                             <span style="font-size: 0.8rem; color: #baa3ab; margin-top: 4px;">Medical certificates, letters, or receipts</span>
                         </label>
                     </div>

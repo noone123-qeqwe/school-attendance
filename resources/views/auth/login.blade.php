@@ -563,7 +563,7 @@ if (document.readyState === 'loading') {
 
             <!-- Explicit Consent for Device Credential Registration -->
             <div id="bioModalConsentWrap" style="display:none;margin-bottom:14px;">
-                <label for="bioModalConsentCheckbox" style="display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border-radius:12px;border:1px solid rgba(255,255,255,0.16);background:rgba(15,4,7,0.52);font-size:0.78rem;line-height:1.45;color:#e3d5d9;cursor:pointer;text-align:left;">
+                <label for="bioModalConsentCheckbox" style="display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border-radius:12px;border:1px solid rgba(255,255,255,0.16);background:rgba(28, 18, 18,0.52);font-size:0.78rem;line-height:1.45;color:#D6CCC6;cursor:pointer;text-align:left;">
                     <input type="checkbox" id="bioModalConsentCheckbox" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;cursor:pointer;">
                     <span>I consent to registering this device’s built-in biometric or screen-lock passkey on my account. Only a cryptographic public key is stored — never raw fingerprint or biometric data.</span>
                 </label>

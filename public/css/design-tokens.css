@@ -20,25 +20,25 @@
     --ds-gold-dark:     #A68822;
     --ds-gold-glow:     rgba(212, 175, 55, 0.15);
 
-    /* ── SURFACE & BACKGROUND ── */
-    --ds-bg:            #110A0A;
+    /* ── SURFACE & BACKGROUND (Login-Matched Smoked Charcoal Glass) ── */
+    --ds-bg:            #141010;
     --ds-surface:       #1E1515;
-    --ds-surface-soft:  rgba(255, 255, 255, 0.03);
-    --ds-surface-hover: rgba(255, 255, 255, 0.06);
-    --ds-surface-raised: rgba(30, 21, 21, 0.7);
-    --ds-surface-glass: rgba(30, 21, 21, 0.65);
+    --ds-surface-soft:  rgba(255, 255, 255, 0.04);
+    --ds-surface-hover: rgba(255, 255, 255, 0.07);
+    --ds-surface-raised: rgba(38, 27, 27, 0.88);
+    --ds-surface-glass: rgba(28, 18, 18, 0.88);
 
     /* ── BORDERS ── */
-    --ds-border:        rgba(212, 175, 55, 0.15);
-    --ds-border-hover:  rgba(212, 175, 55, 0.3);
-    --ds-border-strong: rgba(212, 175, 55, 0.45);
+    --ds-border:        rgba(212, 175, 55, 0.16);
+    --ds-border-hover:  rgba(212, 175, 55, 0.34);
+    --ds-border-strong: rgba(212, 175, 55, 0.48);
     --ds-border-subtle: rgba(255, 255, 255, 0.08);
 
     /* ── TYPOGRAPHY ── */
     --ds-font-family:   'Inter', system-ui, -apple-system, sans-serif;
-    --ds-text-primary:  #FCF8F2;
-    --ds-text-secondary:#D1C5B4;
-    --ds-text-muted:    #A39683;
+    --ds-text-primary:  #FAF8F5;
+    --ds-text-secondary:#D6CCC6;
+    --ds-text-muted:    #A49890;
     --ds-text-on-dark:  #ffffff;
 
     /* ── STATUS / SEMANTIC COLORS ── */
@@ -67,10 +67,10 @@
     --ds-info-text:     #60a5fa;
 
     /* ── SHADOWS ── */
-    --ds-shadow-sm:     0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --ds-shadow-md:     0 4px 12px rgba(0, 0, 0, 0.4);
-    --ds-shadow-lg:     0 10px 30px rgba(0, 0, 0, 0.5);
-    --ds-shadow-glow:   0 0 20px rgba(207, 164, 111, 0.1);
+    --ds-shadow-sm:     0 2px 6px 0 rgba(0, 0, 0, 0.18);
+    --ds-shadow-md:     0 6px 18px rgba(0, 0, 0, 0.22);
+    --ds-shadow-lg:     0 12px 28px rgba(0, 0, 0, 0.28);
+    --ds-shadow-glow:   0 0 14px rgba(212, 175, 55, 0.1);
 
     /* ── SPACING (8px grid) ── */
     --ds-space-xs:      4px;
@@ -96,15 +96,15 @@
     --ds-header-height: 72px;
 
     /* ── OSMEÑA COLLEGES LOGO SEAL TOKENS ── */
-    --ds-seal-bg:       #0F0407;
-    --ds-seal-surface:  #1B090F;
-    --ds-seal-surface-2:#270E17;
-    --ds-seal-core:     #381018;
-    --ds-seal-mid:      #5A1827;
-    --ds-seal-bright:   #8A2439;
-    --ds-seal-ink:      #300810;
-    --ds-silver:        #ECE4E7;
-    --ds-rose-accent:   #E48FA0;
+    --ds-seal-bg:       #141010;
+    --ds-seal-surface:  #1E1515;
+    --ds-seal-surface-2:#261B1B;
+    --ds-seal-core:     rgba(122, 26, 26, 0.22);
+    --ds-seal-mid:      #7A1A1A;
+    --ds-seal-bright:   #9C2727;
+    --ds-seal-ink:      #800000;
+    --ds-silver:        #FAF8F5;
+    --ds-rose-accent:   #D4AF37;
 
     /* ── TRANSITIONS & MOTION (UI UX Pro Max v2.15.0) ── */
     --ds-dur-fast:          120ms;
@@ -121,7 +121,7 @@
 
     /* ── GLASS EFFECTS ── */
     --ds-glass-blur:    blur(16px);
-    --ds-glass-bg:      rgba(18, 9, 6, 0.75);
+    --ds-glass-bg:      rgba(28, 18, 18, 0.88);
 }
 
 

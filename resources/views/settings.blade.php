@@ -34,9 +34,9 @@
 <style>
 /* ── Student settings redesign ─────────────────────────────────────────── */
 .student-settings {
-    --student-panel: #14080C;
-    --student-panel-strong: #14080C;
-    --student-line: rgba(250, 247, 248, 0.11);
+    --student-panel: #1E1515;
+    --student-panel-strong: #1E1515;
+    --student-line: rgba(255, 255, 255, 0.11);
     --student-space: clamp(16px, 2.3vw, 28px);
     max-width: 1360px;
     padding: 24px var(--student-space) 64px;
@@ -46,8 +46,8 @@
     padding: 20px 24px;
     border-radius: 14px;
     border-color: var(--student-line);
-    border-top: 2px solid #6B192B;
-    background: #14080C;
+    border-top: 2px solid #7A1A1A;
+    background: #1E1515;
     box-shadow: none;
 }
 .student-settings .settings-command-header::after { display: none; }
@@ -57,15 +57,15 @@
     height: 60px;
     border-radius: 14px;
     padding: 2px;
-    background: rgba(250, 247, 248, 0.18);
+    background: rgba(255, 255, 255, 0.18);
 }
 .student-settings .settings-chip-avatar { border-radius: 12px; }
 .student-settings .settings-chip-status { width: 14px; height: 14px; }
 .student-settings .settings-breadcrumb-bar {
     padding: 3px 9px;
     margin-bottom: 6px;
-    background: #1C0C11;
-    border-color: rgba(250, 247, 248, 0.1);
+    background: #261B1B;
+    border-color: rgba(255, 255, 255, 0.1);
 }
 .student-settings .pg-title {
     font-size: clamp(1.4rem, 1.9vw, 1.85rem);
@@ -81,8 +81,8 @@
     min-width: min(100%, 260px);
     flex: 1 1 250px;
     border-radius: 10px;
-    background: #0B0406;
-    border-color: rgba(250, 247, 248, 0.12);
+    background: #141010;
+    border-color: rgba(255, 255, 255, 0.12);
 }
 .student-settings .settings-command-telemetry {
     display: grid;
@@ -94,12 +94,12 @@
     min-height: 50px;
     padding: 8px 11px;
     border-radius: 10px;
-    background: #1C0C11;
-    border: 1px solid rgba(250, 247, 248, 0.08);
+    background: #261B1B;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
-.student-settings .telemetry-pill:hover { background: #261118; }
-.student-settings .telemetry-lbl { font-size: 0.64rem; color: #9E8990; }
-.student-settings .telemetry-val { font-size: 0.78rem; color: #FAF7F8; }
+.student-settings .telemetry-pill:hover { background: #2F2222; }
+.student-settings .telemetry-lbl { font-size: 0.64rem; color: #A49890; }
+.student-settings .telemetry-val { font-size: 0.78rem; color: #FAF8F5; }
 
 .student-settings .settings-layout-grid {
     display: block;
@@ -113,15 +113,15 @@
 .student-settings .sec-card,
 .student-settings .sec-group-panel {
     border-color: var(--student-line);
-    background: #14080C;
+    background: #1E1515;
     box-shadow: none;
 }
 .student-settings .sc { border-radius: 14px; overflow: hidden; }
 .student-settings .sc + .sc { margin-top: 16px; }
-.student-settings .sc-head { padding: 18px 22px 15px; border-bottom-color: rgba(250, 247, 248, 0.08); }
+.student-settings .sc-head { padding: 18px 22px 15px; border-bottom-color: rgba(255, 255, 255, 0.08); }
 .student-settings .sc-body { padding: 22px; }
-.student-settings .sc-title, .student-settings .sec-group-title { font-size: 1rem; color: #FAF7F8; }
-.student-settings .sc-sub, .student-settings .sec-group-desc { line-height: 1.48; color: #9E8990; }
+.student-settings .sc-title, .student-settings .sec-group-title { font-size: 1rem; color: #FAF8F5; }
+.student-settings .sc-sub, .student-settings .sec-group-desc { line-height: 1.48; color: #A49890; }
 .student-settings .profile-card-inner {
     gap: 18px;
     padding: 4px;
@@ -133,10 +133,10 @@
     min-height: 86px;
     padding: 13px 14px;
     border-radius: 10px;
-    background: #0B0406;
-    border: 1px solid rgba(250, 247, 248, 0.08);
+    background: #141010;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
-.student-settings .academic-spec-card:hover { border-color: rgba(232, 152, 168, 0.28); background: #1C0C11; }
+.student-settings .academic-spec-card:hover { border-color: rgba(212, 175, 55, 0.28); background: #261B1B; }
 .student-settings .si { min-height: 46px; border-radius: 10px; }
 .student-settings .sbtn, .student-settings .sec-action-btn { min-height: 44px; border-radius: 10px; }
 .student-settings .flash-ok, .student-settings .flash-err { border-radius: 12px; }
@@ -153,15 +153,15 @@
     gap: 8px;
     padding: 10px;
     border-radius: 12px;
-    background: #0B0406;
-    border: 1px solid rgba(250, 247, 248, 0.08);
+    background: #141010;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .student-settings .sec-matrix-item {
     justify-content: flex-start;
     min-height: 42px;
     padding: 8px 10px;
     border-radius: 9px;
-    background: #14080C;
+    background: #1E1515;
 }
 .student-settings .sec-subnav-bar {
     position: sticky;
@@ -186,32 +186,32 @@
 .student-settings .student-account-shortcut,
 .student-settings .student-phone-shortcut {
     display:flex; align-items:center; gap:14px; min-width:0; padding:16px;
-    border:1px solid rgba(250,247,248,.1); border-radius:12px;
-    background:#1C0C11;
+    border:1px solid rgba(255, 255, 255,.1); border-radius:12px;
+    background:#261B1B;
 }
 .student-settings .student-account-shortcut-icon {
     display:grid; place-items:center; flex:0 0 42px; width:42px; height:42px;
-    border:1px solid rgba(232,152,168,.26); border-radius:10px;
-    background:rgba(107,25,43,.34); color:#E898A8; font-size:1.05rem;
+    border:1px solid rgba(212, 175, 55,.26); border-radius:10px;
+    background:rgba(122, 26, 26, 0.24); color:#D4AF37; font-size:1.05rem;
 }
 .student-settings .student-account-shortcut-copy { flex:1; min-width:0; }
 .student-settings .student-account-shortcut-copy strong,
 .student-settings .student-account-shortcut-copy span { display:block; overflow-wrap:anywhere; }
-.student-settings .student-account-shortcut-copy strong { color:#FAF7F8; font-size:.9rem; }
-.student-settings .student-account-shortcut-copy span { margin-top:3px; color:#9E8990; font-size:.78rem; line-height:1.45; }
+.student-settings .student-account-shortcut-copy strong { color:#FAF8F5; font-size:.9rem; }
+.student-settings .student-account-shortcut-copy span { margin-top:3px; color:#A49890; font-size:.78rem; line-height:1.45; }
 .student-settings .student-account-shortcut button,
 .student-settings .student-phone-shortcut button {
     display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:42px;
-    padding:9px 13px; border:1px solid rgba(250,247,248,.16); border-radius:9px;
-    background:#261118; color:#FAF7F8; font:inherit; font-size:.8rem; font-weight:700;
+    padding:9px 13px; border:1px solid rgba(255, 255, 255,.16); border-radius:9px;
+    background:#2F2222; color:#FAF8F5; font:inherit; font-size:.8rem; font-weight:700;
 }
 .student-settings .student-account-shortcut button:hover,
-.student-settings .student-phone-shortcut button:hover { background:#6B192B; border-color:rgba(232,152,168,.38); color:#FFFFFF; }
+.student-settings .student-phone-shortcut button:hover { background:#7A1A1A; border-color:rgba(212, 175, 55,.38); color:#FFFFFF; }
 .student-settings .student-phone-shortcut { justify-content:space-between; margin-bottom:16px; }
 .student-settings .student-account-edit-panel { max-width:760px; margin:0 auto; padding:0; border:0; background:transparent; box-shadow:none; }
 .student-settings .student-account-edit-panel > .student-account-edit-intro {
-    margin-bottom:14px; padding:15px 18px; border:1px solid rgba(250,247,248,.1);
-    border-radius:12px; background:#14080C; color:#D4C6CA; line-height:1.5;
+    margin-bottom:14px; padding:15px 18px; border:1px solid rgba(255, 255, 255,.1);
+    border-radius:12px; background:#1E1515; color:#D6CCC6; line-height:1.5;
 }
 .student-settings .student-account-edit-card { border-radius:14px; }
 .student-settings .account-edit-progress {
@@ -220,48 +220,48 @@
 }
 .student-settings .account-edit-progress li {
     display:flex; align-items:center; gap:10px; min-width:0; min-height:46px;
-    padding:9px 12px; border:1px solid rgba(250,247,248,.09); border-radius:10px;
-    color:#9E8990; background:#0B0406; font-size:.8rem; font-weight:600;
+    padding:9px 12px; border:1px solid rgba(255, 255, 255,.09); border-radius:10px;
+    color:#A49890; background:#141010; font-size:.8rem; font-weight:600;
 }
 .student-settings .account-edit-progress li > .account-step-number {
     display:grid; place-items:center; flex:0 0 26px; width:26px; height:26px;
-    border-radius:7px; border:1px solid rgba(250,247,248,.16); color:#D4C6CA; font-size:.74rem;
+    border-radius:7px; border:1px solid rgba(255, 255, 255,.16); color:#D6CCC6; font-size:.74rem;
 }
 .student-settings .account-edit-progress li[aria-current="step"] {
-    border-color:rgba(232,152,168,.4); color:#FAF7F8; background:#1C0C11;
+    border-color:rgba(212, 175, 55,.4); color:#FAF8F5; background:#261B1B;
 }
 .student-settings .account-edit-progress li[aria-current="step"] > .account-step-number,
 .student-settings .account-edit-progress li.is-complete > .account-step-number {
-    border-color:#FAF7F8; color:#14080C; background:#FAF7F8;
+    border-color:#FAF8F5; color:#800000; background:#FAF8F5;
 }
-.student-settings .account-edit-progress li.is-complete { color:#D4C6CA; }
+.student-settings .account-edit-progress li.is-complete { color:#D6CCC6; }
 .student-settings .account-edit-status {
-    margin:0 0 14px; padding:11px 13px; border:1px solid rgba(232,152,168,.26);
-    border-radius:10px; color:#FAF7F8; background:#1C0C11; font-size:.84rem; line-height:1.45;
+    margin:0 0 14px; padding:11px 13px; border:1px solid rgba(212, 175, 55,.26);
+    border-radius:10px; color:#FAF8F5; background:#261B1B; font-size:.84rem; line-height:1.45;
 }
 .student-settings .account-edit-status[hidden] { display:none !important; }
 .student-settings .account-edit-status[data-tone="error"] { border-color:rgba(251,113,133,.34); color:#FDA4AF; background:rgba(153,27,45,.18); }
 .student-settings .account-edit-status[data-tone="success"] { border-color:rgba(52,211,153,.3); color:#6EE7B7; background:rgba(16,185,129,.1); }
 .student-settings .account-edit-current-value {
     display:flex; align-items:center; gap:10px; min-width:0; margin:12px 0 16px;
-    padding:12px 14px; border:1px solid rgba(250,247,248,.1); border-radius:10px;
-    background:#0B0406; color:#D4C6CA; font-size:.85rem;
+    padding:12px 14px; border:1px solid rgba(255, 255, 255,.1); border-radius:10px;
+    background:#141010; color:#D6CCC6; font-size:.85rem;
 }
-.student-settings .account-edit-current-value i { flex:0 0 auto; color:#E898A8; }
-.student-settings .account-edit-current-value strong { color:#FAF7F8; overflow-wrap:anywhere; }
-.student-settings .account-edit-help { margin:7px 0 16px; color:#9E8990; font-size:.8rem; line-height:1.5; }
+.student-settings .account-edit-current-value i { flex:0 0 auto; color:#D4AF37; }
+.student-settings .account-edit-current-value strong { color:#FAF8F5; overflow-wrap:anywhere; }
+.student-settings .account-edit-help { margin:7px 0 16px; color:#A49890; font-size:.8rem; line-height:1.5; }
 .student-settings .account-otp-grid {
     display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px;
     max-width:390px; margin:8px 0 7px;
 }
 .student-settings .account-otp-input {
-    width:100%; min-width:0; height:50px; padding:0; border:1px solid rgba(250,247,248,.16);
-    border-radius:10px; color:#FAF7F8; background:#0B0406;
+    width:100%; min-width:0; height:50px; padding:0; border:1px solid rgba(255, 255, 255,.16);
+    border-radius:10px; color:#FAF8F5; background:#141010;
     font-size:1.15rem; font-weight:700; text-align:center; outline:none;
     transition:border-color .15s ease, box-shadow .15s ease;
 }
 .student-settings .account-otp-input:focus-visible {
-    border-color:#E898A8; background:#14080C; box-shadow:0 0 0 3px rgba(232,152,168,.18);
+    border-color:#D4AF37; background:#1E1515; box-shadow:0 0 0 3px rgba(212, 175, 55,.18);
 }
 .student-settings .account-form-actions { display:flex; align-items:center; gap:10px; margin-top:16px; }
 .student-settings .account-form-actions > * { min-height:46px; }
@@ -1599,9 +1599,9 @@
     <div id="tab-family" class="spanel">
 
         <!-- Hero Header -->
-        <div class="sec-health-hero mb-4" style="background:#14080C;border-color:rgba(250,247,248,0.12);border-top:2px solid #6B192B;">
+        <div class="sec-health-hero mb-4" style="background:#1E1515;border-color:rgba(255, 255, 255,0.12);border-top:2px solid #7A1A1A;">
             <div class="sec-health-left">
-                <div class="sec-health-icon" style="background:#1C0C11;color:#E898A8;border:1px solid rgba(232,152,168,0.28);">
+                <div class="sec-health-icon" style="background:#261B1B;color:#D4AF37;border:1px solid rgba(212, 175, 55,0.28);">
                     <i class="bi bi-people-fill" aria-hidden="true"></i>
                 </div>
                 <div>
@@ -1617,9 +1617,9 @@
 
         <div class="sec-cards-grid">
             <!-- Card 1: Instant Parent Link Code Generator -->
-            <div class="sec-card" style="--card-accent: #E898A8;">
+            <div class="sec-card" style="--card-accent: #D4AF37;">
                 <div class="sec-card-top">
-                    <div class="sec-card-icon" style="background:#1C0C11;color:#E898A8;border:1px solid rgba(232,152,168,0.28);">
+                    <div class="sec-card-icon" style="background:#261B1B;color:#D4AF37;border:1px solid rgba(212, 175, 55,0.28);">
                         <i class="bi bi-upc-scan" aria-hidden="true"></i>
                     </div>
                     <div class="sec-card-meta">
@@ -1634,15 +1634,15 @@
                 </div>
 
                 <div class="sec-card-content">
-                    <div class="student-link-code-copy" style="font-size:0.82rem;color:#D4C6CA;line-height:1.5;margin-bottom:14px;">
+                    <div class="student-link-code-copy" style="font-size:0.82rem;color:#D6CCC6;line-height:1.5;margin-bottom:14px;">
                         Generate a code and share it with your guardian. They can enter it under <strong>Link Student</strong>.
                     </div>
 
                     <!-- Code Display Card (Hidden until generated) -->
-                    <div id="parentCodeDisplayCard" style="display:none;background:#0B0406;border:1px solid rgba(232,152,168,0.34);border-radius:12px;padding:18px 16px;margin-bottom:16px;text-align:center;">
-                        <div style="font-size:0.72rem;font-weight:700;color:#E898A8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Your 6-Digit Linking Code</div>
+                    <div id="parentCodeDisplayCard" style="display:none;background:#141010;border:1px solid rgba(212, 175, 55,0.34);border-radius:12px;padding:18px 16px;margin-bottom:16px;text-align:center;">
+                        <div style="font-size:0.72rem;font-weight:700;color:#D4AF37;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Your 6-Digit Linking Code</div>
                         <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:8px 0;">
-                            <div id="parentCodeValue" style="font-size:2.1rem;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-weight:800;color:#FAF7F8;letter-spacing:8px;padding:6px 14px;background:#14080C;border-radius:10px;border:1px solid rgba(250,247,248,0.14);">
+                            <div id="parentCodeValue" style="font-size:2.1rem;font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-weight:800;color:#FAF8F5;letter-spacing:8px;padding:6px 14px;background:#1E1515;border-radius:10px;border:1px solid rgba(255, 255, 255,0.14);">
                                 ------
                             </div>
                             <button type="button" class="sbtn btn-gold" onclick="copyParentLinkCode(this)" style="padding:10px 16px;font-size:0.8rem;width:auto;" title="Copy Code" aria-label="Copy linking code">
@@ -1657,7 +1657,7 @@
                         <div style="display:inline-block;padding:12px;background:#ffffff;border-radius:12px;margin:0 auto 10px;">
                             <div id="parentCodeQrBox" style="width:170px;height:170px;display:flex;align-items:center;justify-content:center;"></div>
                         </div>
-                        <div style="font-size:0.74rem;color:#9E8990;">
+                        <div style="font-size:0.74rem;color:#A49890;">
                             Parents can scan this QR code with their mobile camera to link instantly.
                         </div>
                     </div>
@@ -1689,12 +1689,12 @@
                     @if(isset($linkedParents) && $linkedParents->isNotEmpty())
                         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;">
                             @foreach($linkedParents as $guardian)
-                            <div class="info-row" id="guardian-item-{{ $guardian->id }}" style="padding:12px;background:#0B0406;border:1px solid rgba(250,247,248,0.1);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                            <div class="info-row" id="guardian-item-{{ $guardian->id }}" style="padding:12px;background:#141010;border:1px solid rgba(255, 255, 255,0.1);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
                                 <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
-                                    <img src="{{ $guardian->profile_photo_url }}" alt="{{ $guardian->name }}" style="width:40px;height:40px;border-radius:10px;object-fit:cover;border:1px solid rgba(250,247,248,0.2);">
+                                    <img src="{{ $guardian->profile_photo_url }}" alt="{{ $guardian->name }}" style="width:40px;height:40px;border-radius:10px;object-fit:cover;border:1px solid rgba(255, 255, 255,0.2);">
                                     <div style="min-width:0;flex:1;">
-                                        <div style="font-weight:700;color:#FAF7F8;font-size:0.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $guardian->name }}</div>
-                                        <div style="font-size:0.75rem;color:#9E8990;">
+                                        <div style="font-weight:700;color:#FAF8F5;font-size:0.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $guardian->name }}</div>
+                                        <div style="font-size:0.75rem;color:#A49890;">
                                             <span>{{ $guardian->email }}</span>
                                             @if($guardian->phone)
                                                 <span>• {{ $guardian->phone }}</span>
@@ -1709,17 +1709,17 @@
                             @endforeach
                         </div>
                     @else
-                        <div class="student-guardians-empty" style="text-align:center;padding:24px 16px;background:#0B0406;border-radius:10px;border:1px dashed rgba(250,247,248,0.14);margin-bottom:12px;">
-                            <i class="bi bi-person-x" style="font-size:2rem;color:#E898A8;opacity:0.65;display:block;margin-bottom:6px;" aria-hidden="true"></i>
+                        <div class="student-guardians-empty" style="text-align:center;padding:24px 16px;background:#141010;border-radius:10px;border:1px dashed rgba(255, 255, 255,0.14);margin-bottom:12px;">
+                            <i class="bi bi-person-x" style="font-size:2rem;color:#D4AF37;opacity:0.65;display:block;margin-bottom:6px;" aria-hidden="true"></i>
                             <div class="student-guardians-empty-copy">
-                                <div style="font-weight:700;color:#FAF7F8;font-size:0.9rem;margin-bottom:4px;">No Guardians Connected</div>
-                                <div style="font-size:0.78rem;color:#9E8990;">Generate a link code to invite a guardian.</div>
+                                <div style="font-weight:700;color:#FAF8F5;font-size:0.9rem;margin-bottom:4px;">No Guardians Connected</div>
+                                <div style="font-size:0.78rem;color:#A49890;">Generate a link code to invite a guardian.</div>
                             </div>
                         </div>
                     @endif
 
-                    <div class="student-privacy-note" style="background:#1C0C11;border:1px solid rgba(250,247,248,0.1);border-radius:10px;padding:12px 14px;font-size:0.78rem;color:#D4C6CA;line-height:1.45;">
-                        <i class="bi bi-shield-lock-fill me-1" style="color:#E898A8;" aria-hidden="true"></i>
+                    <div class="student-privacy-note" style="background:#261B1B;border:1px solid rgba(255, 255, 255,0.1);border-radius:10px;padding:12px 14px;font-size:0.78rem;color:#D6CCC6;line-height:1.45;">
+                        <i class="bi bi-shield-lock-fill me-1" style="color:#D4AF37;" aria-hidden="true"></i>
                         <span class="student-privacy-note-text"><strong>Privacy safeguard:</strong> Guardians can view attendance and subject summaries. Students cannot remove a guardian link; a guardian or school administrator can manage it.</span>
                     </div>
                 </div>

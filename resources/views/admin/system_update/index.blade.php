@@ -1152,10 +1152,10 @@
 }
 
 .maintenance-tab-btn.active {
-    background: linear-gradient(135deg, rgba(122, 26, 26, 0.75) 0%, rgba(74, 12, 12, 0.95) 100%);
-    color: #ffffff;
-    border-color: rgba(212, 175, 55, 0.4);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 15px rgba(212, 175, 55, 0.15);
+    background: linear-gradient(135deg, rgba(122, 26, 26, 0.28) 0%, rgba(30, 21, 21, 0.92) 100%);
+    color: #FAF8F5;
+    border-color: rgba(212, 175, 55, 0.42);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .tab-icon {
@@ -2835,7 +2835,7 @@
 }
 
 .custom-modal-dialog {
-    background: linear-gradient(135deg, #201414 0%, #110A0A 100%);
+    background: linear-gradient(135deg, #261B1B 0%, #1E1515 100%);
     border: 1px solid rgba(212, 175, 55, 0.35);
     border-radius: 24px;
     width: 100%;
@@ -3018,7 +3018,7 @@
 
 .upload-file-label:hover {
     background: var(--gold, #D4AF37);
-    color: #110A0A;
+    color: #141010;
 }
 
 .upload-file-input {
@@ -3080,7 +3080,7 @@
 
 /* ── Diagnostics Audit Card ── */
 .diagnostics-audit-card {
-    background: rgba(17, 10, 10, 0.88);
+    background: rgba(28, 18, 18, 0.88);
     border: 1px solid rgba(212, 175, 55, 0.3);
     border-radius: 20px;
     overflow: hidden;

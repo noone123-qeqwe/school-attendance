@@ -706,9 +706,10 @@ class StudentDashboardAndSidebarTest extends TestCase
         // Biometric studio CSS + Login verification modal harmonization
         $bioCss = file_get_contents(public_path('css/biometric-flow.css'));
         $this->assertNotFalse($bioCss);
-        $this->assertStringContainsString('--bio-canvas: #0f0407;', $bioCss);
+        $this->assertStringContainsString('--bio-canvas: #141010;', $bioCss);
         $this->assertStringContainsString('.bio-sensor-pad', $bioCss);
         $this->assertStringContainsString('#biometricModal .bio-modal-card', $bioCss);
+        $this->assertStringNotContainsString('#0f0407', $bioCss);
         $this->assertStringNotContainsString('#251b16', $bioCss);
     }
 
@@ -733,7 +734,7 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertDontSee('student-desktop-ux.css', false)
             ->assertSee('sd-scan-desktop-bar', false);
 
-        // Schedule route renders unified Classes & Schedule view cleanly with Obsidian Oxblood palette
+        // Schedule route renders unified Classes & Schedule view cleanly with Login-Matched Smoked Charcoal & Warm Gold palette
         $this->actingAs($student)
             ->get(route('student.schedule'))
             ->assertOk()
@@ -752,11 +753,12 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertOk()
             ->assertSee('aria-label="Search notifications or subjects"', false);
 
-        // Student pending approval, password change, QR result, and offline fallback use unified Obsidian Oxblood palette
+        // Student pending approval, password change, QR result, and offline fallback use unified Login-Matched Smoked Charcoal & Warm Gold palette
         $this->actingAs($student)
             ->get(route('password.change.form'))
             ->assertOk()
-            ->assertSee('#14080C', false)
+            ->assertSee('#1E1515', false)
+            ->assertDontSee('#14080C', false)
             ->assertDontSee('#6366f1', false);
 
         $this->flushSession();
@@ -769,18 +771,21 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->actingAs($pendingStudent)
             ->get(route('student.pending-approval'))
             ->assertOk()
-            ->assertSee('#14080C', false)
+            ->assertSee('#1E1515', false)
+            ->assertDontSee('#14080C', false)
             ->assertDontSee('rgba(25,15,13,.94)', false);
 
         $qrResultHtml = view('qr.result', ['status' => 'success', 'message' => 'Recorded'])->render();
-        $this->assertStringContainsString('#14080C', $qrResultHtml);
+        $this->assertStringContainsString('#1E1515', $qrResultHtml);
+        $this->assertStringNotContainsString('#14080C', $qrResultHtml);
         $this->assertStringNotContainsString('#0f172a', $qrResultHtml);
 
         auth()->logout();
         $this->flushSession();
         $this->get('/offline')
             ->assertOk()
-            ->assertSee('--bg:#0B0406;', false)
+            ->assertSee('--bg:#141010;', false)
+            ->assertDontSee('--bg:#0B0406;', false)
             ->assertDontSee('--bg:#110A0A;', false);
 
         // Verify fixed selector parity in student-portal-master.css & clean student-dashboard.css
@@ -792,11 +797,29 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertStringContainsString('.cor-table-wrap', $masterCss);
         $this->assertStringContainsString('.sd-scan-desktop-bar', $masterCss);
         $this->assertStringNotContainsString('background-attachment: fixed', $masterCss);
+        $this->assertStringNotContainsString('#0b0406', strtolower($masterCss));
+        $this->assertStringNotContainsString('#e898a8', strtolower($masterCss));
 
         $dashCss = file_get_contents(public_path('css/student-dashboard.css'));
         $this->assertNotFalse($dashCss);
-        $this->assertStringContainsString('--sdc-canvas: #0B0406;', $dashCss);
-        $this->assertStringContainsString('--sdc-surface: #14080C;', $dashCss);
+        $this->assertStringContainsString('--sdc-canvas: #141010;', $dashCss);
+        $this->assertStringContainsString('--sdc-surface: #1E1515;', $dashCss);
+
+        // Admin, Teacher & Shared design tokens use Login-Matched Smoked Charcoal Glass instead of heavy solid maroon walls
+        $tokensCss = file_get_contents(public_path('css/design-tokens.css'));
+        $premiumCss = file_get_contents(public_path('css/premium.css'));
+        $adminCss = file_get_contents(public_path('css/admin-theme.css'));
+        $teacherCss = file_get_contents(public_path('css/teacher-portal-redesign.css'));
+        $this->assertNotFalse($tokensCss);
+        $this->assertNotFalse($premiumCss);
+        $this->assertNotFalse($adminCss);
+        $this->assertNotFalse($teacherCss);
+        $this->assertMatchesRegularExpression('/--ds-bg:\s*#141010;/', $tokensCss);
+        $this->assertStringContainsString('--ds-surface-glass: rgba(28, 18, 18, 0.88);', $tokensCss);
+        $this->assertStringContainsString('rgba(24, 17, 17, 0.94)', $premiumCss);
+        $this->assertStringNotContainsString('rgba(45, 10, 10, 0.98)', $premiumCss);
+        $this->assertStringNotContainsString('rgba(74, 12, 12, 0.95)', $adminCss);
+        $this->assertStringNotContainsString('rgba(74, 12, 12, 0.95)', $teacherCss);
     }
 
     public function test_web_push_notifications_are_removed_from_settings_routes_and_schema(): void

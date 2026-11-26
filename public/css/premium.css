@@ -11,27 +11,27 @@
     --gold-dark: #A68822;
 
     /* Surface & Background */
-    --bg: #110A0A;
+    --bg: #141010;
     --surface: #1E1515;
-    --surface-soft: rgba(255, 255, 255, 0.03);
-    --surface-hover: rgba(255, 255, 255, 0.06);
-    --surface-border: rgba(212, 175, 55, 0.15);
+    --surface-soft: rgba(255, 255, 255, 0.04);
+    --surface-hover: rgba(255, 255, 255, 0.07);
+    --surface-border: rgba(212, 175, 55, 0.16);
     
     /* Typography */
-    --text-primary: #FCF8F2;
-    --text-secondary: #D1C5B4;
-    --muted: #A39683;
+    --text-primary: #FAF8F5;
+    --text-secondary: #D6CCC6;
+    --muted: #A49890;
 
     /* Shadows & Effects */
-    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.5);
-    --glow: 0 0 20px rgba(212, 175, 55, 0.1);
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.18);
+    --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.22);
+    --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.28);
+    --glow: 0 0 14px rgba(212, 175, 55, 0.1);
 
     /* ── ULTRA PREMIUM ENTERPRISE ENHANCEMENTS ── */
-    --surface-glass: rgba(30, 21, 21, 0.65);
-    --surface-glass-border: rgba(255, 255, 255, 0.08);
-    --glass-blur: blur(24px);
+    --surface-glass: rgba(28, 18, 18, 0.88);
+    --surface-glass-border: rgba(212, 175, 55, 0.18);
+    --glass-blur: blur(20px);
     
     /* Layout Dimensions */
     --sidebar-width: 280px;
@@ -53,7 +53,7 @@
 
 html {
     zoom: 1.15;
-    background-color: #110a0a;
+    background-color: #141010;
     overscroll-behavior: none !important;
     overscroll-behavior-y: none !important;
     overscroll-behavior-x: none !important;
@@ -64,8 +64,8 @@ html {
 
 body {
     font-family: 'Inter', sans-serif !important;
-    background: radial-gradient(circle at top right, rgba(212, 175, 55, 0.04), transparent 30%),
-                radial-gradient(circle at bottom left, rgba(122, 26, 26, 0.06), transparent 30%),
+    background: radial-gradient(circle at top right, rgba(212, 175, 55, 0.04), transparent 36%),
+                radial-gradient(circle at bottom left, rgba(122, 26, 26, 0.04), transparent 36%),
                 var(--bg) !important;
     color: var(--text-primary) !important;
     margin: 0;
@@ -88,11 +88,12 @@ body {
     height: 100vh;
     position: fixed;
     left: 0; top: 0;
-    background: #110A0A;
-    background: rgba(45, 10, 10, 0.98); /* Solid dark maroon */
+    background: rgba(24, 17, 17, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     z-index: 1200;
-    border-right: 1px solid var(--surface-border);
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+    border-right: 1px solid rgba(212, 175, 55, 0.14);
+    box-shadow: none;
     transition: width 0.4s var(--spring-easing), transform 0.4s var(--spring-easing);
     display: flex;
     flex-direction: column;
@@ -107,7 +108,7 @@ body {
     flex-direction: column;
     align-items: center;
     flex-shrink: 0;
-    background: rgba(74, 12, 12, 0.98);
+    background: transparent;
     position: relative;
     z-index: 20;
 }
@@ -177,7 +178,7 @@ body {
 .sidebar .nav-link:hover i { transform: scale(1.15); }
 
 .sidebar .nav-link.active {
-    background: linear-gradient(90deg, rgba(212,175,55,0.1) 0%, transparent 100%);
+    background: linear-gradient(90deg, rgba(122, 26, 26, 0.24) 0%, rgba(212, 175, 55, 0.05) 100%);
     color: var(--gold-soft);
     border-left: 3px solid var(--gold);
     font-weight: 600;
@@ -224,17 +225,18 @@ body {
     .sidebar.open { transform: translateX(0); }
 }
 
-/* ── 2. TOP HEADER (Solid & Opaque) ── */
+/* ── 2. TOP HEADER (Login-Matched Smoked Charcoal Glass) ── */
 .top-header {
     height: var(--header-height);
-    background: #110A0A;
-    background: rgba(17, 10, 10, 0.98);
+    background: rgba(20, 14, 14, 0.9);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     position: fixed; top: 0; right: 0; left: var(--sidebar-width);
     z-index: 1000;
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 24px;
-    border-bottom: 1px solid rgba(212, 175, 55, 0.15);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.14);
+    box-shadow: none;
     transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .top-header.mini { left: var(--sidebar-mini); }
@@ -1765,7 +1767,7 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
     .badge-pending { padding: 4px 10px; font-size: 0.7rem; }
     .status-badge.dashboard-badge { padding: 5px 10px; font-size: 0.7rem; }
 }
-}
+
 
 /* ── 12. UNIFIED ANIMATIONS & GLASS PANELS ── */
 @keyframes float {
@@ -2128,7 +2130,7 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
 #global-loader {
     position: fixed;
     inset: 0;
-    background: rgba(17,10,10,0.85);
+    background: rgba(20, 14, 14, 0.88);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 9999;

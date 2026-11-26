@@ -7,7 +7,7 @@
     <header class="sd-excuse-hero">
         <div>
             <h1>
-                <i class="bi bi-file-earmark-medical me-2" style="color: #e48fa0;" aria-hidden="true"></i>Submit Excuse Letter
+                <i class="bi bi-file-earmark-medical me-2" style="color: #D4AF37;" aria-hidden="true"></i>Submit Excuse Letter
             </h1>
             <p>Choose the date and subjects for an existing absence, then add your explanation and supporting documents.</p>
         </div>
@@ -26,7 +26,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <div>
                             <label class="sd-form-label mb-1">
-                                <i class="bi bi-journal-check" style="color: #e48fa0;" aria-hidden="true"></i>
+                                <i class="bi bi-journal-check" style="color: #D4AF37;" aria-hidden="true"></i>
                                 Choose Subjects <span class="text-danger">*</span>
                             </label>
                             <span style="font-size: 0.8rem; color: #baa3ab;">You can select one or multiple subjects</span>
@@ -41,7 +41,7 @@
                     </div>
 
                     @if($subjects->isEmpty())
-                        <div class="sd-excuse-empty" style="background: rgba(15,4,7,0.45); border-radius: 14px; border: 1px dashed rgba(236,224,228,0.2);">
+                        <div class="sd-excuse-empty" style="background: rgba(28, 18, 18,0.45); border-radius: 14px; border: 1px dashed rgba(255, 255, 255,0.2);">
                             <i class="bi bi-journal-x" style="font-size: 2rem; color: #baa3ab;" aria-hidden="true"></i>
                             <h4>No enrolled subjects found</h4>
                             <p>Enrolled subjects for this semester will appear here once assigned.</p>
@@ -124,8 +124,8 @@
                                class="visually-hidden">
 
                         <label for="attachments" id="dropZone" class="sd-dropzone">
-                            <i class="bi bi-cloud-arrow-up" style="font-size: 2.2rem; color: #e48fa0; margin-bottom: 8px;" aria-hidden="true"></i>
-                            <span style="font-size: 0.95rem; font-weight: 700; color: #fcf9fa;">Click or drag &amp; drop files here</span>
+                            <i class="bi bi-cloud-arrow-up" style="font-size: 2.2rem; color: #D4AF37; margin-bottom: 8px;" aria-hidden="true"></i>
+                            <span style="font-size: 0.95rem; font-weight: 700; color: #FAF8F5;">Click or drag &amp; drop files here</span>
                             <span style="font-size: 0.8rem; color: #baa3ab; margin-top: 4px;">Medical certificates, letters, or official receipts</span>
                         </label>
                     </div>

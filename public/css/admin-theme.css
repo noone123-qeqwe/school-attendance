@@ -4,42 +4,41 @@
 */
 
 :root {
-    --admin-bg-gradient: radial-gradient(circle at top right, rgba(212, 175, 55, 0.04), transparent 30%),
-                         radial-gradient(circle at bottom left, rgba(122, 26, 26, 0.06), transparent 30%),
-                         #110A0A;
-    --admin-card-bg: rgba(30, 21, 21, 0.65);
-    --admin-card-border: rgba(212, 175, 55, 0.15);
-    --admin-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --admin-bg-gradient: radial-gradient(circle at top right, rgba(212, 175, 55, 0.04), transparent 36%),
+                         radial-gradient(circle at bottom left, rgba(122, 26, 26, 0.04), transparent 36%),
+                         #141010;
+    --admin-card-bg: rgba(30, 21, 21, 0.9);
+    --admin-card-border: rgba(212, 175, 55, 0.18);
+    --admin-card-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     --admin-gold: #D4AF37;
     --admin-maroon: #7A1A1A;
     --admin-maroon-dark: #4A0C0C;
-    --admin-maroon-glow: rgba(122, 26, 26, 0.4);
-    --admin-gold-glow: rgba(212, 175, 55, 0.25);
-    --admin-glass: blur(24px);
+    --admin-maroon-glow: rgba(122, 26, 26, 0.28);
+    --admin-gold-glow: rgba(212, 175, 55, 0.2);
+    --admin-glass: blur(18px);
 }
 
-/* Global Admin Background Adjustment (Matches Student) */
+/* Global Admin Background Adjustment (Matches Login Smoked Charcoal Glass) */
 body {
     background: var(--admin-bg-gradient) !important;
-    background-color: #110A0A !important;
-    background-attachment: fixed !important;
-    color: #FCF8F2 !important;
+    background-color: #141010 !important;
+    color: #FAF8F5 !important;
 }
 body::before {
     display: none !important;
 }
 
-/* Sidebar Enhancements (Matches Student Maroon Dark Glass) */
+/* Sidebar Enhancements (Calm Smoked Charcoal + Subtle Gold/Maroon Active Tint) */
 .sidebar {
-    background: rgba(74, 12, 12, 0.95) !important; /* Maroon Dark Glass */
+    background: rgba(24, 17, 17, 0.94) !important;
     backdrop-filter: var(--admin-glass) !important;
     -webkit-backdrop-filter: var(--admin-glass) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 10px 0 30px rgba(0,0,0,0.3) !important;
+    border-right: 1px solid rgba(212, 175, 55, 0.14) !important;
+    box-shadow: none !important;
 }
 
 .sidebar-head {
-    background: rgba(74, 12, 12, 0.98) !important;
+    background: transparent !important;
     z-index: 20 !important;
 }
 
@@ -70,18 +69,19 @@ body::before {
 }
 
 .sidebar .nav-link:not(.sub-nav-link).active {
-    background: linear-gradient(90deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.04) 100%) !important;
+    background: linear-gradient(90deg, rgba(122, 26, 26, 0.24) 0%, rgba(212, 175, 55, 0.06) 100%) !important;
     color: #fff !important;
     border-left: 3px solid var(--admin-gold, #D4AF37) !important;
-    box-shadow: inset 2px 0 10px rgba(212, 175, 55, 0.1) !important;
+    box-shadow: none !important;
 }
 
-/* Header Enhancements (Solid & Opaque) */
+/* Header Enhancements (Translucent Smoked Glass) */
 .top-header {
-    background: #110A0A !important;
-    background: rgba(17, 10, 10, 0.98) !important;
-    border-bottom: 1px solid rgba(212, 175, 55, 0.15) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+    background: rgba(20, 14, 14, 0.9) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.14) !important;
+    box-shadow: none !important;
 }
 
 /* Admin Cards (Glassmorphism) */

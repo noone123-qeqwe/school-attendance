@@ -1,6 +1,6 @@
 /* ==========================================================================
-   Osmeña Colleges Student Portal — Unified Design System v3.0
-   "Obsidian Oxblood & Crisp Alabaster"
+   Osmeña Colleges Student Portal — Unified Design System v4.0
+   "Login-Matched Smoked Charcoal Glass, Warm Gold & Subtle Maroon"
    Commercial-grade SaaS desktop + native-feel mobile design system.
    Strictly scoped to student surfaces (body.student-portal,
    body.student-mobile-portal, body.biometric-flow-page) inside @media screen
@@ -12,23 +12,23 @@
     body.student-portal,
     body.student-mobile-portal,
     body.biometric-flow-page {
-        /* Obsidian Oxblood & Crisp Alabaster Palette */
-        --sdc-canvas: #0b0406;
-        --sdc-surface: #14080c;
-        --sdc-surface-2: #1c0c11;
-        --sdc-surface-3: #261118;
-        --sdc-seal-core: #3d0f1b;
-        --sdc-seal-mid: #6b192b;
-        --sdc-seal-bright: #9e2a42;
-        --sdc-rose-accent: #e898a8;
-        --sdc-silver: #ebe4e6;
-        --sdc-silver-bright: #faf7f8;
-        --sdc-border-subtle: rgba(250, 244, 246, 0.07);
-        --sdc-border: rgba(250, 244, 246, 0.11);
-        --sdc-border-strong: rgba(250, 244, 246, 0.22);
-        --sdc-text: #faf7f8;
-        --sdc-text-soft: #d4c6ca;
-        --sdc-muted: #9e8990;
+        /* Login-Matched Smoked Charcoal Glass & Warm Gold Palette */
+        --sdc-canvas: #141010;
+        --sdc-surface: #1e1515;
+        --sdc-surface-2: #261b1b;
+        --sdc-surface-3: #2f2222;
+        --sdc-seal-core: #561313;
+        --sdc-seal-mid: #7a1a1a;
+        --sdc-seal-bright: #800000;
+        --sdc-rose-accent: #d4af37;
+        --sdc-silver: #faf8f5;
+        --sdc-silver-bright: #ffffff;
+        --sdc-border-subtle: rgba(255, 255, 255, 0.08);
+        --sdc-border: rgba(212, 175, 55, 0.16);
+        --sdc-border-strong: rgba(212, 175, 55, 0.34);
+        --sdc-text: #faf8f5;
+        --sdc-text-soft: #d6ccc6;
+        --sdc-muted: #a49890;
         --sdc-emerald: #34d399;
         --sdc-amber: #fbbf24;
         --sdc-rose: #fb7185;
@@ -38,71 +38,71 @@
         --sdc-radius-md: 12px;
         --sdc-radius-sm: 10px;
         --sdc-radius-xs: 8px;
-        --sdc-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-        --sdc-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.32);
-        --sdc-shadow-overlay: 0 20px 56px rgba(0, 0, 0, 0.65);
-        --sdc-cta-grad: linear-gradient(180deg, #ffffff 0%, #ebe4e6 100%);
-        --sdc-cta-text: #24060d;
+        --sdc-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+        --sdc-shadow-md: 0 6px 18px rgba(0, 0, 0, 0.22);
+        --sdc-shadow-overlay: 0 16px 40px rgba(0, 0, 0, 0.45);
+        --sdc-cta-grad: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+        --sdc-cta-text: #800000;
 
-        /* Re-map legacy brown/gold tokens to canonical student tokens */
-        --gold: #ebe4e6;
-        --gold-primary: #ebe4e6;
-        --gold-bright: #faf7f8;
-        --gold-light: #faf7f8;
-        --gold-soft: #e898a8;
-        --gold-dark: #6b192b;
-        --gold-border: rgba(250, 244, 246, 0.12);
-        --gold-subtle: rgba(107, 25, 43, 0.24);
-        --border-gold: rgba(250, 244, 246, 0.14);
-        --border-subtle: rgba(250, 244, 246, 0.08);
-        --bg-dark: #0b0406;
-        --bg-surface: #14080c;
-        --bg-card: #14080c;
-        --bg-card-hover: #1c0c11;
-        --surface: #14080c;
-        --surface-card: #14080c;
-        --surface-soft: rgba(250, 244, 246, 0.04);
-        --surface-hover: rgba(107, 25, 43, 0.24);
-        --surface-border: rgba(250, 244, 246, 0.11);
-        --student-surface: #14080c;
-        --student-surface-strong: #1c0c11;
-        --student-border: rgba(250, 244, 246, 0.11);
-        --student-border-strong: rgba(250, 244, 246, 0.22);
-        --text-primary: #faf7f8;
-        --text-secondary: #d4c6ca;
-        --text-muted: #9e8990;
-        --ds-bg: #0b0406;
-        --ds-text-primary: #faf7f8;
-        --ds-text-secondary: #d4c6ca;
-        --ds-text-muted: #9e8990;
-        --ds-gold: #ebe4e6;
-        --ds-gold-dark: #6b192b;
+        /* Re-map legacy tokens to Login-Matched Smoked Charcoal & Warm Gold */
+        --gold: #d4af37;
+        --gold-primary: #d4af37;
+        --gold-bright: #f5dfa8;
+        --gold-light: #f5dfa8;
+        --gold-soft: #d4af37;
+        --gold-dark: #a68822;
+        --gold-border: rgba(212, 175, 55, 0.18);
+        --gold-subtle: rgba(122, 26, 26, 0.18);
+        --border-gold: rgba(212, 175, 55, 0.22);
+        --border-subtle: rgba(255, 255, 255, 0.08);
+        --bg-dark: #141010;
+        --bg-surface: #1a1212;
+        --bg-card: #1e1515;
+        --bg-card-hover: #261b1b;
+        --surface: #1e1515;
+        --surface-card: #1e1515;
+        --surface-soft: rgba(255, 255, 255, 0.04);
+        --surface-hover: rgba(122, 26, 26, 0.2);
+        --surface-border: rgba(212, 175, 55, 0.16);
+        --student-surface: #1e1515;
+        --student-surface-strong: #261b1b;
+        --student-border: rgba(212, 175, 55, 0.16);
+        --student-border-strong: rgba(212, 175, 55, 0.34);
+        --text-primary: #faf8f5;
+        --text-secondary: #d6ccc6;
+        --text-muted: #a49890;
+        --ds-bg: #141010;
+        --ds-text-primary: #faf8f5;
+        --ds-text-secondary: #d6ccc6;
+        --ds-text-muted: #a49890;
+        --ds-gold: #d4af37;
+        --ds-gold-dark: #a68822;
 
         /* Page-specific token overrides */
-        --cor-gold: #ebe4e6;
-        --cor-gold-bright: #faf7f8;
-        --cor-gold-amber: #e898a8;
-        --cor-gold-soft: rgba(107, 25, 43, 0.22);
-        --cor-maroon: #6b192b;
-        --cor-maroon-dark: #24060d;
-        --cor-paper-bg: #100609;
-        --cor-card-bg: #14080c;
-        --cor-border-gold: rgba(250, 244, 246, 0.13);
-        --cor-border-subtle: rgba(250, 244, 246, 0.08);
-        --cor-text-main: #faf7f8;
-        --cor-text-muted: #9e8990;
+        --cor-gold: #d4af37;
+        --cor-gold-bright: #f5dfa8;
+        --cor-gold-amber: #d4af37;
+        --cor-gold-soft: rgba(122, 26, 26, 0.18);
+        --cor-maroon: #7a1a1a;
+        --cor-maroon-dark: #800000;
+        --cor-paper-bg: #1a1212;
+        --cor-card-bg: #1e1515;
+        --cor-border-gold: rgba(212, 175, 55, 0.22);
+        --cor-border-subtle: rgba(255, 255, 255, 0.08);
+        --cor-text-main: #faf8f5;
+        --cor-text-muted: #a49890;
 
-        --notif-bg-card: #14080c;
-        --notif-bg-card-unread: #1d0b11;
-        --notif-border: rgba(250, 244, 246, 0.1);
-        --notif-border-hover: rgba(232, 152, 168, 0.34);
-        --notif-gold: #ebe4e6;
-        --notif-gold-soft: #e898a8;
-        --notif-glow: rgba(107, 25, 43, 0.25);
+        --notif-bg-card: #1e1515;
+        --notif-bg-card-unread: #261b1b;
+        --notif-border: rgba(255, 255, 255, 0.09);
+        --notif-border-hover: rgba(212, 175, 55, 0.34);
+        --notif-gold: #d4af37;
+        --notif-gold-soft: #f5dfa8;
+        --notif-glow: rgba(122, 26, 26, 0.18);
 
         font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
-        background-color: #0b0406 !important;
-        background-image: radial-gradient(ellipse 75% 42% at 50% -10%, rgba(107, 25, 43, 0.24) 0%, transparent 72%) !important;
+        background-color: #141010 !important;
+        background-image: radial-gradient(ellipse 75% 42% at 50% -10%, rgba(122, 26, 26, 0.24) 0%, transparent 72%) !important;
         background-attachment: scroll !important;
         color: var(--sdc-text);
         overflow-x: clip;
@@ -125,13 +125,13 @@
     body.student-portal ::-webkit-scrollbar-thumb,
     body.student-mobile-portal ::-webkit-scrollbar-thumb,
     body.biometric-flow-page ::-webkit-scrollbar-thumb {
-        background: rgba(232, 152, 168, 0.26);
+        background: rgba(212, 175, 55, 0.26);
         border-radius: 99px;
     }
 
     body.student-portal ::-webkit-scrollbar-thumb:hover,
     body.student-mobile-portal ::-webkit-scrollbar-thumb:hover {
-        background: rgba(250, 244, 246, 0.42);
+        background: rgba(255, 255, 255, 0.42);
     }
 
     body.student-portal .text-gold,
@@ -141,7 +141,7 @@
 
     /* ── 2. Global Desktop & Mobile App Shell ────────────────────────────── */
     body.student-portal .sidebar {
-        background: #100609 !important;
+        background: #1A1212 !important;
         border-right: 1px solid var(--sdc-border-subtle) !important;
         box-shadow: none !important;
     }
@@ -156,7 +156,7 @@
 
     body.student-portal .sidebar .student-nav-label,
     body.student-portal .sidebar .nav-section-label {
-        color: #8f7980 !important;
+        color: #A49890 !important;
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link,
@@ -171,15 +171,15 @@
     body.student-portal .sidebar .student-sidebar-nav .nav-link i,
     body.student-portal .sidebar .settings-sidebar-nav .nav-link i,
     body.student-portal .sidebar .settings-sidebar-back-btn i {
-        color: #9e8990 !important;
+        color: #A49890 !important;
         background: transparent !important;
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link:hover,
     body.student-portal .sidebar .settings-sidebar-nav .nav-link:hover,
     body.student-portal .sidebar .settings-sidebar-back-btn:hover {
-        background: rgba(250, 244, 246, 0.05) !important;
-        border-color: rgba(250, 244, 246, 0.09) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 255, 255, 0.09) !important;
         color: #ffffff !important;
     }
 
@@ -187,25 +187,25 @@
     body.student-portal .sidebar .settings-sidebar-nav .nav-link:hover i,
     body.student-portal .sidebar .settings-sidebar-back-btn:hover i {
         color: #ffffff !important;
-        background: rgba(107, 25, 43, 0.36) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link.active,
     body.student-portal .sidebar .settings-sidebar-nav .nav-link.active {
-        background: rgba(107, 25, 43, 0.44) !important;
-        border-color: rgba(250, 244, 246, 0.18) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
         color: #ffffff !important;
-        box-shadow: inset 2.5px 0 0 #faf7f8 !important;
+        box-shadow: inset 2.5px 0 0 #FAF8F5 !important;
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link.active i,
     body.student-portal .sidebar .settings-sidebar-nav .nav-link.active i {
-        background: rgba(250, 244, 246, 0.13) !important;
+        background: rgba(255, 255, 255, 0.13) !important;
         color: #ffffff !important;
     }
 
     body.student-portal .sidebar .settings-sidebar-back-btn {
-        background: rgba(250, 244, 246, 0.04) !important;
+        background: rgba(255, 255, 255, 0.04) !important;
         border-color: var(--sdc-border) !important;
         color: var(--sdc-text) !important;
     }
@@ -219,7 +219,7 @@
 
     /* Top Header */
     body.student-portal .top-header {
-        background: rgba(15, 6, 9, 0.9) !important;
+        background: rgba(28, 18, 18, 0.9) !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
         border-bottom: 1px solid var(--sdc-border-subtle) !important;
@@ -320,8 +320,8 @@
     }
 
     body.student-portal .fb-dropdown-role-badge {
-        background: rgba(107, 25, 43, 0.42) !important;
-        border: 1px solid rgba(232, 152, 168, 0.3) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(212, 175, 55, 0.3) !important;
         color: var(--sdc-text) !important;
     }
 
@@ -336,12 +336,12 @@
     }
 
     body.student-portal .fb-dropdown-item:hover {
-        background: rgba(107, 25, 43, 0.3) !important;
+        background: rgba(122, 26, 26, 0.3) !important;
         color: #ffffff !important;
     }
 
     body.student-portal .fb-icon-settings {
-        background: rgba(250, 244, 246, 0.08) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
         color: var(--sdc-text) !important;
     }
 
@@ -362,7 +362,7 @@
 
     /* Mobile Header & Drawer (layouts.mobile-app) */
     body.student-mobile-portal .mobile-header {
-        background: rgba(15, 6, 9, 0.92) !important;
+        background: rgba(28, 18, 18, 0.92) !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
         border-bottom: 1px solid var(--sdc-border-subtle) !important;
@@ -404,7 +404,7 @@
     }
 
     body.student-mobile-portal .mobile-navigation-menu {
-        background: #100609 !important;
+        background: #1A1212 !important;
         border-right: 1px solid var(--sdc-border) !important;
     }
 
@@ -437,7 +437,7 @@
 
     body.student-mobile-portal .mobile-menu-link.is-active,
     body.student-mobile-portal .mobile-menu-link:hover {
-        background: rgba(107, 25, 43, 0.34) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         color: #ffffff !important;
     }
 
@@ -459,7 +459,7 @@
 
     body.student-portal .mobile-bottom-nav .mbn-item,
     body.student-mobile-portal .mobile-bottom-nav .nav-item {
-        color: #9e8990 !important;
+        color: #A49890 !important;
         min-height: 44px;
         border-radius: 12px !important;
     }
@@ -478,7 +478,7 @@
     body.student-mobile-portal .mobile-bottom-nav .nav-item.active:not(.nav-item-primary)::before {
         width: 18px !important;
         height: 2px !important;
-        background: #faf7f8 !important;
+        background: #FAF8F5 !important;
         box-shadow: none !important;
     }
 
@@ -491,7 +491,7 @@
         border-radius: 15px !important;
         background: var(--sdc-cta-grad) !important;
         color: var(--sdc-cta-text) !important;
-        border: 3px solid #14080c !important;
+        border: 3px solid #1E1515 !important;
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5) !important;
     }
 
@@ -510,7 +510,7 @@
     /* Mobile "More" Bottom Sheet (layouts.app) */
     body.student-portal #moreSheet,
     body.student-portal .more-sheet {
-        background: #14080c !important;
+        background: #1E1515 !important;
         border-top: 1px solid var(--sdc-border) !important;
         border-radius: 20px 20px 0 0 !important;
         color: var(--sdc-text) !important;
@@ -541,7 +541,7 @@
 
     body.student-portal #cmdPaletteOverlay .cmd-palette,
     body.student-mobile-portal #cmdPaletteOverlay .cmd-palette {
-        background: #14080c !important;
+        background: #1E1515 !important;
         border: 1px solid var(--sdc-border) !important;
         border-radius: 18px !important;
         box-shadow: var(--sdc-shadow-overlay) !important;
@@ -559,7 +559,7 @@
 
     body.student-portal #cmdPaletteOverlay .cmd-palette-header,
     body.student-mobile-portal #cmdPaletteOverlay .cmd-palette-header {
-        background: rgba(250, 244, 246, 0.02) !important;
+        background: rgba(255, 255, 255, 0.02) !important;
         border-bottom-color: var(--sdc-border-subtle) !important;
     }
 
@@ -574,7 +574,7 @@
     body.student-mobile-portal #cmdPaletteOverlay .cmd-palette-search-box:focus-within {
         border-color: var(--sdc-border-strong) !important;
         background: #12060a !important;
-        box-shadow: 0 0 0 3px rgba(232, 152, 168, 0.16) !important;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16) !important;
     }
 
     body.student-portal #cmdPaletteOverlay .cmd-palette-search-icon,
@@ -610,8 +610,8 @@
 
     body.student-portal #cmdPaletteOverlay .cmd-cat-pill.active,
     body.student-mobile-portal #cmdPaletteOverlay .cmd-cat-pill.active {
-        background: rgba(107, 25, 43, 0.48) !important;
-        border-color: rgba(250, 244, 246, 0.24) !important;
+        background: rgba(122, 26, 26, 0.28) !important;
+        border-color: rgba(255, 255, 255, 0.24) !important;
         color: #ffffff !important;
     }
 
@@ -624,7 +624,7 @@
 
     body.student-portal #cmdPaletteOverlay .cmd-quick-chip:hover,
     body.student-mobile-portal #cmdPaletteOverlay .cmd-quick-chip:hover {
-        background: rgba(107, 25, 43, 0.36) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         border-color: var(--sdc-border-strong) !important;
     }
 
@@ -634,8 +634,8 @@
     body.student-mobile-portal #cmdPaletteOverlay .cmd-palette-item:hover,
     body.student-mobile-portal #cmdPaletteOverlay .cmd-palette-item.active,
     body.student-mobile-portal #cmdPaletteOverlay .cmd-palette-item.is-selected {
-        background: rgba(107, 25, 43, 0.34) !important;
-        border-color: rgba(250, 244, 246, 0.16) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border-color: rgba(255, 255, 255, 0.16) !important;
     }
 
     body.student-portal #cmdPaletteOverlay .cmd-palette-item-icon,
@@ -647,7 +647,7 @@
 
     body.student-portal #cmdPaletteOverlay .cmd-empty-icon,
     body.student-mobile-portal #cmdPaletteOverlay .cmd-empty-icon {
-        background: rgba(107, 25, 43, 0.32) !important;
+        background: rgba(122, 26, 26, 0.32) !important;
         border-color: var(--sdc-border-strong) !important;
         color: var(--sdc-rose-accent) !important;
     }
@@ -661,7 +661,7 @@
 
     body.student-portal #cmdPaletteOverlay .cmd-empty-reset-btn:hover,
     body.student-mobile-portal #cmdPaletteOverlay .cmd-empty-reset-btn:hover {
-        background: rgba(107, 25, 43, 0.42) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         border-color: var(--sdc-border-strong) !important;
         color: #ffffff !important;
     }
@@ -676,7 +676,7 @@
     /* Modals & Toasts */
     body.student-portal .modal-content,
     body.student-mobile-portal .modal-content {
-        background: #14080c !important;
+        background: #1E1515 !important;
         border: 1px solid var(--sdc-border) !important;
         border-radius: 16px !important;
         color: var(--sdc-text) !important;
@@ -780,13 +780,13 @@
     body.student-portal .sd-view-toggle-btn:hover,
     body.student-portal .student-view-switcher button:hover {
         color: var(--sdc-text) !important;
-        background: rgba(250, 244, 246, 0.04) !important;
+        background: rgba(255, 255, 255, 0.04) !important;
     }
 
     body.student-portal .sd-view-toggle-btn.is-active,
     body.student-portal .student-view-switcher button[aria-pressed="true"] {
-        background: rgba(107, 25, 43, 0.5) !important;
-        border-color: rgba(250, 244, 246, 0.18) !important;
+        background: rgba(122, 26, 26, 0.28) !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
         color: #ffffff !important;
         box-shadow: none !important;
     }
@@ -803,7 +803,7 @@
 
     body.student-portal .ent-card-header,
     body.student-portal .card-header {
-        background: rgba(250, 244, 246, 0.02) !important;
+        background: rgba(255, 255, 255, 0.02) !important;
         border-bottom: 1px solid var(--sdc-border-subtle) !important;
         color: var(--sdc-text) !important;
     }
@@ -818,7 +818,7 @@
     }
 
     body.student-portal .ent-table thead th {
-        background: #100609 !important;
+        background: #1A1212 !important;
         color: var(--sdc-muted) !important;
         border-bottom: 1px solid var(--sdc-border) !important;
         font-size: 0.71rem;
@@ -833,7 +833,7 @@
     }
 
     body.student-portal .ent-table tbody tr:hover {
-        background: rgba(107, 25, 43, 0.14) !important;
+        background: rgba(122, 26, 26, 0.14) !important;
     }
 
     /* Unified Primary & Secondary Buttons */
@@ -983,7 +983,7 @@
     body.student-portal .cor-search-input:focus,
     body.student-portal #scheduleDayFilter:focus {
         border-color: var(--sdc-border-strong) !important;
-        box-shadow: 0 0 0 3px rgba(232, 152, 168, 0.16) !important;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16) !important;
     }
 
     body.student-portal .student-results-count {
@@ -1013,14 +1013,14 @@
 
     body.student-portal .cor-card-section-tag,
     body.student-portal .cor-card-units-tag {
-        background: rgba(250, 244, 246, 0.05) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
         border: 1px solid var(--sdc-border) !important;
         color: var(--sdc-text-soft) !important;
     }
 
     body.student-portal .cor-code-badge {
-        background: rgba(107, 25, 43, 0.44) !important;
-        border: 1px solid rgba(250, 244, 246, 0.2) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         color: #ffffff !important;
         font-family: 'JetBrains Mono', ui-monospace, monospace;
     }
@@ -1050,8 +1050,8 @@
     }
 
     body.student-portal .cor-day-badge {
-        background: rgba(232, 152, 168, 0.12) !important;
-        border-color: rgba(232, 152, 168, 0.28) !important;
+        background: rgba(212, 175, 55, 0.12) !important;
+        border-color: rgba(212, 175, 55, 0.28) !important;
         color: #f6ced7 !important;
     }
 
@@ -1071,7 +1071,7 @@
     }
 
     body.student-portal .cor-table thead th {
-        background: #100609 !important;
+        background: #1A1212 !important;
         color: var(--sdc-muted) !important;
         border-color: var(--sdc-border-subtle) !important;
         border-bottom: 1px solid var(--sdc-border) !important;
@@ -1088,7 +1088,7 @@
     }
 
     body.student-portal .cor-table tbody tr:hover td {
-        background: rgba(107, 25, 43, 0.16) !important;
+        background: rgba(122, 26, 26, 0.16) !important;
     }
 
     body.student-portal .cor-table tfoot td {
@@ -1126,12 +1126,12 @@
     }
 
     body.student-portal .schedule-day-pill-badge {
-        background: rgba(232, 152, 168, 0.16) !important;
+        background: rgba(212, 175, 55, 0.16) !important;
         color: var(--sdc-text) !important;
     }
 
     body.student-portal .schedule-day-pill.active .schedule-day-pill-badge {
-        background: #24060d !important;
+        background: #800000 !important;
         color: #ffffff !important;
     }
 
@@ -1214,7 +1214,7 @@
 
     body.student-portal .scal-nav-btn:hover,
     body.student-portal .att-cal-nav-btn:hover {
-        background: rgba(107, 25, 43, 0.36) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         border-color: var(--sdc-border-strong) !important;
         color: #ffffff !important;
         transform: none;
@@ -1232,7 +1232,7 @@
     }
 
     body.student-portal .scal-nav-today-btn:hover {
-        background: rgba(107, 25, 43, 0.36) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         border-color: var(--sdc-border-strong) !important;
     }
 
@@ -1281,9 +1281,9 @@
 
     body.student-portal .scal-tile.today,
     body.student-portal .att-cal-cell.is-today {
-        border: 1.5px solid #faf7f8 !important;
-        box-shadow: inset 0 0 0 1px rgba(250, 244, 246, 0.2) !important;
-        background: rgba(107, 25, 43, 0.42) !important;
+        border: 1.5px solid #FAF8F5 !important;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
     }
 
     body.student-portal .scal-tile.today .scal-num,
@@ -1294,8 +1294,8 @@
     body.student-portal .scal-tile.is-selected-day,
     body.student-portal .att-cal-cell.selected {
         border: 1.5px solid var(--sdc-rose-accent) !important;
-        box-shadow: 0 0 0 2px rgba(232, 152, 168, 0.24) !important;
-        background: rgba(107, 25, 43, 0.32) !important;
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.24) !important;
+        background: rgba(122, 26, 26, 0.32) !important;
     }
 
     body.student-portal .scal-legend-title,
@@ -1391,7 +1391,7 @@
     }
 
     body.student-portal .table-card-header {
-        background: rgba(250, 244, 246, 0.02) !important;
+        background: rgba(255, 255, 255, 0.02) !important;
         border-bottom: 1px solid var(--sdc-border-subtle) !important;
     }
 
@@ -1400,8 +1400,8 @@
     }
 
     body.student-portal .table-title-icon {
-        background: rgba(107, 25, 43, 0.36) !important;
-        border: 1px solid rgba(250, 244, 246, 0.16) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
         color: #ffffff !important;
     }
 
@@ -1429,15 +1429,15 @@
     }
 
     body.student-portal .excuse-btn {
-        background: rgba(107, 25, 43, 0.32) !important;
+        background: rgba(122, 26, 26, 0.32) !important;
         color: var(--sdc-text) !important;
-        border: 1px solid rgba(250, 244, 246, 0.2) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         border-radius: 10px !important;
         min-height: 40px;
     }
 
     body.student-portal .excuse-btn:hover {
-        background: rgba(107, 25, 43, 0.5) !important;
+        background: rgba(122, 26, 26, 0.28) !important;
         color: #ffffff !important;
         box-shadow: none !important;
         transform: none;
@@ -1497,8 +1497,8 @@
     }
 
     body.student-mobile-portal .mobile-history .subject-code-badge {
-        background: rgba(107, 25, 43, 0.42) !important;
-        border: 1px solid rgba(250, 244, 246, 0.2) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         color: #ffffff !important;
         font-family: 'JetBrains Mono', ui-monospace, monospace;
     }
@@ -1546,7 +1546,7 @@
 
     body.student-mobile-portal .sd-scan-nav-link:hover,
     body.student-mobile-portal .sd-scan-nav-link.is-primary {
-        background: rgba(107, 25, 43, 0.36) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         border-color: var(--sdc-border-strong) !important;
         color: #ffffff !important;
     }
@@ -1606,8 +1606,8 @@
     }
 
     body.student-mobile-portal .scan-paste-btn {
-        background: rgba(107, 25, 43, 0.28) !important;
-        border-color: rgba(232, 152, 168, 0.3) !important;
+        background: rgba(122, 26, 26, 0.28) !important;
+        border-color: rgba(212, 175, 55, 0.3) !important;
     }
 
     body.student-mobile-portal .scan-info-card {
@@ -1619,7 +1619,7 @@
     /* Scanner Modal Shell (QR + 6-Digit Code + Outside-Range Dialog) */
     body.student-portal #studentScannerModal .scanner-modal-card,
     body.student-mobile-portal #studentScannerModal .scanner-modal-card {
-        background: #14080c !important;
+        background: #1E1515 !important;
         border: 1px solid var(--sdc-border) !important;
         box-shadow: var(--sdc-shadow-overlay) !important;
     }
@@ -1639,13 +1639,13 @@
 
     body.student-portal #studentScannerModal .reticle-corner,
     body.student-mobile-portal #studentScannerModal .reticle-corner {
-        border-color: #faf7f8 !important;
+        border-color: #FAF8F5 !important;
     }
 
     body.student-portal #studentScannerModal .scanner-laser-line,
     body.student-mobile-portal #studentScannerModal .scanner-laser-line {
-        background: linear-gradient(90deg, transparent, #e898a8, #ffffff, #e898a8, transparent) !important;
-        box-shadow: 0 0 10px rgba(232, 152, 168, 0.7) !important;
+        background: linear-gradient(90deg, transparent, #D4AF37, #ffffff, #D4AF37, transparent) !important;
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.7) !important;
     }
 
     body.student-portal #studentScannerModal .code-entry-input,
@@ -1658,8 +1658,8 @@
 
     body.student-portal #studentScannerModal .code-entry-input:focus,
     body.student-mobile-portal #studentScannerModal .code-entry-input:focus {
-        border-color: #faf7f8 !important;
-        box-shadow: 0 0 0 3px rgba(232, 152, 168, 0.2) !important;
+        border-color: #FAF8F5 !important;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2) !important;
     }
 
     body.student-portal #studentScannerModal .scanner-primary-action-btn,
@@ -1742,12 +1742,12 @@
     }
 
     body.student-mobile-portal .peer-oval {
-        border-color: #faf7f8 !important;
+        border-color: #FAF8F5 !important;
     }
 
     body.student-mobile-portal .peer-challenge {
-        background: rgba(107, 25, 43, 0.42) !important;
-        border-color: rgba(250, 244, 246, 0.24) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border-color: rgba(255, 255, 255, 0.24) !important;
         color: #ffffff !important;
     }
 
@@ -1840,7 +1840,7 @@
     body.student-portal .sd-excuse-panel-head {
         padding: 16px 20px;
         border-bottom: 1px solid var(--sdc-border-subtle);
-        background: rgba(250, 244, 246, 0.02);
+        background: rgba(255, 255, 255, 0.02);
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -1868,7 +1868,7 @@
     }
 
     body.student-portal .sd-excuse-row:hover {
-        background: rgba(107, 25, 43, 0.12);
+        background: rgba(122, 26, 26, 0.12);
     }
 
     body.student-portal .sd-excuse-row-title {
@@ -1922,7 +1922,7 @@
     }
 
     body.student-portal .sd-excuse-attachment:hover {
-        background: rgba(107, 25, 43, 0.3);
+        background: rgba(122, 26, 26, 0.3);
         border-color: var(--sdc-border-strong);
         color: #ffffff;
     }
@@ -1969,7 +1969,7 @@
     body.student-portal .sd-excuse-form-footer {
         padding: 16px clamp(18px, 3vw, 28px);
         border-top: 1px solid var(--sdc-border-subtle);
-        background: rgba(250, 244, 246, 0.02);
+        background: rgba(255, 255, 255, 0.02);
         display: flex;
         justify-content: flex-end;
         flex-wrap: wrap;
@@ -2014,13 +2014,13 @@
 
     body.student-portal .sd-form-input:focus {
         border-color: var(--sdc-border-strong);
-        box-shadow: 0 0 0 3px rgba(232, 152, 168, 0.16);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16);
         outline: none;
     }
 
     body.student-portal .sd-form-input option {
-        background: #14080c;
-        color: #faf7f8;
+        background: #1E1515;
+        color: #FAF8F5;
     }
 
     body.student-portal .excuse-subject-card {
@@ -2037,8 +2037,8 @@
     }
 
     body.student-portal .excuse-subject-card.selected {
-        background: rgba(107, 25, 43, 0.36) !important;
-        border-color: #faf7f8 !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border-color: #FAF8F5 !important;
         box-shadow: none !important;
     }
 
@@ -2047,8 +2047,8 @@
     }
 
     body.student-portal .sub-code-badge {
-        background: rgba(107, 25, 43, 0.44) !important;
-        border: 1px solid rgba(250, 244, 246, 0.2) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         color: #ffffff !important;
         font-family: 'JetBrains Mono', ui-monospace, monospace;
     }
@@ -2067,7 +2067,7 @@
 
     body.student-portal .quick-date-btn:hover,
     body.student-portal .quick-sub-btn:hover {
-        background: rgba(107, 25, 43, 0.34) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         border-color: var(--sdc-border-strong) !important;
         color: #ffffff !important;
     }
@@ -2079,7 +2079,7 @@
         justify-content: center;
         text-align: center;
         padding: 26px 18px;
-        border: 1.5px dashed rgba(250, 244, 246, 0.22);
+        border: 1.5px dashed rgba(255, 255, 255, 0.22);
         border-radius: 12px;
         background: var(--sdc-canvas);
         cursor: pointer;
@@ -2088,8 +2088,8 @@
 
     body.student-portal .sd-dropzone:hover,
     body.student-portal .sd-dropzone.is-dragover {
-        border-color: #faf7f8;
-        background: rgba(107, 25, 43, 0.18);
+        border-color: #FAF8F5;
+        background: rgba(122, 26, 26, 0.18);
     }
 
     body.student-portal .sd-file-chip {
@@ -2128,8 +2128,8 @@
         width: 46px !important;
         height: 46px !important;
         border-radius: 12px !important;
-        background: rgba(107, 25, 43, 0.44) !important;
-        border: 1px solid rgba(250, 244, 246, 0.18) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
         color: #ffffff !important;
         box-shadow: none !important;
         font-size: 1.3rem !important;
@@ -2177,8 +2177,8 @@
     }
 
     body.student-portal .notif-stat-card.active {
-        border-color: #faf7f8 !important;
-        background: rgba(107, 25, 43, 0.34) !important;
+        border-color: #FAF8F5 !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         box-shadow: none !important;
     }
 
@@ -2207,14 +2207,14 @@
     }
 
     body.student-portal .notif-tab.active {
-        background: rgba(107, 25, 43, 0.5) !important;
-        border-color: rgba(250, 244, 246, 0.2) !important;
+        background: rgba(122, 26, 26, 0.28) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
         color: #ffffff !important;
         box-shadow: none !important;
     }
 
     body.student-portal .notif-tab.active .notif-tab-badge {
-        background: rgba(250, 244, 246, 0.16) !important;
+        background: rgba(255, 255, 255, 0.16) !important;
         color: #ffffff !important;
     }
 
@@ -2227,7 +2227,7 @@
 
     body.student-portal .notif-search-input:focus {
         border-color: var(--sdc-border-strong) !important;
-        box-shadow: 0 0 0 3px rgba(232, 152, 168, 0.16) !important;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16) !important;
     }
 
     body.student-portal .notif-search-icon {
@@ -2251,8 +2251,8 @@
 
     body.student-portal .notif-pill.active,
     body.student-portal .notif-cat-pill.active {
-        background: rgba(107, 25, 43, 0.44) !important;
-        border-color: rgba(250, 244, 246, 0.24) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border-color: rgba(255, 255, 255, 0.24) !important;
         color: #ffffff !important;
         box-shadow: none !important;
     }
@@ -2278,13 +2278,13 @@
     body.student-portal .notif-item-card.unread,
     body.student-portal .notif-card.unread {
         background: #1a0a10 !important;
-        border-color: rgba(232, 152, 168, 0.3) !important;
+        border-color: rgba(212, 175, 55, 0.3) !important;
         box-shadow: none !important;
     }
 
     body.student-portal .notif-item-card.unread::before {
         width: 3px !important;
-        background: #e898a8 !important;
+        background: #D4AF37 !important;
         box-shadow: none !important;
     }
 
@@ -2310,7 +2310,7 @@
     }
 
     body.student-portal .btn-notif-records:hover {
-        background: rgba(107, 25, 43, 0.36) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         border-color: var(--sdc-border-strong) !important;
         color: #ffffff !important;
         transform: none !important;
@@ -2327,7 +2327,7 @@
     }
 
     body.student-portal .notif-empty-icon {
-        background: rgba(107, 25, 43, 0.32) !important;
+        background: rgba(122, 26, 26, 0.32) !important;
         border-color: var(--sdc-border) !important;
         color: var(--sdc-rose-accent) !important;
     }
@@ -2384,8 +2384,8 @@
     }
 
     body.student-portal .course-badge {
-        background: rgba(107, 25, 43, 0.44) !important;
-        border: 1px solid rgba(250, 244, 246, 0.2) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         color: #ffffff !important;
     }
 
@@ -2407,13 +2407,13 @@
     }
 
     body.student-portal .info-card-header {
-        background: rgba(250, 244, 246, 0.02) !important;
+        background: rgba(255, 255, 255, 0.02) !important;
         border-bottom: 1px solid var(--sdc-border-subtle) !important;
     }
 
     body.student-portal .info-card-header-icon {
-        background: rgba(107, 25, 43, 0.36) !important;
-        border: 1px solid rgba(250, 244, 246, 0.16) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
         color: #ffffff !important;
     }
 
@@ -2480,8 +2480,8 @@
         display: grid;
         place-items: center;
         flex-shrink: 0;
-        background: rgba(107, 25, 43, 0.38);
-        border: 1px solid rgba(250, 244, 246, 0.14);
+        background: rgba(122, 26, 26, 0.24);
+        border: 1px solid rgba(255, 255, 255, 0.14);
         color: var(--sdc-text);
         font-size: 0.9rem;
     }
@@ -2523,8 +2523,8 @@
     }
 
     body.student-mobile-portal .ppm-role-pill {
-        background: rgba(107, 25, 43, 0.44) !important;
-        border: 1px solid rgba(250, 244, 246, 0.22) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(255, 255, 255, 0.22) !important;
         color: #ffffff !important;
     }
 
@@ -2546,8 +2546,8 @@
     }
 
     body.student-mobile-portal .mobile-info-icon {
-        background: rgba(107, 25, 43, 0.34) !important;
-        border: 1px solid rgba(250, 244, 246, 0.14) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
         color: var(--sdc-text) !important;
     }
 
@@ -2558,14 +2558,14 @@
 
     body.student-mobile-portal .mobile-menu-item:hover,
     body.student-mobile-portal .mobile-menu-item:active {
-        background: rgba(107, 25, 43, 0.26) !important;
+        background: rgba(122, 26, 26, 0.26) !important;
     }
 
     /* ── 11. Settings & Biometrics (/settings, /settings/biometrics/face) ── */
     body.student-portal .student-settings {
-        --student-panel: #14080c;
-        --student-panel-strong: #14080c;
-        --student-line: rgba(250, 244, 246, 0.11);
+        --student-panel: #1E1515;
+        --student-panel-strong: #1E1515;
+        --student-line: rgba(255, 255, 255, 0.11);
     }
 
     body.student-portal .student-settings-heading {
@@ -2614,7 +2614,7 @@
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .sc-head {
-        background: rgba(250, 244, 246, 0.02) !important;
+        background: rgba(255, 255, 255, 0.02) !important;
         border-bottom: 1px solid var(--sdc-border-subtle) !important;
     }
 
@@ -2622,8 +2622,8 @@
     body.student-portal .sp.student-settings[data-student-settings] .sec-card-icon,
     body.student-portal .sp.student-settings[data-student-settings] .sec-group-icon,
     body.student-portal .sp.student-settings[data-student-settings] .student-account-shortcut-icon {
-        background: rgba(107, 25, 43, 0.36) !important;
-        border: 1px solid rgba(250, 244, 246, 0.16) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
         color: #ffffff !important;
     }
 
@@ -2659,7 +2659,7 @@
 
     body.student-portal .sp.student-settings[data-student-settings] .sec-copy-btn {
         color: var(--sdc-text-soft) !important;
-        background: rgba(250, 244, 246, 0.05) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
         border: 1px solid var(--sdc-border-subtle) !important;
         border-radius: 8px !important;
         padding: 6px 8px !important;
@@ -2673,7 +2673,7 @@
     body.student-portal .sp.student-settings[data-student-settings] .sec-copy-btn:hover {
         color: #ffffff !important;
         border-color: var(--sdc-border-strong) !important;
-        background: rgba(107, 25, 43, 0.32) !important;
+        background: rgba(122, 26, 26, 0.32) !important;
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .sc.student-profile-summary {
@@ -2683,11 +2683,11 @@
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .sc.student-profile-summary .sc-head {
-        background: linear-gradient(180deg, rgba(61, 15, 27, 0.24) 0%, rgba(250, 244, 246, 0.02) 100%) !important;
+        background: linear-gradient(180deg, rgba(61, 15, 27, 0.24) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .ppm-avatar-ring {
-        border: 2.5px solid rgba(232, 152, 168, 0.36) !important;
+        border: 2.5px solid rgba(212, 175, 55, 0.36) !important;
         box-shadow: 0 10px 28px rgba(0, 0, 0, 0.48) !important;
         background: var(--sdc-canvas) !important;
     }
@@ -2695,7 +2695,7 @@
     body.student-portal .sp.student-settings[data-student-settings] .ppm-avatar-dropzone:hover .ppm-avatar-ring,
     body.student-portal .sp.student-settings[data-student-settings] .ppm-avatar-dropzone.ppm-dragover .ppm-avatar-ring {
         border-color: var(--sdc-rose-accent) !important;
-        box-shadow: 0 12px 30px rgba(107, 25, 43, 0.42) !important;
+        box-shadow: 0 12px 30px rgba(122, 26, 26, 0.24) !important;
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .ppm-badge-btn {
@@ -2751,8 +2751,8 @@
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .profile-badge-course {
-        background: rgba(107, 25, 43, 0.44) !important;
-        border: 1px solid rgba(232, 152, 168, 0.28) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border: 1px solid rgba(212, 175, 55, 0.28) !important;
         color: var(--sdc-text) !important;
         font-size: 0.74rem !important;
         font-weight: 700 !important;
@@ -2793,8 +2793,8 @@
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .student-photo-change-btn:hover {
-        background: rgba(107, 25, 43, 0.36);
-        border-color: rgba(232, 152, 168, 0.4);
+        background: rgba(122, 26, 26, 0.24);
+        border-color: rgba(212, 175, 55, 0.4);
         color: #ffffff;
     }
 
@@ -2842,7 +2842,7 @@
 
     body.student-portal .sp.student-settings[data-student-settings] .student-account-shortcut button:hover,
     body.student-portal .sp.student-settings[data-student-settings] .student-phone-shortcut button:hover {
-        background: rgba(107, 25, 43, 0.36) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         color: #ffffff !important;
     }
 
@@ -2853,16 +2853,16 @@
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .account-edit-progress li[aria-current="step"] {
-        background: rgba(107, 25, 43, 0.36) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         border-color: var(--sdc-border-strong) !important;
         color: #ffffff !important;
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .account-edit-progress li[aria-current="step"] > .account-step-number,
     body.student-portal .sp.student-settings[data-student-settings] .account-edit-progress li.is-complete > .account-step-number {
-        background: #faf7f8 !important;
-        border-color: #faf7f8 !important;
-        color: #24060d !important;
+        background: #FAF8F5 !important;
+        border-color: #FAF8F5 !important;
+        color: #800000 !important;
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .si,
@@ -2876,7 +2876,7 @@
     body.student-portal .sp.student-settings[data-student-settings] .si:focus,
     body.student-portal .sp.student-settings[data-student-settings] .account-otp-input:focus-visible {
         border-color: var(--sdc-border-strong) !important;
-        box-shadow: 0 0 0 3px rgba(232, 152, 168, 0.16) !important;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16) !important;
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .sbtn,
@@ -2907,14 +2907,14 @@
     }
 
     body.student-portal .student-biometric-choices > a:hover {
-        background: rgba(107, 25, 43, 0.32) !important;
+        background: rgba(122, 26, 26, 0.32) !important;
         border-color: var(--sdc-border-strong) !important;
         transform: none;
     }
 
     body.student-portal .student-biometric-choices > a > i:first-child {
-        background: rgba(107, 25, 43, 0.4) !important;
-        border-color: rgba(250, 244, 246, 0.18) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
         color: #ffffff !important;
     }
 
@@ -2950,8 +2950,8 @@
 
     body.biometric-flow-page .bio-flow-symbol,
     body.biometric-flow-page .face-camera-placeholder-icon {
-        background: rgba(107, 25, 43, 0.4) !important;
-        border-color: rgba(250, 244, 246, 0.18) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
         color: #ffffff !important;
     }
 
@@ -2962,24 +2962,24 @@
         border-color: var(--sdc-border) !important;
     }
 
-    body.biometric-flow-page .biometric-face-guide { border-color: #faf7f8 !important; }
+    body.biometric-flow-page .biometric-face-guide { border-color: #FAF8F5 !important; }
 
     body.biometric-flow-page .face-pose-progress li[aria-current="step"],
     body.biometric-flow-page .bio-registration-steps li[aria-current="step"] {
-        background: rgba(107, 25, 43, 0.4) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
         border-color: var(--sdc-border-strong) !important;
         color: #ffffff !important;
     }
 
     body.biometric-flow-page .face-pose-progress li[aria-current="step"] > span:first-child,
     body.biometric-flow-page .bio-registration-steps li[aria-current="step"] > span:first-child {
-        background: #faf7f8 !important;
-        color: #24060d !important;
+        background: #FAF8F5 !important;
+        color: #800000 !important;
     }
 
     /* ── 12. Student Assistant Workspace ─────────────────────────────────── */
     body.student-portal .assistant-workspace {
-        --assistant-accent: #e898a8;
+        --assistant-accent: #D4AF37;
     }
 
     body.student-portal .assistant-panel {
@@ -3003,7 +3003,7 @@
     /* ── 12b. Shell Chrome Polish (Skip Link, Notif Dropdown, Mobile Menu) ── */
     body.student-portal .skip-to-main-link {
         background: var(--sdc-silver) !important;
-        color: #14080c !important;
+        color: #800000 !important;
     }
 
     body.student-portal .top-notif-dropdown-menu {
@@ -3034,8 +3034,8 @@
     }
 
     body.student-mobile-portal .mobile-menu-avatar {
-        background: rgba(107, 25, 43, 0.36) !important;
-        border-color: rgba(232, 152, 168, 0.3) !important;
+        background: rgba(122, 26, 26, 0.24) !important;
+        border-color: rgba(212, 175, 55, 0.3) !important;
         color: var(--sdc-text) !important;
     }
 

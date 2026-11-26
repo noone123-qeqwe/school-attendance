@@ -35,11 +35,11 @@
 <!-- Tabs: Class Summaries vs Individual Student Records -->
 <div class="admin-view-tabs">
     <a href="{{ route('admin.attendance', array_merge(request()->except('page'), ['tab' => 'summary'])) }}"
-       style="padding:8px 18px; border-radius:10px; font-weight:700; font-size:0.9rem; text-decoration:none; transition:all 0.2s; {{ $tab === 'summary' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
+       style="padding:8px 18px; border-radius:10px; font-weight:700; font-size:0.9rem; text-decoration:none; transition:all 0.2s; {{ $tab === 'summary' ? 'background:#cfa46f; color:#141010;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
         <i class="bi bi-grid-3x3-gap-fill me-1"></i> Class Summaries
     </a>
     <a href="{{ route('admin.attendance', array_merge(request()->except('page'), ['tab' => 'records'])) }}"
-       style="padding:8px 18px; border-radius:10px; font-weight:700; font-size:0.9rem; text-decoration:none; transition:all 0.2s; {{ $tab === 'records' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
+       style="padding:8px 18px; border-radius:10px; font-weight:700; font-size:0.9rem; text-decoration:none; transition:all 0.2s; {{ $tab === 'records' ? 'background:#cfa46f; color:#141010;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
         <i class="bi bi-person-lines-fill me-1"></i> Individual Student Records
     </a>
 </div>
@@ -73,7 +73,7 @@
                 @endforeach
             </select>
 
-            <button type="submit" class="btn btn-primary" style="background: var(--gold); border: none; color:#110a0a; font-weight:700;">
+            <button type="submit" class="btn btn-primary" style="background: var(--gold); border: none; color:#141010; font-weight:700;">
                 <i class="bi bi-funnel"></i> Filter
             </button>
 

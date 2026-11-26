@@ -149,13 +149,13 @@
                             @if($excuse->status === 'rejected' && $excuse->admin_notes)
                                 <div class="sd-excuse-reviewer-note">
                                     <div style="font-size:0.74rem;font-weight:800;color:#ff8e9b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Reviewer Note</div>
-                                    <p style="font-size:0.84rem;color:#fcf9fa;margin:0;">{{ $excuse->admin_notes }}</p>
+                                    <p style="font-size:0.84rem;color:#FAF8F5;margin:0;">{{ $excuse->admin_notes }}</p>
                                 </div>
                             @endif
                         </div>
                     @empty
                         <div class="sd-excuse-empty">
-                            <i class="bi bi-inbox" style="font-size: 3rem; color: rgba(236,224,228,0.22);" aria-hidden="true"></i>
+                            <i class="bi bi-inbox" style="font-size: 3rem; color: rgba(255, 255, 255,0.22);" aria-hidden="true"></i>
                             <h4>No Submissions Yet</h4>
                             <p>Submitted excuse letters and reviewer decisions will appear here.</p>
                         </div>

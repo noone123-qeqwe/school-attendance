@@ -11,23 +11,23 @@
     @include('partials.pwa-tags')
     <style>
         :root {
-            --primary: #5a1827;
-            --primary-dark: #300810;
-            --gold: #ece4e7;
-            --dark-bg: #0f0407;
+            --primary: #7A1A1A;
+            --primary-dark: #800000;
+            --gold: #FAF8F5;
+            --dark-bg: #141010;
             --card-bg: rgba(27, 9, 15, 0.94);
-            --border: rgba(236, 224, 228, 0.18);
+            --border: rgba(255, 255, 255, 0.18);
         }
         * {
             box-sizing: border-box;
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
         body {
-            background: radial-gradient(ellipse 65% 45% at 88% -6%, rgba(120, 30, 48, 0.4) 0%, transparent 66%),
-                        radial-gradient(ellipse 48% 42% at 10% 10%, rgba(72, 24, 32, 0.34) 0%, transparent 64%),
+            background: radial-gradient(ellipse 65% 45% at 88% -6%, rgba(122, 26, 26, 0.24) 0%, transparent 66%),
+                        radial-gradient(ellipse 48% 42% at 10% 10%, rgba(122, 26, 26, 0.24) 0%, transparent 64%),
                         var(--dark-bg);
             min-height: 100vh;
-            color: #fcf9fa;
+            color: #FAF8F5;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -53,8 +53,8 @@
             width: 70px;
             height: 70px;
             border-radius: 20px;
-            background: linear-gradient(135deg, #8a2439, #381018);
-            border: 1px solid rgba(236, 224, 228, 0.28);
+            background: linear-gradient(135deg, #800000, #381018);
+            border: 1px solid rgba(255, 255, 255, 0.28);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -73,7 +73,7 @@
         }
         .input-group-custom {
             background: #14060a;
-            border: 1.5px solid rgba(236, 224, 228, 0.18);
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
             border-radius: 14px;
             overflow: hidden;
             display: flex;
@@ -81,18 +81,18 @@
             transition: all 0.2s ease;
         }
         .input-group-custom:focus-within {
-            border-color: #ece4e7;
-            box-shadow: 0 0 0 3px rgba(228, 143, 160, 0.22);
+            border-color: #FAF8F5;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.22);
         }
         .input-icon {
             padding: 0 16px;
-            color: #e48fa0;
+            color: #D4AF37;
             font-size: 1.1rem;
         }
         .custom-input {
             background: transparent;
             border: none;
-            color: #fcf9fa;
+            color: #FAF8F5;
             padding: 14px 16px 14px 0;
             width: 100%;
             outline: none;
@@ -103,7 +103,7 @@
         }
         .submit-btn {
             background: linear-gradient(135deg, #ffffff 0%, #eae0e3 55%, #d7c7cc 100%);
-            color: #300810;
+            color: #800000;
             border: 1px solid rgba(255, 255, 255, 0.6);
             border-radius: 14px;
             min-height: 50px;

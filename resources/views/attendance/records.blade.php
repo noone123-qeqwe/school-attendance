@@ -255,15 +255,15 @@
         background: rgba(255,255,255,0.02);
     }
     :is(#excuseModal, #correctionModal) .modal-title {
-        font-size: 1.06rem; font-weight: 700; color: #FAF7F8;
+        font-size: 1.06rem; font-weight: 700; color: #FAF8F5;
     }
     :is(#excuseModal, #correctionModal) .modal-close {
-        background: #1C0C11; border: 1px solid rgba(250,247,248,0.12); border-radius: 9px;
+        background: #261B1B; border: 1px solid rgba(255, 255, 255,0.12); border-radius: 9px;
         width: 38px; height: 38px; cursor: pointer; font-size: 1rem;
         display: flex; align-items: center; justify-content: center;
-        color: #D4C6CA; transition: background 0.15s ease, color 0.15s ease;
+        color: #D6CCC6; transition: background 0.15s ease, color 0.15s ease;
     }
-    :is(#excuseModal, #correctionModal) .modal-close:hover { background: #261118; color: #FFFFFF; }
+    :is(#excuseModal, #correctionModal) .modal-close:hover { background: #2F2222; color: #FFFFFF; }
     
     :is(#excuseModal, #correctionModal) .modal-body {
         padding: 24px 26px;
@@ -274,21 +274,21 @@
     }
     :is(#excuseModal, #correctionModal) .form-label {
         display: block; font-size: 0.76rem; font-weight: 700;
-        color: #D4C6CA; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.05em;
+        color: #D6CCC6; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.05em;
     }
     :is(#excuseModal, #correctionModal) .form-input, :is(#excuseModal, #correctionModal) .form-textarea, :is(#excuseModal, #correctionModal) .form-select {
         width: 100%; padding: 12px 14px; 
-        border: 1px solid rgba(250,247,248,0.12); border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255,0.12); border-radius: 10px;
         font-size: 0.9rem; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-        background: #0B0406; color: #FAF7F8; outline: none;
+        background: #141010; color: #FAF8F5; outline: none;
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
     :is(#excuseModal, #correctionModal) .form-input:focus, :is(#excuseModal, #correctionModal) .form-textarea:focus, :is(#excuseModal, #correctionModal) .form-select:focus {
-        border-color: #E898A8; background: #0B0406;
-        box-shadow: 0 0 0 3px rgba(232,152,168,0.16);
+        border-color: #D4AF37; background: #141010;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55,0.16);
     }
     :is(#excuseModal, #correctionModal) .form-select {
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23E898A8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23D4AF37' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
         background-position: right 14px center;
         background-repeat: no-repeat;
         background-size: 16px 12px;
@@ -298,20 +298,20 @@
         resize: vertical; min-height: 112px;
     }
     :is(#excuseModal, #correctionModal) .form-select option {
-        background: #14080C; color: #FAF7F8;
+        background: #1E1515; color: #FAF8F5;
     }
     
     :is(#excuseModal, #correctionModal) .excuse-details {
-        padding: 16px; background: #1C0C11;
-        border: 1px solid rgba(250,247,248,0.09); border-radius: 12px;
-        font-size: 0.88rem; color: #D4C6CA;
+        padding: 16px; background: #261B1B;
+        border: 1px solid rgba(255, 255, 255,0.09); border-radius: 12px;
+        font-size: 0.88rem; color: #D6CCC6;
         margin-bottom: 20px;
     }
     
     :is(#excuseModal, #correctionModal) .modal-footer {
         padding: 16px 26px 22px; 
         display: flex; gap: 10px; justify-content: flex-end;
-        border-top: 1px solid rgba(250,247,248,0.08);
+        border-top: 1px solid rgba(255, 255, 255,0.08);
         background: transparent;
     }
     :is(#excuseModal, #correctionModal) .btn {
@@ -321,23 +321,23 @@
         text-decoration: none; min-height: 42px;
     }
     :is(#excuseModal, #correctionModal) .btn-primary {
-        background: #FAF7F8 !important; color: #14080C !important;
+        background: #FAF8F5 !important; color: #800000 !important;
     }
     :is(#excuseModal, #correctionModal) .btn-primary:hover {
-        background: #FFFFFF !important; color: #0B0406 !important;
+        background: #FFFFFF !important; color: #800000 !important;
     }
     :is(#excuseModal, #correctionModal) .btn-secondary {
-        background: #1C0C11 !important; color: #FAF7F8 !important; 
-        border: 1px solid rgba(250,247,248,0.14) !important;
+        background: #261B1B !important; color: #FAF8F5 !important; 
+        border: 1px solid rgba(255, 255, 255,0.14) !important;
     }
     :is(#excuseModal, #correctionModal) .btn-secondary:hover {
-        background: #261118 !important;
+        background: #2F2222 !important;
     }
     
     #excuseModal .btn-primary,
     #excuseModal button[type="submit"] {
-        background: #FAF7F8 !important;
-        color: #14080C !important;
+        background: #FAF8F5 !important;
+        color: #800000 !important;
     }
     #excuseModal .btn-primary:hover,
     #excuseModal button[type="submit"]:hover {
@@ -345,7 +345,7 @@
     }
     #excuseModal .btn-primary:focus,
     #excuseModal button[type="submit"]:focus {
-        box-shadow: 0 0 0 3px rgba(232,152,168,0.28) !important;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55,0.28) !important;
     }
 
     /* ── MOBILE RESPONSIVENESS FOR CARDS ── */
@@ -513,7 +513,7 @@
     @endphp
     <div class="summary-chips">
         <a href="{{ route('student.calendar', $baseRecordParams) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === '' ? 'is-active-chip' : '' }}">
-            <div class="summary-chip-value" style="color: #FAF7F8;">{{ $totals['all'] }}</div>
+            <div class="summary-chip-value" style="color: #FAF8F5;">{{ $totals['all'] }}</div>
             <div class="summary-chip-label">Total Records</div>
         </a>
         <a href="{{ route('student.calendar', $activeStatusFilter === 'Present' ? $baseRecordParams : array_merge($baseRecordParams, ['status' => 'Present'])) }}#attendance-records" data-calendar-month-link class="summary-chip {{ $activeStatusFilter === 'Present' ? 'is-active-chip' : '' }}">
@@ -608,8 +608,8 @@
                             @endif
                             <span class="record-date">{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}</span>
                             <span class="record-day">{{ $dayName }}</span>
-                            <span style="color:rgba(250,247,248,0.28);">•</span>
-                            <span style="font-size:0.75rem; color:#E898A8;"><i class="bi bi-person me-1" aria-hidden="true"></i>{{ $instName }}</span>
+                            <span style="color:rgba(255, 255, 255,0.28);">•</span>
+                            <span style="font-size:0.75rem; color:#D4AF37;"><i class="bi bi-person me-1" aria-hidden="true"></i>{{ $instName }}</span>
                         </div>
                     </div>
                     <div class="record-status">
@@ -674,11 +674,11 @@
                         @endif
 
                         @if($record->correction)
-                            <span class="excuse-status excuse-{{ $record->correction->status }}" style="background:rgba(232,152,168,0.14); color:#FBD5DD; border:1px solid rgba(232,152,168,0.28);">
+                            <span class="excuse-status excuse-{{ $record->correction->status }}" style="background:rgba(212, 175, 55,0.14); color:#F5DFA8; border:1px solid rgba(212, 175, 55,0.28);">
                                 <i class="bi bi-patch-question" aria-hidden="true"></i> Appeal: {{ ucfirst($record->correction->status) }}
                             </span>
                         @elseif(in_array($record->status, ['Late', 'Absent']))
-                            <button type="button" class="excuse-btn" style="background:#1C0C11 !important; color:#FAF7F8 !important; border-color:rgba(250,247,248,0.16) !important;" onclick="openCorrectionModal({{ $record->id }}, {{ Illuminate\Support\Js::from($record->subject->name ?? $record->subject_code) }}, '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}', '{{ $record->status }}')">
+                            <button type="button" class="excuse-btn" style="background:#261B1B !important; color:#FAF8F5 !important; border-color:rgba(255, 255, 255,0.16) !important;" onclick="openCorrectionModal({{ $record->id }}, {{ Illuminate\Support\Js::from($record->subject->name ?? $record->subject_code) }}, '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}', '{{ $record->status }}')">
                                 <i class="bi bi-pencil-square" aria-hidden="true"></i> Appeal Record
                             </button>
                         @endif
@@ -814,10 +814,10 @@ document.addEventListener('keydown', event => {
 function openExcuseModal(attendanceId, subjectName, date) {
     document.getElementById('attendanceId').value = attendanceId;
     document.getElementById('excuseDetails').innerHTML = `
-        <div style="font-weight: 700; color: #FAF7F8; margin-bottom: 6px; font-size: 1rem;">${recordText(subjectName)}</div>
-        <div style="font-size: 0.84rem; color: #9E8990; margin-bottom: 4px;"><strong style="color: #D4C6CA;">Date:</strong> ${recordText(date)}</div>
-        <div style="font-size: 0.84rem; color: #9E8990;">
-            <strong style="color: #D4C6CA;">Status:</strong> 
+        <div style="font-weight: 700; color: #FAF8F5; margin-bottom: 6px; font-size: 1rem;">${recordText(subjectName)}</div>
+        <div style="font-size: 0.84rem; color: #A49890; margin-bottom: 4px;"><strong style="color: #D6CCC6;">Date:</strong> ${recordText(date)}</div>
+        <div style="font-size: 0.84rem; color: #A49890;">
+            <strong style="color: #D6CCC6;">Status:</strong> 
             <span style="display:inline-block; padding: 2px 8px; border-radius: 6px; background: rgba(251,113,133,0.14); color: #FB7185; font-weight: 700; margin-left: 4px; font-size: 0.74rem;">Absent</span>
         </div>
     `;
@@ -832,10 +832,10 @@ function closeExcuseModal() {
 function openCorrectionModal(attendanceId, subjectName, date, currentStatus) {
     document.getElementById('corrAttendanceId').value = attendanceId;
     document.getElementById('corrDetails').innerHTML = `
-        <div style="font-weight: 700; color: #FAF7F8; margin-bottom: 6px; font-size: 1rem;">${recordText(subjectName)}</div>
-        <div style="font-size: 0.84rem; color: #9E8990; margin-bottom: 4px;"><strong style="color: #D4C6CA;">Date:</strong> ${recordText(date)}</div>
-        <div style="font-size: 0.84rem; color: #9E8990;">
-            <strong style="color: #D4C6CA;">Recorded Status:</strong> 
+        <div style="font-weight: 700; color: #FAF8F5; margin-bottom: 6px; font-size: 1rem;">${recordText(subjectName)}</div>
+        <div style="font-size: 0.84rem; color: #A49890; margin-bottom: 4px;"><strong style="color: #D6CCC6;">Date:</strong> ${recordText(date)}</div>
+        <div style="font-size: 0.84rem; color: #A49890;">
+            <strong style="color: #D6CCC6;">Recorded Status:</strong> 
             <span style="display:inline-block; padding: 2px 8px; border-radius: 6px; background: rgba(251,191,36,0.14); color: #FBBF24; font-weight: 700; margin-left: 4px; font-size: 0.74rem;">${recordText(currentStatus)}</span>
         </div>
     `;
@@ -894,10 +894,10 @@ body.student-record-dialog-open .mobile-bottom-nav { visibility: hidden; }
 #excuseModal button[type="submit"],
 #excuseModal .btn-primary,
 #excuseModal .excuse-submit-btn {
-    background: #FAF7F8 !important;
-    background-color: #FAF7F8 !important;
-    border: 1px solid #FAF7F8 !important;
-    color: #14080C !important;
+    background: #FAF8F5 !important;
+    background-color: #FAF8F5 !important;
+    border: 1px solid #FAF8F5 !important;
+    color: #800000 !important;
 }
 
 .modal-overlay#excuseModal .modal-content .modal-footer button.btn.btn-primary:hover,
@@ -909,7 +909,7 @@ body.student-record-dialog-open .mobile-bottom-nav { visibility: hidden; }
     background: #FFFFFF !important;
     background-color: #FFFFFF !important;
     border-color: #FFFFFF !important;
-    color: #0B0406 !important;
+    color: #800000 !important;
 }
 
 .modal-overlay#excuseModal .modal-content .modal-footer button.btn.btn-primary:focus,
@@ -918,10 +918,10 @@ body.student-record-dialog-open .mobile-bottom-nav { visibility: hidden; }
 #excuseModal button[type="submit"]:focus,
 #excuseModal .btn-primary:focus,
 #excuseModal .excuse-submit-btn:focus {
-    background: #FAF7F8 !important;
-    background-color: #FAF7F8 !important;
-    border-color: #FAF7F8 !important;
-    color: #14080C !important;
-    box-shadow: 0 0 0 3px rgba(232, 152, 168, 0.28) !important;
+    background: #FAF8F5 !important;
+    background-color: #FAF8F5 !important;
+    border-color: #FAF8F5 !important;
+    color: #800000 !important;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.28) !important;
 }
 </style>

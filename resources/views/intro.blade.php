@@ -63,8 +63,8 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
-            background: #110A0A;
-            background-color: #110A0A;
+            background: #141010;
+            background-color: #141010;
             overflow: hidden;
             font-family: 'Inter', sans-serif;
             height: 100%;

@@ -1,12 +1,12 @@
 /* Teacher workspace refresh. Uses the existing maroon, gold, and warm-neutral palette. */
 body.teacher-portal {
-    --teacher-ink: #FCF8F2;
-    --teacher-muted: #B39B82;
+    --teacher-ink: #FAF8F5;
+    --teacher-muted: #A49890;
     --teacher-gold: #D4AF37;
     --teacher-maroon: #7A1A1A;
     --teacher-line: rgba(212, 175, 55, 0.16);
-    --teacher-panel: rgba(30, 21, 21, 0.82);
-    --teacher-panel-raised: rgba(36, 24, 24, 0.94);
+    --teacher-panel: rgba(30, 21, 21, 0.9);
+    --teacher-panel-raised: rgba(38, 27, 27, 0.94);
     color: var(--teacher-ink);
 }
 
@@ -32,13 +32,13 @@ body.teacher-portal .header-page-sub {
 }
 
 body.teacher-portal .sidebar {
-    background: linear-gradient(180deg, rgba(55, 12, 12, 0.99), rgba(20, 10, 10, 0.99));
+    background: rgba(24, 17, 17, 0.94);
     border-right-color: var(--teacher-line);
 }
 
 body.teacher-portal .sidebar-head {
     padding: 22px 18px 18px;
-    background: linear-gradient(145deg, rgba(74, 12, 12, 0.98), rgba(44, 13, 13, 0.98));
+    background: transparent;
 }
 
 body.teacher-portal .sidebar-brand {
@@ -78,9 +78,9 @@ body.teacher-portal .sidebar .nav-link:hover {
 }
 
 body.teacher-portal .sidebar .nav-link.active {
-    background: linear-gradient(100deg, rgba(122, 26, 26, 0.62), rgba(212, 175, 55, 0.1));
-    border-color: rgba(212, 175, 55, 0.2);
-    border-left: 1px solid rgba(212, 175, 55, 0.2);
+    background: linear-gradient(90deg, rgba(122, 26, 26, 0.24), rgba(212, 175, 55, 0.08));
+    border-color: rgba(212, 175, 55, 0.22);
+    border-left: 1px solid rgba(212, 175, 55, 0.22);
     box-shadow: inset 3px 0 0 var(--teacher-gold);
     color: var(--teacher-ink) !important;
 }
@@ -105,7 +105,7 @@ body.teacher-portal :is(.adm-card, .tch-card, .glass-card, .saas-card, .ent-sect
 }
 
 body.teacher-portal :is(.tch-card, .tch-info-card, .class-card, .main-card, .stats-card, .info-card) {
-    background: linear-gradient(145deg, rgba(35, 23, 21, 0.92), rgba(19, 11, 10, 0.94));
+    background: rgba(30, 21, 21, 0.9);
 }
 
 body.teacher-portal :is(.adm-card-head, .tch-card-head, .saas-card-header, .ent-section-header, .main-card-header, .stats-header) {

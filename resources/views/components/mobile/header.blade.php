@@ -106,7 +106,7 @@
         right: 0;
         height: calc(var(--header-height) + var(--safe-top));
         padding-top: var(--safe-top);
-        background: rgba(17, 10, 10, 0.86);
+        background: rgba(20, 14, 14, 0.88);
         backdrop-filter: blur(22px) saturate(160%);
         -webkit-backdrop-filter: blur(22px) saturate(160%);
         border-bottom: 1px solid rgba(207, 164, 111, 0.16);

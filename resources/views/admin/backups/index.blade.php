@@ -854,7 +854,7 @@
 }
 
 .custom-modal-dialog {
-    background: linear-gradient(135deg, #201414 0%, #110A0A 100%);
+    background: linear-gradient(135deg, #261B1B 0%, #1E1515 100%);
     border: 1px solid rgba(212, 175, 55, 0.35);
     border-radius: 24px;
     width: 100%;
@@ -966,7 +966,7 @@
 
 .upload-file-label:hover {
     background: var(--gold, #D4AF37);
-    color: #110A0A;
+    color: #141010;
 }
 
 .upload-file-input {

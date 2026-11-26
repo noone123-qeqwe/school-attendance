@@ -23,12 +23,12 @@
 
             <!-- Desktop: Dedicated Header (Code Only) -->
             <div id="desktopScannerHeader" class="desktop-scanner-header" style="display: none; align-items: center; gap: 10px;">
-                <div style="width: 36px; height: 36px; border-radius: 10px; background: #1C0C11; color: #E898A8; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border: 1px solid rgba(232,152,168,0.28);">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: #261B1B; color: #D4AF37; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border: 1px solid rgba(212, 175, 55,0.28);">
                     <i class="bi bi-key-fill" aria-hidden="true"></i>
                 </div>
                 <div>
-                    <div style="font-size: 1.02rem; font-weight: 700; color: #FAF7F8; letter-spacing: -0.02em; line-height: 1.2;">Enter Attendance Code</div>
-                    <div style="font-size: 0.72rem; color: #9E8990;">Manual attendance check-in</div>
+                    <div style="font-size: 1.02rem; font-weight: 700; color: #FAF8F5; letter-spacing: -0.02em; line-height: 1.2;">Enter Attendance Code</div>
+                    <div style="font-size: 0.72rem; color: #A49890;">Manual attendance check-in</div>
                 </div>
             </div>
             
@@ -273,7 +273,7 @@
 }
 
 .outside-range-popup-card {
-    background: #14080C;
+    background: #1E1515;
     border: 1px solid rgba(251, 113, 133, 0.38);
     border-top: 2px solid #FB7185;
     border-radius: 16px;
@@ -295,9 +295,9 @@
     position: absolute;
     top: 12px;
     right: 12px;
-    background: #1C0C11;
-    border: 1px solid rgba(250, 247, 248, 0.12);
-    color: #FAF7F8;
+    background: #261B1B;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #FAF8F5;
     width: 40px;
     height: 40px;
     border-radius: 10px;
@@ -360,14 +360,14 @@
 .outside-range-headline {
     font-size: 1.28rem;
     font-weight: 700;
-    color: #FAF7F8;
+    color: #FAF8F5;
     margin-bottom: 8px;
     letter-spacing: -0.02em;
 }
 
 .outside-range-desc {
     font-size: 0.86rem;
-    color: #D4C6CA;
+    color: #D6CCC6;
     line-height: 1.5;
     margin-bottom: 18px;
 }
@@ -376,8 +376,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #0B0406;
-    border: 1px solid rgba(250, 247, 248, 0.09);
+    background: #141010;
+    border: 1px solid rgba(255, 255, 255, 0.09);
     border-radius: 12px;
     padding: 13px 16px;
     margin-bottom: 16px;
@@ -391,7 +391,7 @@
 .outside-range-metric-col .metric-label {
     font-size: 0.7rem;
     font-weight: 700;
-    color: #9E8990;
+    color: #A49890;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 4px;
@@ -420,19 +420,19 @@
 .outside-range-divider {
     width: 1px;
     height: 44px;
-    background: rgba(250, 247, 248, 0.1);
+    background: rgba(255, 255, 255, 0.1);
     margin: 0 12px;
 }
 
 .outside-range-tip-box {
     display: flex;
     align-items: flex-start;
-    background: #1C0C11;
-    border: 1px solid rgba(232, 152, 168, 0.24);
+    background: #261B1B;
+    border: 1px solid rgba(212, 175, 55, 0.24);
     border-radius: 10px;
     padding: 11px 14px;
     font-size: 0.8rem;
-    color: #D4C6CA;
+    color: #D6CCC6;
     text-align: left;
     margin-bottom: 18px;
     line-height: 1.45;
@@ -445,14 +445,14 @@
 }
 
 .outside-range-btn-primary {
-    background: #FAF7F8;
-    color: #14080C;
+    background: #FAF8F5;
+    color: #800000;
     font-weight: 700;
     font-size: 0.9rem;
     min-height: 46px;
     padding: 11px 18px;
     border-radius: 10px;
-    border: 1px solid #FAF7F8;
+    border: 1px solid #FAF8F5;
     cursor: pointer;
     transition: background 0.15s ease;
     display: flex;
@@ -462,13 +462,13 @@
 
 .outside-range-btn-primary:hover {
     background: #FFFFFF;
-    color: #0B0406;
+    color: #800000;
 }
 
 .outside-range-btn-secondary {
-    background: #1C0C11;
-    border: 1px solid rgba(250, 247, 248, 0.16);
-    color: #FAF7F8;
+    background: #261B1B;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #FAF8F5;
     font-weight: 700;
     font-size: 0.86rem;
     min-height: 44px;
