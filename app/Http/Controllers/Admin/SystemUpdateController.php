@@ -503,17 +503,6 @@ class SystemUpdateController extends Controller
             if (app()->isDownForMaintenance()) {
                 Artisan::call('up');
 
-                // Broadcast Web Push announcement
-                try {
-                    app(\App\Services\WebPushService::class)->broadcastAnnouncement(
-                        '🟢 System Maintenance Concluded',
-                        'The attendance portal is fully operational and open for all regular classes and clock-ins.',
-                        ['url' => route('intro'), 'tag' => 'maint-live-' . time()]
-                    );
-                } catch (\Throwable $pushErr) {
-                    \Log::warning('Maintenance live push notice: ' . $pushErr->getMessage());
-                }
-
                 return response()->json([
                     'success' => true,
                     'is_down' => false,
@@ -525,17 +514,6 @@ class SystemUpdateController extends Controller
                     '--render' => 'offline',
                     '--secret' => 'admin-access-portal'
                 ]);
-
-                // Broadcast Web Push announcement
-                try {
-                    app(\App\Services\WebPushService::class)->broadcastAnnouncement(
-                        '⚠️ System Maintenance Active',
-                        'System maintenance is currently in progress. Student services will resume shortly.',
-                        ['url' => route('intro'), 'tag' => 'maint-active-' . time()]
-                    );
-                } catch (\Throwable $pushErr) {
-                    \Log::warning('Maintenance active push notice: ' . $pushErr->getMessage());
-                }
 
                 return response()->json([
                     'success' => true,
@@ -676,22 +654,6 @@ class SystemUpdateController extends Controller
             $newAppVer = $release['version'];
 
             try { Artisan::call('view:clear'); } catch (\Throwable $ex) {}
-
-            try {
-                if ($release['update']['mode'] !== 'silent') {
-                    app(\App\Services\WebPushService::class)->broadcastAnnouncement(
-                        'Smart Attendance Release v' . $newAppVer,
-                        "Application update v{$newAppVer} is available. Open the app to review this release.",
-                        [
-                            'url' => route('intro'),
-                            'tag' => 'app-release-' . $newAppVer,
-                            'version' => 'v' . $newAppVer
-                        ]
-                    );
-                }
-            } catch (\Throwable $pushErr) {
-                Log::warning('App version bump push error', ['exception_class' => get_class($pushErr)]);
-            }
 
             return response()->json([
                 'success' => true,

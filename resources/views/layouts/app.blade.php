@@ -1120,7 +1120,6 @@
     @endauth
     @auth
         <x-command-palette :parent-unread-count="$parentUnreadCount" />
-        <script src="{{ asset('js/web-push.js') }}?v={{ filemtime(public_path('js/web-push.js')) }}"></script>
     @endauth
 
     @yield('scripts')

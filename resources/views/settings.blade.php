@@ -1793,28 +1793,6 @@
                         </div>
                     </div>
 
-                    <!-- Web Push Notifications -->
-                    <div class="pref-tile">
-                        <div style="display:flex;align-items:flex-start;gap:14px;flex:1;min-width:0;">
-                            <div class="pref-tile-icon" style="margin-top:2px;"><i class="bi bi-bell-fill"></i></div>
-                            <div style="flex:1;min-width:0;">
-                                <div class="tlabel" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                    <span>Web Push Notifications</span>
-                                    <span class="push-status-badge badge-inactive" style="font-size:0.7rem;padding:2px 8px;border-radius:999px;background:rgba(207,164,111,0.15);color:#cfa46f;border:1px solid rgba(207,164,111,0.3);font-weight:700;flex-shrink:0;">Checking...</span>
-                                </div>
-                                <div class="tsub" style="margin-top:2px;">Receive background push notifications even when the browser tab is closed.</div>
-                                <div class="mt-2">
-                                    <button type="button" onclick="WebPushManager.sendTest()" class="push-test-btn sbtn btn-emerald" style="display:none;padding:4px 12px;font-size:0.72rem;">
-                                        <i class="bi bi-send-check me-1"></i> Send Test Push Alert
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-check form-switch mb-0" style="flex-shrink:0;">
-                            <input class="form-check-input push-toggle-input" aria-label="Web Push Notifications" type="checkbox" onchange="toggleWebPush(this)">
-                        </div>
-                    </div>
-
                     <!-- SMS Notifications -->
                     <div class="pref-tile">
                         <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">

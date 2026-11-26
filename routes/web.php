@@ -18,12 +18,6 @@ Route::post('/webauthn/setup-options', [App\Http\Controllers\WebAuthnController:
 Route::post('/webauthn/setup-register', [App\Http\Controllers\WebAuthnController::class, 'setupRegister'])->middleware('throttle:login')->block(10, 10)->name('webauthn.setup.register');
 Route::post('/webauthn/native-biometric-login', [App\Http\Controllers\WebAuthnController::class, 'nativeBiometricLogin'])->middleware('throttle:login')->name('webauthn.native.login');
 
-// Web Push Notification Subscriptions & Testing
-Route::get('/push/public-key', [App\Http\Controllers\PushSubscriptionController::class, 'getPublicKey'])->name('push.public_key');
-Route::post('/push/subscribe', [App\Http\Controllers\PushSubscriptionController::class, 'subscribe'])->middleware('auth')->name('push.subscribe');
-Route::post('/push/unsubscribe', [App\Http\Controllers\PushSubscriptionController::class, 'unsubscribe'])->middleware('auth')->name('push.unsubscribe');
-Route::post('/push/test', [App\Http\Controllers\PushSubscriptionController::class, 'sendTest'])->middleware('auth')->name('push.test');
-
 
 // Intro page should always show, with private no-cache to evaluate destination correctly
 Route::get('/', function () {

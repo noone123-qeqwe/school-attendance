@@ -712,14 +712,6 @@ window.checkDeviceBindingStatus = async function() {
 };
 
 
-async function toggleWebPush(input) {
-    if (input.checked) {
-        const ok = await WebPushManager.subscribe();
-        if (!ok) input.checked = false;
-    } else {
-        await WebPushManager.unsubscribe();
-    }
-}
 function togglePw(id, btn, e) {
     if (e) {
         if (e._pwToggled) return;

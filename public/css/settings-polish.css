@@ -513,19 +513,6 @@
         justify-content: center !important;
     }
 
-    /* Push notification badge inline */
-    .push-status-badge {
-        font-size: 0.65rem !important;
-        padding: 2px 8px !important;
-    }
-    .push-test-btn {
-        width: 100% !important;
-        min-height: 42px !important;
-        justify-content: center !important;
-        font-size: 0.78rem !important;
-        padding: 10px 14px !important;
-    }
-
     /* Update feedback area */
     #updateFeedbackArea {
         border-radius: 14px !important;

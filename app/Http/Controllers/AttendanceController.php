@@ -305,32 +305,6 @@ if (!$scheduledDays->contains($todayFull)) {
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Attendance broadcast non-blocking error: ' . $e->getMessage());
         }
-
-        // Real-Time Web Push Alerts
-        try {
-            $pushTitle = $status === 'Present' ? "✓ Checked in: {$subject->name}" : "⚠️ Marked Late: {$subject->name}";
-            $pushBody = "{$user->name} was marked as {$status} on " . $now->format('h:i A');
-
-            // Push to linked parents
-            app(\App\Services\WebPushService::class)->sendToParentsOfStudent(
-                $user,
-                $pushTitle,
-                $pushBody,
-                ['url' => route('parent.child', ['child' => $user->id])]
-            );
-
-            // Push to student if marked Late
-            if ($status === 'Late') {
-                app(\App\Services\WebPushService::class)->sendToUser(
-                    $user,
-                    "⚠️ Marked Late in {$subject->name}",
-                    "You clocked in at {$now->format('h:i A')}, after the grace threshold.",
-                    ['url' => route('attendance.records')]
-                );
-            }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Attendance WebPush dispatch error: ' . $e->getMessage());
-        }
     } catch (\Exception $e) {
         // Broadcasting not available — skip, app continues normally
     }

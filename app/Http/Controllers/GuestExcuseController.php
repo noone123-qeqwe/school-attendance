@@ -105,16 +105,6 @@ class GuestExcuseController extends Controller
                     'message' => "Parent submitted an excuse letter for {$studentName} in {$attendance->subject_code} ({$formattedDate}).",
                     'is_read' => false,
                 ]);
-
-                app(\App\Services\WebPushService::class)->sendToUser(
-                    $instructorId,
-                    '📄 New Excuse Letter Received',
-                    "Parent submitted an excuse for {$studentName} in {$attendance->subject_code}.",
-                    [
-                        'url' => route('teacher.excuse.reviews'),
-                        'tag' => 'excuse-review-' . $excuse->id,
-                    ]
-                );
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('Failed notifying instructor of parent excuse: ' . $e->getMessage());
             }

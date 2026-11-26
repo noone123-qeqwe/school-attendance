@@ -1106,22 +1106,7 @@ class TeacherController extends Controller
                 'is_read' => false,
             ]);
 
-            // 3b. Web Push Notification to Student
-            try {
-                app(\App\Services\WebPushService::class)->sendToUser(
-                    $excuseSubmission->user_id,
-                    '✅ Excuse Request Approved',
-                    $approvalMessage,
-                    [
-                        'url' => route('excuses'),
-                        'tag' => 'excuse-approved-' . $excuseSubmission->id,
-                    ]
-                );
-            } catch (\Throwable $e) {
-                \Log::warning('WebPush approve error: ' . $e->getMessage());
-            }
-
-            // 3c. Notify Linked Parents
+            // 3b. Notify Linked Parents
             if ($student && $student->parents->isNotEmpty()) {
                 $parentMessage = "Excuse letter for {$student->name} in {$subjectLabel} ({$dateLabel}) was approved by {$teacher->name}" . ($adminNotes ? ": {$adminNotes}" : ".");
                 foreach ($student->parents as $parent) {
@@ -1134,18 +1119,8 @@ class TeacherController extends Controller
                             'message' => $parentMessage,
                             'is_read' => false,
                         ]);
-
-                        app(\App\Services\WebPushService::class)->sendToUser(
-                            $parent->id,
-                            '✅ Child Excuse Approved',
-                            $parentMessage,
-                            [
-                                'url' => route('parent.excuses'),
-                                'tag' => 'parent-excuse-approved-' . $excuseSubmission->id,
-                            ]
-                        );
                     } catch (\Throwable $e) {
-                        // Push fail ignore
+                        \Log::warning('Parent notification failed on approve: ' . $e->getMessage());
                     }
                 }
             }
@@ -1218,21 +1193,6 @@ class TeacherController extends Controller
                 \Log::warning('Notification creation failed on reject: ' . $notifError->getMessage());
             }
 
-            // Real-Time Web Push Notification
-            try {
-                app(\App\Services\WebPushService::class)->sendToUser(
-                    $excuseSubmission->user_id,
-                    '❌ Excuse Request Declined',
-                    $rejectMessage,
-                    [
-                        'url' => route('excuses'),
-                        'tag' => 'excuse-rejected-' . $excuseSubmission->id,
-                    ]
-                );
-            } catch (\Exception $e) {
-                // Broadcasting or push not available
-            }
-
             // Notify Linked Parents
             if ($student && $student->parents->isNotEmpty()) {
                 $parentRejectMessage = "Excuse letter for {$student->name} in {$subjectCode} ({$dateLabel}) was declined by {$teacher->name}. Reason: {$adminNotes}";
@@ -1246,18 +1206,8 @@ class TeacherController extends Controller
                             'message' => $parentRejectMessage,
                             'is_read' => false,
                         ]);
-
-                        app(\App\Services\WebPushService::class)->sendToUser(
-                            $parent->id,
-                            '❌ Child Excuse Declined',
-                            $parentRejectMessage,
-                            [
-                                'url' => route('parent.excuses'),
-                                'tag' => 'parent-excuse-rejected-' . $excuseSubmission->id,
-                            ]
-                        );
                     } catch (\Throwable $e) {
-                        // Push fail ignore
+                        \Log::warning('Parent notification failed on reject: ' . $e->getMessage());
                     }
                 }
             }

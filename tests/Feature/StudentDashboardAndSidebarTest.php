@@ -783,4 +783,120 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertStringContainsString('--sdc-canvas: #0B0406;', $dashCss);
         $this->assertStringContainsString('--sdc-surface: #14080C;', $dashCss);
     }
+
+    public function test_web_push_notifications_are_removed_from_settings_routes_and_schema(): void
+    {
+        $student = $this->createStudent([
+            'email' => 'student.nowebpush@gmail.com',
+            'student_number' => '2310820',
+        ]);
+
+        $settingsResponse = $this->actingAs($student)->get(route('settings'));
+        $settingsResponse->assertOk()
+            ->assertDontSee('Web Push Notifications', false)
+            ->assertDontSee('Send Test Push Alert', false)
+            ->assertDontSee('Receive background push notifications even when the browser tab is closed.', false)
+            ->assertDontSee('push-toggle-input', false)
+            ->assertDontSee('push-status-badge', false)
+            ->assertDontSee('push-test-btn', false)
+            ->assertDontSee('toggleWebPush', false)
+            ->assertDontSee('web-push.js', false)
+            ->assertSee('In-App Notifications', false)
+            ->assertSee('Email Notifications', false)
+            ->assertSee('App updates', false);
+
+        $this->actingAs($student)
+            ->get(route('home'))
+            ->assertOk()
+            ->assertDontSee('web-push.js', false);
+
+        $this->actingAs($student)
+            ->post(route('settings.preferences.update'), [
+                'prefs' => ['in_app' => '1', 'email' => '1'],
+            ])
+            ->assertRedirect(route('settings'));
+
+        $this->assertSame(['in_app' => true, 'email' => true], $student->fresh()->notification_preferences);
+
+        $this->get('/push/public-key')->assertNotFound();
+        $this->actingAs($student)->postJson('/push/subscribe', [])->assertNotFound();
+        $this->actingAs($student)->postJson('/push/unsubscribe', [])->assertNotFound();
+        $this->actingAs($student)->postJson('/push/test', [])->assertNotFound();
+
+        $this->assertFalse(\Illuminate\Support\Facades\Schema::hasTable('push_subscriptions'));
+        $this->assertFileDoesNotExist(public_path('js/web-push.js'));
+
+        $swContents = file_get_contents(public_path('sw.js'));
+        $this->assertNotFalse($swContents);
+        $this->assertStringNotContainsString("addEventListener('push'", $swContents);
+        $this->assertStringNotContainsString("addEventListener('notificationclick'", $swContents);
+
+        $teacher = $this->createStudent([
+            'name' => 'Prof. Excuse Check',
+            'role' => 'teacher',
+            'student_number' => null,
+            'employee_id' => 'TCH-NOWEB',
+            'email' => 'teacher.nowebpush@gmail.com',
+        ]);
+
+        $subject = Subject::create([
+            'code' => 'CS499',
+            'name' => 'Capstone Verification',
+            'year_level' => 3,
+            'semester' => 1,
+            'course' => 'BSCS',
+            'section' => 'A',
+            'instructor_id' => $teacher->id,
+        ]);
+
+        $attendanceApproved = Attendance::create([
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'subject_code' => $subject->code,
+            'date' => now()->subDay()->toDateString(),
+            'status' => 'Absent',
+        ]);
+        $excuseApprove = \App\Models\ExcuseSubmission::create([
+            'user_id' => $student->id,
+            'attendance_id' => $attendanceApproved->id,
+            'reason' => 'Medical',
+            'description' => 'Doctor note',
+            'status' => 'pending',
+        ]);
+
+        $attendanceRejected = Attendance::create([
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'subject_code' => $subject->code,
+            'date' => now()->toDateString(),
+            'status' => 'Absent',
+        ]);
+        $excuseReject = \App\Models\ExcuseSubmission::create([
+            'user_id' => $student->id,
+            'attendance_id' => $attendanceRejected->id,
+            'reason' => 'Personal',
+            'description' => 'Late submission',
+            'status' => 'pending',
+        ]);
+
+        $this->flushSession();
+        $this->actingAs($teacher)
+            ->postJson(route('teacher.excuse.approve', $excuseApprove), ['admin_notes' => 'Approved note'])
+            ->assertOk()
+            ->assertJsonPath('status', 'approved');
+
+        $this->actingAs($teacher)
+            ->postJson(route('teacher.excuse.reject', $excuseReject), ['admin_notes' => 'Missing attachment'])
+            ->assertOk()
+            ->assertJsonPath('status', 'rejected');
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $student->id,
+            'type' => 'excuse_approved',
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $student->id,
+            'type' => 'warning_2',
+        ]);
+    }
 }
