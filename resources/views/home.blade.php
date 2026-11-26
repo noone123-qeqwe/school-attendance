@@ -353,6 +353,18 @@
                 <i class="bi bi-chevron-right sd-dock-arrow" aria-hidden="true"></i>
             @endif
         </a>
+        <a href="{{ route('profile') }}" class="sd-dock-pill d-md-none">
+            <span class="sd-dock-icon" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
+            <span class="sd-dock-copy"><strong>My Profile</strong></span>
+            <i class="bi bi-chevron-right sd-dock-arrow" aria-hidden="true"></i>
+        </a>
+        @if(!empty($hasActiveAssistantAssignment))
+            <a href="{{ route('student-assistant.classes') }}" class="sd-dock-pill d-md-none">
+                <span class="sd-dock-icon" aria-hidden="true"><i class="bi bi-qr-code"></i></span>
+                <span class="sd-dock-copy"><strong>Student Assistant</strong></span>
+                <i class="bi bi-chevron-right sd-dock-arrow" aria-hidden="true"></i>
+            </a>
+        @endif
     </nav>
 
     {{-- ── 4. Attendance Overview KPI Bento ─────────────────────────────── --}}

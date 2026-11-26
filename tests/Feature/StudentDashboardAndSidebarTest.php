@@ -32,6 +32,27 @@ class StudentDashboardAndSidebarTest extends TestCase
         ], $overrides));
     }
 
+    public function test_student_mobile_navigation_links_directly_to_excuses_and_marks_excuse_pages_active(): void
+    {
+        $this->actingAs($this->createStudent());
+
+        foreach (['home', 'mobile.home', 'excuses', 'excuses.create_general'] as $route) {
+            $response = $this->get(route($route))->assertOk();
+            $dom = new \DOMDocument();
+            $dom->loadHTML($response->getContent(), LIBXML_NOERROR | LIBXML_NOWARNING);
+            $xpath = new \DOMXPath($dom);
+            $nav = $xpath->query('//nav[@id="mobileBottomNav"]')->item(0);
+            $this->assertNotNull($nav);
+
+            $link = $xpath->query('./a[span[normalize-space()="Excuses"]]', $nav)->item(0);
+            $this->assertInstanceOf(\DOMElement::class, $link);
+            $this->assertSame(route('excuses'), $link->getAttribute('href'));
+            $this->assertSame(str_starts_with($route, 'excuses') ? 'page' : '', $link->getAttribute('aria-current'));
+            $this->assertSame(0, $xpath->query('.//*[normalize-space()="More"]', $nav)->length);
+            $this->assertSame(0, $xpath->query('//*[@id="moreSheet"]')->length);
+        }
+    }
+
     public function test_student_sidebar_omits_profile_settings_scan_pin_and_notifications(): void
     {
         $student = $this->createStudent();
@@ -634,6 +655,8 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->actingAs($teacher)
             ->get(route('teacher.dashboard'))
             ->assertOk()
+            ->assertSee('aria-controls="moreSheet"', false)
+            ->assertSee('id="moreSheet"', false)
             ->assertDontSee('student-portal-master.css', false);
     }
 

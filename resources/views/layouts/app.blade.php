@@ -928,12 +928,13 @@
             @include('layouts.mbn.student')
         @endif
 
+        @if(Auth::user()->isAdmin() || Auth::user()->isTeacher() || Auth::user()->isParent())
         <!-- More Bottom Sheet -->
         <div class="more-sheet-overlay d-md-none" id="moreSheetOverlay" onclick="closeMoreSheet()"></div>
         <div class="more-sheet d-md-none {{ Auth::user()->isAdmin() ? 'admin-navigation-sheet' : '' }}" id="moreSheet" role="dialog" aria-modal="true" aria-labelledby="moreSheetTitle" aria-hidden="true" inert>
             <div class="more-sheet-handle"></div>
             <div class="more-sheet-header">
-                <span class="more-sheet-title" id="moreSheetTitle">{{ Auth::user()->isAdmin() ? 'All admin pages' : (Auth::user()->isParent() ? 'Parent pages' : (Auth::user()->isTeacher() ? 'Teacher pages' : 'More')) }}</span>
+                <span class="more-sheet-title" id="moreSheetTitle">{{ Auth::user()->isAdmin() ? 'All admin pages' : (Auth::user()->isParent() ? 'Parent pages' : 'Teacher pages') }}</span>
                 <button type="button" class="more-sheet-close" id="moreSheetCloseBtn" onclick="closeMoreSheet()" aria-label="Close More Menu">
                     <i class="bi bi-x-lg" style="pointer-events:none;"></i>
                 </button>
@@ -943,34 +944,8 @@
                     @include('partials.admin-workspace-navigation', ['navigationId' => 'adminMobile'])
                 @elseif(Auth::user()->isTeacher())
                     @include('partials.teacher-navigation', ['mobile' => true])
-                @elseif(Auth::user()->isParent())
-                    @include('partials.parent-navigation', ['mobile' => true])
                 @else
-                    @include('partials.student-assistant-mobile-link')
-                    <a href="{{ route('student.schedule') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-clock-history"></i></div>
-                        <span class="more-sheet-item-label">Schedule</span>
-                    </a>
-                    <a href="{{ route('student.calendar') }}#attendance-records" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-clipboard-check-fill"></i></div>
-                        <span class="more-sheet-item-label">Attendance Log</span>
-                    </a>
-                    <a href="{{ route('excuses') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-file-text-fill"></i></div>
-                        <span class="more-sheet-item-label">Excuses</span>
-                    </a>
-                    <button type="button" onclick="closeMoreSheet(); if(typeof openSubjectBreakdownModal==='function'){openSubjectBreakdownModal();}else{window.location.href='{{ route('home') }}?open_breakdown=1';}" class="more-sheet-item" data-color="purple">
-                        <div class="more-sheet-item-icon"><i class="bi bi-pie-chart-fill"></i></div>
-                        <span class="more-sheet-item-label">Breakdown</span>
-                    </button>
-                    <a href="{{ route('profile') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-person-badge-fill"></i></div>
-                        <span class="more-sheet-item-label">My Profile</span>
-                    </a>
-                    <a href="{{ route('settings') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-gear-fill"></i></div>
-                        <span class="more-sheet-item-label">Settings</span>
-                    </a>
+                    @include('partials.parent-navigation', ['mobile' => true])
                 @endif
             </div>
         </div>
@@ -1134,7 +1109,7 @@
             }
         });
         </script>
-        @if(!Auth::user()->isAdmin() && !Auth::user()->isTeacher() && !Auth::user()->isParent())
+        @else
             @if(request()->routeIs('mobile.scan'))
                 @include('partials.student-scanner-modal')
             @else

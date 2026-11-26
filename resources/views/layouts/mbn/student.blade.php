@@ -26,8 +26,8 @@
         <i class="bi bi-calendar-event-fill" aria-hidden="true"></i>
         <span>Calendar</span>
     </a>
-    <button type="button" class="mbn-item mbn-item-more" onclick="openMoreSheet()" aria-label="Open More Menu" aria-haspopup="dialog" aria-controls="moreSheet" aria-expanded="false" style="background:transparent;border:none;outline:none;cursor:pointer;">
-        <i class="bi bi-grid-3x3-gap-fill" aria-hidden="true"></i>
-        <span>More</span>
-    </button>
+    <a href="{{ route('excuses') }}" class="mbn-item {{ request()->routeIs('excuses', 'excuses.*') ? 'active' : '' }}" @if(request()->routeIs('excuses', 'excuses.*')) aria-current="page" @endif>
+        <i class="bi bi-file-text-fill" aria-hidden="true"></i>
+        <span>Excuses</span>
+    </a>
 </nav>

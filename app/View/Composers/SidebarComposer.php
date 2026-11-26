@@ -20,7 +20,7 @@ class SidebarComposer
     {
         $viewName = $view->name();
 
-        if (in_array($viewName, ['layouts.sidebars.student', 'partials.student-assistant-mobile-link', 'mobile.home'], true)) {
+        if (in_array($viewName, ['layouts.sidebars.student', 'home', 'mobile.home'], true)) {
             $view->with('hasActiveAssistantAssignment', $this->resolveStudentAssistantStatus());
             return;
         }

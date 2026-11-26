@@ -1,6 +1,5 @@
 @php
     $user = auth()->user();
-    $currentRoute = Route::currentRouteName();
     $isStudent = $user->isStudent();
     
     // Role-based navigation items
@@ -12,7 +11,7 @@
             ['route' => 'student.classes',   'icon' => 'journal-bookmark-fill', 'label' => 'Classes', 'primary' => false, 'scan' => false],
             ['route' => 'mobile.scan',        'icon' => 'qr-code-scan',   'label' => 'Scan',    'primary' => true,  'scan' => true],
             ['route' => 'student.calendar', 'icon' => 'calendar-event-fill', 'label' => 'Calendar', 'primary' => false, 'scan' => false],
-            ['route' => 'profile',           'icon' => 'person-fill',    'label' => 'Profile', 'primary' => false, 'scan' => false],
+            ['route' => 'excuses',           'icon' => 'file-text-fill', 'label' => 'Excuses', 'primary' => false, 'scan' => false],
         ];
     } elseif ($user->isTeacher()) {
         $navItems = [
@@ -49,10 +48,10 @@
                 'home' => ['home', 'mobile.home'],
                 'student.classes' => ['student.classes', 'student.schedule', 'classes.index'],
                 'student.calendar' => ['student.calendar', 'student.attendance.calendar', 'mobile.attendance', 'mobile.history', 'attendance.index'],
-                'profile' => ['profile', 'mobile.profile'],
+                'excuses' => ['excuses', 'excuses.*'],
                 default => [$item['route']],
             } : [$item['route']];
-            $isActive = in_array($currentRoute, $activeAliases, true);
+            $isActive = request()->routeIs(...$activeAliases);
         @endphp
         @if($item['scan'] && $isStudent)
             {{-- Open the scanner as a dedicated page, not over the current screen. --}}
