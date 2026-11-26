@@ -400,7 +400,6 @@
         position: relative;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
         gap: 16px;
         padding: 20px 22px;
         border-radius: var(--portal-radius-xl);
@@ -411,7 +410,12 @@
     }
 
     .portal-stage {
+        justify-content: flex-start;
         border-color: var(--portal-border);
+    }
+
+    .portal-telemetry {
+        justify-content: space-between;
     }
 
     .portal-stage::before {
@@ -445,6 +449,46 @@
         justify-content: space-between;
         gap: 10px;
         flex-wrap: wrap;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--portal-border-subtle);
+    }
+
+    .portal-stage-foot {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid var(--portal-border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+    }
+
+    .portal-stage-links {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+    }
+
+    .portal-stage-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.77rem;
+        font-weight: 700;
+        color: var(--portal-text-soft);
+        text-decoration: none;
+        transition: color 0.15s ease;
+    }
+
+    .portal-stage-link:hover {
+        color: var(--portal-gold);
+    }
+
+    .portal-stage-link i {
+        color: var(--portal-gold);
+        font-size: 0.8rem;
     }
 
     .portal-stage-eyebrow {

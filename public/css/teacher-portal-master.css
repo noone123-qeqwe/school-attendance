@@ -547,60 +547,128 @@
     }
 
     /* ── 5. Teacher Dashboard Canvas Components ──────────────────────────── */
+    body.teacher-portal .td-stage-progress {
+        font-size: 0.75rem;
+        color: #a49890;
+    }
+
+    body.teacher-portal .td-stage-progress strong {
+        color: #faf8f5;
+        font-weight: 750;
+    }
+
+    body.teacher-portal .td-stage-foot-note {
+        font-size: 0.74rem;
+        color: #a49890;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
     body.teacher-portal .td-today-list {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        border-radius: 12px;
+        background: rgba(20, 16, 16, 0.42);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        overflow: hidden;
     }
 
     body.teacher-portal .td-today-card {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 12px;
-        padding: 13px 14px;
-        border-radius: 12px;
-        background: rgba(20, 16, 16, 0.56);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        gap: 14px;
+        padding: 14px 16px;
+        border-left: 3px solid transparent;
         transition: border-color 0.16s ease, background-color 0.16s ease;
     }
 
-    body.teacher-portal .td-today-card:hover {
-        background: rgba(38, 27, 27, 0.85);
-        border-color: rgba(212, 175, 55, 0.28);
+    body.teacher-portal .td-today-card + .td-today-card {
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    body.teacher-portal .td-today-card.is-focus {
+        background: rgba(212, 175, 55, 0.055);
+        border-left-color: #d4af37;
+    }
+
+    body.teacher-portal .td-today-card.is-live {
+        background: rgba(52, 211, 153, 0.07);
+        border-left-color: var(--portal-emerald);
     }
 
     body.teacher-portal .td-today-card.is-recorded {
-        border-left: 3px solid var(--portal-emerald);
+        border-left-color: var(--portal-emerald);
+    }
+
+    body.teacher-portal .td-today-card:hover {
+        background: rgba(38, 27, 27, 0.72);
+    }
+
+    body.teacher-portal .td-today-time {
+        flex: 0 0 76px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding-right: 12px;
+        border-right: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    body.teacher-portal .td-time-start {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #faf8f5;
+        line-height: 1.25;
+        white-space: nowrap;
+    }
+
+    body.teacher-portal .td-time-end {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: #a49890;
+        line-height: 1.25;
+        white-space: nowrap;
     }
 
     body.teacher-portal .td-today-info {
         min-width: 0;
-        flex: 1 1 220px;
+        flex: 1 1 200px;
     }
 
     body.teacher-portal .td-today-top {
         display: flex;
-        align-items: center;
+        align-items: baseline;
         flex-wrap: wrap;
-        gap: 7px;
-        margin-bottom: 4px;
+        gap: 4px 8px;
+        margin-bottom: 5px;
+    }
+
+    body.teacher-portal .td-today-code {
+        font-size: 0.71rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #d4af37;
+        background: rgba(212, 175, 55, 0.11);
+        padding: 2px 7px;
+        border-radius: 6px;
+        flex-shrink: 0;
     }
 
     body.teacher-portal .td-today-name {
-        font-size: 0.92rem;
+        font-size: 0.94rem;
         font-weight: 750;
         color: #ffffff;
         line-height: 1.3;
+        letter-spacing: -0.01em;
     }
 
     body.teacher-portal .td-today-meta {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 6px 12px;
-        font-size: 0.76rem;
+        gap: 5px 12px;
+        font-size: 0.75rem;
         color: #a49890;
     }
 
@@ -608,10 +676,49 @@
         color: #d4af37;
     }
 
+    body.teacher-portal .td-today-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.74rem;
+        font-weight: 600;
+    }
+
+    body.teacher-portal .td-status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    body.teacher-portal .td-today-status.is-recorded {
+        color: #34d399;
+    }
+
+    body.teacher-portal .td-today-status.is-recorded .td-status-dot {
+        background: #34d399;
+    }
+
+    body.teacher-portal .td-today-status.is-live {
+        color: #34d399;
+    }
+
+    body.teacher-portal .td-today-status.is-live .td-status-dot {
+        background: #34d399;
+        box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.22);
+    }
+
+    body.teacher-portal .td-today-status.is-pending {
+        color: #d6ccc6;
+    }
+
+    body.teacher-portal .td-today-status.is-pending .td-status-dot {
+        background: #d4af37;
+    }
+
     body.teacher-portal .td-today-actions {
         display: inline-flex;
         align-items: center;
-        flex-wrap: wrap;
         gap: 8px;
         flex-shrink: 0;
     }
@@ -619,17 +726,19 @@
     body.teacher-portal .td-btn-qr {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
         min-height: 36px;
-        padding: 6px 12px;
+        padding: 6px 13px;
         border-radius: 8px;
         background: #faf8f5;
         border: 1px solid #faf8f5;
         color: #800000;
-        font-size: 0.78rem;
+        font-size: 0.77rem;
         font-weight: 800;
         text-decoration: none;
         white-space: nowrap;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
 
     body.teacher-portal .td-btn-qr:hover {
@@ -637,26 +746,40 @@
         color: #561313;
     }
 
+    body.teacher-portal .td-btn-qr.is-secondary {
+        background: rgba(250, 248, 245, 0.08);
+        border: 1px solid rgba(212, 175, 55, 0.28);
+        color: #faf8f5;
+        font-weight: 700;
+    }
+
+    body.teacher-portal .td-btn-qr.is-secondary:hover {
+        background: rgba(212, 175, 55, 0.16);
+        border-color: rgba(212, 175, 55, 0.5);
+        color: #ffffff;
+    }
+
     body.teacher-portal .td-btn-records {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 5px;
         min-height: 36px;
-        padding: 6px 11px;
+        padding: 6px 10px;
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        color: #d6ccc6;
+        background: transparent;
+        border: 1px solid transparent;
+        color: #a49890;
         font-size: 0.77rem;
         font-weight: 650;
         text-decoration: none;
         white-space: nowrap;
+        transition: background-color 0.15s ease, color 0.15s ease;
     }
 
     body.teacher-portal .td-btn-records:hover {
-        background: rgba(255, 255, 255, 0.09);
-        border-color: rgba(212, 175, 55, 0.34);
-        color: #ffffff;
+        background: rgba(255, 255, 255, 0.06);
+        color: #faf8f5;
     }
 
     /* Live KPI Strip (Preserves #realStats + [data-accent="success"|"danger"] .ent-kpi-value hooks) */
@@ -1107,17 +1230,34 @@
         color: #faf8f5;
     }
 
-    @media screen and (max-width: 575.98px) {
+    @media screen and (max-width: 639.98px) {
         body.teacher-portal .td-live-kpi-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 6px;
+        }
+        body.teacher-portal .td-today-card {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+            padding: 13px 14px;
+        }
+        body.teacher-portal .td-today-time {
+            flex: none;
+            flex-direction: row;
+            align-items: center;
+            gap: 6px;
+            padding-right: 0;
+            border-right: 0;
+        }
+        body.teacher-portal .td-time-end::before {
+            content: "\2013\00a0";
         }
         body.teacher-portal .td-today-actions {
             width: 100%;
         }
         body.teacher-portal .td-today-actions > a {
             flex: 1 1 auto;
-            justify-content: center;
+            min-height: 40px;
         }
     }
 }

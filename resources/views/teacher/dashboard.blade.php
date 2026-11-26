@@ -146,59 +146,109 @@
     </div>
 
     {{-- ── 3. Signature Asymmetric Hero Canvas (Teaching Stage + Telemetry) ─ --}}
+    @php
+        $targetCarbon = $targetDate ?? now();
+        $dayName = $targetCarbon->format('l');
+        $isViewingToday = $targetCarbon->isToday();
+        $nowTime = now();
+
+        $todayItems = $todayCollection->values()->map(function ($cls) use ($dayName, $isViewingToday, $nowTime) {
+            $daySched = $cls->schedules->firstWhere('day', $dayName) ?? $cls->schedules->first();
+            $roomName = trim((string) ($daySched?->room ?? $cls->room ?? ''));
+            $hasTimes = !empty($daySched?->start_time) && !empty($daySched?->end_time);
+            $startAt = $hasTimes ? \Carbon\Carbon::parse($daySched->start_time) : null;
+            $endAt = $hasTimes ? \Carbon\Carbon::parse($daySched->end_time) : null;
+
+            return (object) [
+                'subject' => $cls,
+                'room' => ($roomName !== '' && strtoupper($roomName) !== 'TBA') ? $roomName : '',
+                'hasTimes' => $hasTimes,
+                'startLabel' => $startAt ? $startAt->format('g:i A') : 'Flexible',
+                'endLabel' => $endAt ? $endAt->format('g:i A') : 'Scheduled',
+                'isLive' => $hasTimes && $isViewingToday && $nowTime->between($startAt, $endAt),
+            ];
+        });
+
+        $focusIdx = $todayItems->search(fn ($item) => $item->isLive);
+        if ($focusIdx === false) {
+            $focusIdx = $todayItems->search(fn ($item) => empty($item->subject->has_attendance_today));
+        }
+        $focusIdx = $focusIdx === false ? 0 : $focusIdx;
+        $hasLiveSession = $todayItems->contains(fn ($item) => $item->isLive);
+    @endphp
     <div class="portal-hero-grid">
         {{-- Left: Today's Teaching Stage --}}
-        <section class="portal-stage {{ $todayCollection->isNotEmpty() ? 'is-next' : 'is-idle' }}" aria-labelledby="teacherTodayHeading">
+        <section class="portal-stage {{ $hasLiveSession ? 'is-live' : ($todayCollection->isNotEmpty() ? 'is-next' : 'is-idle') }}" aria-labelledby="teacherTodayHeading">
             <div class="portal-stage-head">
-                <span class="portal-stage-eyebrow">
-                    <span class="portal-pulse-dot {{ $todayCollection->isNotEmpty() ? '' : 'is-done' }}" aria-hidden="true"></span>
-                    Today&rsquo;s Teaching Schedule
-                </span>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="portal-code-tag portal-mono">{{ $recordedTodayCount }}/{{ $todayCollection->count() }} recorded</span>
+                <h2 id="teacherTodayHeading" class="portal-stage-eyebrow" style="margin: 0;">
+                    <span class="portal-pulse-dot {{ $hasLiveSession ? 'is-live' : ($todayCollection->isNotEmpty() ? '' : 'is-done') }}" aria-hidden="true"></span>
+                    {{ $hasLiveSession ? 'Class in Progress' : "Today's Teaching Schedule" }}
+                </h2>
+                <div class="d-flex align-items-center gap-3">
+                    @if($todayCollection->isNotEmpty())
+                        <span class="td-stage-progress portal-tabular">
+                            <strong>{{ $recordedTodayCount }}/{{ $todayCollection->count() }}</strong> recorded
+                        </span>
+                    @endif
                     <a href="{{ route('teacher.classroom.index') }}" class="portal-panel-link">All classes <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
                 </div>
             </div>
 
-            @if($todayCollection->isNotEmpty())
+            @if($todayItems->isNotEmpty())
                 <div class="td-today-list">
-                    @foreach($todayCollection as $cls)
+                    @foreach($todayItems as $idx => $item)
                         @php
-                            $dayName = ($targetDate ?? now())->format('l');
-                            $daySched = $cls->schedules->firstWhere('day', $dayName) ?? $cls->schedules->first();
-                            $roomName = trim((string) ($daySched?->room ?? $cls->room ?? ''));
-                            $timeWindow = ($daySched?->start_time && $daySched?->end_time)
-                                ? \Carbon\Carbon::parse($daySched->start_time)->format('g:i A') . ' – ' . \Carbon\Carbon::parse($daySched->end_time)->format('g:i A')
-                                : 'Flexible / Scheduled';
+                            $cls = $item->subject;
+                            $isFocus = ($idx === $focusIdx) && empty($cls->has_attendance_today);
+                            $rowClasses = trim(implode(' ', array_filter([
+                                'td-today-card',
+                                !empty($cls->has_attendance_today) ? 'is-recorded' : null,
+                                $item->isLive ? 'is-live' : null,
+                                $isFocus ? 'is-focus' : null,
+                            ])));
                         @endphp
-                        <div class="td-today-card {{ $cls->has_attendance_today ? 'is-recorded' : '' }}">
+                        <div class="{{ $rowClasses }}">
+                            <div class="td-today-time portal-mono">
+                                <span class="td-time-start">{{ $item->startLabel }}</span>
+                                <span class="td-time-end">{{ $item->endLabel }}</span>
+                            </div>
+
                             <div class="td-today-info">
                                 <div class="td-today-top">
-                                    <span class="portal-code-tag portal-mono">{{ $cls->code }}</span>
+                                    <span class="td-today-code portal-mono">{{ $cls->code }}</span>
                                     <span class="td-today-name">{{ $cls->name }}</span>
-                                    @if($cls->has_attendance_today)
-                                        <span class="portal-status-pill is-present portal-tabular">
-                                            <i class="bi bi-check-lg" aria-hidden="true"></i> {{ $cls->class_health }}% &middot; {{ $cls->attendance_count_today }} checked in
-                                        </span>
-                                    @else
-                                        <span class="portal-status-pill is-upcoming">No session logged yet</span>
-                                    @endif
                                 </div>
                                 <div class="td-today-meta portal-tabular">
-                                    <span><i class="bi bi-clock" aria-hidden="true"></i> {{ $timeWindow }}</span>
-                                    @if($roomName !== '' && strtoupper($roomName) !== 'TBA')
-                                        <span><i class="bi bi-geo-alt" aria-hidden="true"></i> {{ $roomName }}</span>
+                                    @if($item->room !== '')
+                                        <span><i class="bi bi-geo-alt" aria-hidden="true"></i> {{ $item->room }}</span>
                                     @endif
                                     @if(!empty($cls->section))
                                         <span><i class="bi bi-people" aria-hidden="true"></i> Sec {{ $cls->section }}</span>
                                     @endif
+                                    @if($cls->has_attendance_today)
+                                        <span class="td-today-status is-recorded">
+                                            <span class="td-status-dot" aria-hidden="true"></span>
+                                            {{ $cls->class_health }}% &middot; {{ $cls->attendance_count_today }} checked in
+                                        </span>
+                                    @elseif($item->isLive)
+                                        <span class="td-today-status is-live">
+                                            <span class="td-status-dot" aria-hidden="true"></span>
+                                            In session &middot; awaiting QR
+                                        </span>
+                                    @else
+                                        <span class="td-today-status is-pending">
+                                            <span class="td-status-dot" aria-hidden="true"></span>
+                                            Session not started
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
+
                             <div class="td-today-actions">
-                                <a href="{{ route('teacher.qr', $cls->code) }}" class="td-btn-qr">
+                                <a href="{{ route('teacher.qr', $cls->code) }}" class="td-btn-qr {{ ($isFocus || $item->isLive) ? 'is-primary' : 'is-secondary' }}">
                                     <i class="bi bi-qr-code-scan" aria-hidden="true"></i> Launch QR
                                 </a>
-                                <a href="{{ route('teacher.attendance', ['subject' => $cls->code, 'date' => ($targetDate ?? now())->toDateString()]) }}" class="td-btn-records">
+                                <a href="{{ route('teacher.attendance', ['subject' => $cls->code, 'date' => $targetCarbon->toDateString()]) }}" class="td-btn-records">
                                     Records
                                 </a>
                             </div>
@@ -206,9 +256,9 @@
                     @endforeach
                 </div>
             @else
-                <div class="portal-inline-empty" style="padding: 16px 0;">
+                <div class="portal-inline-empty" style="padding: 18px 0;">
                     <div>
-                        <strong style="color: var(--portal-white); display: block; margin-bottom: 4px;">No classes scheduled for {{ ($targetDate ?? now())->format('l') }}</strong>
+                        <strong style="color: var(--portal-white); display: block; margin-bottom: 4px;">No classes scheduled for {{ $dayName }}</strong>
                         <span>Open any of your assigned classes anytime to launch a manual session, review rosters, or manage materials.</span>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
@@ -217,6 +267,29 @@
                     </div>
                 </div>
             @endif
+
+            <div class="portal-stage-foot">
+                <div class="portal-stage-links">
+                    <a href="{{ route('teacher.attendance') }}" class="portal-stage-link">
+                        <i class="bi bi-clipboard-check" aria-hidden="true"></i> Attendance Logs
+                    </a>
+                    <a href="{{ route('teacher.students') }}" class="portal-stage-link">
+                        <i class="bi bi-people" aria-hidden="true"></i> Student Roster
+                    </a>
+                    <a href="{{ route('teacher.subjects.create') }}" class="portal-stage-link">
+                        <i class="bi bi-plus-circle" aria-hidden="true"></i> Add Class
+                    </a>
+                </div>
+                <span class="td-stage-foot-note portal-tabular">
+                    @if($todayCollection->isEmpty())
+                        {{ $subjectsCollection->count() }} total {{ \Illuminate\Support\Str::plural('class', $subjectsCollection->count()) }}
+                    @elseif($recordedTodayCount === $todayCollection->count())
+                        <i class="bi bi-check2-circle text-success" aria-hidden="true"></i> All sessions recorded
+                    @else
+                        {{ $todayCollection->count() - $recordedTodayCount }} {{ \Illuminate\Support\Str::plural('session', $todayCollection->count() - $recordedTodayCount) }} remaining
+                    @endif
+                </span>
+            </div>
         </section>
 
         {{-- Right: Attendance Telemetry & Interactive 7-Day Trend --}}
