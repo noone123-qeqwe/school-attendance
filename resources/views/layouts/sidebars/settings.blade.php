@@ -9,9 +9,6 @@
     <img src="{{ asset('images/logo.png') }}" class="sidebar-logo" alt="School logo">
     <div class="sidebar-text">
         <div class="sidebar-brand">{{ config('app.name') }}</div>
-        @unless($isStudentUser)
-            <div class="sidebar-subtitle">Settings</div>
-        @endunless
     </div>
 </div>
 

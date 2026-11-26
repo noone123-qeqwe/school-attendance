@@ -46,10 +46,10 @@
         <link rel="stylesheet" href="{{ asset('css/student-portal-redesign.css') }}?v={{ filemtime(public_path('css/student-portal-redesign.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/student-portal-simple.css') }}?v={{ filemtime(public_path('css/student-portal-simple.css')) }}">
     @endif
-    @if(Auth::user()?->isStudent() || Auth::user()?->isTeacher())
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    @auth
         <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @endauth
+    @if(Auth::user()?->isStudent() || Auth::user()?->isTeacher())
         <link rel="stylesheet" href="{{ asset('css/portal-unified-foundation.css') }}?v={{ filemtime(public_path('css/portal-unified-foundation.css')) }}">
     @endif
     @if(Auth::check() && Auth::user()->isTeacher() && !request()->routeIs('teacher.*.pdf'))

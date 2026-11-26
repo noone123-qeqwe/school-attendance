@@ -5,9 +5,6 @@
         max-width: var(--admin-content-width);
         padding: 24px clamp(20px, 3vw, 40px) 48px !important;
     }
-    body.admin-portal .sidebar-head { padding-bottom: 12px; }
-    body.admin-portal .sidebar-brand { font-size: .72rem; line-height: 1.5; }
-    body.admin-portal .admin-workspace-role { margin-bottom: 16px; }
     body.admin-portal .admin-nav-search { margin: 0 0 16px; position: relative; }
     body.admin-portal .admin-nav-search input { padding: 10px 0; }
     body.admin-portal .admin-nav-group { padding: 2px 0; border-bottom: 0; }

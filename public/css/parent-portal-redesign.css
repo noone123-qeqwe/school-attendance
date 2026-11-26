@@ -8,14 +8,8 @@
     body.parent-portal .parent-form-page { max-width: 900px; margin-inline: auto; }
     body.parent-portal .page-enter :is(.row > *, .d-flex > *, .parent-page > *) { min-width: 0; }
     body.parent-portal .sidebar { box-shadow: none; }
-    body.parent-portal .sidebar-head { flex-direction: row; gap: 12px; padding: 24px 20px; align-items: center; }
-    body.parent-portal .sidebar-logo { width: 42px; height: 42px; flex: none; }
-    body.parent-portal .sidebar-text { text-align: left; margin: 0; }
-    body.parent-portal .sidebar-brand { font-size: .76rem; line-height: 1.5; letter-spacing: .02em; }
-    body.parent-portal .sidebar-subtitle { color: var(--text-secondary); font-size: .72rem; }
     body.parent-portal .sidebar-nav { padding: 8px 12px 24px !important; }
     body.parent-portal .sidebar .nav-link { min-height: 46px; padding: 12px; gap: 12px; border-radius: 9px; font-size: .85rem; white-space: normal; }
-    body.parent-portal .sidebar.collapsed .sidebar-head { padding-inline: 18px; }
     body.parent-portal .sidebar.collapsed .parent-nav-count { display: none; }
     body.parent-portal .parent-nav-count { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; border-radius: 99px; margin-left: auto; padding: 2px 6px; background: var(--maroon); color: var(--text-primary); font-size: .68rem; font-weight: 700; }
     body.parent-portal #moreSheetContent .parent-nav-count { position: absolute; right: 12px; top: 8px; }

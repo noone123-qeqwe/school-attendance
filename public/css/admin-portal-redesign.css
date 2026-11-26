@@ -11,27 +11,7 @@
     body.admin-portal .page-enter > *,
     body.admin-portal .page-enter :is(.row > *, .d-flex > *, [class$="-grid"] > *) { min-width: 0; }
     body.admin-portal .sidebar { box-shadow: none !important; }
-    body.admin-portal .sidebar-head {
-        flex-direction: row;
-        align-items: center;
-        gap: 12px;
-        padding: 24px 20px 16px;
-    }
-    body.admin-portal .sidebar-text { margin: 0; text-align: left; }
-    body.admin-portal .sidebar-brand { font-size: .76rem; line-height: 1.5; letter-spacing: .02em; }
-    body.admin-portal .sidebar-logo { flex: none; width: 42px; height: 42px; }
-    body.admin-portal .sidebar-subtitle { font-size: .75rem; color: var(--text-secondary); }
-    body.admin-portal .admin-workspace-role {
-        margin: 0 20px 18px;
-        padding-top: 12px;
-        border-top: 1px solid var(--surface-border);
-        color: var(--gold-soft);
-        font-size: .74rem;
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-    body.admin-portal .sidebar-nav { padding: 0 12px 24px !important; scrollbar-width: thin; }
+    body.admin-portal .sidebar-nav { padding: 8px 12px 24px !important; scrollbar-width: thin; }
     body.admin-portal .admin-nav-search {
         display: flex;
         align-items: center;
@@ -73,8 +53,7 @@
     body.admin-portal .admin-workspace-nav .nav-link.active { color: var(--gold-soft); background: var(--admin-gold-glow); border-left: 3px solid var(--gold); }
     body.admin-portal .admin-nav-empty { margin: 16px 12px; font-size: .85rem; color: var(--text-secondary); }
     body.admin-portal [hidden] { display: none !important; }
-    body.admin-portal .sidebar.collapsed .sidebar-head { padding-inline: 18px; }
-    body.admin-portal .sidebar.collapsed :is(.admin-workspace-role, .admin-nav-search, .admin-nav-group-name, .admin-nav-chevron) { display: none; }
+    body.admin-portal .sidebar.collapsed :is(.admin-nav-search, .admin-nav-group-name, .admin-nav-chevron) { display: none; }
     body.admin-portal .sidebar.collapsed .admin-nav-group > summary { justify-content: center; }
     body.admin-portal .sidebar.collapsed .admin-workspace-nav .nav-link { margin-inline: 0; padding-inline: 6px; }
     body.admin-portal .top-header { box-shadow: none !important; }

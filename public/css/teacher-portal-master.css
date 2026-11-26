@@ -114,47 +114,6 @@
     }
 
     /* ── 2. Unified Desktop Sidebar (1:1 Student Navigation Chrome) ──────── */
-    body.teacher-portal .sidebar {
-        background: rgba(24, 17, 17, 0.94) !important;
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-        box-shadow: none !important;
-    }
-
-    body.teacher-portal .sidebar .teacher-sidebar-brand,
-    body.teacher-portal .sidebar .sidebar-head {
-        min-height: 64px !important;
-        padding: 14px 16px 12px !important;
-        gap: 11px;
-        background: transparent !important;
-    }
-
-    body.teacher-portal .sidebar .sidebar-logo {
-        width: 34px !important;
-        height: 34px !important;
-        background: transparent !important;
-        border: none !important;
-        border-radius: 50%;
-        box-shadow: none !important;
-        object-fit: contain;
-        padding: 0 !important;
-    }
-
-    body.teacher-portal .sidebar .sidebar-brand {
-        font-size: 0.84rem !important;
-        font-weight: 750 !important;
-        line-height: 1.25 !important;
-        letter-spacing: -0.01em !important;
-        color: #faf8f5 !important;
-        text-transform: none !important;
-    }
-
-    body.teacher-portal .sidebar .sidebar-divider {
-        margin: 0 14px 6px !important;
-        background: rgba(255, 255, 255, 0.08) !important;
-    }
-
     body.teacher-portal .sidebar .teacher-sidebar-nav {
         padding: 10px 10px 24px !important;
         display: flex;
@@ -255,11 +214,6 @@
     }
 
     /* Collapsed Sidebar Rail */
-    body.teacher-portal .sidebar.collapsed .teacher-sidebar-brand {
-        justify-content: center;
-        padding: 14px 10px 12px !important;
-    }
-
     body.teacher-portal .sidebar.collapsed .teacher-sidebar-nav {
         padding: 10px 10px !important;
         align-items: center;

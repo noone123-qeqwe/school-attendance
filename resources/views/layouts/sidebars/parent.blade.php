@@ -1,8 +1,7 @@
-<div class="sidebar-head">
+<div class="sidebar-head parent-sidebar-brand">
     <img src="{{ asset('images/logo.png') }}" class="sidebar-logo" alt="School logo">
     <div class="sidebar-text">
         <div class="sidebar-brand">{{ config('app.name') }}</div>
-        <div class="sidebar-subtitle">Parent &amp; guardian portal</div>
     </div>
 </div>
 <div class="sidebar-divider"></div>
