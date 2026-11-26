@@ -92,26 +92,26 @@ class TeacherPortalRedesignTest extends TestCase
         $this->assertStringContainsString('mbn-item-featured', $html);
         $this->assertStringContainsString(route('teacher.classroom.index', ['task' => 'attendance']), $html);
 
-        // Academic Command Canvas sections + Editorial Schedule Stage + Weekly trend + At-risk warning
+        // Academic Command Canvas sections + Editorial Schedule Stage + At-risk warning
         $this->assertStringContainsString('portal-masthead', $html);
         $this->assertStringContainsString('portal-hero-grid', $html);
+        $this->assertStringContainsString('portal-stage', $html);
         $this->assertStringNotContainsString('portal-utility-rail', $html);
         $this->assertStringNotContainsString('aria-label="Teacher shortcuts"', $html);
+        $this->assertStringNotContainsString('portal-telemetry', $html);
+        $this->assertStringNotContainsString('id="tdWeeklyTrend"', $html);
+        $this->assertStringNotContainsString('id="realStats"', $html);
         $this->assertStringContainsString('td-today-time', $html);
         $this->assertStringContainsString('td-today-status', $html);
         $this->assertStringContainsString('portal-stage-foot', $html);
         $this->assertStringContainsString('portal-workspace', $html);
-        $this->assertStringContainsString('id="tdWeeklyTrend"', $html);
         $this->assertStringContainsString('Prof. Clara Mendoza', $html);
         $this->assertStringContainsString('FAC-2026-900', $html);
         $this->assertStringContainsString('CS301', $html);
         $this->assertStringContainsString('Synthetic Student One', $html);
         $this->assertStringContainsString(route('teacher.student', $student), $html);
 
-        // Preserved real-time Echo DOM hooks
-        $this->assertStringContainsString('id="realStats"', $html);
-        $this->assertStringContainsString('data-accent="success"', $html);
-        $this->assertStringContainsString('data-accent="danger"', $html);
+        // Preserved real-time Echo & Calendar DOM hooks
         $this->assertStringContainsString('id="peerLiveNotice"', $html);
         $this->assertStringContainsString('id="peerLiveConnection"', $html);
         $this->assertStringContainsString('data-banner-dismiss="peerLiveConnection"', $html);

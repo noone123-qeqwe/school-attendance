@@ -13,36 +13,6 @@
     $greeting = $greetHour < 12 ? 'Good Morning' : ($greetHour < 17 ? 'Good Afternoon' : 'Good Evening');
     $greetIcon = $greetHour < 12 ? 'bi-brightness-alt-high-fill' : ($greetHour < 17 ? 'bi-sun-fill' : 'bi-moon-stars-fill');
 
-    $presentCount = (int) ($totalPresent ?? 0);
-    $lateCount = (int) ($totalLate ?? 0);
-    $absentCount = (int) ($totalAbsent ?? 0);
-    // In AnalyticsService, totalPresent already includes Present + Late; keep on-time split clean
-    $onTimeCount = max(0, $presentCount - $lateCount);
-    $totalLogged = $presentCount + $absentCount;
-    $attendanceRate = $totalLogged > 0 ? round(($presentCount / $totalLogged) * 100) : null;
-
-    $rateTone = $attendanceRate === null ? 'empty' : ($attendanceRate >= 85 ? 'good' : ($attendanceRate >= 75 ? 'warning' : 'danger'));
-    $rateTier = $attendanceRate === null ? 'Awaiting Sessions' : ($attendanceRate >= 85 ? 'Healthy Turnout' : ($attendanceRate >= 75 ? 'Moderate Turnout' : 'Needs Follow-Up'));
-
-    $gaugeRadius = 38;
-    $gaugeCircumference = round(2 * pi() * $gaugeRadius, 2);
-    $gaugePct = $attendanceRate === null ? 0 : min(100, max(0, (float) $attendanceRate));
-    $gaugeOffset = round($gaugeCircumference * (1 - ($gaugePct / 100)), 2);
-
-    $onTimePct = $totalLogged > 0 ? round(($onTimeCount / $totalLogged) * 100, 1) : 0;
-    $latePct = $totalLogged > 0 ? round(($lateCount / $totalLogged) * 100, 1) : 0;
-    $absentPct = $totalLogged > 0 ? max(0, round(100 - $onTimePct - $latePct, 1)) : 0;
-
-    $labelsArr = array_values((array) ($weeklyLabels ?? []));
-    $wPresentArr = array_values((array) ($weeklyPresent ?? []));
-    $wLateArr = array_values((array) ($weeklyLate ?? []));
-    $wAbsentArr = array_values((array) ($weeklyAbsent ?? []));
-    $dayTotals = [];
-    for ($d = 0; $d < count($labelsArr); $d++) {
-        $dayTotals[$d] = (int) ($wPresentArr[$d] ?? 0) + (int) ($wLateArr[$d] ?? 0) + (int) ($wAbsentArr[$d] ?? 0);
-    }
-    $maxDayTotal = !empty($dayTotals) ? max(1, max($dayTotals)) : 1;
-
     $metaParts = [];
     if (!empty($teacherUser?->employee_id)) {
         $metaParts[] = ['label' => 'ID ' . $teacherUser->employee_id, 'mono' => true];
@@ -291,101 +261,6 @@
                 </span>
             </div>
         </section>
-
-        {{-- Right: Attendance Telemetry & Interactive 7-Day Trend --}}
-        <section class="portal-telemetry" aria-label="Daily Attendance Telemetry and 7-Day Trend">
-            <div class="portal-standing-top">
-                <div class="portal-gauge-wrap">
-                    <svg class="portal-gauge-svg" viewBox="0 0 88 88" aria-hidden="true">
-                        <circle class="portal-gauge-track" cx="44" cy="44" r="{{ $gaugeRadius }}"></circle>
-                        <circle class="portal-gauge-fill is-{{ $rateTone }}"
-                                cx="44" cy="44" r="{{ $gaugeRadius }}"
-                                stroke-dasharray="{{ $gaugeCircumference }}"
-                                stroke-dashoffset="{{ $gaugeOffset }}"></circle>
-                    </svg>
-                    <div class="portal-gauge-center">
-                        <span class="portal-gauge-value portal-tabular is-{{ $rateTone }}">{{ $attendanceRate === null ? '—' : $attendanceRate . '%' }}</span>
-                        <span class="portal-gauge-sub">Today</span>
-                    </div>
-                </div>
-
-                <div style="min-width: 0; flex: 1 1 auto;">
-                    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-1">
-                        <h2 style="margin: 0; font-size: 0.96rem; font-weight: 800; color: #ffffff;">Daily Turnout</h2>
-                        <span class="portal-status-pill is-{{ $rateTone === 'good' ? 'present' : ($rateTone === 'warning' ? 'late' : ($rateTone === 'danger' ? 'absent' : 'muted')) }}">{{ $rateTier }}</span>
-                    </div>
-                    <p style="margin: 0; font-size: 0.79rem; color: var(--portal-text-soft);" class="portal-tabular">
-                        @if($totalLogged > 0)
-                            <strong>{{ $presentCount }}</strong> attended out of <strong>{{ $totalLogged }}</strong> logged check-ins
-                        @else
-                            Live check-ins appear here once a session starts
-                        @endif
-                    </p>
-                </div>
-            </div>
-
-            {{-- Live Echo-Compatible KPI Strip --}}
-            <div id="realStats" class="td-live-kpi-grid" role="region" aria-label="Today's check-in totals">
-                <div class="td-kpi-pill" data-accent="success">
-                    <span class="td-kpi-pill-label">Present</span>
-                    <span class="ent-kpi-value">{{ $presentCount }}</span>
-                </div>
-                <div class="td-kpi-pill" data-accent="warning">
-                    <span class="td-kpi-pill-label">Late</span>
-                    <span class="ent-kpi-value">{{ $lateCount }}</span>
-                </div>
-                <div class="td-kpi-pill" data-accent="danger">
-                    <span class="td-kpi-pill-label">Absent</span>
-                    <span class="ent-kpi-value">{{ $absentCount }}</span>
-                </div>
-            </div>
-
-            <div class="portal-breakdown-bar" role="img" aria-label="Today breakdown: {{ $onTimeCount }} on-time, {{ $lateCount }} late, {{ $absentCount }} absent">
-                @if($totalLogged > 0)
-                    @if($onTimePct > 0)<span class="portal-seg is-present" style="width: {{ $onTimePct }}%;"></span>@endif
-                    @if($latePct > 0)<span class="portal-seg is-late" style="width: {{ $latePct }}%;"></span>@endif
-                    @if($absentPct > 0)<span class="portal-seg is-absent" style="width: {{ $absentPct }}%;"></span>@endif
-                @else
-                    <span class="portal-seg is-empty" style="width: 100%;"></span>
-                @endif
-            </div>
-
-            {{-- 7-Day Attendance Trend Bars (uses AnalyticsService weekly arrays) --}}
-            @if(!empty($labelsArr))
-            <div class="td-trend-section" id="tdWeeklyTrend">
-                <div class="td-trend-head">
-                    <span class="td-trend-title">7-Day Attendance Trend</span>
-                    <span class="td-trend-readout portal-mono" id="tdTrendReadout">Tap a day</span>
-                </div>
-                <div class="td-trend-bars" role="group" aria-label="7-Day Attendance Volume">
-                    @foreach($labelsArr as $idx => $dayLabel)
-                        @php
-                            $dPres = (int) ($wPresentArr[$idx] ?? 0);
-                            $dLate = (int) ($wLateArr[$idx] ?? 0);
-                            $dAbs = (int) ($wAbsentArr[$idx] ?? 0);
-                            $dTot = $dPres + $dLate + $dAbs;
-                            $hPres = $dTot > 0 ? round(($dPres / $maxDayTotal) * 100, 1) : 0;
-                            $hLate = $dTot > 0 ? round(($dLate / $maxDayTotal) * 100, 1) : 0;
-                            $hAbs = $dTot > 0 ? round(($dAbs / $maxDayTotal) * 100, 1) : 0;
-                            $isLastDay = $idx === (count($labelsArr) - 1);
-                        @endphp
-                        <button type="button"
-                                class="td-trend-col {{ $isLastDay ? 'is-today is-selected' : '' }}"
-                                data-trend-summary="{{ $dayLabel }}: {{ $dPres }} Present · {{ $dLate }} Late · {{ $dAbs }} Absent"
-                                aria-label="{{ $dayLabel }}: {{ $dPres }} present, {{ $dLate }} late, {{ $dAbs }} absent">
-                            <div class="td-trend-track" aria-hidden="true">
-                                @if($hPres > 0)<span class="td-trend-seg is-present" style="height: {{ $hPres }}%;"></span>@endif
-                                @if($hLate > 0)<span class="td-trend-seg is-late" style="height: {{ $hLate }}%;"></span>@endif
-                                @if($hAbs > 0)<span class="td-trend-seg is-absent" style="height: {{ $hAbs }}%;"></span>@endif
-                            </div>
-                            <span class="td-trend-total portal-mono">{{ $dTot }}</span>
-                            <span class="td-trend-day">{{ $dayLabel }}</span>
-                        </button>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-        </section>
     </div>
 
     {{-- ── 4. Asymmetric Operational Workspace ───────────────────────────── --}}
@@ -611,24 +486,6 @@
     tick();
 })();
 
-// 7-Day Trend Bar Readout Interaction
-(function() {
-    const readout = document.getElementById('tdTrendReadout');
-    const cols = document.querySelectorAll('.td-trend-col[data-trend-summary]');
-    if (!readout || !cols.length) return;
-    const initial = cols[cols.length - 1];
-    if (initial) readout.textContent = initial.dataset.trendSummary || 'Tap a day';
-    cols.forEach(col => {
-        const showSummary = () => {
-            cols.forEach(c => c.classList.remove('is-selected'));
-            col.classList.add('is-selected');
-            readout.textContent = col.dataset.trendSummary || '';
-        };
-        col.addEventListener('click', showSummary);
-        col.addEventListener('mouseenter', showSummary);
-    });
-})();
-
 // Recent Attendance live search
 (function() {
     const searchInput = document.getElementById('recentLogsSearch');
@@ -716,13 +573,6 @@
                     row.append(name, detail);
                     list.prepend(row);
                     while (list.children.length > 8) list.lastElementChild.remove();
-                }
-
-                const present = document.querySelector('#realStats [data-accent="success"] .ent-kpi-value');
-                if (present && /^\d+$/.test(present.textContent.trim())) present.textContent = String(Number(present.textContent.trim()) + 1);
-                const absent = document.querySelector('#realStats [data-accent="danger"] .ent-kpi-value');
-                if (payload.previous_status === 'Absent' && absent && /^\d+$/.test(absent.textContent.trim())) {
-                    absent.textContent = String(Math.max(0, Number(absent.textContent.trim()) - 1));
                 }
             });
             const connection = echo.connector?.pusher?.connection;

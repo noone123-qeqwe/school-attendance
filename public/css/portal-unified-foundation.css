@@ -395,27 +395,18 @@
         gap: 16px;
     }
 
-    .portal-stage,
-    .portal-telemetry {
+    .portal-stage {
         position: relative;
         display: flex;
         flex-direction: column;
+        justify-content: flex-start;
         gap: 16px;
         padding: 20px 22px;
         border-radius: var(--portal-radius-xl);
         background: rgba(30, 21, 21, 0.92);
-        border: 1px solid var(--portal-border-subtle);
+        border: 1px solid var(--portal-border);
         box-shadow: var(--portal-shadow-md);
         overflow: hidden;
-    }
-
-    .portal-stage {
-        justify-content: flex-start;
-        border-color: var(--portal-border);
-    }
-
-    .portal-telemetry {
-        justify-content: space-between;
     }
 
     .portal-stage::before {
@@ -528,96 +519,6 @@
         0%, 100% { box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.26); }
         50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0.06); }
     }
-
-    /* Telemetry Gauge + Proportional Breakdown */
-    .portal-standing-top {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .portal-gauge-wrap {
-        position: relative;
-        width: 84px;
-        height: 84px;
-        flex: 0 0 84px;
-    }
-
-    .portal-gauge-svg {
-        width: 100%;
-        height: 100%;
-        transform: rotate(-90deg);
-    }
-
-    .portal-gauge-track {
-        fill: none;
-        stroke: rgba(255, 255, 255, 0.08);
-        stroke-width: 7;
-    }
-
-    .portal-gauge-fill {
-        fill: none;
-        stroke-width: 7;
-        stroke-linecap: round;
-        transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .portal-gauge-fill.is-good { stroke: var(--portal-emerald); }
-    .portal-gauge-fill.is-warning { stroke: var(--portal-amber); }
-    .portal-gauge-fill.is-danger { stroke: var(--portal-rose); }
-    .portal-gauge-fill.is-empty { stroke: var(--portal-border-strong); }
-
-    .portal-gauge-center {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-    }
-
-    .portal-gauge-value {
-        font-size: 1.18rem;
-        font-weight: 800;
-        color: var(--portal-white);
-    }
-
-    .portal-gauge-value.is-good { color: var(--portal-emerald); }
-    .portal-gauge-value.is-warning { color: var(--portal-amber); }
-    .portal-gauge-value.is-danger { color: var(--portal-rose); }
-    .portal-gauge-value.is-empty { color: var(--portal-muted); }
-
-    .portal-gauge-sub {
-        margin-top: 3px;
-        font-size: 0.63rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--portal-muted);
-    }
-
-    .portal-breakdown-bar {
-        display: flex;
-        height: 6px;
-        width: 100%;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.07);
-        overflow: hidden;
-        gap: 2px;
-    }
-
-    .portal-seg {
-        display: block;
-        height: 100%;
-        min-width: 4px;
-        border-radius: 999px;
-    }
-
-    .portal-seg.is-present { background: var(--portal-emerald); }
-    .portal-seg.is-late { background: var(--portal-amber); }
-    .portal-seg.is-absent { background: var(--portal-rose); }
-    .portal-seg.is-empty { background: rgba(255, 255, 255, 0.1); }
 
     /* ── 4. Asymmetric Workspace & Hairline Panels ───────────────────────── */
     .portal-workspace {
@@ -781,9 +682,8 @@
 
     @media screen and (min-width: 1024px) {
         .portal-hero-grid {
-            grid-template-columns: minmax(0, 1.38fr) minmax(330px, 1fr);
+            grid-template-columns: minmax(0, 1fr);
             gap: 18px;
-            align-items: stretch;
         }
     }
 
@@ -811,8 +711,7 @@
             flex: 0 0 44px;
         }
 
-        .portal-stage,
-        .portal-telemetry {
+        .portal-stage {
             padding: 16px;
             border-radius: 14px;
             gap: 14px;
@@ -836,11 +735,6 @@
     @media screen and (max-width: 359px) {
         .portal-masthead-actions {
             grid-template-columns: minmax(0, 1fr);
-        }
-
-        .portal-standing-top {
-            flex-direction: column;
-            align-items: flex-start;
         }
     }
 
