@@ -71,11 +71,21 @@ class ParentNavigation
 
     public static function searchItems(?int $childId = null): array
     {
-        return array_map(fn ($item) => [
-            'id' => $item[1], 'label' => $item[0], 'hint' => $item[5], 'icon' => $item[2],
-            'category' => 'navigation', 'badge' => 'Parent', 'color' => '#cfa46f',
-            'bg' => 'rgba(207,164,111,0.12)', 'url' => self::url($item[1], $childId),
-        ], self::items());
+        return array_map(function ($item) use ($childId) {
+            $route = $item[1];
+            $category = match (true) {
+                in_array($route, ['parent.excuses', 'parent.link.form'], true) => 'action',
+                in_array($route, ['parent.calendar', 'parent.schedule'], true) => 'academic',
+                $route === 'parent.profile' => 'system',
+                default => 'navigation',
+            };
+
+            return [
+                'id' => $route, 'label' => $item[0], 'hint' => $item[5], 'icon' => $item[2],
+                'category' => $category, 'badge' => 'Parent', 'color' => '#cfa46f',
+                'bg' => 'rgba(207,164,111,0.12)', 'url' => self::url($route, $childId),
+            ];
+        }, self::items());
     }
 
     public static function unreadCount(User $parent): int

@@ -95,11 +95,28 @@ class AdminNavigation
         $items = [];
         foreach (self::groups($user) as $group) {
             foreach ($group['items'] as $item) {
+                $route = $item[1];
+                $category = match (true) {
+                    in_array($route, ['admin.qr', 'admin.excuses', 'admin.corrections'], true) => 'action',
+                    in_array($route, [
+                        'admin.students', 'admin.teachers', 'admin.parents.index',
+                        'admin.class-schedules.index', 'admin.subjects', 'admin.sections.index',
+                        'admin.academic-years.index', 'admin.departments.index', 'admin.courses.index',
+                        'admin.attendance', 'admin.reports', 'admin.early-warnings',
+                    ], true) => 'academic',
+                    in_array($route, [
+                        'admin.profile', 'admin.activity.log', 'admin.admins',
+                        'admin.settings', 'admin.roles.index', 'admin.policies.edit',
+                        'admin.system-update.index', 'admin.gps',
+                    ], true) => 'system',
+                    default => 'navigation',
+                };
+
                 $items[] = [
-                    'id' => $item[1], 'label' => $item[0],
+                    'id' => $route, 'label' => $item[0],
                     'hint' => $item[4] ?? $group['description'], 'icon' => $item[2],
-                    'category' => 'navigation', 'badge' => $group['label'],
-                    'color' => '#cfa46f', 'bg' => 'rgba(207,164,111,0.12)', 'url' => route($item[1]),
+                    'category' => $category, 'badge' => $group['label'],
+                    'color' => '#cfa46f', 'bg' => 'rgba(207,164,111,0.12)', 'url' => route($route),
                 ];
             }
         }

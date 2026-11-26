@@ -48,6 +48,8 @@
 
         {{-- Palette Body --}}
         <div class="cmd-palette-body" id="cmdPaletteBody">
+            <span id="cmdPaletteLiveStatus" class="cmd-sr-only" role="status" aria-live="polite" aria-atomic="true"></span>
+
             {{-- Quick Access Chips (shown when no search query) --}}
             <div class="cmd-quick-chips-wrap" id="cmdQuickChipsWrap">
                 <div class="cmd-quick-chips-label">
@@ -73,9 +75,9 @@
             <div class="cmd-palette-group" id="cmdPaletteMainGroup">
                 <div class="cmd-palette-group-header">
                     <div class="cmd-palette-group-label" id="cmdPaletteGroupLabel">
-                        <i class="bi bi-compass" aria-hidden="true"></i> Navigation
+                        <i class="bi bi-grid-1x2" aria-hidden="true"></i> All Pages &amp; Actions
                     </div>
-                    <span class="cmd-palette-count-badge" id="cmdPaletteCountBadge" role="status" aria-live="polite" aria-atomic="true"></span>
+                    <span class="cmd-palette-count-badge" id="cmdPaletteCountBadge"></span>
                 </div>
                 <div id="cmdPaletteItems" class="cmd-palette-items-list"></div>
             </div>
@@ -85,8 +87,12 @@
                 <div class="cmd-empty-icon" aria-hidden="true">
                     <i class="bi bi-search"></i>
                 </div>
-                <div class="cmd-empty-title">No matching pages or actions found</div>
-                <div class="cmd-empty-desc">Try keywords like "classes", "schedule", "code", or "records"</div>
+                <div class="cmd-empty-title" id="cmdEmptyTitle">No matching pages or actions found</div>
+                <div class="cmd-empty-desc" id="cmdEmptyDesc">Try keywords like "classes", "schedule", "code", or "records"</div>
+                <div class="cmd-empty-actions" id="cmdEmptyActions" style="display:none;">
+                    <button type="button" class="cmd-empty-reset-btn" id="cmdEmptyClearBtn" style="display:none;">Clear search</button>
+                    <button type="button" class="cmd-empty-reset-btn" id="cmdEmptyAllCatBtn" style="display:none;">Show All Categories</button>
+                </div>
             </div>
         </div>
 
@@ -116,9 +122,23 @@
     -webkit-backdrop-filter: blur(16px);
     align-items: flex-start;
     justify-content: center;
-    padding: min(9vh, 64px) 16px 24px;
+    padding: clamp(16px, 6vh, 56px) 16px clamp(16px, 4vh, 24px);
+    padding: clamp(16px, 6dvh, 56px) 16px clamp(16px, 4dvh, 24px);
     opacity: 0;
     transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    overscroll-behavior: none;
+}
+
+#cmdPaletteOverlay .cmd-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 #cmdPaletteOverlay.cmd-palette-overlay.active {
@@ -129,7 +149,11 @@
 #cmdPaletteOverlay .cmd-palette {
     width: min(640px, 100%);
     max-width: 100%;
-    max-height: min(620px, calc(100vh - 96px));
+    height: min(580px, calc(100vh - clamp(48px, 12vh, 104px)));
+    height: min(580px, calc(100dvh - clamp(48px, 12dvh, 104px)));
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    min-height: 0;
     background: linear-gradient(180deg, rgba(24, 15, 13, 0.98) 0%, rgba(13, 8, 7, 0.99) 100%);
     border: 1px solid rgba(223, 184, 121, 0.24);
     border-radius: 22px;
@@ -289,14 +313,20 @@
 #cmdPaletteOverlay .cmd-palette-categories {
     display: flex;
     align-items: center;
+    flex-wrap: nowrap;
     gap: 8px;
     padding: 12px 20px;
+    min-height: 58px;
     overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scroll-padding-inline: 20px;
     scrollbar-width: none;
     -ms-overflow-style: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     background: rgba(0, 0, 0, 0.16);
-    flex-shrink: 0;
+    flex: 0 0 auto;
 }
 
 #cmdPaletteOverlay .cmd-palette-categories::-webkit-scrollbar {
@@ -386,10 +416,15 @@
 
 /* Body & Items */
 #cmdPaletteOverlay .cmd-palette-body {
-    flex: 1 1 auto;
+    flex: 1 1 0%;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    display: flex;
+    flex-direction: column;
     padding: 16px 18px;
     scrollbar-width: thin;
     scrollbar-color: rgba(207, 164, 111, 0.25) transparent;
@@ -467,8 +502,8 @@
 /* Individual Item Card */
 .cmd-palette-item {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    align-items: flex-start;
+    gap: 13px;
     padding: 11px 14px;
     border-radius: 16px;
     color: #f3ede4;
@@ -520,19 +555,21 @@
 
 .cmd-palette-item-label-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 2px;
+    gap: 4px 8px;
+    margin-bottom: 3px;
 }
 
 .cmd-palette-item-label {
     font-weight: 700;
     font-size: 0.92rem;
     color: #fdfbf7;
-    line-height: 1.3;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.35;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
 }
 
 .cmd-palette-item-badge {
@@ -549,11 +586,13 @@
 }
 
 .cmd-palette-item-hint {
-    font-size: 0.76rem;
+    font-size: 0.77rem;
     color: #9a8a7a;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.42;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
 }
 
 .cmd-palette-item:hover .cmd-palette-item-hint,
@@ -565,6 +604,7 @@
     color: #8f826f;
     font-size: 1.15rem;
     opacity: 0;
+    align-self: center;
     transform: translateX(-4px);
     transition: all 0.18s ease;
     flex-shrink: 0;
@@ -578,9 +618,15 @@
 }
 
 /* Empty State */
-.cmd-palette-empty {
+#cmdPaletteOverlay .cmd-palette-empty {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
     text-align: center;
-    padding: 40px 16px;
+    padding: 32px 20px;
     color: #8f826f;
 }
 
@@ -606,10 +652,38 @@
 }
 
 .cmd-empty-desc {
-    font-size: 0.78rem;
-    color: #8f826f;
-    max-width: 280px;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: #9a8a7a;
+    max-width: 300px;
     margin: 0 auto;
+}
+
+.cmd-empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.cmd-empty-reset-btn {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(223, 184, 121, 0.25);
+    background: rgba(255, 255, 255, 0.05);
+    color: #f3ede4;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.cmd-empty-reset-btn:hover {
+    background: rgba(255, 209, 102, 0.12);
+    border-color: rgba(255, 209, 102, 0.45);
+    color: #ffd166;
 }
 
 /* Footer (Desktop) */
@@ -655,23 +729,38 @@ body.cmd-palette-open .mobile-bottom-nav {
     pointer-events: none !important;
 }
 
-/* ── MOBILE RESPONSIVENESS: NATIVE LUXURY BOTTOM SHEET ── */
-@media (max-width: 768px) {
+/* ── MOBILE & SHORT-VIEWPORT RESPONSIVENESS ── */
+@media (max-height: 520px) {
+    #cmdPaletteOverlay .cmd-palette-footer {
+        display: none !important;
+    }
+}
+
+@media (max-width: 767.98px) {
     #cmdPaletteOverlay.cmd-palette-overlay {
-        padding: 0;
+        top: var(--cmd-vv-top, 0px);
+        left: 0;
+        right: 0;
+        bottom: auto;
+        height: 100vh;
+        height: var(--cmd-vv-height, 100dvh);
+        padding: max(12px, env(safe-area-inset-top, 0px)) 0 0;
         align-items: flex-end;
+        justify-content: center;
     }
 
     #cmdPaletteOverlay .cmd-palette {
         width: 100%;
         max-width: 100%;
-        max-height: min(86dvh, calc(100vh - 16px));
-        border-radius: 26px 26px 0 0;
+        height: min(680px, calc(var(--cmd-vv-height, 100dvh) - max(14px, env(safe-area-inset-top, 0px))));
+        max-height: calc(var(--cmd-vv-height, 100dvh) - max(8px, env(safe-area-inset-top, 0px)));
+        min-height: 0;
+        border-radius: 24px 24px 0 0;
         border-bottom: none;
         border-left: none;
         border-right: none;
         box-shadow: 0 -15px 50px rgba(0, 0, 0, 0.9);
-        padding-bottom: env(safe-area-inset-bottom, 16px);
+        padding-bottom: var(--cmd-bottom-inset, max(12px, env(safe-area-inset-bottom, 12px)));
         transform: translateY(100%);
     }
 
@@ -702,7 +791,9 @@ body.cmd-palette-open .mobile-bottom-nav {
 
     #cmdPaletteOverlay .cmd-palette-categories {
         padding: 10px 16px 12px;
+        min-height: 58px;
         gap: 8px;
+        scroll-padding-inline: 16px;
     }
 
     #cmdPaletteOverlay .cmd-cat-pill {
@@ -712,6 +803,7 @@ body.cmd-palette-open .mobile-bottom-nav {
 
     #cmdPaletteOverlay .cmd-palette-body {
         padding: 12px 14px;
+        scrollbar-gutter: auto;
     }
 
     #cmdPaletteOverlay .cmd-quick-chips-row {
@@ -721,15 +813,18 @@ body.cmd-palette-open .mobile-bottom-nav {
     }
 
     #cmdPaletteOverlay .cmd-quick-chip {
+        min-width: 0;
         min-height: 40px;
         justify-content: flex-start;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;
+        line-height: 1.25;
+        overflow: visible;
+        text-overflow: clip;
     }
 
     #cmdPaletteOverlay .cmd-palette-item {
-        padding: 10px 12px;
+        padding: 11px 12px;
+        gap: 12px;
     }
 
     #cmdPaletteOverlay .cmd-palette-item-icon {
@@ -737,14 +832,19 @@ body.cmd-palette-open .mobile-bottom-nav {
         height: 38px;
         font-size: 1.05rem;
         border-radius: 11px;
+        margin-top: 1px;
     }
 
     #cmdPaletteOverlay .cmd-palette-item-label {
-        font-size: 0.88rem;
+        font-size: 0.89rem;
     }
 
     #cmdPaletteOverlay .cmd-palette-item-hint {
-        font-size: 0.72rem;
+        font-size: 0.74rem;
+    }
+
+    #cmdPaletteOverlay .cmd-palette-item-arrow {
+        display: none !important;
     }
 
     #cmdPaletteOverlay .cmd-palette-footer {
@@ -837,7 +937,10 @@ body.cmd-palette-open .mobile-bottom-nav {
     var clearBtn = document.getElementById('cmdPaletteClearBtn');
     var closeBtn = document.getElementById('cmdPaletteCloseBtn');
     var grabber = document.getElementById('cmdPaletteGrabber');
+    var bodyEl = document.getElementById('cmdPaletteBody');
     var itemsContainer = document.getElementById('cmdPaletteItems');
+    var mainGroup = document.getElementById('cmdPaletteMainGroup');
+    var groupLabel = document.getElementById('cmdPaletteGroupLabel');
     var recentContainer = document.getElementById('cmdPaletteRecentItems');
     var recentGroup = document.getElementById('cmdPaletteRecent');
     var clearRecentBtn = document.getElementById('cmdClearRecentBtn');
@@ -845,9 +948,155 @@ body.cmd-palette-open .mobile-bottom-nav {
     var quickChipsRow = document.getElementById('cmdQuickChipsRow');
     var categoriesWrap = document.getElementById('cmdPaletteCategories');
     var countBadge = document.getElementById('cmdPaletteCountBadge');
+    var liveStatus = document.getElementById('cmdPaletteLiveStatus');
     var emptyState = document.getElementById('cmdPaletteEmpty');
+    var emptyTitle = document.getElementById('cmdEmptyTitle');
+    var emptyDesc = document.getElementById('cmdEmptyDesc');
+    var emptyActions = document.getElementById('cmdEmptyActions');
+    var emptyClearBtn = document.getElementById('cmdEmptyClearBtn');
+    var emptyAllCatBtn = document.getElementById('cmdEmptyAllCatBtn');
     var activeIndex = -1;
     var currentCategory = 'all';
+    var viewportRaf = null;
+    var viewportListenersAttached = false;
+
+    var categoryMeta = {
+        all:        { icon: 'bi-grid-1x2',              label: 'All Pages & Actions', searchLabel: 'Search Results' },
+        action:     { icon: 'bi-lightning-charge-fill', label: 'Actions',             searchLabel: 'Matching Actions' },
+        navigation: { icon: 'bi-compass',               label: 'Navigation',          searchLabel: 'Matching Navigation' },
+        academic:   { icon: 'bi-mortarboard-fill',      label: 'Academic',            searchLabel: 'Matching Academic' },
+        system:     { icon: 'bi-gear-fill',             label: 'System',              searchLabel: 'Matching System' }
+    };
+
+    function setActiveCategoryPill(cat) {
+        currentCategory = cat || 'all';
+        if (!categoriesWrap) return;
+        categoriesWrap.querySelectorAll('.cmd-cat-pill').forEach(function(el) {
+            var isMatch = (el.getAttribute('data-cat') || 'all') === currentCategory;
+            el.classList.toggle('active', isMatch);
+            el.setAttribute('aria-pressed', isMatch ? 'true' : 'false');
+            if (isMatch && typeof el.scrollIntoView === 'function') {
+                try {
+                    el.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+                } catch (err) {
+                    el.scrollIntoView(true);
+                }
+            }
+        });
+    }
+
+    function syncCategoryPillsAvailability() {
+        if (!categoriesWrap) return;
+        var counts = { all: navItems.length };
+        navItems.forEach(function(item) {
+            var c = item.category || 'navigation';
+            counts[c] = (counts[c] || 0) + 1;
+        });
+        categoriesWrap.querySelectorAll('.cmd-cat-pill').forEach(function(el) {
+            var cat = el.getAttribute('data-cat') || 'all';
+            el.style.display = (cat === 'all' || (counts[cat] || 0) > 0) ? '' : 'none';
+        });
+    }
+
+    function updateGroupHeader(query, count) {
+        var meta = categoryMeta[currentCategory] || categoryMeta.navigation;
+        var heading = query ? meta.searchLabel : meta.label;
+        if (groupLabel) {
+            groupLabel.innerHTML = '<i class="bi ' + meta.icon + '" aria-hidden="true"></i> ' + escapeHtml(heading);
+        }
+        if (countBadge) {
+            countBadge.textContent = count + (count === 1 ? ' result' : ' results');
+        }
+        if (liveStatus) {
+            liveStatus.textContent = count === 0
+                ? 'No matching pages or actions found in ' + meta.label
+                : heading + ': ' + count + (count === 1 ? ' result' : ' results');
+        }
+    }
+
+    function syncEmptyState(itemsCount, query) {
+        if (!emptyState) return;
+        var isEmpty = itemsCount === 0;
+        if (mainGroup) {
+            mainGroup.style.display = isEmpty ? 'none' : '';
+        }
+        emptyState.style.display = isEmpty ? 'flex' : 'none';
+        if (!isEmpty) return;
+
+        var meta = categoryMeta[currentCategory] || categoryMeta.all;
+        if (emptyTitle) {
+            emptyTitle.textContent = query
+                ? 'No matches for "' + query + '"'
+                : 'No items available in ' + meta.label;
+        }
+        if (emptyDesc) {
+            emptyDesc.textContent = currentCategory !== 'all'
+                ? 'Try clearing your search filter or switching back to All categories.'
+                : 'Try keywords like "classes", "schedule", "code", or "records".';
+        }
+        var showClear = !!query;
+        var showAllCat = currentCategory !== 'all';
+        if (emptyClearBtn) emptyClearBtn.style.display = showClear ? '' : 'none';
+        if (emptyAllCatBtn) emptyAllCatBtn.style.display = showAllCat ? '' : 'none';
+        if (emptyActions) emptyActions.style.display = (showClear || showAllCat) ? 'flex' : 'none';
+    }
+
+    function syncViewportMetrics() {
+        if (!overlay.classList.contains('active')) return;
+        var vv = window.visualViewport;
+        if (!vv) {
+            overlay.style.removeProperty('--cmd-vv-height');
+            overlay.style.removeProperty('--cmd-vv-top');
+            overlay.style.removeProperty('--cmd-bottom-inset');
+            return;
+        }
+        var vvHeight = Math.max(240, Math.round(vv.height));
+        var vvTop = Math.max(0, Math.round(vv.offsetTop));
+        var layoutHeight = window.innerHeight || document.documentElement.clientHeight || vvHeight;
+        var keyboardOpen = (layoutHeight - vvHeight) > 120;
+        overlay.style.setProperty('--cmd-vv-height', vvHeight + 'px');
+        overlay.style.setProperty('--cmd-vv-top', vvTop + 'px');
+        overlay.style.setProperty('--cmd-bottom-inset', keyboardOpen ? '8px' : 'max(12px, env(safe-area-inset-bottom, 12px))');
+        document.body.classList.toggle('keyboard-open', keyboardOpen);
+    }
+
+    function scheduleViewportSync() {
+        if (viewportRaf) return;
+        viewportRaf = window.requestAnimationFrame(function() {
+            viewportRaf = null;
+            syncViewportMetrics();
+        });
+    }
+
+    function attachViewportListeners() {
+        syncViewportMetrics();
+        if (viewportListenersAttached) return;
+        viewportListenersAttached = true;
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', scheduleViewportSync);
+            window.visualViewport.addEventListener('scroll', scheduleViewportSync);
+        }
+        window.addEventListener('resize', scheduleViewportSync);
+    }
+
+    function detachViewportListeners() {
+        if (viewportRaf) {
+            window.cancelAnimationFrame(viewportRaf);
+            viewportRaf = null;
+        }
+        if (viewportListenersAttached) {
+            viewportListenersAttached = false;
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', scheduleViewportSync);
+                window.visualViewport.removeEventListener('scroll', scheduleViewportSync);
+            }
+            window.removeEventListener('resize', scheduleViewportSync);
+        }
+        overlay.style.removeProperty('--cmd-vv-height');
+        overlay.style.removeProperty('--cmd-vv-top');
+        overlay.style.removeProperty('--cmd-bottom-inset');
+        document.body.classList.remove('keyboard-open');
+    }
 
     // Populate Quick Action Chips
     function renderQuickChips() {
@@ -874,9 +1123,6 @@ body.cmd-palette-open .mobile-bottom-nav {
     // Render items with highlight and rich badge
     function renderItems(items, container, query) {
         container.innerHTML = '';
-        if (countBadge) {
-            countBadge.textContent = items.length + (items.length === 1 ? ' result' : ' results');
-        }
 
         items.forEach(function(item, i) {
             var a = document.createElement('a');
@@ -974,7 +1220,8 @@ body.cmd-palette-open .mobile-bottom-nav {
 
         if (!q) {
             renderItems(list, itemsContainer);
-            emptyState.style.display = 'none';
+            updateGroupHeader('', list.length);
+            syncEmptyState(list.length, '');
             if (quickChipsWrap) quickChipsWrap.style.display = currentCategory === 'all' ? '' : 'none';
             showRecent();
             activeIndex = -1;
@@ -1002,7 +1249,8 @@ body.cmd-palette-open .mobile-bottom-nav {
         var filtered = scored.map(function(obj) { return obj.item; });
 
         renderItems(filtered, itemsContainer, q);
-        emptyState.style.display = filtered.length === 0 ? 'block' : 'none';
+        updateGroupHeader(q, filtered.length);
+        syncEmptyState(filtered.length, q);
         activeIndex = -1;
         updateActive();
     }
@@ -1012,14 +1260,26 @@ body.cmd-palette-open .mobile-bottom-nav {
         categoriesWrap.addEventListener('click', function(e) {
             var pill = e.target.closest('.cmd-cat-pill');
             if (!pill) return;
-            categoriesWrap.querySelectorAll('.cmd-cat-pill').forEach(function(el) {
-                el.classList.remove('active');
-                el.setAttribute('aria-pressed', 'false');
-            });
-            pill.classList.add('active');
-            pill.setAttribute('aria-pressed', 'true');
-            currentCategory = pill.getAttribute('data-cat') || 'all';
+            setActiveCategoryPill(pill.getAttribute('data-cat') || 'all');
+            if (bodyEl) bodyEl.scrollTop = 0;
             if (window.triggerHaptic) window.triggerHaptic('light');
+            filterItems(input.value);
+        });
+    }
+
+    if (emptyClearBtn) {
+        emptyClearBtn.addEventListener('click', function() {
+            input.value = '';
+            if (bodyEl) bodyEl.scrollTop = 0;
+            filterItems('');
+            input.focus({ preventScroll: true });
+        });
+    }
+
+    if (emptyAllCatBtn) {
+        emptyAllCatBtn.addEventListener('click', function() {
+            setActiveCategoryPill('all');
+            if (bodyEl) bodyEl.scrollTop = 0;
             filterItems(input.value);
         });
     }
@@ -1075,34 +1335,26 @@ body.cmd-palette-open .mobile-bottom-nav {
     function openPalette() {
         overlay.classList.add('active');
         document.body.classList.add('cmd-palette-open');
+        document.documentElement.style.overflow = 'hidden';
         document.body.style.overflow = 'hidden';
         input.value = '';
-        currentCategory = 'all';
-        if (categoriesWrap) {
-            categoriesWrap.querySelectorAll('.cmd-cat-pill').forEach(function(el) {
-                el.classList.remove('active');
-                el.setAttribute('aria-pressed', 'false');
-            });
-            var allPill = categoriesWrap.querySelector('[data-cat="all"]');
-            if (allPill) {
-                allPill.classList.add('active');
-                allPill.setAttribute('aria-pressed', 'true');
-            }
-        }
+        syncCategoryPillsAvailability();
+        setActiveCategoryPill('all');
         renderQuickChips();
-        renderItems(navItems, itemsContainer);
-        showRecent();
-        emptyState.style.display = 'none';
-        if (clearBtn) clearBtn.style.display = 'none';
+        if (bodyEl) bodyEl.scrollTop = 0;
+        filterItems('');
         activeIndex = -1;
+        attachViewportListeners();
         if (window.triggerHaptic) window.triggerHaptic('medium');
-        setTimeout(function() { input.focus(); }, 60);
+        setTimeout(function() { input.focus({ preventScroll: true }); }, 60);
     }
 
     function closePalette() {
         overlay.classList.remove('active');
         document.body.classList.remove('cmd-palette-open');
+        document.documentElement.style.overflow = '';
         document.body.style.overflow = '';
+        detachViewportListeners();
         activeIndex = -1;
     }
 
@@ -1110,8 +1362,9 @@ body.cmd-palette-open .mobile-bottom-nav {
     if (clearBtn) {
         clearBtn.addEventListener('click', function() {
             input.value = '';
+            if (bodyEl) bodyEl.scrollTop = 0;
             filterItems('');
-            input.focus();
+            input.focus({ preventScroll: true });
         });
     }
 
@@ -1128,6 +1381,7 @@ body.cmd-palette-open .mobile-bottom-nav {
     }
 
     input.addEventListener('input', function() {
+        if (bodyEl) bodyEl.scrollTop = 0;
         filterItems(this.value);
     });
 

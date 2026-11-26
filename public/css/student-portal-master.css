@@ -506,8 +506,18 @@
     body.student-mobile-portal #cmdPaletteOverlay .cmd-palette {
         background: #14080c !important;
         border: 1px solid var(--sdc-border) !important;
-        border-radius: 16px !important;
+        border-radius: 18px !important;
         box-shadow: var(--sdc-shadow-overlay) !important;
+    }
+
+    @media (max-width: 767.98px) {
+        body.student-portal #cmdPaletteOverlay .cmd-palette,
+        body.student-mobile-portal #cmdPaletteOverlay .cmd-palette {
+            border-radius: 24px 24px 0 0 !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-bottom: none !important;
+        }
     }
 
     body.student-portal #cmdPaletteOverlay .cmd-palette-header,
@@ -596,6 +606,27 @@
         background: var(--sdc-surface-2) !important;
         border-color: var(--sdc-border-subtle) !important;
         color: var(--sdc-rose-accent) !important;
+    }
+
+    body.student-portal #cmdPaletteOverlay .cmd-empty-icon,
+    body.student-mobile-portal #cmdPaletteOverlay .cmd-empty-icon {
+        background: rgba(107, 25, 43, 0.32) !important;
+        border-color: var(--sdc-border-strong) !important;
+        color: var(--sdc-rose-accent) !important;
+    }
+
+    body.student-portal #cmdPaletteOverlay .cmd-empty-reset-btn,
+    body.student-mobile-portal #cmdPaletteOverlay .cmd-empty-reset-btn {
+        background: var(--sdc-surface-2) !important;
+        border-color: var(--sdc-border) !important;
+        color: var(--sdc-text) !important;
+    }
+
+    body.student-portal #cmdPaletteOverlay .cmd-empty-reset-btn:hover,
+    body.student-mobile-portal #cmdPaletteOverlay .cmd-empty-reset-btn:hover {
+        background: rgba(107, 25, 43, 0.42) !important;
+        border-color: var(--sdc-border-strong) !important;
+        color: #ffffff !important;
     }
 
     body.student-portal #cmdPaletteOverlay .cmd-palette-footer,
