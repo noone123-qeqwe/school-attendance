@@ -541,65 +541,7 @@
     .portal-seg.is-absent { background: var(--portal-rose); }
     .portal-seg.is-empty { background: rgba(255, 255, 255, 0.1); }
 
-    /* ── 4. Contextual Utility Rail ──────────────────────────────────────── */
-    .portal-utility-rail {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        overflow-x: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        padding: 2px 0;
-    }
-
-    .portal-utility-rail::-webkit-scrollbar {
-        display: none;
-    }
-
-    .portal-util-item {
-        flex: 0 0 auto;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        min-height: 44px;
-        padding: 8px 14px;
-        border-radius: 10px;
-        background: rgba(30, 21, 21, 0.72);
-        border: 1px solid var(--portal-border-subtle);
-        color: var(--portal-text);
-        font-size: 0.82rem;
-        font-weight: 650;
-        text-decoration: none;
-        white-space: nowrap;
-        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-    }
-
-    .portal-util-item i {
-        color: var(--portal-gold);
-        font-size: 0.9rem;
-    }
-
-    .portal-util-item:hover {
-        background: var(--portal-surface-2);
-        border-color: var(--portal-border-strong);
-        color: var(--portal-white);
-    }
-
-    .portal-util-count {
-        font-size: 0.71rem;
-        font-weight: 700;
-        padding: 2px 7px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.06);
-        color: var(--portal-text-soft);
-    }
-
-    .portal-util-count.is-amber {
-        background: rgba(251, 191, 36, 0.14);
-        color: var(--portal-amber);
-    }
-
-    /* ── 5. Asymmetric Workspace & Hairline Panels ───────────────────────── */
+    /* ── 4. Asymmetric Workspace & Hairline Panels ───────────────────────── */
     .portal-workspace {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -756,11 +698,6 @@
             display: flex;
             align-items: center;
             flex-shrink: 0;
-        }
-
-        .portal-utility-rail {
-            flex-wrap: wrap;
-            overflow-x: visible;
         }
     }
 

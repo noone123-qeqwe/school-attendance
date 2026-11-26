@@ -305,44 +305,7 @@
         </section>
     </div>
 
-    {{-- ── 4. Sleek Contextual Utility Rail ──────────────────────────────── --}}
-    <nav class="portal-utility-rail" aria-label="Teacher shortcuts">
-        <a href="{{ route('teacher.classroom.index') }}" class="portal-util-item">
-            <i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i>
-            <span>My Classes</span>
-            <span class="portal-util-count portal-mono">{{ $subjectsCollection->count() }}</span>
-        </a>
-        <a href="{{ route('teacher.attendance') }}" class="portal-util-item">
-            <i class="bi bi-clipboard-check-fill" aria-hidden="true"></i>
-            <span>Attendance Records</span>
-        </a>
-        <a href="{{ route('teacher.excuse.reviews') }}" class="portal-util-item">
-            <i class="bi bi-file-earmark-text-fill" aria-hidden="true"></i>
-            <span>Excuse Reviews</span>
-            @if(!empty($pendingExcuses) && $pendingExcuses > 0)
-                <span class="portal-util-count is-amber portal-mono">{{ $pendingExcuses }}</span>
-            @endif
-        </a>
-        <a href="{{ route('teacher.corrections') }}" class="portal-util-item">
-            <i class="bi bi-pencil-square" aria-hidden="true"></i>
-            <span>Corrections</span>
-        </a>
-        <a href="{{ route('teacher.absent') }}" class="portal-util-item">
-            <i class="bi bi-person-x-fill" aria-hidden="true"></i>
-            <span>Absent Report</span>
-        </a>
-        <a href="{{ route('teacher.students') }}" class="portal-util-item">
-            <i class="bi bi-people-fill" aria-hidden="true"></i>
-            <span>Student Roster</span>
-            <span class="portal-util-count portal-mono">{{ $totalStudents ?? 0 }}</span>
-        </a>
-        <a href="{{ route('teacher.reports') }}" class="portal-util-item">
-            <i class="bi bi-graph-up-arrow" aria-hidden="true"></i>
-            <span>Reports</span>
-        </a>
-    </nav>
-
-    {{-- ── 5. Asymmetric Operational Workspace ───────────────────────────── --}}
+    {{-- ── 4. Asymmetric Operational Workspace ───────────────────────────── --}}
     <div class="portal-workspace">
         <div class="portal-col-main">
             {{-- School Calendar Panel --}}

@@ -92,10 +92,11 @@ class TeacherPortalRedesignTest extends TestCase
         $this->assertStringContainsString('mbn-item-featured', $html);
         $this->assertStringContainsString(route('teacher.classroom.index', ['task' => 'attendance']), $html);
 
-        // Academic Command Canvas sections + Weekly trend + At-risk warning
+        // Academic Command Canvas sections (without redundant shortcut pill rail) + Weekly trend + At-risk warning
         $this->assertStringContainsString('portal-masthead', $html);
         $this->assertStringContainsString('portal-hero-grid', $html);
-        $this->assertStringContainsString('portal-utility-rail', $html);
+        $this->assertStringNotContainsString('portal-utility-rail', $html);
+        $this->assertStringNotContainsString('aria-label="Teacher shortcuts"', $html);
         $this->assertStringContainsString('portal-workspace', $html);
         $this->assertStringContainsString('id="tdWeeklyTrend"', $html);
         $this->assertStringContainsString('Prof. Clara Mendoza', $html);
