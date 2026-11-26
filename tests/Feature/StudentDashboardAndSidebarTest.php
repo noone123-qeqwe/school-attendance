@@ -1050,4 +1050,26 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertOk()
             ->assertSee('<section class="student-profile-summary"', false);
     }
+
+    public function test_student_sidebar_omits_redundant_section_labels(): void
+    {
+        $student = $this->createStudent([
+            'email' => 'student.nolabels@gmail.com',
+            'student_number' => '2310824',
+        ]);
+
+        $response = $this->actingAs($student)
+            ->get(route('home'))
+            ->assertOk()
+            ->assertSee('student-sidebar-nav', false)
+            ->assertSee('Classes &amp; Schedule', false)
+            ->assertSee('Attendance &amp; Calendar', false)
+            ->assertDontSee('My workspace', false)
+            ->assertDontSee('Attendance &amp; school', false)
+            ->assertDontSee('student-nav-label nav-section-label', false);
+
+        $sidebarTemplate = file_get_contents(resource_path('views/layouts/sidebars/student.blade.php'));
+        $this->assertNotFalse($sidebarTemplate);
+        $this->assertStringNotContainsString('nav-section-label', $sidebarTemplate);
+    }
 }

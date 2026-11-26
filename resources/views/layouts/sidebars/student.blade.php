@@ -8,7 +8,6 @@
 <div class="sidebar-divider"></div>
 
 <nav class="sidebar-nav student-sidebar-nav" aria-label="Student navigation">
-    <div class="student-nav-label nav-section-label">My workspace</div>
     <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" @if(request()->routeIs('home')) aria-current="page" @endif title="Dashboard" data-title="Dashboard" aria-label="Dashboard">
         <i class="bi bi-grid-fill" aria-hidden="true"></i>
         <span class="nav-link-text">Dashboard</span>
@@ -24,7 +23,6 @@
             <span class="nav-link-text">Student Assistant</span>
         </a>
     @endif
-    <div class="student-nav-label nav-section-label">Attendance &amp; school</div>
     <a href="{{ route('student.calendar') }}" class="nav-link {{ request()->routeIs('student.calendar', 'student.attendance.calendar', 'attendance.records', 'attendance.history') ? 'active' : '' }}" @if(request()->routeIs('student.calendar', 'student.attendance.calendar', 'attendance.records', 'attendance.history')) aria-current="page" @endif title="Attendance & Calendar" data-title="Attendance & Calendar" aria-label="Attendance and calendar">
         <i class="bi bi-calendar-event-fill" aria-hidden="true"></i>
         <span class="nav-link-text">Attendance &amp; Calendar</span>

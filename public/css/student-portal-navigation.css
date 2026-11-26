@@ -199,8 +199,8 @@ body.student-portal .student-sidebar-brand .sidebar-logo {
     }
 
     body.student-portal .sidebar .student-sidebar-nav {
-        padding: 10px 10px 20px !important;
-        gap: 3px !important;
+        padding: 12px 10px 20px !important;
+        gap: 4px !important;
     }
 
     body.student-portal .sidebar .student-nav-label {
