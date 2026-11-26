@@ -194,23 +194,26 @@ class StudentDashboardAndSidebarTest extends TestCase
         $response = $this->actingAs($student)->get(route('home'));
         $response->assertOk();
 
-        $response->assertSee('sd-identity-cluster', false)
+        $response->assertSee('sd-masthead', false)
+            ->assertSee('sd-identity-cluster', false)
+            ->assertSee('sd-hero-grid', false)
             ->assertSee('id="sdHeroSpotlight"', false)
             ->assertSee('All classes completed today')
             ->assertSee('View timetable')
+            ->assertSee('Attendance Standing')
+            ->assertSee('7-Day Pulse')
+            ->assertSee("Today's Schedule", false)
+            ->assertSee('Subject Standing')
+            ->assertSee('Recent Check-Ins')
             ->assertSee('Campus &amp; Class Announcements', false)
             ->assertSee('Lab Maintenance Notice')
             ->assertSee('Action Required: Attendance Warning')
-            ->assertDontSee('sd-command-actions', false)
+            ->assertSee('id="daySummaryModal"', false)
+            ->assertSee('CS302', false)
+            ->assertSee('No sessions recorded yet')
             ->assertDontSee('Enter 6-Digit PIN')
             ->assertDontSee('sd-quick-dock', false)
-            ->assertDontSee('Attendance Overview')
-            ->assertDontSee('Attendance Standing')
-            ->assertDontSee('7-Day Attendance Pulse')
-            ->assertDontSee("Today's Schedule", false)
-            ->assertDontSee('Subject Attendance')
             ->assertDontSee('id="subjectBreakdownModal"', false)
-            ->assertDontSee('id="daySummaryModal"', false)
             ->assertDontSee('id="attendanceRecordsModal"', false);
     }
 
@@ -435,14 +438,16 @@ class StudentDashboardAndSidebarTest extends TestCase
             $response->assertOk()
                 ->assertSee('id="sdHeroSpotlight"', false)
                 ->assertSee('id="sdSpotlightTimer"', false)
+                ->assertSee('id="sdSpotlightProgressFill"', false)
                 ->assertSee('Check in now', false)
                 ->assertSee('View timetable', false)
                 ->assertSee('Read more', false)
+                ->assertSee('data-sched-filter="all"', false)
+                ->assertSee('data-sched-filter="remaining"', false)
+                ->assertSee('data-sched-filter="done"', false)
+                ->assertSee('id="sdScheduleLiveRegion"', false)
                 ->assertSee('#cmdPaletteOverlay .cmd-palette-input:focus-visible', false)
-                ->assertSee('id="cmdPaletteCategories" role="group"', false)
-                ->assertDontSee("openAttendanceRecordsModal('present')", false)
-                ->assertDontSee('openSubjectBreakdownModal()', false)
-                ->assertDontSee('All (3)', false);
+                ->assertSee('id="cmdPaletteCategories" role="group"', false);
         } finally {
             \Carbon\Carbon::setTestNow();
         }
@@ -487,16 +492,18 @@ class StudentDashboardAndSidebarTest extends TestCase
         $response->assertOk()
             ->assertSee('student-dashboard.css', false)
             ->assertSee('class="sd-cockpit"', false)
+            ->assertSee('sd-masthead', false)
             ->assertSee('sd-identity-cluster', false)
-            ->assertSee('sd-bento-hero--solo', false)
+            ->assertSee('sd-hero-grid', false)
             ->assertSee("Today's Status")
             ->assertSee('Free schedule today')
-            ->assertDontSee('Attendance Standing')
-            ->assertDontSee('7-Day Attendance Pulse')
-            ->assertDontSee('Recent Activity')
-            ->assertDontSee('Attendance Overview')
-            ->assertDontSee("Today's Schedule", false)
-            ->assertDontSee('Subject Attendance');
+            ->assertSee('Attendance Standing')
+            ->assertSee('7-Day Pulse')
+            ->assertSee('Recent Check-Ins')
+            ->assertSee('1 pending excuse')
+            ->assertSee('Subject Standing')
+            ->assertSee('CS401', false)
+            ->assertSee('id="daySummaryModal"', false);
     }
 
     public function test_reinvented_mobile_home_dashboard_renders_unified_cockpit_sections(): void

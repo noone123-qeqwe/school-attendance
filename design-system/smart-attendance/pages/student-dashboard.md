@@ -2,28 +2,27 @@
 
 > **PROJECT:** Smart Attendance (Osmeña Colleges)
 > **Scope:** `/home` (Desktop + Mobile) and `/mobile/home`
-> **Stylesheet:** `public/css/student-dashboard.css`
+> **Stylesheet:** `public/css/student-dashboard.css` (v4.0 — Academic Command Canvas)
 
 ---
 
 ## Page-Specific Rules
 
 ### Layout Architecture
-- **Desktop (`>= 1024px`)**:
-  1. Compact Command & Identity Bar (Avatar + editorial greeting/clock metadata + crisp Alabaster primary Scan QR CTA & subtle secondary 6-Digit PIN CTA).
-  2. Asymmetric 12-column Hero Bento (`7fr` Live/Next Class Focus Stage with subtle oxblood atmospheric edge + `5fr` Circular Standing Gauge & 7-Day Interactive Attendance Pulse).
-  3. 4-column Quick Workspace Strip (`Weekly Schedule`, `My Classes`, `Attendance Log`, `Submit Excuse`) — flat hairline-bordered utility row.
-  4. 4-column Interactive Attendance Overview KPI Row (`Present`, `Late`, `Absent`, `Subjects`) — tabular figures with thin proportional bar and click-to-inspect drilldown.
-  5. Asymmetric 2-column Workspace (`1.45fr` Today's Schedule Timeline + Recent Activity hairline feed | `1fr` Subject Attendance Standing list + Campus Announcements) — zero nested card-in-card clutter.
-- **Mobile (`< 768px`)**:
-  - Compact Identity Ribbon with full-width 2-column thumb-reachable primary Check-In dock above the fold (stacks cleanly at `<= 359px`).
-  - Live/Next Class Focus Card followed by Standing Gauge + 7-Day Interactive Pulse.
-  - Swipeable single-row Quick Strip (`/home`) or 2-column Quick Tools grid (`/mobile/home`).
-  - 2×2 KPI tiles and native-feel bottom-sheet modals with drag handles, `>= 44×44px` stepper/close touch targets, and safe-area bottom inset.
+- **Desktop (`>= 1120px`) & Large Screens (`>= 1024px`)**:
+  1. **Open Editorial Masthead (`.sd-masthead`):** Borderless circular avatar (`.sd-avatar-ring`), typographic greeting & live clock kicker, display student name (`h1`), quiet mid-dot metadata ribbon, plus Login-matched primary `Scan QR` & secondary `Enter PIN` CTAs directly on canvas (no nested outer box).
+  2. **Contextual Alert Rail:** Dismissible missing-section notice banner (`#missingSectionNotice`), session status/error banners, and active attendance warning panel when warnings exist.
+  3. **Signature Asymmetric Hero Grid (`.sd-hero-grid` — `1.38fr : 1fr`):** Left **Live / Next Class Stage (`#sdHeroSpotlight`)** with countdown timer (`#sdSpotlightTimer`) and session progress meter (`#sdSpotlightProgressFill`); Right **Attendance Telemetry Panel (`.sd-telemetry`)** unifying the SVG radial standing gauge, 3-segment proportional distribution bar (`Present` / `Late` / `Absent`), streak & pending-excuse pills, and interactive **7-Day Pulse** strip.
+  4. **Contextual Utility Rail (`.sd-utility-rail`):** Sleek hairline shortcuts (`Weekly Schedule`, `My Classes`, `Attendance Log`, `Submit Excuse`, conditional `Student Assistant` & `Peer Check-In`) with live counts.
+  5. **Asymmetric Operational Workspace (`.sd-workspace` — `1.42fr : 1fr`):** Primary column hosts interactive **Today's Schedule** timeline (with segmented `All` / `Remaining` / `Done` filters + polite `#sdScheduleLiveRegion`) and **Recent Check-Ins** ledger; secondary column surfaces sorted **Subject Standing** rows (showing calm `New` for zero-record subjects) and **Campus & Class Announcements**.
+- **Tablet (`768px–1023px`)**:
+  - Open masthead with side-by-side actions, stacked hero panels for generous readability beside the sidebar, full-width schedule time-rail timeline, and wrapping utility shortcuts.
+- **Mobile (`< 768px`, down to `320px`)**:
+  - Compact identity header with full-width 2-button thumb-reachable `Scan QR` / `Enter PIN` strip above the fold (single-column at `<= 359px`).
+  - Horizontal swipeable utility rail (`>= 44px` tap targets), inline time-pill schedule rows, and native-feeling bottom-sheet `#daySummaryModal` (`max-height: 88dvh`, drag handle, safe-area bottom inset).
 
 ### Real-Time & Accessibility Guarantees
 - Clock and spotlight countdown pause automatically when `document.hidden === true` and sync immediately on tab focus.
-- Schedule filter (`All`, `Remaining`, `Done`) and attendance records search announce contextual counts via polite `aria-live` status regions without stealing focus.
-- Day Summary Inspector supports `ArrowLeft` / `ArrowRight` keyboard navigation between days and `Escape` dismissal.
-- Async modals (`#daySummaryModal`, `#attendanceRecordsModal`) render skeleton shimmer placeholders matching card geometry (`CLS < 0.1`).
-- Command Palette (`#cmdPaletteOverlay`) is unified across all student pages via `student-portal-master.css`.
+- Schedule filter (`All`, `Remaining`, `Done`) announces visible class counts via `#sdScheduleLiveRegion` (`aria-live="polite" aria-atomic="true"`) without stealing focus.
+- Interactive 7-Day Pulse opens `#daySummaryModal` with `ArrowLeft` / `ArrowRight` stepping, `.ds-skeleton-stack` shimmer loading (`CLS < 0.1`), strict HTML escaping, and safe error retry.
+- Zero fabricated stats, zero inline `onclick=""` handlers, and CSP nonces applied on every `<script>` block.
