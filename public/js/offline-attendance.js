@@ -20,7 +20,10 @@
     const ROSTER_ENDPOINT = '/teacher/offline-attendance/roster';
     const PING_ENDPOINT = '/api/ping';
     const BATCH_SIZE = 20;
-    const PING_INTERVAL_MS = 15000;      // Check connectivity every 15s
+    const PING_TIMEOUT_MS = 10000;       // Tolerate slower local / cold-start responses
+    const PING_INTERVAL_MS = 30000;      // Check connectivity every 30s while tab is visible
+    const INITIAL_PING_DELAY_MS = 2500;  // Avoid racing initial dashboard requests
+    const OFFLINE_FAILURE_THRESHOLD = 2; // Require 2 consecutive failed probes before marking offline
     const RETRY_BASE_MS = 30000;         // 30s base retry
     const MAX_RETRY_MS = 300000;         // 5 min max
     const SYNCED_RETENTION_DAYS = 7;     // Auto-clean synced records after 7 days
@@ -28,11 +31,13 @@
     let db = null;
     let csrfToken = '';
     let teacherId = null;
-    // navigator.onLine only reports network-interface state, not server reachability.
-    let connectionState = 'offline'; // 'online' | 'offline' | 'syncing'
+    // Start aligned with the browser's online signal, then verify with the server probe.
+    let connectionState = (typeof navigator !== 'undefined' && navigator.onLine === false) ? 'offline' : 'online'; // 'online' | 'offline' | 'syncing'
     let pingTimer = null;
+    let initialPingTimer = null;
     let syncTimer = null;
     let connectivityRetryAttempt = 0;
+    let consecutivePingFailures = 0;
     let isSyncing = false;
     let initialized = false;
 
@@ -279,13 +284,25 @@
     //  Connectivity Detection
     // ──────────────────────────────────────────────
     function checkServerReachable() {
-        return fetch(PING_ENDPOINT, {
+        var timeoutId = null;
+        var signal;
+        if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+            signal = AbortSignal.timeout(PING_TIMEOUT_MS);
+        } else if (typeof AbortController !== 'undefined') {
+            var controller = new AbortController();
+            signal = controller.signal;
+            timeoutId = setTimeout(function() { controller.abort(); }, PING_TIMEOUT_MS);
+        }
+
+        return fetch(PING_ENDPOINT + '?_t=' + Date.now(), {
             method: 'GET',
             cache: 'no-store',
-            signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined,
+            signal: signal,
         }).then(function(resp) {
-            return resp.ok;
+            if (timeoutId) clearTimeout(timeoutId);
+            return Boolean(resp && resp.status > 0 && resp.status < 500);
         }).catch(function() {
+            if (timeoutId) clearTimeout(timeoutId);
             return false;
         });
     }
@@ -299,39 +316,73 @@
         }
     }
 
+    function handleReachabilityResult(reachable, triggerAutoSync) {
+        if (reachable) {
+            consecutivePingFailures = 0;
+            if (connectionState !== 'online') {
+                setConnectionState('online');
+            }
+            if (triggerAutoSync) {
+                triggerSync(false);
+            }
+            return;
+        }
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            consecutivePingFailures = OFFLINE_FAILURE_THRESHOLD;
+            setConnectionState('offline');
+            return;
+        }
+
+        consecutivePingFailures += 1;
+        if (consecutivePingFailures >= OFFLINE_FAILURE_THRESHOLD && connectionState !== 'offline') {
+            setConnectionState('offline');
+        }
+    }
+
+    function runConnectivityProbe(triggerAutoSync) {
+        return checkServerReachable().then(function(reachable) {
+            handleReachabilityResult(reachable, triggerAutoSync);
+            return reachable;
+        });
+    }
+
     function startConnectivityMonitor() {
         window.addEventListener('online', function() {
-            checkServerReachable().then(function(reachable) {
-                if (reachable) {
-                    setConnectionState('online');
-                    triggerSync(false);
-                }
-            });
+            consecutivePingFailures = 0;
+            runConnectivityProbe(true);
         });
 
         window.addEventListener('offline', function() {
+            consecutivePingFailures = OFFLINE_FAILURE_THRESHOLD;
             setConnectionState('offline');
         });
 
-        // Periodic ping
-        if (pingTimer) clearInterval(pingTimer);
-        pingTimer = setInterval(function() {
-            if (isSyncing) return;
-            checkServerReachable().then(function(reachable) {
-                if (reachable && connectionState === 'offline') {
-                    setConnectionState('online');
-                    triggerSync(false);
-                } else if (!reachable && connectionState === 'online') {
-                    setConnectionState('offline');
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden && !isSyncing) {
+                    runConnectivityProbe(connectionState === 'offline');
                 }
             });
+        }
+
+        // Periodic ping only while tab is visible and not actively syncing
+        if (pingTimer) clearInterval(pingTimer);
+        pingTimer = setInterval(function() {
+            if (isSyncing || (typeof document !== 'undefined' && document.hidden)) return;
+            runConnectivityProbe(connectionState === 'offline');
         }, PING_INTERVAL_MS);
 
-        // Initial check
-        checkServerReachable().then(function(reachable) {
-            setConnectionState(reachable ? 'online' : 'offline');
-            if (reachable) triggerSync(false);
-        });
+        if (initialPingTimer) clearTimeout(initialPingTimer);
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            setConnectionState('offline');
+            runConnectivityProbe(true);
+        } else {
+            initialPingTimer = setTimeout(function() {
+                initialPingTimer = null;
+                runConnectivityProbe(true);
+            }, INITIAL_PING_DELAY_MS);
+        }
     }
 
     // ──────────────────────────────────────────────
@@ -345,7 +396,6 @@
     function syncPendingRecords(includePermanentFailures) {
         if (isSyncing) return Promise.resolve();
         isSyncing = true;
-        setConnectionState('syncing');
 
         return Promise.all([getPendingRecords(), getFailedRecords()])
             .then(function(results) {
@@ -355,9 +405,11 @@
                 var allPending = results[0].concat(failedRecords);
                 if (allPending.length === 0) {
                     isSyncing = false;
-                    setConnectionState('online');
+                    setConnectionState((typeof navigator !== 'undefined' && navigator.onLine === false) ? 'offline' : 'online');
                     return;
                 }
+
+                setConnectionState('syncing');
 
                 // Process in batches
                 var batches = [];
@@ -378,9 +430,7 @@
     function processBatches(batches, index) {
         if (index >= batches.length) {
             isSyncing = false;
-            checkServerReachable().then(function(reachable) {
-                setConnectionState(reachable ? 'online' : 'offline');
-            });
+            runConnectivityProbe(false);
             updateUI();
             cleanupSyncedRecords();
             scheduleRetry();
@@ -513,11 +563,9 @@
             console.log('[OfflineAttendance] Scheduling retry in', Math.round(delay / 1000), 's');
             syncTimer = setTimeout(function() {
                 syncTimer = null;
-                checkServerReachable().then(function(reachable) {
+                runConnectivityProbe(true).then(function(reachable) {
                     if (reachable) {
                         connectivityRetryAttempt = 0;
-                        setConnectionState('online');
-                        triggerSync(false);
                     } else {
                         connectivityRetryAttempt++;
                         scheduleRetry();
@@ -657,17 +705,17 @@
             '.oa-status-wrap{position:fixed;bottom:calc(88px + env(safe-area-inset-bottom,16px));right:16px;z-index:99990;display:flex;align-items:center;gap:8px;animation:oaSlideIn .35s cubic-bezier(.16,1,.3,1)}' +
             '@keyframes oaSlideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}' +
             '@keyframes oaSpin{to{transform:rotate(360deg)}}' +
-            '.oa-status-pill{display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(15,23,42,.92);border:1px solid rgba(207,164,111,.3);border-radius:99px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:default;transition:all .25s ease;user-select:none}' +
-            '.oa-status-pill:hover{border-color:rgba(207,164,111,.5);box-shadow:0 8px 30px rgba(0,0,0,.55)}' +
+            '.oa-status-pill{display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(30,21,21,.94);border:1px solid rgba(212,175,55,.28);border-radius:99px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 24px rgba(0,0,0,.38);cursor:default;transition:all .25s ease;user-select:none}' +
+            '.oa-status-pill:hover{border-color:rgba(212,175,55,.48);box-shadow:0 8px 30px rgba(0,0,0,.48)}' +
             '.oa-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .3s}' +
             '.oa-status-dot.online{background:#22c55e;box-shadow:0 0 8px #22c55e}' +
             '.oa-status-dot.offline{background:#ef4444;box-shadow:0 0 8px #ef4444;animation:oaPulse 2s infinite}' +
             '.oa-status-dot.syncing{background:#f59e0b;box-shadow:0 0 8px #f59e0b;animation:oaPulse 1s infinite}' +
             '@keyframes oaPulse{0%,100%{opacity:1}50%{opacity:.4}}' +
-            '.oa-status-label{font-size:.78rem;font-weight:700;color:#f3e7cd;letter-spacing:.3px}' +
+            '.oa-status-label{font-size:.78rem;font-weight:700;color:#faf8f5;letter-spacing:.3px}' +
             '.oa-pending-badge{min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;padding:0 6px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:.7rem;font-weight:800;border-radius:99px;box-shadow:0 2px 8px rgba(239,68,68,.45)}' +
-            '.oa-sync-btn{width:36px;height:36px;border-radius:50%;background:rgba(207,164,111,.15);border:1px solid rgba(207,164,111,.35);color:#cfa46f;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:.95rem}' +
-            '.oa-sync-btn:hover{background:rgba(207,164,111,.3);transform:scale(1.08)}' +
+            '.oa-sync-btn{width:36px;height:36px;border-radius:50%;background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.35);color:#d4af37;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:.95rem}' +
+            '.oa-sync-btn:hover{background:rgba(212,175,55,.28);transform:scale(1.08)}' +
             '.oa-sync-btn.spinning i{animation:oaSpin .8s linear infinite}' +
             '.oa-sync-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-60px);padding:12px 22px;border-radius:14px;font-size:.85rem;font-weight:700;z-index:100001;display:flex;align-items:center;gap:10px;background:rgba(22,163,74,.95);color:#fff;border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 30px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.16,1,.3,1),opacity .3s;opacity:0;pointer-events:none}' +
             '.oa-sync-toast.warning{background:rgba(180,83,9,.97)}' +

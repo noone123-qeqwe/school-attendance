@@ -6,13 +6,17 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ParentApiController;
 use App\Http\Controllers\Api\OtpApiController;
 
-// Lightweight health/connectivity probe — no auth, no session, no CSRF
+// Lightweight health/connectivity probe — no auth, no session, no CSRF, no DB throttle
 Route::get('/ping', function () {
     return response()->json(['status' => 'ok', 'ts' => now()->timestamp], 200, [
         'Cache-Control' => 'no-store, no-cache, must-revalidate',
         'Pragma' => 'no-cache',
     ]);
-});
+})->withoutMiddleware([
+    'throttle:api',
+    \App\Http\Middleware\CheckAccountStatus::class,
+    \App\Http\Middleware\EnsureStudentRegistrationApproved::class,
+]);
 
 // Authentication & Brute-Force Protected Login (supports /api/login and /api/auth/login)
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');

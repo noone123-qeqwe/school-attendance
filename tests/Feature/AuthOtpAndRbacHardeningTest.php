@@ -304,4 +304,16 @@ class AuthOtpAndRbacHardeningTest extends TestCase
         $this->assertTrue((bool) $otp->fresh()->used);
         $this->assertFalse(Otp::hasExceededVerifyAttempts($admin->id, 'admin_api_login'));
     }
+
+    public function test_api_ping_connectivity_probe_is_unthrottled_and_no_store(): void
+    {
+        $response = $this->getJson('/api/ping');
+
+        $response->assertOk()
+            ->assertJsonPath('status', 'ok');
+
+        $cacheControl = (string) $response->headers->get('Cache-Control', '');
+        $this->assertStringContainsString('no-store', $cacheControl);
+        $this->assertNull($response->headers->get('X-RateLimit-Limit'));
+    }
 }
