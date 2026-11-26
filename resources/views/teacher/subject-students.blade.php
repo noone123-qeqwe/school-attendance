@@ -18,17 +18,17 @@
     <div style="padding: 20px 22px;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
             <div>
-                <h1 style="font-size: 1.5rem; font-weight: 800; color: #f3e7cd; margin: 0 0 4px 0;">{{ $subject->name }}</h1>
-                <p style="color: #b39b82; margin: 0; font-size: 0.875rem;">
-                    {{ $subject->code }} â€¢ Year {{ $subject->year_level }} â€¢ Semester {{ $subject->semester }}
-                    @if($subject->room) â€¢ Room {{ $subject->room }} @endif
+                <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--portal-text); margin: 0 0 4px 0;">{{ $subject->name }}</h1>
+                <p style="color: var(--portal-muted); margin: 0; font-size: 0.875rem;">
+                    {{ $subject->code }} &bull; Year {{ $subject->year_level }} &bull; Semester {{ $subject->semester }}
+                    @if($subject->room) &bull; Room {{ $subject->room }} @endif
                 </p>
             </div>
             <div style="display: flex; gap: 12px;">
-                <a href="{{ route('teacher.qr', $subject->code) }}" class="tch-btn tch-btn-primary" style="background:#800000;border-color:#8a3b2e;color:white;">
+                <a href="{{ route('teacher.qr', $subject->code) }}" class="tch-btn tch-btn-primary">
                     <i class="bi bi-qr-code me-1"></i> Start QR Attendance
                 </a>
-                <x-back-link :href="route('teacher.subjects')" label="Back to Subjects" variant="teacher-ghost" style="color:#e7d4b8;border-color:rgba(207,164,111,0.2);" />
+                <x-back-link :href="route('teacher.subjects')" label="Back to Subjects" variant="teacher-ghost" />
             </div>
         </div>
     </div>
@@ -142,8 +142,8 @@
         <div class="col-md-3">
             <div class="tch-card">
                 <div style="padding: 20px; text-align: center;">
-                    <div style="font-size: 2rem; font-weight: 800; color: #cfa46f; margin-bottom: 8px;">{{ $studentsWithGoodAttendance }}</div>
-                    <div style="font-size: 0.875rem; color: #b39b82; font-weight: 600;">Good Attendance (â‰¥75%)</div>
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--portal-emerald); margin-bottom: 8px;">{{ $studentsWithGoodAttendance }}</div>
+                    <div style="font-size: 0.875rem; color: var(--portal-muted); font-weight: 600;">Good Attendance (&ge;75%)</div>
                 </div>
             </div>
         </div>

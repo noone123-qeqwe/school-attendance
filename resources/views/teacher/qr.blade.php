@@ -70,17 +70,16 @@
 
 /* Buttons */
 .modern-btn { 
-    background: linear-gradient(135deg, var(--gold), #b88a44) !important;
-    border: none !important;
-    color: #1a1a2e !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%) !important;
+    border: 1px solid #ffffff !important;
+    color: #800000 !important;
     padding: 12px 24px !important;
-    border-radius: 14px !important;
-    font-weight: 700 !important;
-    font-size: 0.92rem !important;
-    box-shadow: 0 6px 20px rgba(207, 164, 111, 0.25) !important;
+    border-radius: 12px !important;
+    font-weight: 750 !important;
+    font-size: 0.9rem !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
     transition: all 0.2s ease !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
+    letter-spacing: 0.02em !important;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -262,9 +261,9 @@
 }
 
 .roster-pill.active {
-    background: linear-gradient(135deg, #cfa46f, #8c6d46);
-    color: #181614;
-    border-color: #ffd700;
+    background: rgba(122, 26, 26, 0.34);
+    color: #ffffff;
+    border-color: var(--portal-gold);
 }
 
 /* Glass Clock-ins Items */

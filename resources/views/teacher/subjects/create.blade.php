@@ -7,7 +7,7 @@
 <div class="tch-card" style="max-width:680px;">
     <div class="tch-card-head">
         <div class="tch-card-title">
-            <div class="tch-card-icon" style="background:#f0fdf4;color:#16a34a;"><i class="bi bi-plus-circle-fill"></i></div>
+            <div class="tch-card-icon" style="background:rgba(52,211,153,0.14);color:var(--portal-emerald);"><i class="bi bi-plus-circle-fill"></i></div>
             Add New Subject
         </div>
     </div>

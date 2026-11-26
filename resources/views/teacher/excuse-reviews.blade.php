@@ -205,8 +205,8 @@
     box-shadow: 0 8px 16px rgba(255, 255, 255, 0.06);
 }
 .modal-content {
-    background: #2a2a2a !important;
-    color: #e2e8f0 !important;
+    background: var(--portal-surface, #1e1515) !important;
+    color: var(--portal-text, #faf8f5) !important;
     display: flex;
     flex-direction: column;
     max-height: calc(100vh - 30px);
@@ -316,31 +316,31 @@
 
 <div class="tch-stats">
     <div class="tch-stat">
-        <div style="width:38px;height:38px;border-radius:10px;background:#fef7f7;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-            <i class="bi bi-file-text-fill" style="color:var(--tch-primary);font-size:1rem;"></i>
+        <div style="width:38px;height:38px;border-radius:10px;background:rgba(212,175,55,0.12);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            <i class="bi bi-file-text-fill" style="color:var(--portal-gold);font-size:1rem;"></i>
         </div>
-        <div class="tch-stat-val" style="color: var(--tch-primary);">{{ $totalSubmissions }}</div>
+        <div class="tch-stat-val" style="color: var(--portal-gold);">{{ $totalSubmissions }}</div>
         <div class="tch-stat-lbl">Total Submissions</div>
     </div>
     <div class="tch-stat">
-        <div style="width:38px;height:38px;border-radius:10px;background:#fffbeb;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-            <i class="bi bi-clock" style="color:#d97706;font-size:1rem;"></i>
+        <div style="width:38px;height:38px;border-radius:10px;background:rgba(251,191,36,0.12);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            <i class="bi bi-clock" style="color:var(--portal-amber);font-size:1rem;"></i>
         </div>
-        <div class="tch-stat-val" style="color: #d97706;">{{ $pendingCount }}</div>
+        <div class="tch-stat-val" style="color: var(--portal-amber);">{{ $pendingCount }}</div>
         <div class="tch-stat-lbl">Pending Review</div>
     </div>
     <div class="tch-stat">
-        <div style="width:38px;height:38px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-            <i class="bi bi-check-circle" style="color:#16a34a;font-size:1rem;"></i>
+        <div style="width:38px;height:38px;border-radius:10px;background:rgba(52,211,153,0.12);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            <i class="bi bi-check-circle" style="color:var(--portal-emerald);font-size:1rem;"></i>
         </div>
-        <div class="tch-stat-val" style="color: #16a34a;">{{ $approvedCount }}</div>
+        <div class="tch-stat-val" style="color: var(--portal-emerald);">{{ $approvedCount }}</div>
         <div class="tch-stat-lbl">Approved</div>
     </div>
     <div class="tch-stat">
-        <div style="width:38px;height:38px;border-radius:10px;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-            <i class="bi bi-x-circle" style="color:#dc2626;font-size:1rem;"></i>
+        <div style="width:38px;height:38px;border-radius:10px;background:rgba(251,113,133,0.12);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            <i class="bi bi-x-circle" style="color:var(--portal-rose);font-size:1rem;"></i>
         </div>
-        <div class="tch-stat-val" style="color: #dc2626;">{{ $rejectedCount }}</div>
+        <div class="tch-stat-val" style="color: var(--portal-rose);">{{ $rejectedCount }}</div>
         <div class="tch-stat-lbl">Rejected</div>
     </div>
 </div>
@@ -348,7 +348,7 @@
 <div class="tch-card">
     <div class="tch-card-head">
         <div class="tch-card-title">
-            <div class="tch-card-icon" style="background: #fef7f7; color: var(--tch-primary);">
+            <div class="tch-card-icon" style="background: rgba(122,26,26,0.22); color: var(--portal-gold);">
                 <i class="bi bi-file-text-fill"></i>
             </div>
             Excuse Submissions

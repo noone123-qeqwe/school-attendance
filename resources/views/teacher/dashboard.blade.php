@@ -1,466 +1,545 @@
 @extends('layouts.app')
-@section('page-title', 'Instructor Dashboard')
-
-@push('styles')
-<style>
-    /* FullCalendar Overrides - Dark Squircle Theme */
-    .fc {
-        color: #f3ede4;
-        font-family: inherit;
-    }
-    .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid {
-        border-color: rgba(255,255,255,0.06) !important;
-    }
-    .fc .fc-col-header-cell {
-        background: rgba(255,255,255,0.025) !important;
-        padding: 12px 0;
-        border: none !important;
-    }
-    .fc .fc-col-header-cell-cushion {
-        color: #cfa46f;
-        text-transform: uppercase;
-        font-size: 0.8rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-decoration: none !important;
-    }
-    .fc .fc-daygrid-day-frame {
-        border-radius: 12px !important;
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.04) !important;
-        margin: 3px !important;
-        min-height: 85px !important;
-        transition: all 0.2s ease;
-    }
-    .fc .fc-daygrid-day-frame:hover {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(207, 164, 111, 0.3) !important;
-        transform: translateY(-1px);
-        z-index: 2;
-    }
-    .fc .fc-daygrid-day-number {
-        color: #f3ede4;
-        font-weight: 700;
-        font-size: 0.95rem;
-        padding: 6px 10px !important;
-        text-decoration: none !important;
-    }
-    .fc .fc-day-sun .fc-daygrid-day-number {
-        color: #f87171 !important;
-    }
-    .fc .fc-day-other .fc-daygrid-day-number {
-        color: #5c4e40;
-        opacity: 0.5;
-    }
-    .fc a {
-        text-decoration: none !important;
-    }
-    .fc .fc-day-today .fc-daygrid-day-frame {
-        background: rgba(207, 164, 111, 0.1) !important;
-        border: 2px solid #cfa46f !important;
-        box-shadow: 0 0 16px rgba(207, 164, 111, 0.2) !important;
-    }
-    .fc .fc-day-today .fc-daygrid-day-number {
-        color: #ffffff !important;
-        font-weight: 800 !important;
-    }
-    .fc .fc-daygrid-event {
-        border: none !important;
-        border-radius: 6px !important;
-        padding: 3px 6px;
-        font-size: 0.74rem;
-        font-weight: 700;
-        color: #ffffff !important;
-        margin: 2px 4px !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
-        cursor: pointer;
-    }
-    .fc .fc-scrollgrid-sync-table { width: 100% !important; }
-    .fc-col-header { width: 100% !important; }
-    .fc-daygrid-body { width: 100% !important; }
-    .fc-scrollgrid { width: 100% !important; }
-
-    /* Modal styling */
-    .event-modal-content {
-        background: linear-gradient(145deg, #241414 0%, #150a0a 100%);
-        border: 1px solid rgba(207, 164, 111, 0.3);
-        border-radius: 20px;
-        color: #f3e7cd;
-    }
-    .event-modal-header {
-        border-bottom: 1px solid rgba(207, 164, 111, 0.15);
-        padding: 18px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    .event-modal-body {
-        padding: 20px 24px;
-    }
-</style>
-@endpush
+@section('page-title', 'Dashboard')
 
 @section('content')
-
 @php
+    $teacherUser = Auth::user();
+    $todayCollection = collect($todayClasses ?? []);
+    $subjectsCollection = collect($teacherSubjects ?? []);
+    $recentCollection = collect($recentAttendance ?? []);
+    $atRiskCollection = collect($atRiskStudents ?? []);
+
     $greetHour = now()->hour;
     $greeting = $greetHour < 12 ? 'Good Morning' : ($greetHour < 17 ? 'Good Afternoon' : 'Good Evening');
+    $greetIcon = $greetHour < 12 ? 'bi-brightness-alt-high-fill' : ($greetHour < 17 ? 'bi-sun-fill' : 'bi-moon-stars-fill');
+
+    $presentCount = (int) ($totalPresent ?? 0);
+    $lateCount = (int) ($totalLate ?? 0);
+    $absentCount = (int) ($totalAbsent ?? 0);
+    // In AnalyticsService, totalPresent already includes Present + Late; keep on-time split clean
+    $onTimeCount = max(0, $presentCount - $lateCount);
+    $totalLogged = $presentCount + $absentCount;
+    $attendanceRate = $totalLogged > 0 ? round(($presentCount / $totalLogged) * 100) : null;
+
+    $rateTone = $attendanceRate === null ? 'empty' : ($attendanceRate >= 85 ? 'good' : ($attendanceRate >= 75 ? 'warning' : 'danger'));
+    $rateTier = $attendanceRate === null ? 'Awaiting Sessions' : ($attendanceRate >= 85 ? 'Healthy Turnout' : ($attendanceRate >= 75 ? 'Moderate Turnout' : 'Needs Follow-Up'));
+
+    $gaugeRadius = 38;
+    $gaugeCircumference = round(2 * pi() * $gaugeRadius, 2);
+    $gaugePct = $attendanceRate === null ? 0 : min(100, max(0, (float) $attendanceRate));
+    $gaugeOffset = round($gaugeCircumference * (1 - ($gaugePct / 100)), 2);
+
+    $onTimePct = $totalLogged > 0 ? round(($onTimeCount / $totalLogged) * 100, 1) : 0;
+    $latePct = $totalLogged > 0 ? round(($lateCount / $totalLogged) * 100, 1) : 0;
+    $absentPct = $totalLogged > 0 ? max(0, round(100 - $onTimePct - $latePct, 1)) : 0;
+
+    $labelsArr = array_values((array) ($weeklyLabels ?? []));
+    $wPresentArr = array_values((array) ($weeklyPresent ?? []));
+    $wLateArr = array_values((array) ($weeklyLate ?? []));
+    $wAbsentArr = array_values((array) ($weeklyAbsent ?? []));
+    $dayTotals = [];
+    for ($d = 0; $d < count($labelsArr); $d++) {
+        $dayTotals[$d] = (int) ($wPresentArr[$d] ?? 0) + (int) ($wLateArr[$d] ?? 0) + (int) ($wAbsentArr[$d] ?? 0);
+    }
+    $maxDayTotal = !empty($dayTotals) ? max(1, max($dayTotals)) : 1;
+
+    $metaParts = [];
+    if (!empty($teacherUser?->employee_id)) {
+        $metaParts[] = ['label' => 'ID ' . $teacherUser->employee_id, 'mono' => true];
+    } else {
+        $metaParts[] = ['label' => 'Faculty Workspace', 'mono' => false];
+    }
+    $metaParts[] = ['label' => $subjectsCollection->count() . ' ' . \Illuminate\Support\Str::plural('Class', $subjectsCollection->count()), 'mono' => false];
+    $metaParts[] = ['label' => ($totalStudents ?? 0) . ' ' . \Illuminate\Support\Str::plural('Student', (int) ($totalStudents ?? 0)), 'mono' => false];
+
+    $recordedTodayCount = $todayCollection->where('has_attendance_today', true)->count();
 @endphp
 
-@if(session('error'))
-<div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:12px;padding:12px 16px;font-size:.875rem;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
-    <i class="bi bi-exclamation-circle-fill"></i><span>{{ session('error') }}</span>
-</div>
-@endif
-
-@if(session('success'))
-<div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:12px;padding:12px 16px;font-size:.875rem;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
-    <i class="bi bi-check-circle-fill"></i><span>{{ session('success') }}</span>
-</div>
-@endif
-
-<!-- Urgent Alerts -->
-@if(isset($pendingExcuses) && $pendingExcuses > 0)
-<div class="ent-alert ent-fade-up" style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); margin-bottom: 24px; padding: 24px; border-radius: 16px;">
-    <div class="d-flex align-items-center gap-3 mb-3">
-        <div class="ent-alert-icon" style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.1);">
-            <i class="bi bi-file-earmark-text-fill"></i>
-        </div>
-        <div class="ent-alert-body" style="flex: 1;">
-            <div class="ent-alert-title" style="color: #fcd34d; font-weight: 700; font-size: 1.1rem; letter-spacing: -0.01em;">{{ $pendingExcuses }} Pending Excuses</div>
-            <div class="ent-alert-text" style="color: #b39b82; font-size: 0.875rem;">Students have submitted leave requests requiring your review.</div>
-        </div>
-    </div>
-    <div class="d-flex gap-3 flex-wrap">
-        <a href="{{ route('teacher.excuse.reviews') }}" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, #fbbf24, #d97706); border: 1px solid rgba(245,158,11,0.4); border-radius: 10px; color: #1a1a2e;">
-            Review Now
-        </a>
-    </div>
-</div>
-@endif
-
-<!-- Hero Banner -->
-<div class="premium-hero-card dashboard-hero mb-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
-        <div class="d-flex align-items-center gap-3">
-            <div>
-                <h1 style="color: #ffffff; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 4vw, 2.1rem); letter-spacing: -0.5px;">{{ Auth::user()->name }}</h1>
-                <div style="color: #b39b82; font-size: 0.88rem; font-weight: 500;">
-                    Manage your active classes, attendance, and student requests
+<div class="portal-cockpit">
+    {{-- ── 1. Open Editorial Masthead ────────────────────────────────────── --}}
+    <header class="portal-masthead" aria-label="Faculty overview">
+        <div class="portal-identity-cluster">
+            <div class="portal-avatar-ring">
+                <img src="{{ $teacherUser->profile_photo_url_with_version }}" alt="{{ $teacherUser->name }}">
+                <span class="portal-avatar-live-dot" title="Active Session" aria-hidden="true"></span>
+            </div>
+            <div class="portal-identity-copy">
+                <div class="portal-kicker-line">
+                    <span class="portal-kicker-greeting">
+                        <i class="bi {{ $greetIcon }}" aria-hidden="true"></i>
+                        <span>{{ $greeting }}</span>
+                    </span>
+                    <span class="portal-kicker-sep" aria-hidden="true">&middot;</span>
+                    <span>{{ ($targetDate ?? now())->format('l, M j') }}</span>
+                    <span class="portal-kicker-sep" aria-hidden="true">&middot;</span>
+                    <span id="teacherClock" class="portal-kicker-clock portal-mono" title="Campus Local Time">{{ now()->format('g:i A') }}</span>
+                </div>
+                <h1 class="portal-title">{{ $teacherUser->name }}</h1>
+                <div class="portal-meta-ribbon">
+                    @foreach($metaParts as $metaPart)
+                        @if(!$loop->first)<span class="portal-meta-sep" aria-hidden="true">&middot;</span>@endif
+                        <span class="portal-meta-item {{ $metaPart['mono'] ? 'portal-mono is-id' : '' }}">{{ $metaPart['label'] }}</span>
+                    @endforeach
                 </div>
             </div>
         </div>
-        <div class="d-flex flex-column align-items-md-end gap-2">
-            <div class="hero-clock-pill">
-                <div class="hero-clock-time">
-                    <i class="bi bi-clock"></i> <span id="teacherClock">{{ now()->format('h:i A') }}</span>
-                </div>
-                <div class="hero-clock-date">{{ now()->format('l, F j, Y') }}</div>
-            </div>
-            <div class="d-flex gap-2 justify-content-end mt-1 teacher-dashboard-hero-actions">
-                <a href="{{ route('teacher.reports.pdf') }}" target="_blank" rel="noopener" class="btn-modern-glass" style="padding: 8px 16px; font-size: 0.84rem;">
-                    <i class="bi bi-file-earmark-arrow-down-fill" style="color: var(--gold);"></i> Download report
-                </a>
-                <a href="{{ route('teacher.excuse.reviews') }}" class="btn-modern-gold" style="padding: 8px 16px; font-size: 0.84rem;">
-                    <i class="bi bi-file-earmark-text"></i> Review excuses
-                </a>
-            </div>
+
+        <div class="portal-masthead-actions">
+            <a href="{{ route('teacher.classroom.index', ['task' => 'attendance']) }}" class="portal-cta-primary">
+                <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
+                <span>Take Attendance</span>
+            </a>
+            <a href="{{ route('teacher.reports.pdf') }}" target="_blank" rel="noopener" class="portal-cta-secondary">
+                <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i>
+                <span>Download Report</span>
+            </a>
         </div>
-    </div>
-</div>
+    </header>
 
-<nav class="teacher-quick-tasks" aria-label="Daily teacher tasks">
-    <a href="{{ route('teacher.classroom.index', ['task' => 'attendance']) }}" class="teacher-task-link teacher-task-primary"><i class="bi bi-qr-code-scan" aria-hidden="true"></i><span><strong>Take attendance</strong><small>Choose a class and open its QR</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-    <a href="{{ route('teacher.classroom.index') }}" class="teacher-task-link"><i class="bi bi-journal-bookmark" aria-hidden="true"></i><span><strong>My classes</strong><small>Students, schedules, and materials</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-    <a href="{{ route('teacher.attendance') }}" class="teacher-task-link"><i class="bi bi-clipboard-check" aria-hidden="true"></i><span><strong>Attendance records</strong><small>Search and check recorded attendance</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-    <a href="{{ route('teacher.excuse.reviews') }}" class="teacher-task-link"><i class="bi bi-file-earmark-text" aria-hidden="true"></i><span><strong>Review excuses</strong><small>Read student letters and respond</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-</nav>
-
-<section class="teacher-today-section" aria-label="Today's classes">
-    <x-card title="Today's Classes" icon="bi bi-easel-fill">
-        <div class="teacher-today-grid">
-            @forelse($todayClasses as $class)
-                <div class="teacher-today-class">
-                    <a href="{{ route('teacher.qr', $class->code) }}" class="teacher-today-attendance">
-                        <span><strong>{{ $class->name }}</strong><small>{{ $class->code }}</small></span>
-                        <span>Take attendance <i class="bi bi-arrow-right" aria-hidden="true"></i></span>
-                    </a>
-                    <a href="{{ route('teacher.attendance', ['subject' => $class->code, 'date' => now()->toDateString()]) }}" class="teacher-today-records">View today's records</a>
+    {{-- ── 2. Contextual Alert Rail (Flashes, Live Echo & Pending Reviews) ── --}}
+    <div class="portal-alert-rail">
+        @if(session('error'))
+            <div class="portal-banner is-error" role="alert">
+                <div class="portal-banner-lead">
+                    <span class="portal-banner-icon" aria-hidden="true"><i class="bi bi-exclamation-circle-fill"></i></span>
+                    <div><div class="portal-banner-title">{{ session('error') }}</div></div>
                 </div>
-            @empty
-                <div class="teacher-today-empty">
-                    <p>No classes scheduled today. You can still open your assigned classes and view their schedules.</p>
-                    <a href="{{ route('teacher.classroom.index') }}" class="ent-btn ent-btn-secondary">View my classes <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            </div>
+        @endif
+
+        @if(session('success'))
+            <div class="portal-banner is-success" role="status">
+                <div class="portal-banner-lead">
+                    <span class="portal-banner-icon" aria-hidden="true"><i class="bi bi-check-circle-fill"></i></span>
+                    <div><div class="portal-banner-title">{{ session('success') }}</div></div>
                 </div>
-            @endforelse
-        </div>
-    </x-card>
-</section>
+            </div>
+        @endif
 
-<!-- Quick Stats -->
-<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:grid; gap:20px; margin-bottom:24px;">
-    <x-card type="kpi" accent="gold" label="Today's Classes" value="{{ $todayClasses->count() }}" icon="bi bi-easel-fill" />
-    <x-card type="kpi" accent="info" label="Total Students" value="{{ $totalStudents ?? 0 }}" icon="bi bi-people-fill" />
-    <x-card type="kpi" accent="success" label="Present Today" value="{{ $totalPresent ?? 0 }}" icon="bi bi-check-circle-fill" />
-    <x-card type="kpi" accent="danger" label="Absent Today" value="{{ $totalAbsent ?? 0 }}" icon="bi bi-x-circle-fill" />
-</div>
+        <div id="peerLiveNotice" class="portal-banner is-live" role="status" aria-live="polite" hidden></div>
+        <div id="peerLiveConnection" class="portal-banner is-info" role="status" hidden></div>
 
-<div id="peerLiveNotice" role="status" aria-live="polite" hidden style="margin-bottom:20px;padding:14px 18px;border:1px solid rgba(74,222,128,.35);border-radius:12px;background:rgba(74,222,128,.09);color:#d6f8df;"></div>
-<div id="peerLiveConnection" role="status" hidden style="margin-bottom:14px;color:#b39b82;font-size:.8rem;"></div>
-
-<div class="row g-4 mb-4">
-    <!-- Left Column -->
-    <div class="col-lg-8">
-        
-        <!-- School Calendar -->
-        <div class="mb-4">
-            <x-card title="School Calendar" class="teacher-dashboard-calendar" icon="bi bi-calendar3">
-                <x-slot name="headerActions">
-                    <div class="d-flex align-items-center gap-2">
-                        <button type="button" onclick="schoolCalendar.prev(); updateCalendarTitle();" aria-label="Previous calendar period" class="btn btn-outline btn-sm" style="color: var(--ent-text); border-color: var(--ent-border);">
-                            <i class="bi bi-chevron-left"></i>
-                        </button>
-                        <button type="button" onclick="schoolCalendar.next(); updateCalendarTitle();" aria-label="Next calendar period" class="btn btn-outline btn-sm" style="color: var(--ent-text); border-color: var(--ent-border);">
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
-                        <button type="button" onclick="schoolCalendar.today(); updateCalendarTitle();" class="btn btn-outline btn-sm" style="color: var(--ent-text); border-color: var(--ent-border);">
-                            Today
-                        </button>
+        @if(isset($pendingExcuses) && $pendingExcuses > 0)
+            <div class="portal-banner is-warning" role="region" aria-label="Pending excuse reviews">
+                <div class="portal-banner-lead">
+                    <span class="portal-banner-icon" aria-hidden="true"><i class="bi bi-file-earmark-text-fill"></i></span>
+                    <div>
+                        <div class="portal-banner-title">{{ $pendingExcuses }} Pending {{ \Illuminate\Support\Str::plural('Excuse', $pendingExcuses) }} Awaiting Review</div>
+                        <div class="portal-banner-sub">Students or guardians have submitted absence documentation for your classes.</div>
                     </div>
-                </x-slot>
-
-                <div id="calendarTitle" style="font-weight: 700; color: var(--ent-text); font-size: 1.1rem; margin-bottom: 16px;"></div>
-
-                <div class="legend-container mb-3 d-flex gap-3 flex-wrap" style="font-size:0.8rem; font-weight:600; color:var(--ent-text-muted);">
-                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#60a5fa;"></div> Class</div>
-                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#ec4899;"></div> Exam</div>
-                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#fbbf24;"></div> Meeting</div>
-                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#a78bfa;"></div> School Event</div>
-                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#4ade80;"></div> Holiday</div>
                 </div>
+                <a href="{{ route('teacher.excuse.reviews') }}" class="portal-banner-btn">
+                    Review Excuses <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                </a>
+            </div>
+        @endif
+    </div>
 
-                <div style="overflow-x: auto;">
-                    <div id="schoolCalendar" style="min-height: 500px; min-width: 700px;"></div>
+    {{-- ── 3. Signature Asymmetric Hero Canvas (Teaching Stage + Telemetry) ─ --}}
+    <div class="portal-hero-grid">
+        {{-- Left: Today's Teaching Stage --}}
+        <section class="portal-stage {{ $todayCollection->isNotEmpty() ? 'is-next' : 'is-idle' }}" aria-labelledby="teacherTodayHeading">
+            <div class="portal-stage-head">
+                <span class="portal-stage-eyebrow">
+                    <span class="portal-pulse-dot {{ $todayCollection->isNotEmpty() ? '' : 'is-done' }}" aria-hidden="true"></span>
+                    Today&rsquo;s Teaching Schedule
+                </span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="portal-code-tag portal-mono">{{ $recordedTodayCount }}/{{ $todayCollection->count() }} recorded</span>
+                    <a href="{{ route('teacher.classroom.index') }}" class="portal-panel-link">All classes <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
                 </div>
-            </x-card>
-        </div>
+            </div>
 
-        <!-- Recent Logs -->
-        <div class="mb-4">
-            <x-card title="Recent Attendance" icon="bi bi-clock-history">
-                <div class="mb-3">
-                    <input type="text" id="recentLogsSearch" placeholder="Search student or class..." aria-label="Search recent attendance"
-                        style="background:rgba(255,255,255,0.04);border:1px solid var(--ent-border);border-radius:8px;color:var(--ent-text);padding:8px 12px;font-size:0.85rem;width:100%;outline:none;font-family:'Inter',sans-serif;" 
-                        onkeyup="filterRecentLogs()">
-                </div>
-                
-                <div id="recentAttendanceRows" class="d-flex flex-column gap-3" style="max-height: 300px; overflow-y: auto;">
-                    @forelse($recentAttendance->take(8) as $record)
-                        <div class="attendance-row" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#f3e7cd;">
-                                    {{ substr($record->user->name, 0, 2) }}
+            @if($todayCollection->isNotEmpty())
+                <div class="td-today-list">
+                    @foreach($todayCollection as $cls)
+                        @php
+                            $dayName = ($targetDate ?? now())->format('l');
+                            $daySched = $cls->schedules->firstWhere('day', $dayName) ?? $cls->schedules->first();
+                            $roomName = trim((string) ($daySched?->room ?? $cls->room ?? ''));
+                            $timeWindow = ($daySched?->start_time && $daySched?->end_time)
+                                ? \Carbon\Carbon::parse($daySched->start_time)->format('g:i A') . ' – ' . \Carbon\Carbon::parse($daySched->end_time)->format('g:i A')
+                                : 'Flexible / Scheduled';
+                        @endphp
+                        <div class="td-today-card {{ $cls->has_attendance_today ? 'is-recorded' : '' }}">
+                            <div class="td-today-info">
+                                <div class="td-today-top">
+                                    <span class="portal-code-tag portal-mono">{{ $cls->code }}</span>
+                                    <span class="td-today-name">{{ $cls->name }}</span>
+                                    @if($cls->has_attendance_today)
+                                        <span class="portal-status-pill is-present portal-tabular">
+                                            <i class="bi bi-check-lg" aria-hidden="true"></i> {{ $cls->class_health }}% &middot; {{ $cls->attendance_count_today }} checked in
+                                        </span>
+                                    @else
+                                        <span class="portal-status-pill is-upcoming">No session logged yet</span>
+                                    @endif
                                 </div>
-                                <div>
-                                    <div style="font-weight: 700; color: #f3e7cd;">{{ $record->user->name }}</div>
-                                    <div style="color: #b39b82; font-size: 0.8rem; margin-top: 4px;">
-                                        {{ $record->subject->name ?? $record->subject_code }}
+                                <div class="td-today-meta portal-tabular">
+                                    <span><i class="bi bi-clock" aria-hidden="true"></i> {{ $timeWindow }}</span>
+                                    @if($roomName !== '' && strtoupper($roomName) !== 'TBA')
+                                        <span><i class="bi bi-geo-alt" aria-hidden="true"></i> {{ $roomName }}</span>
+                                    @endif
+                                    @if(!empty($cls->section))
+                                        <span><i class="bi bi-people" aria-hidden="true"></i> Sec {{ $cls->section }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="td-today-actions">
+                                <a href="{{ route('teacher.qr', $cls->code) }}" class="td-btn-qr">
+                                    <i class="bi bi-qr-code-scan" aria-hidden="true"></i> Launch QR
+                                </a>
+                                <a href="{{ route('teacher.attendance', ['subject' => $cls->code, 'date' => ($targetDate ?? now())->toDateString()]) }}" class="td-btn-records">
+                                    Records
+                                </a>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="portal-inline-empty" style="padding: 16px 0;">
+                    <div>
+                        <strong style="color: var(--portal-white); display: block; margin-bottom: 4px;">No classes scheduled for {{ ($targetDate ?? now())->format('l') }}</strong>
+                        <span>Open any of your assigned classes anytime to launch a manual session, review rosters, or manage materials.</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ route('teacher.classroom.index') }}" class="portal-cta-secondary">View My Classes <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                        <a href="{{ route('teacher.subjects.create') }}" class="portal-cta-secondary">Add Subject</a>
+                    </div>
+                </div>
+            @endif
+        </section>
+
+        {{-- Right: Attendance Telemetry & Interactive 7-Day Trend --}}
+        <section class="portal-telemetry" aria-label="Daily Attendance Telemetry and 7-Day Trend">
+            <div class="portal-standing-top">
+                <div class="portal-gauge-wrap">
+                    <svg class="portal-gauge-svg" viewBox="0 0 88 88" aria-hidden="true">
+                        <circle class="portal-gauge-track" cx="44" cy="44" r="{{ $gaugeRadius }}"></circle>
+                        <circle class="portal-gauge-fill is-{{ $rateTone }}"
+                                cx="44" cy="44" r="{{ $gaugeRadius }}"
+                                stroke-dasharray="{{ $gaugeCircumference }}"
+                                stroke-dashoffset="{{ $gaugeOffset }}"></circle>
+                    </svg>
+                    <div class="portal-gauge-center">
+                        <span class="portal-gauge-value portal-tabular is-{{ $rateTone }}">{{ $attendanceRate === null ? '—' : $attendanceRate . '%' }}</span>
+                        <span class="portal-gauge-sub">Today</span>
+                    </div>
+                </div>
+
+                <div style="min-width: 0; flex: 1 1 auto;">
+                    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-1">
+                        <h2 style="margin: 0; font-size: 0.96rem; font-weight: 800; color: #ffffff;">Daily Turnout</h2>
+                        <span class="portal-status-pill is-{{ $rateTone === 'good' ? 'present' : ($rateTone === 'warning' ? 'late' : ($rateTone === 'danger' ? 'absent' : 'muted')) }}">{{ $rateTier }}</span>
+                    </div>
+                    <p style="margin: 0; font-size: 0.79rem; color: var(--portal-text-soft);" class="portal-tabular">
+                        @if($totalLogged > 0)
+                            <strong>{{ $presentCount }}</strong> attended out of <strong>{{ $totalLogged }}</strong> logged check-ins
+                        @else
+                            Live check-ins appear here once a session starts
+                        @endif
+                    </p>
+                </div>
+            </div>
+
+            {{-- Live Echo-Compatible KPI Strip --}}
+            <div id="realStats" class="td-live-kpi-grid" role="region" aria-label="Today's check-in totals">
+                <div class="td-kpi-pill" data-accent="success">
+                    <span class="td-kpi-pill-label">Present</span>
+                    <span class="ent-kpi-value">{{ $presentCount }}</span>
+                </div>
+                <div class="td-kpi-pill" data-accent="warning">
+                    <span class="td-kpi-pill-label">Late</span>
+                    <span class="ent-kpi-value">{{ $lateCount }}</span>
+                </div>
+                <div class="td-kpi-pill" data-accent="danger">
+                    <span class="td-kpi-pill-label">Absent</span>
+                    <span class="ent-kpi-value">{{ $absentCount }}</span>
+                </div>
+            </div>
+
+            <div class="portal-breakdown-bar" role="img" aria-label="Today breakdown: {{ $onTimeCount }} on-time, {{ $lateCount }} late, {{ $absentCount }} absent">
+                @if($totalLogged > 0)
+                    @if($onTimePct > 0)<span class="portal-seg is-present" style="width: {{ $onTimePct }}%;"></span>@endif
+                    @if($latePct > 0)<span class="portal-seg is-late" style="width: {{ $latePct }}%;"></span>@endif
+                    @if($absentPct > 0)<span class="portal-seg is-absent" style="width: {{ $absentPct }}%;"></span>@endif
+                @else
+                    <span class="portal-seg is-empty" style="width: 100%;"></span>
+                @endif
+            </div>
+
+            {{-- 7-Day Attendance Trend Bars (uses AnalyticsService weekly arrays) --}}
+            @if(!empty($labelsArr))
+            <div class="td-trend-section" id="tdWeeklyTrend">
+                <div class="td-trend-head">
+                    <span class="td-trend-title">7-Day Attendance Trend</span>
+                    <span class="td-trend-readout portal-mono" id="tdTrendReadout">Tap a day</span>
+                </div>
+                <div class="td-trend-bars" role="group" aria-label="7-Day Attendance Volume">
+                    @foreach($labelsArr as $idx => $dayLabel)
+                        @php
+                            $dPres = (int) ($wPresentArr[$idx] ?? 0);
+                            $dLate = (int) ($wLateArr[$idx] ?? 0);
+                            $dAbs = (int) ($wAbsentArr[$idx] ?? 0);
+                            $dTot = $dPres + $dLate + $dAbs;
+                            $hPres = $dTot > 0 ? round(($dPres / $maxDayTotal) * 100, 1) : 0;
+                            $hLate = $dTot > 0 ? round(($dLate / $maxDayTotal) * 100, 1) : 0;
+                            $hAbs = $dTot > 0 ? round(($dAbs / $maxDayTotal) * 100, 1) : 0;
+                            $isLastDay = $idx === (count($labelsArr) - 1);
+                        @endphp
+                        <button type="button"
+                                class="td-trend-col {{ $isLastDay ? 'is-today is-selected' : '' }}"
+                                data-trend-summary="{{ $dayLabel }}: {{ $dPres }} Present · {{ $dLate }} Late · {{ $dAbs }} Absent"
+                                aria-label="{{ $dayLabel }}: {{ $dPres }} present, {{ $dLate }} late, {{ $dAbs }} absent">
+                            <div class="td-trend-track" aria-hidden="true">
+                                @if($hPres > 0)<span class="td-trend-seg is-present" style="height: {{ $hPres }}%;"></span>@endif
+                                @if($hLate > 0)<span class="td-trend-seg is-late" style="height: {{ $hLate }}%;"></span>@endif
+                                @if($hAbs > 0)<span class="td-trend-seg is-absent" style="height: {{ $hAbs }}%;"></span>@endif
+                            </div>
+                            <span class="td-trend-total portal-mono">{{ $dTot }}</span>
+                            <span class="td-trend-day">{{ $dayLabel }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+        </section>
+    </div>
+
+    {{-- ── 4. Sleek Contextual Utility Rail ──────────────────────────────── --}}
+    <nav class="portal-utility-rail" aria-label="Teacher shortcuts">
+        <a href="{{ route('teacher.classroom.index') }}" class="portal-util-item">
+            <i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i>
+            <span>My Classes</span>
+            <span class="portal-util-count portal-mono">{{ $subjectsCollection->count() }}</span>
+        </a>
+        <a href="{{ route('teacher.attendance') }}" class="portal-util-item">
+            <i class="bi bi-clipboard-check-fill" aria-hidden="true"></i>
+            <span>Attendance Records</span>
+        </a>
+        <a href="{{ route('teacher.excuse.reviews') }}" class="portal-util-item">
+            <i class="bi bi-file-earmark-text-fill" aria-hidden="true"></i>
+            <span>Excuse Reviews</span>
+            @if(!empty($pendingExcuses) && $pendingExcuses > 0)
+                <span class="portal-util-count is-amber portal-mono">{{ $pendingExcuses }}</span>
+            @endif
+        </a>
+        <a href="{{ route('teacher.corrections') }}" class="portal-util-item">
+            <i class="bi bi-pencil-square" aria-hidden="true"></i>
+            <span>Corrections</span>
+        </a>
+        <a href="{{ route('teacher.absent') }}" class="portal-util-item">
+            <i class="bi bi-person-x-fill" aria-hidden="true"></i>
+            <span>Absent Report</span>
+        </a>
+        <a href="{{ route('teacher.students') }}" class="portal-util-item">
+            <i class="bi bi-people-fill" aria-hidden="true"></i>
+            <span>Student Roster</span>
+            <span class="portal-util-count portal-mono">{{ $totalStudents ?? 0 }}</span>
+        </a>
+        <a href="{{ route('teacher.reports') }}" class="portal-util-item">
+            <i class="bi bi-graph-up-arrow" aria-hidden="true"></i>
+            <span>Reports</span>
+        </a>
+    </nav>
+
+    {{-- ── 5. Asymmetric Operational Workspace ───────────────────────────── --}}
+    <div class="portal-workspace">
+        <div class="portal-col-main">
+            {{-- School Calendar Panel --}}
+            <section class="portal-panel teacher-dashboard-calendar" aria-labelledby="teacherCalendarHeading">
+                <header class="portal-panel-head">
+                    <div class="portal-panel-title-group">
+                        <h2 id="teacherCalendarHeading" class="portal-panel-title">School Calendar</h2>
+                        <span id="calendarTitle" class="portal-panel-meta portal-tabular">{{ now()->format('F Y') }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Calendar navigation">
+                            <button type="button" id="calPrevBtn" class="btn btn-sm tch-btn-secondary" aria-label="Previous calendar period">
+                                <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                            </button>
+                            <button type="button" id="calTodayBtn" class="btn btn-sm tch-btn-secondary">Today</button>
+                            <button type="button" id="calNextBtn" class="btn btn-sm tch-btn-secondary" aria-label="Next calendar period">
+                                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <a href="{{ route('teacher.calendar') }}" class="portal-panel-link ms-1">
+                            Full calendar <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </header>
+
+                <div class="portal-panel-body">
+                    <div class="d-flex gap-3 flex-wrap mb-3" style="font-size: 0.76rem; font-weight: 600; color: var(--portal-muted);">
+                        <span class="d-inline-flex align-items-center gap-1"><span style="width:8px;height:8px;border-radius:50%;background:#60a5fa;"></span> Class</span>
+                        <span class="d-inline-flex align-items-center gap-1"><span style="width:8px;height:8px;border-radius:50%;background:#ec4899;"></span> Exam</span>
+                        <span class="d-inline-flex align-items-center gap-1"><span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;"></span> Meeting</span>
+                        <span class="d-inline-flex align-items-center gap-1"><span style="width:8px;height:8px;border-radius:50%;background:#a78bfa;"></span> School Event</span>
+                        <span class="d-inline-flex align-items-center gap-1"><span style="width:8px;height:8px;border-radius:50%;background:#4ade80;"></span> Holiday</span>
+                    </div>
+                    <div id="schoolCalendar"></div>
+                </div>
+            </section>
+
+            {{-- Recent Attendance Ledger --}}
+            <section class="portal-panel" aria-labelledby="teacherRecentHeading">
+                <header class="portal-panel-head">
+                    <div class="portal-panel-title-group">
+                        <h2 id="teacherRecentHeading" class="portal-panel-title">Recent Attendance</h2>
+                        <span class="portal-panel-meta">Latest check-ins across your subjects</span>
+                    </div>
+                    <a href="{{ route('teacher.attendance') }}" class="portal-panel-link">View all <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                </header>
+
+                <div class="portal-panel-body" style="padding-bottom: 10px; border-bottom: 1px solid var(--portal-border-subtle);">
+                    <input type="text" id="recentLogsSearch" class="td-search-input" placeholder="Search student name or class..." aria-label="Search recent attendance">
+                </div>
+
+                <div id="recentAttendanceRows" class="td-ledger-list">
+                    @forelse($recentCollection->take(8) as $record)
+                        @php
+                            $recordStatus = strtolower((string) ($record->status ?? 'absent'));
+                            $recordTone = $recordStatus === 'present' ? 'present' : ($recordStatus === 'late' ? 'late' : 'absent');
+                            $studentName = $record->user->name ?? 'Unknown Student';
+                            $initials = mb_strtoupper(mb_substr($studentName, 0, 2));
+                            $loggedAt = $record->time_in
+                                ? \Carbon\Carbon::parse($record->time_in)->format('g:i A')
+                                : ($record->created_at ? $record->created_at->format('M j, g:i A') : '');
+                        @endphp
+                        <div class="attendance-row">
+                            <div class="d-flex align-items-center gap-3" style="min-width: 0; flex: 1 1 200px;">
+                                <div class="td-avatar-monogram portal-mono" aria-hidden="true">{{ $initials }}</div>
+                                <div style="min-width: 0;">
+                                    <div style="font-weight: 700; color: #ffffff; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis;">{{ $studentName }}</div>
+                                    <div style="color: var(--portal-muted); font-size: 0.76rem;" class="portal-tabular">
+                                        <span class="portal-code-tag portal-mono">{{ $record->subject_code }}</span>
+                                        <span>{{ $record->subject->name ?? '' }}</span>
+                                        @if($loggedAt)<span>&middot; {{ $loggedAt }}</span>@endif
                                     </div>
                                 </div>
                             </div>
-                            <div>
-                                @php $recordStatus = strtolower($record->status ?? ''); @endphp
-                                @if($recordStatus === 'present') <x-badge type="present">Present</x-badge>
-                                @elseif($recordStatus === 'late') <x-badge type="late">Late</x-badge>
-                                @else <x-badge type="absent">{{ $record->status }}</x-badge>
-                                @endif
-                            </div>
+                            <span class="portal-status-pill is-{{ $recordTone }}">{{ ucfirst($recordStatus) }}</span>
                         </div>
                     @empty
-                        <div class="empty-state text-center" style="padding: 40px 20px;">
-                            <i class="bi bi-inbox-fill" style="font-size: 3rem; color: #b39b82; opacity: 0.5;"></i>
-                            <p style="color: #b39b82; font-size: 1rem; margin-top: 16px; font-weight: 600;">No recent logs</p>
+                        <div class="empty-state portal-inline-empty">
+                            <span>No check-in activity yet for your classes.</span>
                         </div>
                     @endforelse
                 </div>
-            </x-card>
+            </section>
         </div>
 
-    </div>
-
-    <!-- Right Column -->
-    <div class="col-lg-4">
-        
-        <!-- At-Risk Students -->
-        @if(isset($atRiskStudents) && $atRiskStudents->count() > 0)
-        <div class="mb-4">
-            <x-card title="Early Warning" icon="bi bi-exclamation-triangle-fill">
-                <div class="d-flex flex-column gap-3">
-                    @foreach($atRiskStudents->take(3) as $stat)
-                    <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(248,113,113,0.15); padding: 14px; border-radius: 12px;">
-                        <div style="font-size: 0.9rem; font-weight: 700; color: var(--ent-text); margin-bottom: 8px;">{{ $stat->user->name }}</div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--ent-text-muted); margin-bottom: 6px;">
-                            <span>Attendance Rate</span>
-                            <span style="color: var(--ent-danger); font-weight: 700;">{{ $stat->rate }}%</span>
-                        </div>
-                        <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden;">
-                            <div style="height: 100%; width: {{ $stat->rate }}%; background: #f87171; border-radius: 99px;"></div>
-                        </div>
+        <div class="portal-col-aside">
+            {{-- Early Warning / At-Risk Students --}}
+            <section class="portal-panel" aria-labelledby="teacherAtRiskHeading">
+                <header class="portal-panel-head">
+                    <div class="portal-panel-title-group">
+                        <h2 id="teacherAtRiskHeading" class="portal-panel-title">Early Warning</h2>
+                        <span class="portal-panel-meta">Students below 80% attendance across your classes</span>
                     </div>
-                    @endforeach
-                    @if($atRiskStudents->count() > 3)
-                        <div style="text-align: center; margin-top: 8px;">
-                            <a href="{{ route('teacher.classroom.index') }}" style="font-size: 0.85rem; color: #b39b82; text-decoration: none;">View all at-risk students <i class="bi bi-arrow-right"></i></a>
+                    <a href="{{ route('teacher.absent') }}" class="portal-panel-link">Absent report <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                </header>
+
+                @if($atRiskCollection->isNotEmpty())
+                    <div>
+                        @foreach($atRiskCollection->take(5) as $stat)
+                            @php
+                                $atRiskUser = $stat->user;
+                                $rateVal = (int) ($stat->rate ?? 0);
+                            @endphp
+                            @if($atRiskUser)
+                            <a href="{{ route('teacher.student', $stat->user_id) }}" class="td-atrisk-row">
+                                <div class="d-flex align-items-center justify-content-between gap-2">
+                                    <span style="font-size: 0.86rem; font-weight: 700; color: #ffffff;">{{ $atRiskUser->name }}</span>
+                                    <span class="portal-mono" style="font-size: 0.82rem; font-weight: 800; color: var(--portal-rose);">{{ $rateVal }}%</span>
+                                </div>
+                                <div style="height: 5px; width: 100%; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden;" aria-hidden="true">
+                                    <span style="display: block; height: 100%; width: {{ min(100, max(4, $rateVal)) }}%; background: var(--portal-rose); border-radius: 999px;"></span>
+                                </div>
+                                <div class="d-flex justify-content-between" style="font-size: 0.72rem; color: var(--portal-muted);">
+                                    <span>{{ $atRiskUser->student_number ?? ($atRiskUser->course ?? 'Student') }}</span>
+                                    <span class="portal-mono">{{ (int) ($stat->present_sessions ?? 0) }}/{{ (int) ($stat->total_sessions ?? 0) }} sessions</span>
+                                </div>
+                            </a>
+                            @endif
+                        @endforeach
+                    </div>
+                @else
+                    <div class="portal-inline-empty">
+                        <span>All students are currently at or above 80% attendance.</span>
+                    </div>
+                @endif
+            </section>
+
+            {{-- Post Class Announcement --}}
+            <section class="portal-panel" aria-labelledby="teacherAnnounceHeading">
+                <header class="portal-panel-head">
+                    <div class="portal-panel-title-group">
+                        <h2 id="teacherAnnounceHeading" class="portal-panel-title">Post Class Announcement</h2>
+                        <span class="portal-panel-meta">Notify students enrolled in a specific subject</span>
+                    </div>
+                </header>
+
+                <div class="portal-panel-body">
+                    <form action="{{ route('teacher.announcements.store') }}" method="POST" class="td-announce-form">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label" for="teacherAnnouncementClass" style="font-size: 0.78rem; font-weight: 700; color: var(--portal-text-soft);">Class *</label>
+                            <select id="teacherAnnouncementClass" name="target_id" class="form-select" required>
+                                <option value="">Select a class...</option>
+                                @foreach($subjectsCollection as $sub)
+                                    <option value="{{ $sub->id }}">{{ $sub->name }} ({{ $sub->code }})</option>
+                                @endforeach
+                            </select>
                         </div>
-                    @endif
+                        <div class="mb-3">
+                            <label class="form-label" for="teacherAnnouncementTitle" style="font-size: 0.78rem; font-weight: 700; color: var(--portal-text-soft);">Title *</label>
+                            <input id="teacherAnnouncementTitle" type="text" name="title" class="form-control" placeholder="e.g. Quiz Schedule Update" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="teacherAnnouncementMessage" style="font-size: 0.78rem; font-weight: 700; color: var(--portal-text-soft);">Message *</label>
+                            <textarea id="teacherAnnouncementMessage" name="content" class="form-control" rows="3" placeholder="Write your notice for students..." required></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" for="teacherAnnouncementSchedule" style="font-size: 0.78rem; font-weight: 700; color: var(--portal-text-soft);">Publish later (optional)</label>
+                            <input id="teacherAnnouncementSchedule" type="datetime-local" name="scheduled_for" class="form-control">
+                        </div>
+                        <button type="submit" class="portal-cta-primary w-100">
+                            <i class="bi bi-send-fill" aria-hidden="true"></i>
+                            <span>Publish Announcement</span>
+                        </button>
+                    </form>
                 </div>
-            </x-card>
+            </section>
         </div>
-        @endif
-        
-        <!-- Post Announcement -->
-        <div class="mb-4">
-            <x-card title="Post Announcement" icon="bi bi-megaphone-fill">
-                <form action="{{ route('teacher.announcements.store') }}" method="POST">
-                    @csrf
-                    <div class="mb-3">
-                        <label class="form-label" for="teacherAnnouncementClass" style="font-weight: 600; color: #b39b82;">Class *</label>
-                        <select id="teacherAnnouncementClass" name="target_id" class="form-select" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
-                            <option value="">Select a class...</option>
-                            @foreach($teacherSubjects as $sub)
-                                <option value="{{ $sub->id }}" style="color: #000;">{{ $sub->name }} ({{ $sub->code }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="teacherAnnouncementTitle" style="font-weight: 600; color: #b39b82;">Title *</label>
-                        <input id="teacherAnnouncementTitle" type="text" name="title" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="teacherAnnouncementMessage" style="font-weight: 600; color: #b39b82;">Message *</label>
-                        <textarea id="teacherAnnouncementMessage" name="content" class="form-control" rows="3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required></textarea>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label" for="teacherAnnouncementSchedule" style="font-weight: 600; color: #b39b82;">Publish later (optional)</label>
-                        <input id="teacherAnnouncementSchedule" type="datetime-local" name="scheduled_for" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100" style="background: var(--gold); border: none; font-weight: 600; color: #fff;">
-                        <i class="bi bi-send-fill"></i> Post Announcement
-                    </button>
-                </form>
-            </x-card>
-        </div>
-        
     </div>
 </div>
-
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
-<style>
-    .fc {
-        color: #f3ede4;
-        font-family: inherit;
-    }
-    .fc-theme-standard td, .fc-theme-standard th {
-        border-color: rgba(255,255,255,0.04) !important;
-    }
-    .fc .fc-toolbar-title {
-        font-size: 1.25rem !important;
-        font-weight: 800;
-        color: #fdfbf7;
-    }
-    .fc .fc-col-header-cell {
-        background: rgba(255,255,255,0.025) !important;
-        padding: 12px 0 !important;
-        border: none !important;
-    }
-    .fc .fc-col-header-cell-cushion {
-        color: #cfa46f;
-        font-weight: 800;
-        text-transform: uppercase;
-        font-size: 0.8rem;
-        letter-spacing: 0.08em;
-    }
-    .fc .fc-daygrid-day-frame {
-        border-radius: 12px !important;
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.03) !important;
-        margin: 3px !important;
-        min-height: 90px !important;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .fc .fc-daygrid-day-frame:hover {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(207, 164, 111, 0.3) !important;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
-    }
-    .fc .fc-daygrid-day-number {
-        color: #f3ede4;
-        font-size: 1.05rem;
-        font-weight: 700;
-        padding: 8px 12px !important;
-        text-decoration: none !important;
-    }
-    .fc .fc-day-sun .fc-daygrid-day-number {
-        color: #f87171 !important;
-    }
-    .fc .fc-day-other .fc-daygrid-day-number {
-        color: #5c4e40;
-        opacity: 0.5;
-    }
-    .fc .fc-day-today .fc-daygrid-day-frame {
-        background: rgba(255, 209, 102, 0.08) !important;
-        border: 2px solid #ffd166 !important;
-        box-shadow: 0 0 20px rgba(255, 209, 102, 0.25), inset 0 0 12px rgba(255, 209, 102, 0.08) !important;
-    }
-    .fc .fc-day-today .fc-daygrid-day-number {
-        color: #ffffff !important;
-        font-weight: 800 !important;
-    }
-    .fc .fc-daygrid-event {
-        border-radius: 8px !important;
-        padding: 4px 8px;
-        font-size: 0.78rem;
-        font-weight: 700;
-        color: #ffffff !important;
-        margin: 2px 4px !important;
-        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        border: none !important;
-    }
-    .fc .fc-daygrid-event:hover {
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.5) !important;
-        filter: brightness(1.15);
-    }
-</style>
-
 <!-- Event Detail Modal -->
-<div class="modal fade" id="eventDetailModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="eventDetailModal" tabindex="-1" aria-labelledby="eventTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content event-modal-content w-100">
-            <div class="event-modal-header">
-                <h5 class="modal-title" style="margin: 0; font-weight: 700;" id="eventTitle">Event Details</h5>
+        <div class="modal-content w-100">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventTitle">Event Details</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="event-modal-body">
-                <div style="margin-bottom: 12px;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82; font-weight: 700; margin-bottom: 4px;">Event Type</div>
-                    <span id="eventTypeBadge" class="badge" style="background: rgba(207,164,111,0.2); color: #f3e7cd; font-size: 0.82rem; padding: 5px 10px;">Type</span>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--portal-muted); font-weight: 700; margin-bottom: 4px;">Event Type</div>
+                    <span id="eventTypeBadge" class="portal-code-tag">Event</span>
                 </div>
-                <div style="margin-bottom: 12px;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82; font-weight: 700; margin-bottom: 4px;">Date</div>
+                <div class="mb-3">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--portal-muted); font-weight: 700; margin-bottom: 4px;">Date</div>
                     <div id="eventDateText" style="color: #ffffff; font-weight: 600;">Date</div>
                 </div>
-                <div id="eventDescriptionContainer" style="margin-bottom: 12px; display: none;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82; font-weight: 700; margin-bottom: 4px;">Description</div>
-                    <div id="eventDescription" style="color: #d4c8b8; font-size: 0.9rem;"></div>
+                <div id="eventDescriptionContainer" class="mb-3" style="display: none;">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--portal-muted); font-weight: 700; margin-bottom: 4px;">Description</div>
+                    <div id="eventDescription" style="color: var(--portal-text-soft); font-size: 0.9rem;"></div>
                 </div>
                 <div id="eventLocationContainer" style="display: none;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82; font-weight: 700; margin-bottom: 4px;">Location</div>
-                    <div id="eventLocation" style="color: #d4c8b8; font-size: 0.9rem;"></div>
+                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--portal-muted); font-weight: 700; margin-bottom: 4px;">Location</div>
+                    <div id="eventLocation" style="color: var(--portal-text-soft); font-size: 0.9rem;"></div>
                 </div>
             </div>
         </div>
@@ -468,37 +547,65 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
-<script nonce="{{ csp_nonce() }}">
-// Real-time clock
+<script @cspNonce>
+// Real-time campus clock (paused when tab is backgrounded)
 (function() {
     const clockEl = document.getElementById('teacherClock');
+    if (!clockEl) return;
     function tick() {
+        if (document.hidden) return;
         const now = new Date();
         let h = now.getHours(), m = now.getMinutes();
         const ampm = h >= 12 ? 'PM' : 'AM';
         h = h % 12 || 12;
-        const short = h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
-        if (clockEl) clockEl.textContent = short;
+        clockEl.textContent = h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
     }
     setInterval(tick, 1000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
     tick();
 })();
 
-function filterRecentLogs() {
-    const input = document.getElementById('recentLogsSearch').value.toLowerCase();
-    const rows = document.querySelectorAll('.attendance-row');
-    rows.forEach(row => {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(input) ? 'flex' : 'none';
+// 7-Day Trend Bar Readout Interaction
+(function() {
+    const readout = document.getElementById('tdTrendReadout');
+    const cols = document.querySelectorAll('.td-trend-col[data-trend-summary]');
+    if (!readout || !cols.length) return;
+    const initial = cols[cols.length - 1];
+    if (initial) readout.textContent = initial.dataset.trendSummary || 'Tap a day';
+    cols.forEach(col => {
+        const showSummary = () => {
+            cols.forEach(c => c.classList.remove('is-selected'));
+            col.classList.add('is-selected');
+            readout.textContent = col.dataset.trendSummary || '';
+        };
+        col.addEventListener('click', showSummary);
+        col.addEventListener('mouseenter', showSummary);
     });
-}
+})();
+
+// Recent Attendance live search
+(function() {
+    const searchInput = document.getElementById('recentLogsSearch');
+    if (!searchInput) return;
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        document.querySelectorAll('#recentAttendanceRows .attendance-row').forEach(row => {
+            const text = (row.textContent || '').toLowerCase();
+            row.style.display = text.includes(query) ? 'flex' : 'none';
+        });
+    });
+})();
 
 // Peer verification events update this dashboard without a page reload.
 (function subscribeToPeerAttendance() {
     let attempts = 0;
     const status = document.getElementById('peerLiveConnection');
     const seen = new Set();
-    function setConnectionMessage(message) { status.textContent = message; status.hidden = !message; }
+    function setConnectionMessage(message) {
+        if (!status) return;
+        status.textContent = message;
+        status.hidden = !message;
+    }
     function connectionMessageFor(state) {
         if (state === 'connected') return '';
         if (state === 'initialized' || state === 'connecting') return 'Connecting to live attendance updates…';
@@ -520,45 +627,62 @@ function filterRecentLogs() {
                 if (!payload || !Number.isSafeInteger(Number(payload.attendance_id)) || seen.has(payload.attendance_id)) return;
                 seen.add(payload.attendance_id);
                 const notice = document.getElementById('peerLiveNotice');
-                notice.textContent = `${payload.student_name} checked in by Peer Biometric for ${payload.subject_code}. Vouched by ${payload.voucher_student_name}.`;
-                notice.hidden = false;
+                if (notice) {
+                    notice.textContent = `${payload.student_name} checked in by Peer Biometric for ${payload.subject_code}. Vouched by ${payload.voucher_student_name}.`;
+                    notice.hidden = false;
+                }
 
                 const list = document.getElementById('recentAttendanceRows');
-                const empty = list.querySelector('.empty-state');
-                if (empty) empty.remove();
-                const row = document.createElement('div');
-                row.className = 'attendance-row';
-                row.style.cssText = 'background:rgba(0,0,0,.2);border:1px solid rgba(74,222,128,.3);border-radius:12px;padding:12px 16px;color:#f3e7cd;';
-                const name = document.createElement('strong');
-                name.textContent = payload.student_name;
-                const detail = document.createElement('div');
-                detail.style.cssText = 'color:#b39b82;font-size:.8rem;margin-top:4px;';
-                detail.textContent = `${payload.subject_code} · Peer Biometric · Vouched by ${payload.voucher_student_name}`;
-                row.append(name, detail); list.prepend(row);
-                while (list.children.length > 8) list.lastElementChild.remove();
+                if (list) {
+                    const empty = list.querySelector('.empty-state');
+                    if (empty) empty.remove();
+                    const row = document.createElement('div');
+                    row.className = 'attendance-row';
+                    const name = document.createElement('strong');
+                    name.style.color = '#ffffff';
+                    name.textContent = payload.student_name;
+                    const detail = document.createElement('div');
+                    detail.style.cssText = 'color:var(--portal-muted);font-size:.78rem;margin-top:3px;';
+                    detail.textContent = `${payload.subject_code} · Peer Biometric · Vouched by ${payload.voucher_student_name}`;
+                    row.append(name, detail);
+                    list.prepend(row);
+                    while (list.children.length > 8) list.lastElementChild.remove();
+                }
 
                 const present = document.querySelector('#realStats [data-accent="success"] .ent-kpi-value');
                 if (present && /^\d+$/.test(present.textContent.trim())) present.textContent = String(Number(present.textContent.trim()) + 1);
                 const absent = document.querySelector('#realStats [data-accent="danger"] .ent-kpi-value');
-                if (payload.previous_status === 'Absent' && absent && /^\d+$/.test(absent.textContent.trim()))
+                if (payload.previous_status === 'Absent' && absent && /^\d+$/.test(absent.textContent.trim())) {
                     absent.textContent = String(Math.max(0, Number(absent.textContent.trim()) - 1));
+                }
             });
             const connection = echo.connector?.pusher?.connection;
             connection?.bind('state_change', state => setConnectionMessage(connectionMessageFor(state.current)));
             setConnectionMessage(connectionMessageFor(connection?.state || 'unavailable'));
-        } catch { setConnectionMessage(connectionMessageFor('unavailable')); }
+        } catch {
+            setConnectionMessage(connectionMessageFor('unavailable'));
+        }
     }
     connect();
 })();
 
 // School Calendar Initialization
 let schoolCalendar;
+function updateCalendarTitle() {
+    if (schoolCalendar && schoolCalendar.view) {
+        const titleEl = document.getElementById('calendarTitle');
+        if (titleEl) {
+            titleEl.textContent = schoolCalendar.view.title;
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('schoolCalendar');
     if (!calendarEl || typeof FullCalendar === 'undefined') return;
-    
+
     schoolCalendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: window.matchMedia('(max-width: 767.98px)').matches ? 'listWeek' : 'dayGridMonth',
+        initialView: window.matchMedia('(max-width: 767.98px)').matches ? 'listMonth' : 'dayGridMonth',
         headerToolbar: false,
         height: 'auto',
         firstDay: 0,
@@ -593,11 +717,13 @@ document.addEventListener('DOMContentLoaded', function() {
         eventClick: function(info) {
             const event = info.event;
             const props = event.extendedProps || {};
-            
+
             document.getElementById('eventTitle').textContent = event.title;
             document.getElementById('eventTypeBadge').textContent = props.type || 'Event';
-            document.getElementById('eventDateText').textContent = event.start ? event.start.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
-            
+            document.getElementById('eventDateText').textContent = event.start
+                ? event.start.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                : '';
+
             const descEl = document.getElementById('eventDescription');
             const descContainer = document.getElementById('eventDescriptionContainer');
             if (props.description) {
@@ -606,7 +732,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 descContainer.style.display = 'none';
             }
-            
+
             const locEl = document.getElementById('eventLocation');
             const locContainer = document.getElementById('eventLocationContainer');
             if (props.location) {
@@ -615,7 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 locContainer.style.display = 'none';
             }
-            
+
             const modalEl = document.getElementById('eventDetailModal');
             if (modalEl && typeof bootstrap !== 'undefined') {
                 const modal = new bootstrap.Modal(modalEl);
@@ -630,18 +756,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return [];
         }
     });
-    
+
     schoolCalendar.render();
     updateCalendarTitle();
-});
 
-function updateCalendarTitle() {
-    if(schoolCalendar && schoolCalendar.view) {
-        const titleEl = document.getElementById('calendarTitle');
-        if (titleEl) {
-            titleEl.textContent = schoolCalendar.view.title;
-        }
-    }
-}
+    document.getElementById('calPrevBtn')?.addEventListener('click', () => { schoolCalendar.prev(); updateCalendarTitle(); });
+    document.getElementById('calTodayBtn')?.addEventListener('click', () => { schoolCalendar.today(); updateCalendarTitle(); });
+    document.getElementById('calNextBtn')?.addEventListener('click', () => { schoolCalendar.next(); updateCalendarTitle(); });
+});
 </script>
 @endsection

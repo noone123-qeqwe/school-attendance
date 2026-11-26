@@ -78,16 +78,16 @@
 @if($availableAssistantSlots > 0 && $eligibleAssistantStudents->isNotEmpty())
 <div class="modal fade" id="assignAssistantModal" tabindex="-1" aria-labelledby="assignAssistantTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <form method="POST" action="{{ route('teacher.classroom.assistants.store', $subject->code) }}" class="modal-content" style="background:#20140f;border:1px solid rgba(207,164,111,.3);color:#f3e7cd;">
+        <form method="POST" action="{{ route('teacher.classroom.assistants.store', $subject->code) }}" class="modal-content">
             @csrf
-            <div class="modal-header" style="border-color:rgba(207,164,111,.2);">
+            <div class="modal-header">
                 <h2 class="modal-title fs-5" id="assignAssistantTitle">Assign Student Assistant</h2>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 @include('partials.student-assistant-assignment-fields', ['assistant' => null])
             </div>
-            <div class="modal-footer" style="border-color:rgba(207,164,111,.2);">
+            <div class="modal-footer">
                 <button type="button" class="btn-secondary btn-action" data-bs-dismiss="modal">Cancel</button>
                 <button type="submit" class="btn-action">Assign</button>
             </div>
@@ -100,16 +100,16 @@
     @if($eligibleAssistantStudents->isNotEmpty())
         <div class="modal fade" id="replaceAssistantModal{{ $assistant->id }}" tabindex="-1" aria-labelledby="replaceAssistantTitle{{ $assistant->id }}" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <form method="POST" action="{{ route('teacher.classroom.assistants.replace', [$subject->code, $assistant->id]) }}" class="modal-content" style="background:#20140f;border:1px solid rgba(207,164,111,.3);color:#f3e7cd;">
+                <form method="POST" action="{{ route('teacher.classroom.assistants.replace', [$subject->code, $assistant->id]) }}" class="modal-content">
                     @csrf @method('PUT')
-                    <div class="modal-header" style="border-color:rgba(207,164,111,.2);">
+                    <div class="modal-header">
                         <h2 class="modal-title fs-5" id="replaceAssistantTitle{{ $assistant->id }}">Change {{ $assistant->student?->name }}'s Assignment</h2>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         @include('partials.student-assistant-assignment-fields')
                     </div>
-                    <div class="modal-footer" style="border-color:rgba(207,164,111,.2);">
+                    <div class="modal-footer">
                         <button type="button" class="btn-secondary btn-action" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn-action">Change</button>
                     </div>

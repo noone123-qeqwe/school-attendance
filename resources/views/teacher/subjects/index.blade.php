@@ -153,8 +153,8 @@
             <tbody>
                 @forelse($subjects as $subject)
                 <tr data-code="{{ $subject->code }}" data-name="{{ $subject->name }}">
-                    <td data-label="Code" style="font-family:monospace;font-weight:700;color:#cfa46f;">{{ $subject->code }}</td>
-                    <td data-label="Subject Name" style="font-weight:600;color:#f3e7cd;">{{ $subject->name }}</td>
+                    <td data-label="Code" style="font-family:var(--portal-font-mono);font-weight:700;color:var(--portal-gold);">{{ $subject->code }}</td>
+                    <td data-label="Subject Name" style="font-weight:600;color:var(--portal-text);">{{ $subject->name }}</td>
                     <td data-label="Year / Sem" class="tch-col-meta">
                         <div class="tch-level-pair">
                             <div class="tch-level-chip" title="Year level">
@@ -167,16 +167,15 @@
                             </div>
                         </div>
                     </td>
-                    <td data-label="Days" style="font-weight:600;color:#d6b67b;">{{ $subject->days ?? 'â€”' }}</td>
-                    <td data-label="Time" style="font-size:.82rem;color:#b39b82;">
+                    <td data-label="Days" style="font-weight:600;color:var(--portal-gold-bright);">{{ $subject->days ?? '—' }}</td>
+                    <td data-label="Time" style="font-size:.82rem;color:var(--portal-muted);">
                         @if($subject->start_time && $subject->end_time)
-                            {{ \Carbon\Carbon::parse($subject->start_time)->format('h:i A') }} â€“ {{ \Carbon\Carbon::parse($subject->end_time)->format('h:i A') }}
-                        @else â€”
+                            {{ \Carbon\Carbon::parse($subject->start_time)->format('h:i A') }} &ndash; {{ \Carbon\Carbon::parse($subject->end_time)->format('h:i A') }}
+                        @else &mdash;
                         @endif
                     </td>
-                    <td data-label="Units" style="color:#b39b82;" class="mobile-hide">{{ $subject->units ?? 'â€”' }}</td>
-                    <td data-label="Units" style="color:#b39b82;" class="mobile-hide">{{ $subject->units ?? '—' }}</td>
-                    <td data-label="Section" style="color:#b39b82;" class="mobile-hide">{{ $subject->section ?? '—' }}</td>
+                    <td data-label="Units" style="color:var(--portal-muted);" class="mobile-hide">{{ $subject->units ?? '—' }}</td>
+                    <td data-label="Section" style="color:var(--portal-muted);" class="mobile-hide">{{ $subject->section ?? '—' }}</td>
                     <td data-label="Actions">
                         <div style="display:flex;gap:5px;">
                             <a href="{{ route('teacher.qr', $subject->code) }}" class="view-btn" style="color:#cfa46f;border-color:rgba(207,164,111,0.32);background:rgba(207,164,111,0.12);" title="Start QR Attendance">

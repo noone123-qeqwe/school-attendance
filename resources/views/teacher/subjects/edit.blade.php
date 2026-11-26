@@ -7,8 +7,8 @@
 <div class="tch-card" style="max-width:680px;">
     <div class="tch-card-head">
         <div class="tch-card-title">
-            <div class="tch-card-icon" style="background:#eff6ff;color:#2563eb;"><i class="bi bi-pencil-fill"></i></div>
-            Edit â€” {{ $subject->code }}
+            <div class="tch-card-icon" style="background:rgba(122,26,26,0.22);color:var(--portal-gold);"><i class="bi bi-pencil-fill"></i></div>
+            Edit &mdash; {{ $subject->code }}
         </div>
     </div>
     <div style="padding:24px;">

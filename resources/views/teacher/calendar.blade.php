@@ -7,12 +7,12 @@
 <style>
     #schoolCalendarPage { padding-bottom: 18px; }
     .holiday-dashboard .glass-card {
-        background: rgba(26, 26, 46, 0.5);
-        border: 1px solid rgba(255,255,255,0.08);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
-        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        border-radius: 28px;
+        background: var(--portal-surface, #1e1515);
+        border: 1px solid var(--portal-border, rgba(212, 175, 55, 0.16));
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+        border-radius: 18px;
     }
     .holiday-dashboard .glass-card .adm-card-head {
         padding: 24px 32px;
@@ -764,7 +764,7 @@
             </div>
             
             <div style="padding: 20px; overflow-x: auto;">
-                <div id="calendar" style="min-height: 600px; min-width: 700px;"></div>
+                <div id="calendar" style="min-height: 540px; width: 100%;"></div>
             </div>
         </div>
     </div>
@@ -863,7 +863,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let timeStr = start.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
             if (props.type !== 'holiday' && !info.event.allDay) {
-                timeStr += ` â€¢ ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                timeStr += ` \u2022 ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                 if (end) {
                     timeStr += ` - ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                 }

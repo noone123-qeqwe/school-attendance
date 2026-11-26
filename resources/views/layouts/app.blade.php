@@ -46,9 +46,18 @@
         <link rel="stylesheet" href="{{ asset('css/student-portal-redesign.css') }}?v={{ filemtime(public_path('css/student-portal-redesign.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/student-portal-simple.css') }}?v={{ filemtime(public_path('css/student-portal-simple.css')) }}">
     @endif
-    @if(Auth::check() && Auth::user()->isTeacher() && !request()->routeIs('teacher.*.pdf', 'teacher.*.preview'))
-        <link rel="stylesheet" href="{{ asset('css/teacher-portal-redesign.css') }}?v={{ filemtime(public_path('css/teacher-portal-redesign.css')) }}">
-        <link rel="stylesheet" href="{{ asset('css/teacher-simple.css') }}?v={{ filemtime(public_path('css/teacher-simple.css')) }}">
+    @if(Auth::user()?->isStudent() || Auth::user()?->isTeacher())
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="{{ asset('css/portal-unified-foundation.css') }}?v={{ filemtime(public_path('css/portal-unified-foundation.css')) }}">
+    @endif
+    @if(Auth::check() && Auth::user()->isTeacher() && !request()->routeIs('teacher.*.pdf'))
+        @if(!request()->routeIs('teacher.*.preview'))
+            <link rel="stylesheet" href="{{ asset('css/teacher-portal-redesign.css') }}?v={{ filemtime(public_path('css/teacher-portal-redesign.css')) }}">
+            <link rel="stylesheet" href="{{ asset('css/teacher-simple.css') }}?v={{ filemtime(public_path('css/teacher-simple.css')) }}">
+        @endif
+        <link rel="stylesheet" href="{{ asset('css/teacher-portal-master.css') }}?v={{ filemtime(public_path('css/teacher-portal-master.css')) }}">
     @endif
     @if(Auth::user()?->isAdmin() && !request()->routeIs('admin.*.pdf'))
         <link rel="stylesheet" href="{{ asset('css/admin-portal-redesign.css') }}?v={{ filemtime(public_path('css/admin-portal-redesign.css')) }}">
@@ -62,9 +71,6 @@
         <link rel="stylesheet" href="{{ asset('css/student-settings.css') }}?v={{ filemtime(public_path('css/student-settings.css')) }}">
     @endif
     @if(Auth::user()?->isStudent())
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="{{ asset('css/student-desktop.css') }}?v={{ filemtime(public_path('css/student-desktop.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/student-desktop-pages.css') }}?v={{ filemtime(public_path('css/student-desktop-pages.css')) }}">
         @if(request()->routeIs('settings'))
@@ -167,6 +173,8 @@
                                 @yield('page-title')
                             @elseif(Auth::user()?->isAdmin())
                                 {{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['title'] }}
+                            @elseif(Auth::user()?->isTeacher())
+                                {{ \App\Support\TeacherNavigation::context(request()->route()?->getName())['title'] }}
                             @elseif(Auth::user()?->isParent())
                                 {{ \App\Support\ParentNavigation::context(request()->route()?->getName())['title'] }}
                             @else
@@ -186,7 +194,7 @@
                                 @endif
                             @endif
                         </div>
-                        <div class="header-page-sub">@if(View::hasSection('page-sub'))@yield('page-sub')@elseif(Auth::user()?->isAdmin()){{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['group'] }}@elseif(Auth::user()?->isParent()){{ \App\Support\ParentNavigation::context(request()->route()?->getName())['group'] }}@else{{ now()->format('l, F j, Y') }}@endif</div>
+                        <div class="header-page-sub">@if(View::hasSection('page-sub'))@yield('page-sub')@elseif(Auth::user()?->isAdmin()){{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['group'] }}@elseif(Auth::user()?->isTeacher()){{ \App\Support\TeacherNavigation::context(request()->route()?->getName())['group'] }}@elseif(Auth::user()?->isParent()){{ \App\Support\ParentNavigation::context(request()->route()?->getName())['group'] }}@else{{ now()->format('l, F j, Y') }}@endif</div>
                     </div>
                 </div>
 

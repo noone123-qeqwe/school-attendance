@@ -56,7 +56,7 @@
                 <option value="">All Subjects</option>
                 @foreach($teacherSubjects as $subject)
                     <option value="{{ $subject->code }}" {{ request('subject') == $subject->code ? 'selected' : '' }}>
-                        {{ $subject->code }} â€” {{ $subject->name }}
+                        {{ $subject->code }} &mdash; {{ $subject->name }}
                     </option>
                 @endforeach
             </select>
@@ -74,7 +74,7 @@
         <tr>
             <td data-label="#">{{ $attendanceRecords->firstItem() + $i }}</td>
             <td data-label="Student">
-                <div style="font-weight:600;">{{ $record->user->name ?? 'â€”' }}</div>
+                <div style="font-weight:600;">{{ $record->user->name ?? '—' }}</div>
                 <div class="text-muted" style="font-size:.75rem;">{{ $record->user->student_number ?? '' }}</div>
             </td>
             <td data-label="Subject" style="font-weight:600;">{{ $record->subject->name ?? $record->subject_code }}</td>
@@ -84,7 +84,7 @@
             </td>
             <td data-label="Status">
                 <div class="dropdown">
-                    <button class="btn btn-sm btn-outline dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 2px 10px; font-size: 0.75rem; border-color: rgba(207,164,111,0.2); color: #f3e7cd;" id="statusBtn_{{ $record->id }}">
+                    <button class="btn btn-sm btn-outline dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 2px 10px; font-size: 0.75rem; border-color: var(--portal-border); color: var(--portal-text);" id="statusBtn_{{ $record->id }}">
                         @if($record->excused)
                             <x-badge type="excused">Excused</x-badge>
                         @else
@@ -103,7 +103,7 @@
                     </ul>
                 </div>
             </td>
-            <td data-label="Time In">{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : 'â€”' }}</td>
+            <td data-label="Time In">{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : '—' }}</td>
             <td data-label="Excused">
                 @if($record->excused)
                     <span class="text-success" style="font-size:.85rem; font-weight: 700;"><i class="bi bi-check-lg"></i> Excused</span>
@@ -111,7 +111,7 @@
                         <div class="text-muted" style="font-size:.75rem; margin-top:2px;">{{ $record->excuse_note }}</div>
                     @endif
                 @else
-                    <span class="text-muted">â€”</span>
+                    <span class="text-muted">—</span>
                 @endif
             </td>
         </tr>
@@ -132,7 +132,7 @@
     @if($attendanceRecords->hasPages())
         <div class="mt-4 d-flex justify-content-between align-items-center">
             <div class="text-muted" style="font-size:.85rem;">
-                Showing {{ $attendanceRecords->firstItem() }}â€“{{ $attendanceRecords->lastItem() }} of {{ $attendanceRecords->total() }} records
+                Showing {{ $attendanceRecords->firstItem() }}&ndash;{{ $attendanceRecords->lastItem() }} of {{ $attendanceRecords->total() }} records
             </div>
             <div>
                 {{ $attendanceRecords->links('pagination::bootstrap-4') }}

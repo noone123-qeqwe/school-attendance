@@ -89,10 +89,10 @@
                         <td data-label="Student">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <img src="{{ $record->user->profile_image ? (str_starts_with($record->user->profile_image, 'http') ? $record->user->profile_image : public_storage_url($record->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name).'&background=800000&color=fff' }}"
-                                     style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #f1f5f9;">
+                                     class="profile-avatar-frame" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
                                 <div>
-                                    <div style="font-weight: 600; color: #1e293b;">{{ $record->user->name }}</div>
-                                    <div style="font-size: 0.75rem; color: #94a3b8;">{{ $record->user->student_number }}</div>
+                                    <div style="font-weight: 600; color: var(--portal-text);">{{ $record->user->name }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--portal-muted);">{{ $record->user->student_number }}</div>
                                 </div>
                             </div>
                         </td>
@@ -129,12 +129,12 @@
                                     <i class="bi bi-eye"></i> View
                                 </a>
                                 @if(!$record->excused)
-                                    <button onclick="excuseAbsence({{ $record->id }})" class="view-btn" style="background: #f0fdf4; color: #16a34a; border-color: #bbf7d0;">
+                                    <button onclick="excuseAbsence({{ $record->id }})" class="view-btn" style="background: rgba(52,211,153,0.14); color: var(--portal-emerald); border-color: rgba(52,211,153,0.3);">
                                         <i class="bi bi-check"></i> Excuse
                                     </button>
                                 @endif
                                 <button onclick="openWarningModal({{ $record->user->id }}, '{{ $record->user->name }}', '{{ $record->subject_code }}')" 
-                                        class="view-btn" style="background: #fef2f2; color: #dc2626; border-color: #fecaca;">
+                                        class="view-btn" style="background: rgba(251,113,133,0.14); color: var(--portal-rose); border-color: rgba(251,113,133,0.3);">
                                     <i class="bi bi-exclamation-triangle"></i> Warn
                                 </button>
                             </div>
@@ -157,25 +157,25 @@
 <!-- Excuse Modal -->
 <div class="modal fade" id="excuseModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content" style="border-radius: 14px; border: none;">
-            <div class="modal-header" style="border-bottom: 1px solid #f1f5f9;">
-                <h5 class="modal-title" style="font-weight: 700; color: #1e293b;">
-                    <i class="bi bi-check-circle" style="color: #16a34a;"></i>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-weight: 700;">
+                    <i class="bi bi-check-circle" style="color: var(--portal-emerald);"></i>
                     Excuse Absence
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="excuseForm" method="POST">
                 @csrf
                 <div class="modal-body" style="padding: 20px;">
                     <div class="mb-3">
-                        <label class="form-label" style="font-weight: 600; color: #374151;">Excuse Note (Optional)</label>
+                        <label class="form-label" style="font-weight: 600; color: var(--portal-text-soft);">Excuse Note (Optional)</label>
                         <textarea name="excuse_note" class="tch-input" rows="3" placeholder="Reason for excusing this absence..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 20px;">
+                <div class="modal-footer" style="padding: 16px 20px;">
                     <button type="button" class="tch-btn tch-btn-ghost" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="tch-btn" style="background: #16a34a; color: white;">
+                    <button type="submit" class="tch-btn" style="background: rgba(16,185,129,0.2); color: var(--portal-emerald); border: 1px solid rgba(52,211,153,0.35);">
                         <i class="bi bi-check"></i> Excuse Absence
                     </button>
                 </div>
@@ -187,30 +187,30 @@
 <!-- Warning Modal -->
 <div class="modal fade" id="warningModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content" style="border-radius: 14px; border: none;">
-            <div class="modal-header" style="border-bottom: 1px solid #f1f5f9;">
-                <h5 class="modal-title" style="font-weight: 700; color: #1e293b;">
-                    <i class="bi bi-exclamation-triangle" style="color: #dc2626;"></i>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="font-weight: 700;">
+                    <i class="bi bi-exclamation-triangle" style="color: var(--portal-rose);"></i>
                     Send Warning
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="warningForm" method="POST">
                 @csrf
                 <div class="modal-body" style="padding: 20px;">
                     <div class="mb-3">
-                        <label class="form-label" style="font-weight: 600; color: #374151;">Student</label>
-                        <div id="studentName" style="padding: 8px 12px; background: #f8fafc; border-radius: 8px; color: #1e293b;"></div>
+                        <label class="form-label" style="font-weight: 600; color: var(--portal-text-soft);">Student</label>
+                        <div id="studentName" style="padding: 8px 12px; background: var(--portal-canvas); border: 1px solid var(--portal-border-subtle); border-radius: 8px; color: var(--portal-text);"></div>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label" style="font-weight: 600; color: #374151;">Subject</label>
+                        <label class="form-label" style="font-weight: 600; color: var(--portal-text-soft);">Subject</label>
                         <input type="hidden" name="subject_code" id="subjectCode">
-                        <div id="subjectName" style="padding: 8px 12px; background: #f8fafc; border-radius: 8px; color: #1e293b;"></div>
+                        <div id="subjectName" style="padding: 8px 12px; background: var(--portal-canvas); border: 1px solid var(--portal-border-subtle); border-radius: 8px; color: var(--portal-text);"></div>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label" style="font-weight: 600; color: #374151;">Warning Type</label>
+                        <label class="form-label" style="font-weight: 600; color: var(--portal-text-soft);">Warning Type</label>
                         <select name="type" class="tch-input" required onchange="toggleCustomMessage()">
                             <option value="warning_2">2 Consecutive Absences</option>
                             <option value="warning_3">3+ Absences (Final Notice)</option>
@@ -220,13 +220,13 @@
                     </div>
                     
                     <div class="mb-3" id="customMessageDiv" style="display: none;">
-                        <label class="form-label" style="font-weight: 600; color: #374151;">Custom Message</label>
+                        <label class="form-label" style="font-weight: 600; color: var(--portal-text-soft);">Custom Message</label>
                         <textarea name="message" class="tch-input" rows="3" placeholder="Enter your custom warning message..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 20px;">
+                <div class="modal-footer" style="padding: 16px 20px;">
                     <button type="button" class="tch-btn tch-btn-ghost" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="tch-btn" style="background: #dc2626; color: white;">
+                    <button type="submit" class="tch-btn" style="background: rgba(251,113,133,0.2); color: var(--portal-rose); border: 1px solid rgba(251,113,133,0.35);">
                         <i class="bi bi-send"></i> Send Warning
                     </button>
                 </div>

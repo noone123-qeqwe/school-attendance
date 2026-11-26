@@ -15,9 +15,9 @@
             <form action="{{ route('teacher.excuses.store') }}" method="POST" enctype="multipart/form-data" id="excuseForm">
                 @csrf
                 <div class="mb-3">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Select Subject <span style="color: #f87171;">*</span></label>
-                    <select name="subject_code" class="form-select @error('subject_code') is-invalid @enderror" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd; border-radius: 10px; padding: 12px 16px; font-size: 0.95rem; appearance: auto; outline: none; transition: all 0.2s;" onfocus="this.style.boxShadow='0 0 0 3px rgba(207,164,111,0.2)'; this.style.borderColor='var(--gold)';" onblur="this.style.boxShadow='none'; this.style.borderColor='rgba(255,255,255,0.1)';" required>
-                        <option value="" style="background: #1a1a2e;">-- Choose Subject --</option>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--portal-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Select Subject <span style="color: var(--portal-rose);">*</span></label>
+                    <select name="subject_code" class="form-select @error('subject_code') is-invalid @enderror" required>
+                        <option value="">-- Choose Subject --</option>
                         @foreach($subjects as $subject)
                             <option value="{{ $subject->code }}" {{ old('subject_code') == $subject->code ? 'selected' : '' }}>
                                 {{ $subject->name }} ({{ $subject->code }})
@@ -28,15 +28,15 @@
                 </div>
 
                 <div class="mb-3">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Date of Absence <span style="color: #f87171;">*</span></label>
-                    <input type="date" name="date" class="form-control @error('date') is-invalid @enderror" value="{{ old('date', date('Y-m-d')) }}" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd; border-radius: 10px; padding: 12px 16px; font-size: 0.95rem; outline: none; transition: all 0.2s; color-scheme: dark;" onfocus="this.style.boxShadow='0 0 0 3px rgba(207,164,111,0.2)'; this.style.borderColor='var(--gold)';" onblur="this.style.boxShadow='none'; this.style.borderColor='rgba(255,255,255,0.1)';" required max="{{ date('Y-m-d') }}">
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--portal-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Date of Absence <span style="color: var(--portal-rose);">*</span></label>
+                    <input type="date" name="date" class="form-control @error('date') is-invalid @enderror" value="{{ old('date', date('Y-m-d')) }}" style="color-scheme: dark;" required max="{{ date('Y-m-d') }}">
                     @error('date')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="mb-3">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Reason <span style="color: #f87171;">*</span></label>
-                    <select name="reason" class="form-select @error('reason') is-invalid @enderror" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd; border-radius: 10px; padding: 12px 16px; font-size: 0.95rem; appearance: auto; outline: none; transition: all 0.2s;" onfocus="this.style.boxShadow='0 0 0 3px rgba(207,164,111,0.2)'; this.style.borderColor='var(--gold)';" onblur="this.style.boxShadow='none'; this.style.borderColor='rgba(255,255,255,0.1)';" required>
-                        <option value="" style="background: #1a1a2e;">-- Select Reason --</option>
+                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--portal-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Reason <span style="color: var(--portal-rose);">*</span></label>
+                    <select name="reason" class="form-select @error('reason') is-invalid @enderror" required>
+                        <option value="">-- Select Reason --</option>
                         <option value="Medical / Illness" {{ old('reason') == 'Medical / Illness' ? 'selected' : '' }}>Medical / Illness</option>
                         <option value="Emergency" {{ old('reason') == 'Emergency' ? 'selected' : '' }}>Emergency</option>
                         <option value="Official Business" {{ old('reason') == 'Official Business' ? 'selected' : '' }}>Official Business</option>

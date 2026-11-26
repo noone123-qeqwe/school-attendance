@@ -5,10 +5,10 @@
 <div class="ent-section ent-fade-up">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
         <div>
-            <h1 style="font-size: 2rem; font-weight: 800; color: #f3e7cd; margin-bottom:4px; letter-spacing: -0.02em;">My Excuses</h1>
-            <p style="color: #b39b82; font-size: 0.95rem; margin:0;">Submit and track your absence excuses for your classes</p>
+            <h1 style="font-size: clamp(1.35rem, 2.4vw, 1.75rem); font-weight: 800; color: var(--portal-text); margin-bottom:4px; letter-spacing: -0.025em;">My Excuses</h1>
+            <p style="color: var(--portal-muted); font-size: 0.9rem; margin:0;">Submit and track your absence excuses for your classes</p>
         </div>
-        <a href="{{ route('teacher.excuses.create') }}" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #1a1a2e; border: none; font-weight: 700;">
+        <a href="{{ route('teacher.excuses.create') }}" class="ent-btn ent-btn-primary">
             <i class="bi bi-plus-circle-fill" style="margin-right: 4px;"></i> Submit New Excuse
         </a>
     </div>

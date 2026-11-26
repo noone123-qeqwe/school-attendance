@@ -881,24 +881,25 @@ body.cmd-palette-open .mobile-bottom-nav {
             ];
         @elseif(Auth::user()->isTeacher())
             navItems = [
-                { id: 'dashboard', label: 'Dashboard', hint: 'Teacher dashboard & active sessions', icon: 'bi-grid-fill', color: '#ffd166', bg: 'rgba(255, 209, 102, 0.12)', category: 'navigation', badge: 'Home', url: '{{ route("teacher.dashboard") }}' },
-                { id: 'qr', label: 'Live QR Attendance', hint: 'Generate QR & monitor check-ins', icon: 'bi-qr-code-scan', color: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', category: 'action', badge: 'Live', url: '{{ route("teacher.attendance") }}' },
-                { id: 'classroom', label: 'My Classroom', hint: 'Active classroom student monitor', icon: 'bi-journal-album', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.12)', category: 'academic', badge: 'Classroom', url: '{{ route("teacher.classroom.index") }}' },
-                { id: 'subjects', label: 'My Subjects', hint: 'Subject schedules & enrolled rosters', icon: 'bi-book-fill', color: '#a78bfa', bg: 'rgba(167, 139, 250, 0.12)', category: 'academic', badge: 'Subjects', url: '{{ route("teacher.subjects") }}' },
-                { id: 'attendance', label: 'Attendance Records', hint: 'Class attendance history', icon: 'bi-clipboard-check-fill', color: '#fde68a', bg: 'rgba(253, 230, 138, 0.12)', category: 'academic', badge: 'Records', url: '{{ route("teacher.attendance") }}' },
-                { id: 'absent', label: 'Absent Students Report', hint: 'Review chronic & missed classes', icon: 'bi-person-x-fill', color: '#f87171', bg: 'rgba(248, 113, 113, 0.12)', category: 'academic', badge: 'Report', url: '{{ route("teacher.absent") }}' },
-                { id: 'excuses', label: 'Excuse Reviews', hint: 'Review submitted student excuses', icon: 'bi-file-text-fill', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', category: 'action', badge: 'Reviews', url: '{{ route("teacher.excuse.reviews") }}' },
-                { id: 'students', label: 'Student Directory', hint: 'Browse enrolled student profiles', icon: 'bi-people-fill', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.12)', category: 'academic', badge: 'Directory', url: '{{ route("teacher.students") }}' },
-                { id: 'reports', label: 'Attendance Reports', hint: 'Generate attendance export & reports', icon: 'bi-bar-chart-fill', color: '#2dd4bf', bg: 'rgba(45, 212, 191, 0.12)', category: 'academic', badge: 'Analytics', url: '{{ route("teacher.reports") }}' },
-                { id: 'calendar', label: 'Holiday Calendar', hint: 'School events & academic calendar', icon: 'bi-calendar-event-fill', color: '#4ade80', bg: 'rgba(74, 222, 128, 0.12)', category: 'navigation', badge: 'Calendar', url: '{{ route("teacher.calendar") }}' },
+                { id: 'dashboard', label: 'Dashboard', hint: 'Teacher command canvas & live classes', icon: 'bi-grid-fill', color: '#ffd166', bg: 'rgba(255, 209, 102, 0.12)', category: 'navigation', badge: 'Home', url: '{{ route("teacher.dashboard") }}' },
+                { id: 'qr', label: 'Live QR Attendance', hint: 'Choose a class & open attendance QR', icon: 'bi-qr-code-scan', color: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', category: 'action', badge: 'Live', url: '{{ route("teacher.classroom.index", ["task" => "attendance"]) }}' },
+                { id: 'classroom', label: 'My Classes', hint: 'Schedules, enrolled rosters & assistants', icon: 'bi-journal-bookmark-fill', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.12)', category: 'academic', badge: 'Classes', url: '{{ route("teacher.classroom.index") }}' },
+                { id: 'attendance', label: 'Attendance Records', hint: 'Search and override attendance logs', icon: 'bi-clipboard-check-fill', color: '#fde68a', bg: 'rgba(253, 230, 138, 0.12)', category: 'academic', badge: 'Records', url: '{{ route("teacher.attendance") }}' },
+                { id: 'excuses', label: 'Excuse Reviews', hint: 'Review submitted student excuse letters', icon: 'bi-file-earmark-text-fill', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', category: 'action', badge: 'Reviews', url: '{{ route("teacher.excuse.reviews") }}' },
+                { id: 'corrections', label: 'Correction Requests', hint: 'Review student attendance adjustments', icon: 'bi-pencil-square', color: '#fb923c', bg: 'rgba(251, 146, 60, 0.12)', category: 'action', badge: 'Adjustments', url: '{{ route("teacher.corrections") }}' },
+                { id: 'absent', label: 'Absent Report', hint: 'Review missed classes and send warnings', icon: 'bi-person-x-fill', color: '#f87171', bg: 'rgba(248, 113, 113, 0.12)', category: 'academic', badge: 'Report', url: '{{ route("teacher.absent") }}' },
+                { id: 'students', label: 'Student Roster', hint: 'Browse enrolled student profiles & notes', icon: 'bi-people-fill', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.12)', category: 'academic', badge: 'Directory', url: '{{ route("teacher.students") }}' },
+                { id: 'reports', label: 'Attendance Reports', hint: 'Generate PDF, CSV & Excel exports', icon: 'bi-graph-up-arrow', color: '#2dd4bf', bg: 'rgba(45, 212, 191, 0.12)', category: 'academic', badge: 'Analytics', url: '{{ route("teacher.reports") }}' },
+                { id: 'calendar', label: 'School Calendar', hint: 'Academic holidays, exams & events', icon: 'bi-calendar-event-fill', color: '#4ade80', bg: 'rgba(74, 222, 128, 0.12)', category: 'navigation', badge: 'Calendar', url: '{{ route("teacher.calendar") }}' },
+                { id: 'my-excuses', label: 'My Excuse Requests', hint: 'Submit or track faculty excuse requests', icon: 'bi-file-earmark-person-fill', color: '#a78bfa', bg: 'rgba(167, 139, 250, 0.12)', category: 'navigation', badge: 'Excuses', url: '{{ route("teacher.excuses") }}' },
                 { id: 'notifications', label: 'Notifications', hint: 'Alerts and system updates', icon: 'bi-bell-fill', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', category: 'navigation', badge: '{{ $notifBadgeText }}', url: '{{ route("teacher.notifications") }}' },
-                { id: 'profile', label: 'My Profile', hint: 'Instructor credentials & settings', icon: 'bi-person-circle', color: '#cbd5e1', bg: 'rgba(203, 213, 225, 0.12)', category: 'system', badge: 'Account', url: '{{ route("teacher.profile") }}' }
+                { id: 'profile', label: 'My Profile', hint: 'Account credentials, passkeys & settings', icon: 'bi-person-circle', color: '#cbd5e1', bg: 'rgba(203, 213, 225, 0.12)', category: 'system', badge: 'Account', url: '{{ route("teacher.profile") }}' }
             ];
             quickActionChips = [
-                { label: 'Live QR', icon: 'bi-qr-code-scan', url: '{{ route("teacher.attendance") }}' },
-                { label: 'Classroom', icon: 'bi-journal-album', url: '{{ route("teacher.classroom.index") }}' },
-                { label: 'Excuse Reviews', icon: 'bi-file-text-fill', url: '{{ route("teacher.excuse.reviews") }}' },
-                { label: 'Absent Report', icon: 'bi-person-x-fill', url: '{{ route("teacher.absent") }}' }
+                { label: 'Live QR', icon: 'bi-qr-code-scan', url: '{{ route("teacher.classroom.index", ["task" => "attendance"]) }}' },
+                { label: 'My Classes', icon: 'bi-journal-bookmark-fill', url: '{{ route("teacher.classroom.index") }}' },
+                { label: 'Excuse Reviews', icon: 'bi-file-earmark-text-fill', url: '{{ route("teacher.excuse.reviews") }}' },
+                { label: 'Corrections', icon: 'bi-pencil-square', url: '{{ route("teacher.corrections") }}' }
             ];
         @elseif(Auth::user()->role === 'parent')
             @php

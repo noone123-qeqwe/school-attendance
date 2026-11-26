@@ -52,8 +52,8 @@
         width: 34px; height: 34px; border-radius: 9px;
         display: flex; align-items: center; justify-content: center; font-size: 0.95rem;
     }
-    .tch-info-card-title { font-size: 0.9rem; font-weight: 700; color: #7c2d12; }
-    .tch-info-card-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 1px; }
+    .tch-info-card-title { font-size: 0.9rem; font-weight: 700; color: var(--portal-text); }
+    .tch-info-card-sub { font-size: 0.75rem; color: var(--portal-muted); margin-top: 1px; }
     .tch-info-card-body { padding: 6px 22px 18px; }
     .tch-info-row {
         display: flex; align-items: center; gap: 14px;
@@ -195,16 +195,16 @@
             <div class="tch-info-card-body" style="padding-top:16px;">
 
                 <!-- Change Email via OTP -->
-                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #f1f5f9;">
-                    <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Email Address</div>
+                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Email Address</div>
                     
                     <div id="tchEmailStep1">
-                        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;margin-bottom:12px;">
-                            <i class="bi bi-envelope-fill" style="color:#64748b;"></i>
-                            <span style="font-size:.875rem;font-weight:600;color:#1e293b;">{{ $teacher->email }}</span>
+                        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--portal-canvas);border-radius:10px;border:1px solid rgba(255,255,255,0.1);margin-bottom:12px;">
+                            <i class="bi bi-envelope-fill" style="color:var(--portal-gold);"></i>
+                            <span style="font-size:.875rem;font-weight:600;color:var(--portal-text);">{{ $teacher->email }}</span>
                         </div>
-                        <p style="font-size:.85rem;color:#64748b;margin-bottom:12px;">
-                            An OTP will be sent to your <strong>current email</strong> to verify it's you before changing.
+                        <p style="font-size:.85rem;color:var(--portal-muted);margin-bottom:12px;">
+                            An OTP will be sent to your <strong style="color:var(--portal-text);">current email</strong> to verify it's you before changing.
                         </p>
                         <button type="button" onclick="tchRequestEmailOtp()" id="tchSendEmailOtpBtn" class="tch-save-btn">
                             <i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email
@@ -212,24 +212,24 @@
                     </div>
 
                     <div id="tchEmailStep2" style="display:none;">
-                        <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:10px;padding:10px 14px;font-size:.82rem;margin-bottom:14px;">
+                        <div style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:var(--portal-emerald);border-radius:10px;padding:10px 14px;font-size:.82rem;margin-bottom:14px;">
                             <i class="bi bi-envelope-check me-2"></i>OTP sent to <strong>{{ $teacher->email }}</strong>
                         </div>
                         <form action="{{ route('otp.email.change') }}" method="POST">
                             @csrf
-                            <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Enter OTP</label>
+                            <label style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Enter OTP</label>
                             <div style="display:flex;gap:8px;margin-bottom:14px;">
                                 @for($j=1;$j<=6;$j++)
-                                <input type="text" class="tch-email-otp-digit" maxlength="1" inputmode="numeric" id="ted{{$j}}" style="width:42px;height:48px;border-radius:9px;border:1.5px solid #e2e8f0;font-size:1.2rem;font-weight:800;text-align:center;color:#7c2d12;background:#f8fafc;outline:none;transition:all .2s;">
+                                <input type="text" class="tch-email-otp-digit" maxlength="1" inputmode="numeric" id="ted{{$j}}" style="width:42px;height:48px;border-radius:9px;border:1px solid rgba(212,175,55,0.28);font-size:1.2rem;font-weight:800;text-align:center;color:var(--portal-text);background:var(--portal-canvas);outline:none;transition:all .2s;">
                                 @endfor
                             </div>
                             <input type="hidden" name="otp" id="tchEmailOtpHidden">
                             <div class="mb-3">
-                                <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Email Address</label>
+                                <label style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Email Address</label>
                                 <input type="email" name="new_email" class="tch-form-input" placeholder="newemail@example.com" required>
                             </div>
                             <div style="display:flex;gap:10px;">
-                                <button type="button" onclick="tchCancelEmailOtp()" style="padding:11px 20px;background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;border-radius:10px;font-weight:600;font-size:.875rem;cursor:pointer;">Cancel</button>
+                                <button type="button" onclick="tchCancelEmailOtp()" class="tch-btn tch-btn-ghost" style="padding:11px 20px;border-radius:10px;font-weight:600;font-size:.875rem;cursor:pointer;">Cancel</button>
                                 <button type="submit" class="tch-save-btn" style="flex:1;" onclick="tchCollectEmailOtp()"><i class="bi bi-check2 me-2"></i>Change Email</button>
                             </div>
                         </form>
@@ -237,45 +237,45 @@
                 </div>
 
                 <!-- OTP Password Change -->
-                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #f1f5f9;">
-                    <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Change Password</div>
+                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Change Password</div>
                     <div id="tchOtpStep1">
-                        <p style="font-size:.85rem;color:#64748b;margin-bottom:12px;">
-                            We'll send a 6-digit OTP to <strong>{{ $teacher->email }}</strong> to verify it's you.
+                        <p style="font-size:.85rem;color:var(--portal-muted);margin-bottom:12px;">
+                            We'll send a 6-digit OTP to <strong style="color:var(--portal-text);">{{ $teacher->email }}</strong> to verify it's you.
                         </p>
                         <button type="button" onclick="tchRequestOtp()" id="tchSendOtpBtn" class="tch-save-btn">
                             <i class="bi bi-send-fill me-2"></i>Send OTP to Email
                         </button>
                     </div>
                     <div id="tchOtpStep2" style="display:none;">
-                        <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:10px;padding:10px 14px;font-size:.82rem;margin-bottom:14px;">
+                        <div style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:var(--portal-emerald);border-radius:10px;padding:10px 14px;font-size:.82rem;margin-bottom:14px;">
                             <i class="bi bi-check-circle me-2"></i>OTP sent to {{ $teacher->email }}
                         </div>
                         <form action="{{ route('otp.change') }}" method="POST">
                             @csrf
-                            <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Enter OTP</label>
+                            <label style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Enter OTP</label>
                             <div style="display:flex;gap:8px;margin-bottom:14px;">
                                 @for($i=1;$i<=6;$i++)
-                                <input type="text" class="tch-otp-digit" maxlength="1" inputmode="numeric" id="tc{{$i}}" style="width:42px;height:48px;border-radius:9px;border:1.5px solid #e2e8f0;font-size:1.2rem;font-weight:800;text-align:center;color:#7c2d12;background:#f8fafc;outline:none;transition:all .2s;">
+                                <input type="text" class="tch-otp-digit" maxlength="1" inputmode="numeric" id="tc{{$i}}" style="width:42px;height:48px;border-radius:9px;border:1px solid rgba(212,175,55,0.28);font-size:1.2rem;font-weight:800;text-align:center;color:var(--portal-text);background:var(--portal-canvas);outline:none;transition:all .2s;">
                                 @endfor
                             </div>
                             <input type="hidden" name="otp" id="tchOtpHidden">
                             <div class="mb-3">
-                                <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Password</label>
+                                <label style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Password</label>
                                 <div class="pw-wrap">
                                     <input type="password" name="password" id="tpw1" class="tch-form-input" placeholder="12+ chars, mixed case, number, symbol" minlength="12" required>
                                     <button type="button" class="eye-btn" onclick="togglePw('tpw1',this,event)" data-toggle-password="tpw1" aria-controls="tpw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
                             </div>
                             <div class="mb-4">
-                                <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Confirm Password</label>
+                                <label style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Confirm Password</label>
                                 <div class="pw-wrap">
                                     <input type="password" name="password_confirmation" id="tpw2" class="tch-form-input" placeholder="Repeat new password" minlength="12" required>
                                     <button type="button" class="eye-btn" onclick="togglePw('tpw2',this,event)" data-toggle-password="tpw2" aria-controls="tpw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
                             </div>
                             <div style="display:flex;gap:10px;">
-                                <button type="button" onclick="tchCancelOtp()" style="padding:11px 20px;background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;border-radius:10px;font-weight:600;font-size:.875rem;cursor:pointer;">Cancel</button>
+                                <button type="button" onclick="tchCancelOtp()" class="tch-btn tch-btn-ghost" style="padding:11px 20px;border-radius:10px;font-weight:600;font-size:.875rem;cursor:pointer;">Cancel</button>
                                 <button type="submit" class="tch-save-btn" style="flex:1;" onclick="tchCollectOtp()"><i class="bi bi-check2 me-2"></i>Change Password</button>
                             </div>
                         </form>
@@ -320,8 +320,8 @@
                         <i class="bi bi-key-fill me-2"></i>Generate Recovery Codes
                     </button>
                     
-                    <div id="recoveryCodesList" style="display:none;margin-top:16px;background:#fffbeb;border:1px solid #fef3c7;border-radius:10px;padding:16px;">
-                        <div style="font-size:.875rem;font-weight:600;color:#d97706;margin-bottom:12px;">
+                    <div id="recoveryCodesList" style="display:none;margin-top:16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.28);border-radius:10px;padding:16px;">
+                        <div style="font-size:.875rem;font-weight:600;color:var(--portal-amber);margin-bottom:12px;">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>Save these codes in a safe place. They will not be shown again.
                         </div>
                         <div id="codesContainer" style="display:flex;flex-wrap:wrap;gap:10px;">

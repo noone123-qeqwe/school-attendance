@@ -1,0 +1,840 @@
+/* ==========================================================================
+   Osmeña Colleges Academic Portal — Unified Shared Foundation v1.0
+   Role-independent design tokens & "Academic Command Canvas" primitives
+   shared between Student and Teacher portals.
+   Strictly scoped inside @media screen so @media print & PDF views stay intact.
+   ========================================================================== */
+
+@media screen {
+    body.student-portal,
+    body.student-mobile-portal,
+    body.biometric-flow-page,
+    body.teacher-portal {
+        /* ── Canonical Smoked Charcoal Glass, Warm Gold & Osmeña Maroon ── */
+        --portal-canvas: #141010;
+        --portal-surface: #1e1515;
+        --portal-surface-2: #261b1b;
+        --portal-surface-3: #2f2222;
+        --portal-maroon-core: #561313;
+        --portal-maroon-mid: #7a1a1a;
+        --portal-maroon-bright: #800000;
+        --portal-gold: #d4af37;
+        --portal-gold-bright: #f5dfa8;
+        --portal-gold-dark: #a68822;
+        --portal-ivory: #faf8f5;
+        --portal-white: #ffffff;
+        --portal-text: #faf8f5;
+        --portal-text-soft: #d6ccc6;
+        --portal-muted: #a49890;
+        --portal-border-subtle: rgba(255, 255, 255, 0.08);
+        --portal-border: rgba(212, 175, 55, 0.16);
+        --portal-border-strong: rgba(212, 175, 55, 0.34);
+        --portal-emerald: #34d399;
+        --portal-amber: #fbbf24;
+        --portal-rose: #fb7185;
+        --portal-sky: #7dd3fc;
+        --portal-radius-xl: 16px;
+        --portal-radius-lg: 14px;
+        --portal-radius-md: 10px;
+        --portal-radius-sm: 8px;
+        --portal-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+        --portal-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.24);
+        --portal-shadow-overlay: 0 18px 44px rgba(0, 0, 0, 0.52);
+        --portal-cta-grad: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+        --portal-cta-text: #800000;
+        --portal-font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+        --portal-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    /* ── Typography & Numeric Helpers ────────────────────────────────────── */
+    .portal-mono {
+        font-family: var(--portal-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .portal-tabular {
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Academic Command Canvas Container ───────────────────────────────── */
+    .portal-cockpit {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        color: var(--portal-text);
+        font-family: var(--portal-font-sans);
+        min-width: 0;
+        max-width: 1280px;
+        margin: 0 auto;
+    }
+
+    .portal-cockpit *,
+    .portal-cockpit *::before,
+    .portal-cockpit *::after {
+        box-sizing: border-box;
+    }
+
+    /* ── 1. Open Editorial Masthead ──────────────────────────────────────── */
+    .portal-masthead {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 4px 0 18px;
+        border-bottom: 1px solid var(--portal-border-subtle);
+    }
+
+    .portal-identity-cluster {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+    }
+
+    .portal-avatar-ring {
+        position: relative;
+        width: 50px;
+        height: 50px;
+        flex: 0 0 50px;
+        padding: 0;
+        border-radius: 50%;
+        border: none;
+        background: transparent;
+    }
+
+    .portal-avatar-ring img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        display: block;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+    }
+
+    .portal-avatar-live-dot {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: var(--portal-emerald);
+        border: 2px solid var(--portal-canvas);
+    }
+
+    .portal-identity-copy {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .portal-kicker-line {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        color: var(--portal-muted);
+        margin-bottom: 3px;
+    }
+
+    .portal-kicker-greeting {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--portal-gold-bright);
+        font-weight: 700;
+    }
+
+    .portal-kicker-greeting i {
+        color: var(--portal-gold);
+        font-size: 0.78rem;
+    }
+
+    .portal-kicker-clock {
+        color: var(--portal-text-soft);
+    }
+
+    .portal-kicker-sep,
+    .portal-meta-sep {
+        opacity: 0.45;
+    }
+
+    .portal-title {
+        margin: 0;
+        font-size: clamp(1.26rem, 2.2vw, 1.62rem);
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        line-height: 1.18;
+        color: var(--portal-white);
+        overflow-wrap: anywhere;
+    }
+
+    .portal-meta-ribbon {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin-top: 4px;
+        font-size: 0.79rem;
+        color: var(--portal-text-soft);
+    }
+
+    .portal-meta-item.is-id {
+        color: var(--portal-gold);
+        font-weight: 600;
+    }
+
+    .portal-masthead-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .portal-cta-primary,
+    .portal-cta-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-size: 0.84rem;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
+    }
+
+    .portal-cta-primary {
+        background: var(--portal-cta-grad);
+        border: 1px solid #ffffff;
+        color: var(--portal-cta-text);
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.22);
+    }
+
+    .portal-cta-primary:hover {
+        background: #ffffff;
+        color: var(--portal-maroon-core);
+    }
+
+    .portal-cta-secondary {
+        background: rgba(30, 21, 21, 0.85);
+        border: 1px solid var(--portal-border-strong);
+        color: var(--portal-text);
+    }
+
+    .portal-cta-secondary:hover {
+        background: var(--portal-surface-2);
+        border-color: var(--portal-gold);
+        color: var(--portal-gold-bright);
+    }
+
+    /* ── 2. Contextual Alert Rail ────────────────────────────────────────── */
+    .portal-alert-rail {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .portal-alert-rail:empty {
+        display: none;
+    }
+
+    .portal-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 13px 16px;
+        border-radius: var(--portal-radius-md);
+        background: var(--portal-surface);
+        border: 1px solid var(--portal-border-subtle);
+        font-size: 0.84rem;
+        line-height: 1.5;
+        color: var(--portal-text);
+    }
+
+    .portal-banner[hidden] {
+        display: none !important;
+    }
+
+    .portal-banner.is-success {
+        background: rgba(52, 211, 153, 0.1);
+        border-color: rgba(52, 211, 153, 0.28);
+        border-left: 3px solid var(--portal-emerald);
+        color: #d1fae5;
+    }
+
+    .portal-banner.is-error {
+        background: rgba(251, 113, 133, 0.1);
+        border-color: rgba(251, 113, 133, 0.3);
+        border-left: 3px solid var(--portal-rose);
+        color: #ffe4e8;
+    }
+
+    .portal-banner.is-warning {
+        background: rgba(251, 191, 36, 0.08);
+        border-color: rgba(251, 191, 36, 0.28);
+        border-left: 3px solid var(--portal-amber);
+        color: #fef3c7;
+    }
+
+    .portal-banner.is-live {
+        background: rgba(52, 211, 153, 0.09);
+        border-color: rgba(52, 211, 153, 0.3);
+        border-left: 3px solid var(--portal-emerald);
+        color: #d6f8df;
+    }
+
+    .portal-banner.is-info {
+        background: rgba(212, 175, 55, 0.08);
+        border-color: rgba(212, 175, 55, 0.24);
+        border-left: 3px solid var(--portal-gold);
+        color: var(--portal-text-soft);
+    }
+
+    .portal-banner-lead {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        min-width: 0;
+        flex: 1 1 260px;
+    }
+
+    .portal-banner-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.07);
+        font-size: 0.95rem;
+    }
+
+    .portal-banner.is-warning .portal-banner-icon {
+        background: rgba(251, 191, 36, 0.15);
+        color: var(--portal-amber);
+    }
+
+    .portal-banner-title {
+        font-weight: 700;
+        color: var(--portal-white);
+        font-size: 0.88rem;
+    }
+
+    .portal-banner-sub {
+        color: var(--portal-text-soft);
+        font-size: 0.8rem;
+        margin-top: 2px;
+    }
+
+    .portal-banner-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 36px;
+        padding: 6px 14px;
+        border-radius: 9px;
+        background: var(--portal-ivory);
+        color: var(--portal-maroon-bright);
+        font-size: 0.79rem;
+        font-weight: 800;
+        text-decoration: none;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .portal-banner-btn:hover {
+        background: #ffffff;
+        color: var(--portal-maroon-core);
+    }
+
+    /* ── 3. Signature Asymmetric Hero Grid ───────────────────────────────── */
+    .portal-hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+    }
+
+    .portal-stage,
+    .portal-telemetry {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 20px 22px;
+        border-radius: var(--portal-radius-xl);
+        background: rgba(30, 21, 21, 0.92);
+        border: 1px solid var(--portal-border-subtle);
+        box-shadow: var(--portal-shadow-md);
+        overflow: hidden;
+    }
+
+    .portal-stage {
+        border-color: var(--portal-border);
+    }
+
+    .portal-stage::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 20px;
+        right: 20px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.45), transparent);
+        pointer-events: none;
+    }
+
+    .portal-stage.is-live {
+        border-color: rgba(52, 211, 153, 0.34);
+        background: linear-gradient(155deg, rgba(22, 34, 28, 0.55) 0%, rgba(30, 21, 21, 0.95) 68%);
+    }
+
+    .portal-stage.is-live::before {
+        background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.65), transparent);
+    }
+
+    .portal-stage.is-next {
+        border-color: rgba(212, 175, 55, 0.3);
+        background: linear-gradient(155deg, rgba(122, 26, 26, 0.18) 0%, rgba(30, 21, 21, 0.94) 68%);
+    }
+
+    .portal-stage-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .portal-stage-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.71rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--portal-gold);
+    }
+
+    .portal-stage.is-live .portal-stage-eyebrow {
+        color: var(--portal-emerald);
+    }
+
+    .portal-pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: var(--portal-gold);
+    }
+
+    .portal-pulse-dot.is-live {
+        background: var(--portal-emerald);
+        box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.22);
+        animation: portalPulseRing 2s ease-in-out infinite;
+    }
+
+    .portal-pulse-dot.is-done {
+        background: var(--portal-muted);
+    }
+
+    @keyframes portalPulseRing {
+        0%, 100% { box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.26); }
+        50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0.06); }
+    }
+
+    /* Telemetry Gauge + Proportional Breakdown */
+    .portal-standing-top {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .portal-gauge-wrap {
+        position: relative;
+        width: 84px;
+        height: 84px;
+        flex: 0 0 84px;
+    }
+
+    .portal-gauge-svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .portal-gauge-track {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.08);
+        stroke-width: 7;
+    }
+
+    .portal-gauge-fill {
+        fill: none;
+        stroke-width: 7;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .portal-gauge-fill.is-good { stroke: var(--portal-emerald); }
+    .portal-gauge-fill.is-warning { stroke: var(--portal-amber); }
+    .portal-gauge-fill.is-danger { stroke: var(--portal-rose); }
+    .portal-gauge-fill.is-empty { stroke: var(--portal-border-strong); }
+
+    .portal-gauge-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+
+    .portal-gauge-value {
+        font-size: 1.18rem;
+        font-weight: 800;
+        color: var(--portal-white);
+    }
+
+    .portal-gauge-value.is-good { color: var(--portal-emerald); }
+    .portal-gauge-value.is-warning { color: var(--portal-amber); }
+    .portal-gauge-value.is-danger { color: var(--portal-rose); }
+    .portal-gauge-value.is-empty { color: var(--portal-muted); }
+
+    .portal-gauge-sub {
+        margin-top: 3px;
+        font-size: 0.63rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--portal-muted);
+    }
+
+    .portal-breakdown-bar {
+        display: flex;
+        height: 6px;
+        width: 100%;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.07);
+        overflow: hidden;
+        gap: 2px;
+    }
+
+    .portal-seg {
+        display: block;
+        height: 100%;
+        min-width: 4px;
+        border-radius: 999px;
+    }
+
+    .portal-seg.is-present { background: var(--portal-emerald); }
+    .portal-seg.is-late { background: var(--portal-amber); }
+    .portal-seg.is-absent { background: var(--portal-rose); }
+    .portal-seg.is-empty { background: rgba(255, 255, 255, 0.1); }
+
+    /* ── 4. Contextual Utility Rail ──────────────────────────────────────── */
+    .portal-utility-rail {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 2px 0;
+    }
+
+    .portal-utility-rail::-webkit-scrollbar {
+        display: none;
+    }
+
+    .portal-util-item {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 8px 14px;
+        border-radius: 10px;
+        background: rgba(30, 21, 21, 0.72);
+        border: 1px solid var(--portal-border-subtle);
+        color: var(--portal-text);
+        font-size: 0.82rem;
+        font-weight: 650;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .portal-util-item i {
+        color: var(--portal-gold);
+        font-size: 0.9rem;
+    }
+
+    .portal-util-item:hover {
+        background: var(--portal-surface-2);
+        border-color: var(--portal-border-strong);
+        color: var(--portal-white);
+    }
+
+    .portal-util-count {
+        font-size: 0.71rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--portal-text-soft);
+    }
+
+    .portal-util-count.is-amber {
+        background: rgba(251, 191, 36, 0.14);
+        color: var(--portal-amber);
+    }
+
+    /* ── 5. Asymmetric Workspace & Hairline Panels ───────────────────────── */
+    .portal-workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 20px;
+    }
+
+    .portal-col-main,
+    .portal-col-aside {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-width: 0;
+    }
+
+    .portal-panel {
+        display: flex;
+        flex-direction: column;
+        background: rgba(30, 21, 21, 0.88);
+        border: 1px solid var(--portal-border-subtle);
+        border-radius: var(--portal-radius-xl);
+        overflow: hidden;
+    }
+
+    .portal-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 16px 20px 14px;
+        border-bottom: 1px solid var(--portal-border-subtle);
+    }
+
+    .portal-panel-title-group {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .portal-panel-title {
+        margin: 0;
+        font-size: 0.98rem;
+        font-weight: 800;
+        letter-spacing: -0.015em;
+        color: var(--portal-white);
+    }
+
+    .portal-panel-meta {
+        font-size: 0.76rem;
+        color: var(--portal-muted);
+    }
+
+    .portal-panel-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--portal-gold-bright);
+        text-decoration: none;
+        min-height: 36px;
+    }
+
+    .portal-panel-link:hover {
+        color: var(--portal-gold);
+    }
+
+    .portal-panel-body {
+        padding: 16px 20px;
+    }
+
+    .portal-panel-foot {
+        padding: 10px 20px 14px;
+        border-top: 1px solid var(--portal-border-subtle);
+    }
+
+    /* ── 6. Shared Subpage Header ────────────────────────────────────────── */
+    .portal-sub-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-bottom: 20px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--portal-border-subtle);
+    }
+
+    .portal-sub-header h1 {
+        color: var(--portal-text);
+        font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        margin: 0 0 4px;
+        text-wrap: balance;
+    }
+
+    .portal-sub-header p {
+        color: var(--portal-muted);
+        margin: 0;
+        font-size: 0.875rem;
+    }
+
+    .portal-code-tag {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 5px;
+        background: var(--portal-surface-2);
+        border: 1px solid var(--portal-border-subtle);
+        color: var(--portal-gold-bright);
+    }
+
+    .portal-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 9px;
+        border-radius: 7px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .portal-status-pill.is-present { background: rgba(52, 211, 153, 0.12); color: var(--portal-emerald); }
+    .portal-status-pill.is-late { background: rgba(251, 191, 36, 0.12); color: var(--portal-amber); }
+    .portal-status-pill.is-absent { background: rgba(251, 113, 133, 0.14); color: var(--portal-rose); }
+    .portal-status-pill.is-upcoming { background: rgba(212, 175, 55, 0.12); color: var(--portal-gold-bright); }
+    .portal-status-pill.is-muted { background: rgba(255, 255, 255, 0.06); color: var(--portal-muted); }
+
+    .portal-inline-empty {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 20px;
+        font-size: 0.83rem;
+        color: var(--portal-muted);
+    }
+
+    /* ── Responsive Canvas Breakpoints ───────────────────────────────────── */
+    @media screen and (min-width: 768px) {
+        .portal-masthead {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 4px 0 20px;
+        }
+
+        .portal-masthead-actions {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .portal-utility-rail {
+            flex-wrap: wrap;
+            overflow-x: visible;
+        }
+    }
+
+    @media screen and (min-width: 1024px) {
+        .portal-hero-grid {
+            grid-template-columns: minmax(0, 1.38fr) minmax(330px, 1fr);
+            gap: 18px;
+            align-items: stretch;
+        }
+    }
+
+    @media screen and (min-width: 1120px) {
+        .portal-workspace {
+            grid-template-columns: minmax(0, 1.42fr) minmax(320px, 1fr);
+            gap: 20px;
+            align-items: start;
+        }
+    }
+
+    @media screen and (max-width: 767.98px) {
+        .portal-cockpit {
+            gap: 14px;
+        }
+
+        .portal-masthead {
+            padding: 2px 0 14px;
+            gap: 12px;
+        }
+
+        .portal-avatar-ring {
+            width: 44px;
+            height: 44px;
+            flex: 0 0 44px;
+        }
+
+        .portal-stage,
+        .portal-telemetry {
+            padding: 16px;
+            border-radius: 14px;
+            gap: 14px;
+        }
+
+        .portal-panel {
+            border-radius: 14px;
+        }
+
+        .portal-panel-head {
+            padding: 14px 16px 12px;
+        }
+
+        .portal-panel-body,
+        .portal-panel-foot,
+        .portal-inline-empty {
+            padding: 14px 16px;
+        }
+    }
+
+    @media screen and (max-width: 359px) {
+        .portal-masthead-actions {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .portal-standing-top {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .portal-cockpit *,
+        .portal-cockpit *::before,
+        .portal-cockpit *::after {
+            animation: none !important;
+            transition: none !important;
+        }
+    }
+}

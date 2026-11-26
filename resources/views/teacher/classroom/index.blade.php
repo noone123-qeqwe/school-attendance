@@ -144,11 +144,11 @@
 <div class="teacher-classes-wrapper">
 <div class="d-flex justify-content-between align-items-center mb-4 teacher-page-heading">
     <div>
-        <h1 style="color: #f3e7cd; font-weight: 800; font-size: 1.8rem; margin: 0;">{{ $attendanceMode ? 'Take attendance' : 'My Classes' }}</h1>
-        <p style="color: #b39b82; font-size: 0.95rem; margin-top: 4px;">{{ $attendanceMode ? 'Choose a class, then open its QR attendance screen.' : 'Open a class to manage its students, schedule, and materials.' }}</p>
+        <h1 style="color: var(--portal-text); font-weight: 800; font-size: clamp(1.35rem, 2.4vw, 1.75rem); letter-spacing: -0.025em; margin: 0;">{{ $attendanceMode ? 'Take attendance' : 'My Classes' }}</h1>
+        <p style="color: var(--portal-muted); font-size: 0.9rem; margin-top: 4px;">{{ $attendanceMode ? 'Choose a class, then open its QR attendance screen.' : 'Open a class to manage its students, schedule, and materials.' }}</p>
     </div>
     <div>
-        <a href="{{ route('teacher.subjects.create') }}" class="btn-action btn-primary-action" style="background: rgba(207,164,111,0.15); border: 1px solid rgba(207,164,111,0.3); color: #f3e7cd; padding: 10px 20px; border-radius: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+        <a href="{{ route('teacher.subjects.create') }}" class="ent-btn ent-btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px;">
             <i class="bi bi-plus-lg"></i> Add Subject
         </a>
     </div>
