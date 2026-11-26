@@ -893,11 +893,11 @@
                         <div class="info-icon academic-spec-icon"><i class="bi bi-card-text"></i></div>
                         <div class="academic-spec-info">
                             <div class="info-lbl academic-spec-label">Student ID</div>
-                            <div class="info-val academic-spec-value" style="display:flex;align-items:center;justify-content:space-between;">
+                            <div class="info-val academic-spec-value" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
                                 <span>{{ Auth::user()->student_number ?: 'Not Assigned' }}</span>
                                 @if(Auth::user()->student_number)
-                                <button type="button" class="sec-copy-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}');if(typeof showToast==='function')showToast('Student ID copied!','info');" title="Copy Student ID">
-                                    <i class="bi bi-clipboard"></i>
+                                <button type="button" class="sec-copy-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}');if(typeof showToast==='function')showToast('Student ID copied!','info');" title="Copy Student ID" aria-label="Copy Student ID">
+                                    <i class="bi bi-clipboard" aria-hidden="true"></i>
                                 </button>
                                 @endif
                             </div>

@@ -929,4 +929,36 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertStringContainsString('.student-privacy-note-text', $settingsCss);
         $this->assertStringContainsString('overflow-wrap: break-word;', $settingsCss);
     }
+
+    public function test_student_academic_spec_cards_and_pref_tiles_restore_full_borders_padding_and_grid_gap(): void
+    {
+        $student = $this->createStudent([
+            'email' => 'student.specgrid@gmail.com',
+            'student_number' => '2310822',
+        ]);
+
+        $this->actingAs($student)
+            ->get(route('settings'))
+            ->assertOk()
+            ->assertSee('aria-label="Copy Student ID"', false);
+
+        $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
+        $this->assertNotFalse($masterCss);
+        $this->assertMatchesRegularExpression(
+            '/\.sp\.student-settings\[data-student-settings\]\s+\.academic-spec-grid\s*\{[^}]*gap:\s*12px\s*!important;/s',
+            $masterCss
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.sp\.student-settings\[data-student-settings\]\s+\.academic-spec-card\s*,\s*body\.student-portal\s+\.sp\.student-settings\[data-student-settings\]\s+\.pref-tile\s*,\s*body\.student-portal\s+\.sp\.student-settings\[data-student-settings\]\s+\.sec-status-tile\s*\{[^}]*border:\s*1px\s+solid\s+var\(--sdc-border-subtle\)\s*!important;/s',
+            $masterCss
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.sp\.student-settings\[data-student-settings\]\s+\.academic-spec-card\s*\{[^}]*padding:\s*14px\s+16px\s*!important;/s',
+            $masterCss
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.sp\.student-settings\[data-student-settings\]\s+\.pref-tile\s*\{[^}]*padding:\s*16px\s+18px\s*!important;/s',
+            $masterCss
+        );
+    }
 }

@@ -2567,12 +2567,53 @@
         color: #ffffff !important;
     }
 
+    body.student-portal .sp.student-settings[data-student-settings] .academic-spec-grid {
+        gap: 12px !important;
+    }
+
     body.student-portal .sp.student-settings[data-student-settings] .academic-spec-card,
     body.student-portal .sp.student-settings[data-student-settings] .pref-tile,
     body.student-portal .sp.student-settings[data-student-settings] .sec-status-tile {
         background: var(--sdc-surface-2) !important;
-        border-color: var(--sdc-border-subtle) !important;
+        border: 1px solid var(--sdc-border-subtle) !important;
         border-radius: 11px !important;
+    }
+
+    body.student-portal .sp.student-settings[data-student-settings] .academic-spec-card {
+        padding: 14px 16px !important;
+        min-height: 0 !important;
+    }
+
+    body.student-portal .sp.student-settings[data-student-settings] .academic-spec-label {
+        color: var(--sdc-muted) !important;
+    }
+
+    body.student-portal .sp.student-settings[data-student-settings] .academic-spec-value {
+        color: var(--sdc-text) !important;
+    }
+
+    body.student-portal .sp.student-settings[data-student-settings] .pref-tile {
+        padding: 16px 18px !important;
+        margin: 0 0 10px !important;
+    }
+
+    body.student-portal .sp.student-settings[data-student-settings] .sec-copy-btn {
+        color: var(--sdc-text-soft) !important;
+        background: rgba(250, 244, 246, 0.05) !important;
+        border: 1px solid var(--sdc-border-subtle) !important;
+        border-radius: 8px !important;
+        padding: 6px 8px !important;
+        min-width: 34px;
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    body.student-portal .sp.student-settings[data-student-settings] .sec-copy-btn:hover {
+        color: #ffffff !important;
+        border-color: var(--sdc-border-strong) !important;
+        background: rgba(107, 25, 43, 0.32) !important;
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .student-account-shortcut-copy strong {
