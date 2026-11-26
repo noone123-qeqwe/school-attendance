@@ -189,11 +189,15 @@
         padding: 11px 12px !important;
         font-size: .74rem !important;
         line-height: 1.5 !important;
-        overflow-wrap: anywhere;
     }
     .sp.student-settings[data-student-settings] #tab-family .student-privacy-note > i {
         flex: 0 0 auto;
         margin: 2px 0 0 !important;
+    }
+    .sp.student-settings[data-student-settings] #tab-family .student-privacy-note-text {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow-wrap: break-word;
     }
 }
 @media (max-width: 575.98px) {

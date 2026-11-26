@@ -899,4 +899,34 @@ class StudentDashboardAndSidebarTest extends TestCase
             'type' => 'warning_2',
         ]);
     }
+
+    public function test_student_guardian_privacy_note_wraps_text_in_single_flex_item(): void
+    {
+        $student = $this->createStudent([
+            'email' => 'student.privacywrap@gmail.com',
+            'student_number' => '2310821',
+        ]);
+
+        $response = $this->actingAs($student)->get(route('settings'))->assertOk();
+
+        libxml_use_internal_errors(true);
+        $dom = new \DOMDocument();
+        $dom->loadHTML($response->getContent());
+        libxml_clear_errors();
+
+        $xpath = new \DOMXPath($dom);
+        $note = $xpath->query('//*[contains(concat(" ", normalize-space(@class), " "), " student-privacy-note ")]')->item(0);
+        $this->assertNotNull($note);
+
+        // Strong must live inside the text wrapper span, never as a direct flex sibling of text nodes.
+        $this->assertSame(0, $xpath->query('./strong', $note)->length);
+        $textWrap = $xpath->query('./span[contains(concat(" ", normalize-space(@class), " "), " student-privacy-note-text ")]', $note)->item(0);
+        $this->assertNotNull($textWrap);
+        $this->assertSame(1, $xpath->query('./strong[normalize-space()="Privacy safeguard:"]', $textWrap)->length);
+
+        $settingsCss = file_get_contents(public_path('css/student-settings.css'));
+        $this->assertNotFalse($settingsCss);
+        $this->assertStringContainsString('.student-privacy-note-text', $settingsCss);
+        $this->assertStringContainsString('overflow-wrap: break-word;', $settingsCss);
+    }
 }

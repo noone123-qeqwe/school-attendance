@@ -1720,7 +1720,7 @@
 
                     <div class="student-privacy-note" style="background:#1C0C11;border:1px solid rgba(250,247,248,0.1);border-radius:10px;padding:12px 14px;font-size:0.78rem;color:#D4C6CA;line-height:1.45;">
                         <i class="bi bi-shield-lock-fill me-1" style="color:#E898A8;" aria-hidden="true"></i>
-                        <strong>Privacy safeguard:</strong> Guardians can view attendance and subject summaries. Students cannot remove a guardian link; a guardian or school administrator can manage it.
+                        <span class="student-privacy-note-text"><strong>Privacy safeguard:</strong> Guardians can view attendance and subject summaries. Students cannot remove a guardian link; a guardian or school administrator can manage it.</span>
                     </div>
                 </div>
             </div>
