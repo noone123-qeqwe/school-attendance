@@ -212,20 +212,34 @@
 
     /* ── Profile button ── */
     .header-right .dropdown .btn,
-    .header-right .fb-trigger {
+    .header-right .fb-trigger,
+    .header-right .header-account-trigger {
         width: 40px !important;
         height: 40px !important;
         min-width: 40px !important;
         min-height: 40px !important;
         padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
         border-radius: 50% !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .header-right .dropdown .btn:not(:focus-visible),
+    .header-right .fb-trigger:not(:focus-visible),
+    .header-right .header-account-trigger:not(:focus-visible) {
+        box-shadow: none !important;
     }
 
     .header-right .fb-trigger img,
+    .header-right .header-account-trigger img,
     .header-right .dropdown .btn img {
-        width: 34px !important;
-        height: 34px !important;
+        width: 36px !important;
+        height: 36px !important;
         border-radius: 50% !important;
+        object-fit: cover !important;
     }
 
     /* ── Mobile Back Button ── */

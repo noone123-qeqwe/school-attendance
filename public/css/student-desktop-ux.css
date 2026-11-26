@@ -236,7 +236,11 @@
     body.student-portal .sidebar .sidebar-logo {
         width: 34px;
         height: 34px;
-        border-radius: 10px;
+        background: transparent;
+        border: none;
+        padding: 0;
+        box-shadow: none;
+        object-fit: contain;
         flex-shrink: 0;
     }
 

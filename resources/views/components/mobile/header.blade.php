@@ -153,18 +153,31 @@
     }
 
     .header-avatar-pill {
-        padding: 2px;
-        border-color: rgba(212, 175, 55, 0.32);
-        background: rgba(212, 175, 55, 0.10);
+        padding: 0;
+        border: none;
+        background: transparent;
+        border-radius: 50%;
         overflow: hidden;
     }
 
     .header-avatar-img {
-        width: 100%;
-        height: 100%;
+        width: 34px;
+        height: 34px;
         object-fit: cover;
         border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.22);
         display: block;
+    }
+
+    .header-avatar-pill .header-avatar-initials {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(212, 175, 55, 0.32);
+        background: rgba(212, 175, 55, 0.12);
     }
 
     .header-avatar-initials {

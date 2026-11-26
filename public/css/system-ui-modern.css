@@ -64,10 +64,40 @@
 .header-search-bar,
 .notif-btn,
 .user-menu-btn,
+.header-account-trigger,
 .mobile-back-btn,
 .burger-btn {
     transition: background-color var(--ui-motion), border-color var(--ui-motion),
         box-shadow var(--ui-motion), transform var(--ui-motion);
+}
+
+.header-account-trigger {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 999px;
+}
+
+.header-profile-img {
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+body.student-portal .sd-avatar-ring,
+body.student-portal .sd-avatar-ring img {
+    border-radius: 50%;
+}
+
+body.student-portal .sidebar .nav-link > i {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+body.student-portal .sp.student-settings[data-student-settings] :is(.sc-icon, .sec-card-icon) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* One measured radius and hover treatment for shared surface components. */
@@ -342,8 +372,15 @@
     letter-spacing: -0.02em;
 }
 
-.mobile-app-layout :where(.header-btn-left, .header-btn-right, .mobile-menu-close) {
+.mobile-app-layout :where(.header-btn-left, .header-btn-right:not(.header-avatar-pill), .mobile-menu-close) {
     border-radius: 12px;
+}
+
+.mobile-app-layout .header-btn-right.header-avatar-pill {
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    padding: 0;
 }
 
 .mobile-app-layout .mobile-bottom-nav {

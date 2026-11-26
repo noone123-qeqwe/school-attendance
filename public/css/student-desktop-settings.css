@@ -158,14 +158,13 @@
     }
 
     body.student-portal .student-biometric-choices > a > i:first-child {
-        width: 44px;
-        height: 44px;
-        flex: 0 0 44px;
+        width: 28px;
+        height: 28px;
+        flex: 0 0 28px;
         display: grid;
         place-items: center;
-        border-radius: 12px;
-        border: 1px solid var(--gold-border);
-        background: var(--gold-subtle);
+        border: none;
+        background: transparent;
         font-size: 1.3rem;
     }
 
@@ -194,10 +193,12 @@
     }
 
     body.student-portal .sp.student-settings[data-student-settings] .sec-card-icon {
-        flex: 0 0 42px;
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
+        flex: 0 0 32px;
+        width: 32px;
+        height: 32px;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
         font-size: 1.2rem;
     }
 

@@ -235,17 +235,45 @@
         color: var(--sdc-muted) !important;
     }
 
-    body.student-portal .top-header :is(.burger-btn, .notif-btn, .header-account-trigger, #headerSearchBar, .mobile-back-btn) {
+    body.student-portal .top-header :is(.burger-btn, .notif-btn, #headerSearchBar, .mobile-back-btn) {
         background: var(--sdc-surface) !important;
         border: 1px solid var(--sdc-border) !important;
         color: var(--sdc-text-soft) !important;
         box-shadow: none !important;
     }
 
-    body.student-portal .top-header :is(.burger-btn, .notif-btn, .header-account-trigger, #headerSearchBar, .mobile-back-btn):hover {
+    body.student-portal .top-header :is(.burger-btn, .notif-btn, #headerSearchBar, .mobile-back-btn):hover {
         background: var(--sdc-surface-2) !important;
         border-color: var(--sdc-border-strong) !important;
         color: #ffffff !important;
+    }
+
+    body.student-portal .top-header .header-account-trigger {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        border-radius: 999px !important;
+        color: var(--sdc-text-soft) !important;
+    }
+
+    body.student-portal .top-header .header-account-trigger:not(:focus-visible) {
+        box-shadow: none !important;
+    }
+
+    body.student-portal .top-header .header-account-trigger:focus-visible {
+        outline: 2px solid var(--ux-focus, rgba(249, 229, 150, 0.78)) !important;
+        outline-offset: 3px;
+        box-shadow: 0 0 0 4px var(--ux-focus-ring, rgba(212, 175, 55, 0.22)) !important;
+    }
+
+    body.student-portal .top-header .header-account-trigger:hover {
+        background: transparent !important;
+        border-color: transparent !important;
+        color: #ffffff !important;
+    }
+
+    body.student-portal .top-header .header-account-trigger:hover .header-profile-img {
+        border-color: #ffffff !important;
     }
 
     body.student-portal .top-header :is(.header-search-icon, .header-search-key) {
@@ -258,6 +286,7 @@
     }
 
     body.student-portal .top-header .header-profile-img {
+        border-radius: 50% !important;
         border-color: var(--sdc-border-strong) !important;
     }
 
@@ -358,11 +387,19 @@
     }
 
     body.student-mobile-portal .header-avatar-pill {
+        border: none !important;
+        background: transparent !important;
+        border-radius: 50% !important;
+        padding: 0 !important;
+    }
+
+    body.student-mobile-portal .header-avatar-img {
         border-color: var(--sdc-border-strong) !important;
-        background: var(--sdc-surface-2) !important;
     }
 
     body.student-mobile-portal .header-avatar-initials {
+        border-color: var(--sdc-border-strong) !important;
+        background: var(--sdc-surface-2) !important;
         color: var(--sdc-text) !important;
     }
 
