@@ -308,14 +308,7 @@ class HomeController extends Controller
         ]);
     }
 
-    // 8c-iii. Compact recent check-ins & pending excuse counter
-    $recentAttendances = Attendance::with(['subject:id,code,name'])
-        ->where('user_id', $user->id)
-        ->orderBy('date', 'desc')
-        ->orderBy('time_in', 'desc')
-        ->take(5)
-        ->get();
-
+    // 8c-iii. Pending excuse counter
     $pendingExcusesCount = ExcuseSubmission::where('user_id', $user->id)
         ->where('status', 'pending')
         ->count();
@@ -384,7 +377,6 @@ class HomeController extends Controller
         'totalAbsent',
         'streakCount',
         'weeklyPulse',
-        'recentAttendances',
         'pendingExcusesCount',
         'todaySchedule',
         'subjectStats',

@@ -204,7 +204,7 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertSee('7-Day Pulse')
             ->assertSee("Today's Schedule", false)
             ->assertSee('Subject Standing')
-            ->assertSee('Recent Check-Ins')
+            ->assertDontSee('Recent Check-Ins')
             ->assertSee('Campus &amp; Class Announcements', false)
             ->assertSee('Lab Maintenance Notice')
             ->assertSee('Action Required: Attendance Warning')
@@ -473,7 +473,7 @@ class StudentDashboardAndSidebarTest extends TestCase
         }
     }
 
-    public function test_reinvented_student_dashboard_renders_standing_gauge_seven_day_pulse_recent_activity_and_pending_excuses(): void
+    public function test_reinvented_student_dashboard_renders_standing_gauge_seven_day_pulse_and_pending_excuses(): void
     {
         $student = $this->createStudent([
             'email' => 'student.cockpit@gmail.com',
@@ -519,7 +519,7 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertSee('Free schedule today')
             ->assertSee('Attendance Standing')
             ->assertSee('7-Day Pulse')
-            ->assertSee('Recent Check-Ins')
+            ->assertDontSee('Recent Check-Ins')
             ->assertSee('1 pending excuse')
             ->assertSee('Subject Standing')
             ->assertSee('CS401', false)

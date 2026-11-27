@@ -39,7 +39,6 @@
     $weeklyPulseCollection = collect($weeklyPulse ?? []);
     $subjectsCollection = collect($subjects ?? []);
     $subjectStatsCollection = collect($subjectStats ?? []);
-    $recentCollection = collect($recentAttendances ?? []);
     $pendingExcuses = (int) ($pendingExcusesCount ?? 0);
     $peerAvailable = app(\App\Services\PeerBiometricAttendanceService::class)->isAvailable();
 
@@ -458,47 +457,6 @@
                     <div class="sd-inline-empty is-quiet">
                         <span>No classes scheduled for {{ now()->format('l') }}.</span>
                         <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-panel-link">Open weekly timetable <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                    </div>
-                @endif
-            </section>
-
-            {{-- Recent Check-Ins --}}
-            <section class="sd-panel" aria-labelledby="sdRecentCheckinsHeading">
-                <header class="sd-panel-head">
-                    <div class="sd-panel-title-group">
-                        <h2 id="sdRecentCheckinsHeading" class="sd-panel-title">Recent Check-Ins</h2>
-                        <span class="sd-panel-meta">Latest verified class sessions</span>
-                    </div>
-                    <a href="{{ route('student.calendar') }}#attendance-records" class="sd-panel-link">Full log <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                </header>
-
-                @if($recentCollection->isNotEmpty())
-                    <div class="sd-ledger">
-                        @foreach($recentCollection as $rec)
-                            @php
-                                $recStatus = strtolower((string) ($rec->status ?? 'absent'));
-                                $recTone = $recStatus === 'present' ? 'present' : ($recStatus === 'late' ? 'late' : 'absent');
-                                $recTime = $rec->time_in
-                                    ? \Carbon\Carbon::parse($rec->time_in)->format('g:i A')
-                                    : ($rec->checked_in_at ? $rec->checked_in_at->format('g:i A') : null);
-                            @endphp
-                            <div class="sd-ledger-row">
-                                <span class="sd-ledger-dot is-{{ $recTone }}" aria-hidden="true"></span>
-                                <div class="sd-ledger-copy">
-                                    <div class="sd-ledger-title">{{ $rec->subject->name ?? $rec->subject_code }}</div>
-                                    <div class="sd-ledger-sub sd-tabular">
-                                        <span class="sd-code-tag sd-mono">{{ $rec->subject_code }}</span>
-                                        <span>{{ \Carbon\Carbon::parse($rec->date)->format('M j, Y') }}</span>
-                                        @if($recTime)<span>&middot; {{ $recTime }}</span>@endif
-                                    </div>
-                                </div>
-                                <span class="sd-status-pill is-{{ $recTone }}">{{ ucfirst($recStatus) }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="sd-inline-empty is-quiet">
-                        <span>No check-in activity yet. Records appear automatically after scanning into a session.</span>
                     </div>
                 @endif
             </section>
