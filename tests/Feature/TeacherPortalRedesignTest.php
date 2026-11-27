@@ -138,6 +138,11 @@ class TeacherPortalRedesignTest extends TestCase
         // Command palette points Live QR directly to attendance picker & includes Corrections
         $this->assertStringContainsString("label: 'Correction Requests'", $html);
 
+        // Top header omits redundant page title & date block on teacher portal
+        $this->assertStringNotContainsString('header-title-container', $html);
+        $this->assertStringNotContainsString('header-page-title', $html);
+        $this->assertStringNotContainsString('header-page-sub', $html);
+
         // Zero mojibake
         $this->assertStringNotContainsString('â€”', $html);
         $this->assertStringNotContainsString('â€¢', $html);
@@ -215,6 +220,7 @@ class TeacherPortalRedesignTest extends TestCase
         $this->assertStringContainsString('portal-unified-foundation.css', $html);
         $this->assertStringContainsString('student-portal-master.css', $html);
         $this->assertStringContainsString('student-dashboard.css', $html);
+        $this->assertStringContainsString('header-title-container', $html);
         $this->assertStringNotContainsString('teacher-portal-master.css', $html);
     }
 }

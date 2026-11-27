@@ -169,6 +169,7 @@
                             <i class="bi bi-chevron-left"></i>
                         </button>
                     @endif
+                    @unless(Auth::user()?->isTeacher())
                     <div class="header-title-container">
                         <div class="header-page-title">
                             @if(View::hasSection('page-title'))
@@ -196,6 +197,7 @@
                                 @endif
                             @endif
                         </div>
+                    @endunless
                         <div class="header-page-sub">@if(View::hasSection('page-sub'))@yield('page-sub')@elseif(Auth::user()?->isAdmin()){{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['group'] }}@elseif(Auth::user()?->isTeacher()){{ \App\Support\TeacherNavigation::context(request()->route()?->getName())['group'] }}@elseif(Auth::user()?->isParent()){{ \App\Support\ParentNavigation::context(request()->route()?->getName())['group'] }}@else{{ now()->format('l, F j, Y') }}@endif</div>
                     </div>
                 </div>
