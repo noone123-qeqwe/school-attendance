@@ -21,13 +21,14 @@ final class MobileNavigation
                 if ($item['key'] === 'attendance') {
                     $tabs[] = self::tab('scan', 'Scan Attendance QR', 'mobile.scan', 'qr-code-scan', ['mobile.scan'], 'Scan', featured: true);
                 }
-                $tabs[] = self::tab($item['key'], $item['label'], $item['route'], $item['icon'], $item['active'], match ($item['key']) {
-                    'home' => 'Home',
-                    'classes' => 'Classes',
-                    'attendance' => 'Calendar',
-                    'excuses' => 'Excuses',
-                    default => $item['label'],
-                });
+                [$shortLabel, $icon] = match ($item['key']) {
+                    'home' => ['Home', 'house-door'],
+                    'classes' => ['Classes', 'journal-bookmark'],
+                    'attendance' => ['Calendar', 'calendar2-week'],
+                    'excuses' => ['Excuses', 'file-earmark-text'],
+                    default => [$item['label'], $item['icon']],
+                };
+                $tabs[] = self::tab($item['key'], $item['label'], $item['route'], $icon, $item['active'], $shortLabel);
             }
 
             return $tabs;

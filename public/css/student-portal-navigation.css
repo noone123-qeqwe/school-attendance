@@ -1,24 +1,32 @@
 /* Shared student navigation styles — Obsidian Oxblood & Alabaster v3.0 */
-@media (max-width: 768px) {
-    body.student-portal #mobileBottomNav.mobile-bottom-nav {
-        --student-dock-icon-size: 28px;
+@media screen and (max-width: 768px) {
+    body.student-portal nav#mobileBottomNav.mobile-bottom-nav {
+        --student-dock-icon-row: 34px;
         display: grid !important;
         grid-auto-flow: column;
         grid-auto-columns: minmax(0, 1fr);
         height: auto !important;
+        padding: 6px max(6px, env(safe-area-inset-right, 0px))
+            calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)) !important;
+        background: var(--sdc-surface) !important;
+        border: 1px solid var(--sdc-border-strong) !important;
+        border-bottom: 0 !important;
+        border-radius: 20px 20px 0 0 !important;
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.18) !important;
     }
 
     body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item {
         display: grid !important;
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: var(--student-dock-icon-size) 1.25em;
+        grid-template-rows: var(--student-dock-icon-row) 1.25em;
         align-content: center;
         justify-items: center;
         height: auto !important;
         min-height: 64px !important;
-        gap: 4px !important;
+        gap: 3px !important;
         padding: 4px 1px !important;
         font-size: clamp(0.75rem, 3.2vw, 0.875rem);
+        color: var(--sdc-text-soft) !important;
     }
 
     body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item > span:not(.mbn-scan-icon) {
@@ -26,19 +34,35 @@
         font-size: inherit !important;
         letter-spacing: normal !important;
         line-height: 1.25 !important;
+        opacity: 1 !important;
     }
 
     body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item > i {
-        display: block;
-        width: var(--student-dock-icon-size);
-        height: var(--student-dock-icon-size);
-        font-size: var(--student-dock-icon-size) !important;
+        display: grid;
+        place-items: center;
+        width: min(54px, 100%);
+        height: var(--student-dock-icon-row);
+        border-radius: 999px;
+        font-size: 28px !important;
         line-height: 1 !important;
         transform: none !important;
     }
 
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item[aria-current]::before {
+        content: none !important;
+    }
+
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item[aria-current] > i {
+        background: var(--gold-bright);
+        color: var(--sdc-canvas) !important;
+    }
+
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item[aria-current] > span {
+        color: var(--gold-bright) !important;
+    }
+
     body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item.mbn-item-scan {
-        color: #fae2bc !important;
+        color: var(--gold-bright) !important;
     }
 
     body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item-scan > .mbn-scan-icon {
@@ -47,7 +71,7 @@
         opacity: 1 !important;
     }
 
-    .mbn-scan-icon svg {
+    body.student-portal .mbn-scan-icon svg {
         display: block;
         width: 40px;
         height: 40px;
