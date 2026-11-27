@@ -318,6 +318,25 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertStringNotContainsString('Back to Dashboard', $dashSidebarText);
     }
 
+    public function test_student_phone_editor_is_opened_from_password_and_email_and_can_save(): void
+    {
+        $student = $this->createStudent();
+        $this->actingAs($student);
+        $response = $this->get(route('settings'))->assertOk();
+        $dom = new \DOMDocument();
+        $dom->loadHTML($response->getContent(), LIBXML_NOERROR | LIBXML_NOWARNING);
+        $xpath = new \DOMXPath($dom);
+
+        $this->assertSame(0, $xpath->query('//*[@id="tab-profile"]//input[@name="phone"]')->length);
+        $this->assertSame(0, $xpath->query('//*[@id="tab-profile"]//*[@data-account-page="change-phone"]')->length);
+        $this->assertSame(1, $xpath->query('//*[@id="sec-section-credentials"]//button[@data-account-page="change-phone"]')->length);
+        $this->assertSame(route('settings.update'), $xpath->evaluate('string(//*[@id="tab-account-phone"]//form[@id="personalInfoForm"]/@action)'));
+
+        $phone = '+63 900 000-0012';
+        $this->post(route('settings.update'), ['phone' => $phone])->assertRedirect(route('settings'));
+        $this->assertSame($phone, $student->fresh()->phone);
+    }
+
     public function test_navigating_to_other_app_pages_keeps_default_sidebar_while_settings_middleware_stays_intact(): void
     {
         $student = $this->createStudent();

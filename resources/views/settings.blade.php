@@ -181,10 +181,8 @@
 .student-settings .sec-cards-grid { gap: 16px; }
 .student-settings .sec-card { border-radius: 12px; padding: 18px 20px; }
 .student-settings .student-account-shortcuts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-.student-settings .student-account-shortcuts[hidden],
-.student-settings .student-phone-shortcut[hidden] { display:none !important; }
-.student-settings .student-account-shortcut,
-.student-settings .student-phone-shortcut {
+.student-settings .student-account-shortcuts[hidden] { display:none !important; }
+.student-settings .student-account-shortcut {
     display:flex; align-items:center; gap:14px; min-width:0; padding:16px;
     border:1px solid rgba(255, 255, 255,.1); border-radius:12px;
     background:#261B1B;
@@ -199,15 +197,12 @@
 .student-settings .student-account-shortcut-copy span { display:block; overflow-wrap:anywhere; }
 .student-settings .student-account-shortcut-copy strong { color:#FAF8F5; font-size:.9rem; }
 .student-settings .student-account-shortcut-copy span { margin-top:3px; color:#A49890; font-size:.78rem; line-height:1.45; }
-.student-settings .student-account-shortcut button,
-.student-settings .student-phone-shortcut button {
+.student-settings .student-account-shortcut button {
     display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:42px;
     padding:9px 13px; border:1px solid rgba(255, 255, 255,.16); border-radius:9px;
     background:#2F2222; color:#FAF8F5; font:inherit; font-size:.8rem; font-weight:700;
 }
-.student-settings .student-account-shortcut button:hover,
-.student-settings .student-phone-shortcut button:hover { background:#7A1A1A; border-color:rgba(212, 175, 55,.38); color:#FFFFFF; }
-.student-settings .student-phone-shortcut { justify-content:space-between; margin-bottom:16px; }
+.student-settings .student-account-shortcut button:hover { background:#7A1A1A; border-color:rgba(212, 175, 55,.38); color:#FFFFFF; }
 .student-settings .student-account-edit-panel { max-width:760px; margin:0 auto; padding:0; border:0; background:transparent; box-shadow:none; }
 .student-settings .student-account-edit-panel > .student-account-edit-intro {
     margin-bottom:14px; padding:15px 18px; border:1px solid rgba(255, 255, 255,.1);
@@ -268,7 +263,6 @@
 .student-settings .account-form-actions .sec-action-btn { flex:1; }
 .student-settings .student-account-edit-card .sec-card-content { min-width:0; }
 .student-settings .student-account-edit-card .si { min-height:48px; }
-.student-settings .student-account-edit-panel .student-phone-shortcut { margin-bottom:0; }
 .student-settings .student-account-edit-panel .sec-card,
 .student-settings .student-account-edit-panel .sc { margin:0; }
 .student-settings .sec-card-top { margin-bottom: 14px; }
@@ -417,7 +411,6 @@
     .student-settings .student-account-shortcuts { grid-template-columns:minmax(0,1fr); gap:10px; }
     .student-settings .student-account-shortcut { padding:14px; align-items:flex-start; }
     .student-settings .student-account-shortcut button { flex:0 0 auto; padding:9px 10px; }
-    .student-settings .student-phone-shortcut { padding:14px; align-items:flex-start; }
     .student-settings .student-account-edit-panel > .student-account-edit-intro { padding:15px; }
     .student-settings .account-edit-progress { gap:7px; }
     .student-settings .account-edit-progress li { gap:7px; min-height:44px; padding:7px 9px; font-size:.74rem; }
@@ -763,9 +756,9 @@
         </nav>
         @if($user->isStudent())
         <header class="student-settings-detail-heading">
-            <button type="button" class="student-settings-back" data-account-back hidden><i class="bi bi-arrow-left" aria-hidden="true"></i><span data-account-back-label>Back</span></button>
+            <button type="button" class="student-settings-back" data-account-back hidden><i class="bi bi-arrow-left" aria-hidden="true"></i><span>Back to Password &amp; email</span></button>
             <h2 id="studentSettingsPageTitle" tabindex="-1">Profile</h2>
-            <p id="studentSettingsPageDescription">Manage your photo, contact number, and student information.</p>
+            <p id="studentSettingsPageDescription">Manage your photo and review your student information.</p>
         </header>
         @endif
 
@@ -813,63 +806,9 @@
             </div>
         </div>
 
-        <!-- Personal Information (Editable) -->
-        <div class="sc {{ $user->isStudent() ? 'student-account-edit-card' : '' }}" @if($user->isStudent()) data-account-edit-source="phone" @endif>
-            <div class="sc-head">
-                <div class="sc-icon" style="background:rgba(207,164,111,0.14);color:#cfa46f;"><i class="bi bi-person-lines-fill"></i></div>
-                <div>
-                    <div class="sc-title">{{ $user->isStudent() ? 'Phone number' : 'Personal Information' }}</div>
-                    <div class="sc-sub">{{ $user->isStudent() ? 'Add or update the phone number listed on your school account.' : 'Update your contact details and emergency recovery info' }}</div>
-                </div>
-            </div>
-            <div class="sc-body">
-                <form action="{{ route('settings.update') }}" method="POST" id="personalInfoForm">
-                    @csrf
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="sl" for="phoneInput">Phone number</label>
-                            <div class="input-icon-wrap">
-                                <i class="bi bi-telephone-fill input-icon-prefix"></i>
-                                <input type="tel"
-                                       id="phoneInput"
-                                       name="phone"
-                                       class="si with-icon"
-                                       style="padding-left: 44px !important;"
-                                       value="{{ old('phone', Auth::user()->phone) }}"
-                                       placeholder="+63 900 000 0000"
-                                       inputmode="tel"
-                                       autocomplete="tel"
-                                       maxlength="20"
-                                       pattern="[0-9+\s-]{0,20}"
-                                       aria-describedby="phoneInputHelp">
-                            </div>
-                            <div id="phoneInputHelp" class="account-edit-help">
-                                <i class="bi bi-shield-check text-warning"></i>
-                                Include your country code if needed. Use digits, spaces, +, or hyphens; leave it blank to remove the saved number.
-                            </div>
-                        </div>
-                    </div>
-                    @if($user->isStudent())
-                        <div id="phoneFormStatus" class="account-edit-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
-                    @endif
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                        <button type="submit" id="savePhoneBtn" class="sbtn btn-gold" style="width:auto;padding:11px 28px;">
-                            <i class="bi bi-save me-2"></i>{{ $user->isStudent() ? 'Save phone number' : 'Save Changes' }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        @if($user->isStudent())
-        <div class="sc student-phone-shortcut" id="studentPhoneShortcut" hidden>
-            <div>
-                <div class="sc-title">Phone number</div>
-                <div class="sc-sub">{{ Auth::user()->phone ?: 'Add a number for school contact.' }}</div>
-            </div>
-            <button type="button" data-account-page="change-phone"><i class="bi bi-pencil-square" aria-hidden="true"></i>Change</button>
-        </div>
-        @endif
+        @unless($user->isStudent())
+            @include('partials.settings-phone-card')
+        @endunless
 
         <!-- Academic Info -->
         <div class="sc student-academic-details">
@@ -1017,7 +956,9 @@
                     </div>
                     <div>
                         <div class="sec-group-title">Password &amp; email</div>
-                        <div class="sec-group-desc">Verify changes to your email address and password with a security code.</div>
+                        <div class="sec-group-desc">{{ $user->isStudent()
+                            ? 'Update your phone number, or verify changes to your email address and password with a security code.'
+                            : 'Verify changes to your email address and password with a security code.' }}</div>
                     </div>
                 </div>
             </div>
@@ -1033,6 +974,11 @@
                     <span class="student-account-shortcut-icon"><i class="bi bi-key" aria-hidden="true"></i></span>
                     <span class="student-account-shortcut-copy"><strong>Password</strong><span>Change your password after verifying your email.</span></span>
                     <button type="button" data-account-page="change-password">Change</button>
+                </article>
+                <article class="student-account-shortcut">
+                    <span class="student-account-shortcut-icon"><i class="bi bi-telephone" aria-hidden="true"></i></span>
+                    <span class="student-account-shortcut-copy"><strong>Phone number</strong><span>{{ $user->phone ?: 'Add a number for school contact.' }}</span></span>
+                    <button type="button" data-account-page="change-phone" aria-label="Change phone number">Change</button>
                 </article>
             </div>
             @endif
@@ -1867,7 +1813,7 @@
     </div>
     <div id="tab-account-phone" class="spanel student-account-edit-panel" aria-label="Change phone number">
         <div class="student-account-edit-intro">Update the phone number listed on your school account.</div>
-        <div id="accountPhoneFormSlot"></div>
+        @include('partials.settings-phone-card')
     </div>
     @endif
 

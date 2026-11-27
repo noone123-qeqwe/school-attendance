@@ -4,9 +4,9 @@
     if (!root) return;
 
     const pages = {
-        profile: ['Profile & school details', 'Manage your photo, contact number, and student information.', 'profile'],
+        profile: ['Profile', 'Manage your photo and review your student information.', 'profile'],
         family: ['Guardians', 'Choose who can view your attendance and share a link code with your guardian.', 'family'],
-        credentials: ['Password & email', 'Keep your sign-in details up to date. Changes require an email verification code.', 'security', 'credentials'],
+        credentials: ['Password & email', 'Manage your password, email address, and phone number.', 'security', 'credentials'],
         'change-email': ['Change email address', 'Verify the new address before it becomes your account email.', 'account-email'],
         'change-password': ['Change password', 'Confirm your email and choose a new password.', 'account-password'],
         'change-phone': ['Change phone number', 'Update the phone number listed on your school account.', 'account-phone'],
@@ -23,7 +23,6 @@
     const heading = document.getElementById('studentSettingsPageTitle');
     const description = document.getElementById('studentSettingsPageDescription');
     const backBtn = document.querySelector('[data-account-back]');
-    const backLabel = document.querySelector('[data-account-back-label]');
     const returnKey = 'student_settings_return_' + root.dataset.studentSettings;
     let started = false;
 
@@ -31,7 +30,6 @@
         const sources = [
             ['email', 'accountEmailFormSlot'],
             ['password', 'accountPasswordFormSlot'],
-            ['phone', 'accountPhoneFormSlot'],
         ];
         let moved = 0;
         sources.forEach(([name, slotId]) => {
@@ -46,10 +44,8 @@
         if (moved === sources.length) {
             const formGrid = document.getElementById('studentCredentialFormGrid');
             const credentialShortcuts = document.getElementById('studentCredentialShortcuts');
-            const phoneShortcut = document.getElementById('studentPhoneShortcut');
             if (formGrid) formGrid.hidden = true;
             if (credentialShortcuts) credentialShortcuts.hidden = false;
-            if (phoneShortcut) phoneShortcut.hidden = false;
             root.dataset.accountFormsReady = 'true';
         }
     }
@@ -59,9 +55,7 @@
     function defaultPage() { return 'profile'; }
 
     function resolveActiveNavKey(page) {
-        if (page === 'change-email' || page === 'change-password') return 'credentials';
-        if (page === 'change-phone') return 'profile';
-        return page;
+        return page.startsWith('change-') ? 'credentials' : page;
     }
 
     window.studentSettingsRememberReturn = function() {
@@ -102,13 +96,7 @@
         });
 
         if (backBtn) {
-            const isSubPage = page.startsWith('change-');
-            backBtn.hidden = !isSubPage;
-            if (backLabel && isSubPage) {
-                backLabel.textContent = page === 'change-phone'
-                    ? 'Back to Profile & school details'
-                    : 'Back to Password & email';
-            }
+            backBtn.hidden = !page.startsWith('change-');
         }
 
         if (pages[page]) {
@@ -150,8 +138,7 @@
         const accountBack = event.target.closest('[data-account-back]');
         if (accountBack && root.contains(accountBack)) {
             event.preventDefault();
-            const current = root.dataset.studentView || '';
-            navigate(current === 'change-phone' ? 'profile' : 'credentials', { push: true, focus: true });
+            navigate('credentials', { push: true, focus: true });
             return;
         }
         const navBtn = event.target.closest('[data-settings-page]');
@@ -189,7 +176,7 @@
         try { returned = sessionStorage.getItem(returnKey); sessionStorage.removeItem(returnKey); } catch (e) {}
         // Preserve the section after a form redirects with validation or success feedback.
         if (root.dataset.settingsFeedback === 'true') {
-            const destination = returned || (root.dataset.settingsPhoneError === 'true' ? 'profile' : 'credentials');
+            const destination = root.dataset.settingsPhoneError === 'true' ? 'change-phone' : (returned || 'credentials');
             navigate(destination);
 
             if (destination === 'change-email' && root.dataset.settingsEmailError === 'true') {

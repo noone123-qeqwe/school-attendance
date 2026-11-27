@@ -33,7 +33,7 @@ class SettingsNavigation
                 'destination' => 'profile',
                 'icon' => 'bi-person-circle',
                 'label' => 'Profile',
-                'description' => 'Photo, contact number, and school information',
+                'description' => $user?->isStudent() ? 'Photo and school information' : 'Photo, contact number, and school information',
             ],
         ];
 
@@ -53,7 +53,7 @@ class SettingsNavigation
                     'destination' => 'credentials',
                     'icon' => 'bi-shield-lock',
                     'label' => 'Password & email',
-                    'description' => 'Update your sign-in details',
+                    'description' => $user?->isStudent() ? 'Manage your password, email, and phone number' : 'Update your sign-in details',
                 ],
                 [
                     'destination' => 'biometrics',
