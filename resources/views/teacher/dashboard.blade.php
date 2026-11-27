@@ -242,7 +242,7 @@
                         <i class="bi bi-clipboard-check" aria-hidden="true"></i> Class Records
                     </a>
                     <a href="{{ route('teacher.students') }}" class="portal-stage-link">
-                        <i class="bi bi-people" aria-hidden="true"></i> Student Roster
+                        <i class="bi bi-people" aria-hidden="true"></i> Student Record
                     </a>
                     <a href="{{ route('teacher.subjects.create') }}" class="portal-stage-link">
                         <i class="bi bi-plus-circle" aria-hidden="true"></i> Add Class

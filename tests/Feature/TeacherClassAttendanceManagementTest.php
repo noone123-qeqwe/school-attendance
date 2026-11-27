@@ -165,6 +165,8 @@ class TeacherClassAttendanceManagementTest extends TestCase
         $this->assertStringNotContainsString('Back to My Classes', $htmlOne);
         $this->assertStringContainsString('id="tab-btn-overview"', $htmlOne);
         $this->assertStringContainsString('id="tab-btn-roster"', $htmlOne);
+        $this->assertStringContainsString('Student Record', $htmlOne);
+        $this->assertStringNotContainsString('Student Roster', $htmlOne);
         $this->assertStringContainsString('id="tab-btn-records"', $htmlOne);
         $this->assertStringContainsString('id="tab-btn-sessions"', $htmlOne);
         $this->assertStringContainsString('SESS01', $htmlOne);

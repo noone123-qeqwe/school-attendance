@@ -109,7 +109,7 @@
             aria-controls="roster-tab"
             aria-selected="{{ $activeTab === 'roster' ? 'true' : 'false' }}">
             <i class="bi bi-people" aria-hidden="true"></i>
-            <span>Student Roster</span>
+            <span>Student Record</span>
             <span class="tc-tab-count portal-mono">{{ $totalStudents }}</span>
         </button>
 
@@ -245,12 +245,12 @@
         <div class="tc-panel">
             <div class="tc-panel-head">
                 <div>
-                    <h2 class="tc-panel-title">Student Roster ({{ $totalStudents }})</h2>
+                    <h2 class="tc-panel-title">Student Record ({{ $totalStudents }})</h2>
                     <p class="tc-panel-sub">Enrolled students and their {{ $subject->code }} attendance standing.</p>
                 </div>
                 @if($students->isNotEmpty())
                     <div style="min-width: 240px; flex: 0 1 300px;">
-                        <input type="search" id="rosterQuickSearch" class="ds-input" placeholder="Search roster by name or ID..." aria-label="Search class student roster">
+                        <input type="search" id="rosterQuickSearch" class="ds-input" placeholder="Search students by name or ID..." aria-label="Search class student record">
                     </div>
                 @endif
             </div>
