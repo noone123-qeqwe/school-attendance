@@ -230,3 +230,81 @@
         display: none !important;
     }
 }
+
+/* Standardized Student-Reference Sidebar Width & Offsets (All Roles) */
+@media screen and (min-width: 768.02px) {
+    :root {
+        --sidebar-width: var(--ds-sidebar-width, 248px);
+        --sidebar-mini: var(--ds-sidebar-mini, 72px);
+    }
+
+    body:is(.admin-portal, .parent-portal, .teacher-portal) .sidebar {
+        width: var(--sidebar-width, 248px) !important;
+        transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body:is(.admin-portal, .parent-portal, .teacher-portal) .sidebar.collapsed {
+        width: var(--sidebar-mini, 72px) !important;
+    }
+
+    body:is(.admin-portal, .parent-portal, .teacher-portal) .top-header:not(.guest) {
+        left: var(--sidebar-width, 248px) !important;
+        transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body:is(.admin-portal, .parent-portal, .teacher-portal) .top-header.mini:not(.guest) {
+        left: var(--sidebar-mini, 72px) !important;
+    }
+
+    body:is(.admin-portal, .parent-portal, .teacher-portal) .main-content:not(.guest-mode) {
+        padding-left: var(--sidebar-width, 248px) !important;
+        min-width: 0;
+        transition: padding-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body:is(.admin-portal, .parent-portal, .teacher-portal) .main-content.mini:not(.guest-mode) {
+        padding-left: var(--sidebar-mini, 72px) !important;
+    }
+
+    body:is(.admin-portal, .parent-portal, .teacher-portal) .sidebar.collapsed .sidebar-nav {
+        padding-inline: 10px !important;
+    }
+
+    body.admin-portal .sidebar.collapsed .admin-nav-group > summary {
+        padding-inline: 0 !important;
+        justify-content: center !important;
+    }
+
+    body.admin-portal .sidebar.collapsed .admin-workspace-nav .nav-link {
+        width: 44px;
+        margin-inline: auto !important;
+        padding-inline: 0 !important;
+        justify-content: center !important;
+    }
+
+    body.parent-portal .sidebar.collapsed .parent-nav-group .nav-link {
+        width: 44px;
+        height: 42px;
+        min-height: 42px;
+        margin-inline: auto !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        justify-content: center !important;
+    }
+
+    body:is(.teacher-portal, .parent-portal) .sidebar.collapsed,
+    body:is(.teacher-portal, .parent-portal) .sidebar.collapsed .sidebar-nav {
+        overflow: visible !important;
+    }
+
+    body:is(.teacher-portal, .parent-portal) .sidebar.collapsed .nav-link::after {
+        left: calc(100% + 12px);
+        top: 50%;
+        transform: translateY(-50%) translateX(-4px);
+    }
+
+    body:is(.teacher-portal, .parent-portal) .sidebar.collapsed .nav-link:hover::after {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}

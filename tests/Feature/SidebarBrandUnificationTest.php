@@ -94,4 +94,64 @@ class SidebarBrandUnificationTest extends TestCase
         $this->assertStringNotContainsString('.sidebar-head', $teacherMasterCss);
         $this->assertStringNotContainsString('.teacher-sidebar-brand', $teacherMasterCss);
     }
+
+    public function test_all_roles_standardize_sidebar_width_and_offsets_to_student_reference(): void
+    {
+        $tokensCss = file_get_contents(public_path('css/design-tokens.css'));
+        $premiumCss = file_get_contents(public_path('css/premium.css'));
+        $adminSaasCss = file_get_contents(public_path('css/admin-saas.css'));
+        $sharedCss = file_get_contents(public_path('css/portal-layout-refinements.css'));
+        $studentDesktopCss = file_get_contents(public_path('css/student-desktop.css'));
+        $studentUxCss = file_get_contents(public_path('css/student-desktop-ux.css'));
+
+        $this->assertIsString($tokensCss);
+        $this->assertStringContainsString('--ds-sidebar-width: 248px;', $tokensCss);
+        $this->assertStringContainsString('--ds-sidebar-mini:  72px;', $tokensCss);
+
+        $this->assertIsString($premiumCss);
+        $this->assertStringContainsString('--sidebar-width: var(--ds-sidebar-width, 248px);', $premiumCss);
+        $this->assertStringContainsString('--sidebar-mini: var(--ds-sidebar-mini, 72px);', $premiumCss);
+        $this->assertStringNotContainsString('--sidebar-width: 280px;', $premiumCss);
+        $this->assertStringNotContainsString('--sidebar-mini: 80px;', $premiumCss);
+
+        $this->assertIsString($adminSaasCss);
+        $this->assertStringContainsString('width: var(--sidebar-width, 248px);', $adminSaasCss);
+        $this->assertStringContainsString('margin-left: var(--sidebar-width, 248px);', $adminSaasCss);
+
+        $this->assertIsString($sharedCss);
+        $this->assertStringContainsString('@media screen and (min-width: 768.02px)', $sharedCss);
+        $this->assertStringContainsString('body:is(.admin-portal, .parent-portal, .teacher-portal) .sidebar {', $sharedCss);
+        $this->assertStringContainsString('width: var(--sidebar-width, 248px) !important;', $sharedCss);
+        $this->assertStringContainsString('width: var(--sidebar-mini, 72px) !important;', $sharedCss);
+        $this->assertStringContainsString('left: var(--sidebar-width, 248px) !important;', $sharedCss);
+        $this->assertStringContainsString('left: var(--sidebar-mini, 72px) !important;', $sharedCss);
+        $this->assertStringContainsString('padding-left: var(--sidebar-width, 248px) !important;', $sharedCss);
+        $this->assertStringContainsString('padding-left: var(--sidebar-mini, 72px) !important;', $sharedCss);
+
+        $this->assertIsString($studentDesktopCss);
+        $this->assertStringContainsString('--sidebar-width: var(--ds-sidebar-width, 248px);', $studentDesktopCss);
+        $this->assertStringContainsString('--sidebar-mini: var(--ds-sidebar-mini, 72px);', $studentDesktopCss);
+
+        $this->assertIsString($studentUxCss);
+        $this->assertStringContainsString('width: 248px !important;', $studentUxCss);
+        $this->assertStringContainsString('width: 72px !important;', $studentUxCss);
+
+        foreach ([
+            ['admin', route('admin.dashboard')],
+            ['parent', route('parent.dashboard')],
+            ['teacher', route('teacher.dashboard')],
+            ['student', route('home')],
+        ] as [$role, $url]) {
+            $this->flushSession();
+            $user = $this->createSyntheticUser($role);
+            $request = $this->actingAs($user);
+            if ($role === 'admin') {
+                $request = $request->withSession(['admin_2fa_verified' => true]);
+            }
+            $html = $request->get($url)->assertOk()->getContent();
+            $this->assertStringContainsString('css/design-tokens.css', $html, "Missing design-tokens.css on {$url}");
+            $this->assertStringContainsString('css/premium.css', $html, "Missing premium.css on {$url}");
+            $this->assertStringContainsString('css/portal-layout-refinements.css', $html, "Missing portal-layout-refinements.css on {$url}");
+        }
+    }
 }

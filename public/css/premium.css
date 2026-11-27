@@ -34,8 +34,8 @@
     --glass-blur: blur(20px);
     
     /* Layout Dimensions */
-    --sidebar-width: 280px;
-    --sidebar-mini: 80px;
+    --sidebar-width: var(--ds-sidebar-width, 248px);
+    --sidebar-mini: var(--ds-sidebar-mini, 72px);
     --header-height: 76px;
 
     /* Border Radius (Softer, modern curves) */

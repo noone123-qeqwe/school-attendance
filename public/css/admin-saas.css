@@ -162,7 +162,7 @@ body {
 
 /* Sidebar */
 .saas-sidebar {
-    width: 260px;
+    width: var(--sidebar-width, 248px);
     flex-shrink: 0;
     background: var(--saas-surface);
     border-right: 1px solid var(--saas-border);
@@ -275,7 +275,7 @@ body {
 /* Main Content Area */
 .saas-main {
     flex: 1;
-    margin-left: 260px; /* Match sidebar width */
+    margin-left: var(--sidebar-width, 248px); /* Match sidebar width */
     display: flex;
     flex-direction: column;
     min-height: 100vh;

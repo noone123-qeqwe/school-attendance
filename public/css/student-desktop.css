@@ -3,8 +3,8 @@
 
 @media screen and (min-width: 1024px) {
     body.student-portal {
-        --sidebar-width: 248px;
-        --sidebar-mini: 76px;
+        --sidebar-width: var(--ds-sidebar-width, 248px);
+        --sidebar-mini: var(--ds-sidebar-mini, 72px);
         --header-height: 76px;
         --student-border: rgba(207, 164, 111, .18);
         --student-border-strong: rgba(207, 164, 111, .34);
