@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    @include('partials.alert-banner-assets')
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#141010">
@@ -54,12 +53,6 @@
             color:#6EE7B7;padding:10px 14px;border-radius:10px;font-size:.84rem;font-weight:600;
             margin-bottom:16px;align-items:center;justify-content:center;gap:8px;
         }
-        .isp-tip{
-            display:none;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);
-            border-radius:10px;padding:13px 14px;margin-bottom:18px;
-            font-size:.82rem;color:#FDE68A;text-align:left;line-height:1.55;
-        }
-
         /* icon + heading */
         .icon-wrap{display:flex;justify-content:center;margin-bottom:16px;}
         .icon-circle{width:64px;height:64px;border-radius:14px;
@@ -231,19 +224,6 @@
         <span>⚡ Connection restored! Reloading...</span>
     </div>
 
-    <!-- ISP tip -->
-    <x-alert-banner id="ispTipBox" class="isp-tip" role="note" alert-key="offline-isp-routing-tip" version="routing-tip-v1"
-                    dismiss-label="Dismiss network troubleshooting tip">
-        <div style="font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px;">
-            🌐 Internet Active &bull; Host Connection Blocked
-        </div>
-        <div>Your device has active internet, but your network provider cannot route to the school server.</div>
-        <div style="margin-top:8px;font-size:.79rem;color:rgba(254,240,138,.85);">
-            &bull; Try <strong>Cloudflare WARP (1.1.1.1)</strong><br>
-            &bull; Or switch between Wi-Fi and Mobile Data.
-        </div>
-    </x-alert-banner>
-
     <!-- icon -->
     <div class="icon-wrap" id="offlineIcon">
         <div class="icon-circle">
@@ -375,20 +355,17 @@ function setStatus(state) {
     var head  = document.getElementById('offlineHeading');
     var msg   = document.getElementById('offlineMsg');
     var rt    = document.getElementById('retryText');
-    var isp   = document.getElementById('ispTipBox');
     if (state === 'server-unreachable') {
         badge.className = 'status-badge server';
         text.textContent = 'Server Not Reachable';
         head.textContent = 'Can’t reach the school server';
-        msg.textContent  = 'Your device reports a network connection, but the school server is not responding. Retry, or switch between Wi-Fi and mobile data.';
-        if (isp) isp.style.display = 'block';
+        msg.textContent  = 'The school server is not responding. Check your connection and try again.';
         if (!rt.textContent.includes('…')) rt.textContent = 'Retry Connecting to Server';
     } else {
         badge.className = 'status-badge';
         text.textContent = 'No Connection';
         head.textContent = "You're Offline";
         msg.textContent  = "We can't connect to the School Attendance server right now. Check your Wi-Fi or mobile data.";
-        if (isp) isp.style.display = 'none';
         if (!rt.textContent.includes('…')) rt.textContent = 'Retry Connection';
     }
 }
