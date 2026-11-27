@@ -364,4 +364,42 @@ class TeacherRequestsHubTest extends TestCase
         $this->assertStringContainsString('display: inline-flex !important;', $masterCss);
         $this->assertStringContainsString('text-decoration: none !important;', $masterCss);
     }
+
+    public function test_submit_excuse_form_renders_unified_frontend_and_handles_empty_or_assigned_subjects(): void
+    {
+        $teacherWithoutSubjects = $this->createUser('teacher');
+        $emptyHtml = $this->actingAs($teacherWithoutSubjects)->get(route('teacher.excuses.create'))->assertOk()->getContent();
+        $this->assertStringContainsString('No Assigned Classes Found', $emptyHtml);
+        $this->assertStringContainsString(route('teacher.subjects.create'), $emptyHtml);
+
+        $this->flushSession();
+
+        $teacher = $this->createUser('teacher');
+        $subject = $this->createSubject($teacher, 'CS540', 'Distributed Databases');
+
+        $html = $this->actingAs($teacher)->get(route('teacher.excuses.create'))->assertOk()->getContent();
+        $workspaceHtml = $this->extractHtmlBlock($html, '/<div class="texc-workspace">.*?<\/main>/s');
+        $this->assertNotEmpty($workspaceHtml);
+
+        $this->assertStringContainsString('class="texc-workspace"', $workspaceHtml);
+        $this->assertStringContainsString('class="texc-grid"', $workspaceHtml);
+        $this->assertStringContainsString('data-reason-chip=', $workspaceHtml);
+        $this->assertStringContainsString('id="dropZone" class="texc-dropzone"', $workspaceHtml);
+        $this->assertStringContainsString('maxlength="1000"', $workspaceHtml);
+        $this->assertStringContainsString(route('teacher.excuses.store'), $workspaceHtml);
+        $this->assertStringContainsString('ui-back-link', $workspaceHtml);
+        $this->assertStringContainsString($subject->code, $workspaceHtml);
+        $this->assertStringContainsString($subject->name, $workspaceHtml);
+
+        $this->assertStringNotContainsString('onfocus=', $workspaceHtml);
+        $this->assertStringNotContainsString('onmouseover=', $workspaceHtml);
+        $this->assertStringNotContainsString('onchange="handleFileSelect', $workspaceHtml);
+
+        $masterCss = file_get_contents(public_path('css/teacher-portal-master.css'));
+        $this->assertIsString($masterCss);
+        $this->assertStringContainsString('.texc-workspace', $masterCss);
+        $this->assertStringContainsString('.texc-grid', $masterCss);
+        $this->assertStringContainsString('.texc-dropzone', $masterCss);
+        $this->assertStringContainsString('.texc-reason-chip', $masterCss);
+    }
 }

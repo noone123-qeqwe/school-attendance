@@ -1710,4 +1710,412 @@
             min-height: 40px;
         }
     }
+
+    /* ── Teacher Submit Faculty Excuse Workspace (.texc-*) ──────────────── */
+    body.teacher-portal .texc-workspace {
+        max-width: 980px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    body.teacher-portal .texc-hero {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    body.teacher-portal .texc-back-link {
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 4px 0;
+        color: #d6ccc6;
+        font-size: 0.84rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.16s ease;
+    }
+
+    body.teacher-portal .texc-back-link:hover {
+        color: #f5dfa8;
+    }
+
+    body.teacher-portal .texc-title {
+        margin: 0;
+        font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        color: #faf8f5;
+    }
+
+    body.teacher-portal .texc-sub {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #a49890;
+    }
+
+    body.teacher-portal .texc-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.85fr) minmax(240px, 0.9fr);
+        gap: 18px;
+        align-items: start;
+    }
+
+    body.teacher-portal .texc-card,
+    body.teacher-portal .texc-aside {
+        background: rgba(30, 21, 21, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    body.teacher-portal .texc-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(20, 14, 14, 0.45);
+    }
+
+    body.teacher-portal .texc-card-body {
+        padding: 22px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    body.teacher-portal .texc-row-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    body.teacher-portal .texc-field {
+        min-width: 0;
+    }
+
+    body.teacher-portal .texc-label-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 7px;
+    }
+
+    body.teacher-portal .texc-label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #d6ccc6;
+        margin-bottom: 7px;
+        letter-spacing: 0.02em;
+    }
+
+    body.teacher-portal .texc-label-row .texc-label {
+        margin-bottom: 0;
+    }
+
+    body.teacher-portal .texc-req {
+        color: #fb7185;
+    }
+
+    body.teacher-portal .texc-char-count {
+        font-size: 0.74rem;
+        font-weight: 650;
+        color: #a49890;
+        font-variant-numeric: tabular-nums;
+    }
+
+    body.teacher-portal .texc-char-count.is-warn {
+        color: #fbbf24;
+    }
+
+    body.teacher-portal .texc-char-count.is-limit {
+        color: #fb7185;
+    }
+
+    body.teacher-portal .texc-reason-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    body.teacher-portal .texc-reason-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 36px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #141010;
+        color: #d6ccc6;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    body.teacher-portal .texc-reason-chip:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(212, 175, 55, 0.34);
+        color: #ffffff;
+    }
+
+    body.teacher-portal .texc-reason-chip.is-active {
+        background: rgba(122, 26, 26, 0.34);
+        border-color: rgba(212, 175, 55, 0.45);
+        color: #faf8f5;
+    }
+
+    body.teacher-portal .texc-dropzone {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 6px;
+        padding: 26px 20px;
+        border: 1.5px dashed rgba(212, 175, 55, 0.32);
+        border-radius: 14px;
+        background: rgba(20, 14, 14, 0.55);
+        cursor: pointer;
+        transition: background-color 0.18s ease, border-color 0.18s ease;
+    }
+
+    body.teacher-portal .texc-dropzone:hover,
+    body.teacher-portal .texc-dropzone.is-dragover {
+        background: rgba(122, 26, 26, 0.18);
+        border-color: rgba(212, 175, 55, 0.6);
+    }
+
+    body.teacher-portal .texc-dropzone-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: rgba(212, 175, 55, 0.12);
+        color: #d4af37;
+        font-size: 1.35rem;
+        margin-bottom: 4px;
+    }
+
+    body.teacher-portal .texc-dropzone-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #faf8f5;
+    }
+
+    body.teacher-portal .texc-dropzone-sub {
+        font-size: 0.78rem;
+        color: #a49890;
+    }
+
+    body.teacher-portal .texc-file-error {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: rgba(251, 113, 133, 0.12);
+        border: 1px solid rgba(251, 113, 133, 0.32);
+        color: #fecaca;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    body.teacher-portal .texc-file-list {
+        margin-top: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    body.teacher-portal .texc-file-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        background: #141010;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 11px;
+    }
+
+    body.teacher-portal .texc-file-main {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    body.teacher-portal .texc-file-thumb {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #d4af37;
+        font-size: 1.15rem;
+        overflow: hidden;
+    }
+
+    body.teacher-portal .texc-file-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    body.teacher-portal .texc-file-meta {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    body.teacher-portal .texc-file-name {
+        font-size: 0.84rem;
+        font-weight: 650;
+        color: #faf8f5;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    body.teacher-portal .texc-file-size {
+        font-size: 0.74rem;
+        color: #a49890;
+    }
+
+    body.teacher-portal .texc-file-remove {
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: #fb7185;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    body.teacher-portal .texc-file-remove:hover {
+        background: rgba(251, 113, 133, 0.14);
+        border-color: rgba(251, 113, 133, 0.3);
+    }
+
+    body.teacher-portal .texc-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 16px 24px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(20, 14, 14, 0.55);
+    }
+
+    body.teacher-portal .texc-footer-note {
+        font-size: 0.78rem;
+        color: #a49890;
+    }
+
+    body.teacher-portal .texc-footer-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    body.teacher-portal .texc-aside-head {
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.88rem;
+        font-weight: 750;
+        color: #faf8f5;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    body.teacher-portal .texc-steps {
+        list-style: none;
+        margin: 0;
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    body.teacher-portal .texc-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 11px;
+    }
+
+    body.teacher-portal .texc-step-num {
+        width: 24px;
+        height: 24px;
+        flex: 0 0 24px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: rgba(212, 175, 55, 0.14);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        color: #f5dfa8;
+        font-size: 0.74rem;
+        font-weight: 750;
+    }
+
+    body.teacher-portal .texc-step-title {
+        font-size: 0.83rem;
+        font-weight: 700;
+        color: #faf8f5;
+        margin-bottom: 2px;
+    }
+
+    body.teacher-portal .texc-step-desc {
+        font-size: 0.78rem;
+        color: #a49890;
+        line-height: 1.45;
+    }
+
+    @media (max-width: 900px) {
+        body.teacher-portal .texc-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 640px) {
+        body.teacher-portal .texc-row-2 {
+            grid-template-columns: 1fr;
+        }
+
+        body.teacher-portal .texc-card-body {
+            padding: 18px;
+        }
+
+        body.teacher-portal .texc-footer {
+            padding: 16px 18px;
+        }
+
+        body.teacher-portal .texc-footer-actions {
+            width: 100%;
+        }
+
+        body.teacher-portal .texc-footer-actions > * {
+            flex: 1 1 0;
+        }
+    }
 }
