@@ -328,42 +328,6 @@
         </section>
     </div>
 
-    {{-- ── 4. Sleek Contextual Utility Rail ──────────────────────────────── --}}
-    <nav class="sd-utility-rail" aria-label="Workspace shortcuts">
-        <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-util-item">
-            <i class="bi bi-calendar2-week" aria-hidden="true"></i>
-            <span class="sd-util-label">Weekly Schedule</span>
-            @if($todayClassCount > 0)<span class="sd-util-count sd-mono">{{ $todayClassCount }} today</span>@endif
-        </a>
-        <a href="{{ route('student.classes') }}" class="sd-util-item">
-            <i class="bi bi-journal-bookmark" aria-hidden="true"></i>
-            <span class="sd-util-label">My Classes</span>
-            <span class="sd-util-count sd-mono">{{ $subjectsCollection->count() }}</span>
-        </a>
-        <a href="{{ route('student.calendar') }}#attendance-records" class="sd-util-item">
-            <i class="bi bi-clock-history" aria-hidden="true"></i>
-            <span class="sd-util-label">Attendance Log</span>
-            <span class="sd-util-count sd-mono">{{ (int) ($attendanceRecordCount ?? 0) }}</span>
-        </a>
-        <a href="{{ route('excuses.create_general') }}" class="sd-util-item">
-            <i class="bi bi-file-earmark-medical" aria-hidden="true"></i>
-            <span class="sd-util-label">Submit Excuse</span>
-            @if($pendingExcuses > 0)<span class="sd-util-count is-amber sd-mono">{{ $pendingExcuses }} pending</span>@endif
-        </a>
-        @if(!empty($hasActiveAssistantAssignment))
-        <a href="{{ route('student-assistant.classes') }}" class="sd-util-item">
-            <i class="bi bi-qr-code" aria-hidden="true"></i>
-            <span class="sd-util-label">Student Assistant</span>
-        </a>
-        @endif
-        @if($peerAvailable)
-        <a href="{{ route('peer-snap.index') }}" class="sd-util-item">
-            <i class="bi bi-person-bounding-box" aria-hidden="true"></i>
-            <span class="sd-util-label">Peer Check-In</span>
-        </a>
-        @endif
-    </nav>
-
     {{-- ── 5. Asymmetric Operational Workspace ───────────────────────────── --}}
     <div class="sd-workspace">
         <div class="sd-col-main">

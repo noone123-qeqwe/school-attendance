@@ -524,6 +524,8 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertSee('Attendance Standing')
             ->assertSee('7-Day Pulse')
             ->assertDontSee('Recent Check-Ins')
+            ->assertDontSee('sd-utility-rail', false)
+            ->assertDontSee('aria-label="Workspace shortcuts"', false)
             ->assertSee('1 pending excuse')
             ->assertSee('Subject Standing')
             ->assertSee('CS401', false)
