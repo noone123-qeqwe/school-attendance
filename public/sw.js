@@ -3,12 +3,10 @@ const CACHE_VERSION = 'v20261127033';
 const CACHE_NAME = `attendance-${CACHE_VERSION}`;
 const STATIC_CACHE_NAME = CACHE_NAME;
 const RUNTIME_CACHE_NAME = `attendance-runtime-${CACHE_VERSION}`;
-const OFFLINE_URL = '/offline';
 const FALLBACK_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23CFA46F" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
 // Core essential resources to pre-cache on install
 const PRECACHE_ASSETS = [
-    OFFLINE_URL,
     '/images/logo.png',
     '/images/icons/icon-192x192.png',
     '/images/icons/icon-512x512.png',
@@ -74,25 +72,22 @@ self.addEventListener('install', (event) => {
 });
 
 
-// Activate: clean up old caches (seamless, no auto-reloading or claiming open windows)
+// Activate: retire old caches and stop preloading navigations previously handled here.
 self.addEventListener('activate', (event) => {
-        const validCaches = [STATIC_CACHE_NAME, RUNTIME_CACHE_NAME];
+    const validCaches = [STATIC_CACHE_NAME, RUNTIME_CACHE_NAME];
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             const ownedCaches = cacheNames.filter((cacheName) =>
                 cacheName.startsWith('attendance-v') || cacheName.startsWith('attendance-runtime-v')
             );
-            return Promise.all(
-                ownedCaches.map((cacheName) => {
-                    if (!validCaches.includes(cacheName)) {
-                        console.log('[PWA SW] Clearing old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
+            return Promise.all([
+                ...ownedCaches.filter(cacheName => !validCaches.includes(cacheName)).map(cacheName => caches.delete(cacheName)),
+                // Remove the retired fallback even on an update with the same cache version.
+                caches.open(STATIC_CACHE_NAME).then(cache => cache.delete('/offline')),
+            ]);
         }).then(() => {
             if (self.registration.navigationPreload) {
-                return self.registration.navigationPreload.enable();
+                return self.registration.navigationPreload.disable();
             }
         }).then(() => {
             return self.clients.claim();
@@ -101,7 +96,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch Strategy:
-// 1. Navigation (HTML pages): Network-first with timeout + retry, /offline fallback
+// 1. Navigation (HTML pages): Direct through the browser
 // 2. Static Assets (CSS, JS, Fonts): Stale-While-Revalidate
 // 3. Media/Images: Cache-First with network fallback
 // 4. API & Non-GET requests: Direct network pass-through
@@ -109,15 +104,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const request = event.request;
 
-    // Only handle GET requests
-    if (request.method !== 'GET') {
+    // Let the browser navigate directly and handle connection errors.
+    if (request.method !== 'GET' || request.mode === 'navigate') {
         return;
     }
 
     const url = new URL(request.url);
 
     // 5. Connectivity probes — always bypass SW cache (network-only)
-    // This ensures the offline page's retry mechanism gets real network status.
     if (url.pathname === '/api/ping' ||
         url.pathname === '/up' ||
         (url.pathname === '/manifest.json' && url.search.includes('_t='))) {
@@ -126,75 +120,6 @@ self.addEventListener('fetch', (event) => {
         );
         return;
     }
-
-    // 1. Navigation requests (Page transitions, link clicks)
-    if (request.mode === 'navigate') {
-        event.respondWith(
-            (async () => {
-                // Helper: fetch with a timeout to handle slow Render cold starts
-                async function fetchWithTimeout(req, timeoutMs) {
-                    const controller = new AbortController();
-                    const timer = setTimeout(() => controller.abort(), timeoutMs);
-                    try {
-                        const res = await fetch(req, { signal: controller.signal });
-                        clearTimeout(timer);
-                        return res;
-                    } catch (err) {
-                        clearTimeout(timer);
-                        throw err;
-                    }
-                }
-
-                let preloadResponse = null;
-                try {
-                    // A rejected preload is just a failed first network attempt.
-                    // Do not let it skip the explicit retry below (common during
-                    // a cold start or a brief mobile-network handoff).
-                    preloadResponse = await event.preloadResponse;
-                } catch (_) {}
-                if (preloadResponse && preloadResponse.status < 500) {
-                    return preloadResponse;
-                }
-
-                let firstFailure = null;
-                try {
-                    // Attempt 1: Fetch with 12s timeout (generous for Render cold starts)
-                    return await fetchWithTimeout(request, 12000);
-                } catch (error) {
-                    firstFailure = error;
-                }
-
-                // Attempt 2: Retry after a short delay (handles transient mobile network blips)
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                try {
-                    return await fetchWithTimeout(request, 10000);
-                } catch (error) {
-                    // Fall through to the cached offline page only after both
-                    // the preload and the two direct network attempts failed.
-                    firstFailure = error || firstFailure;
-                }
-
-                try {
-                    if (firstFailure) console.info('[PWA SW] Navigation network attempts failed; using offline page.');
-                    // All attempts failed — show offline page
-                    const cache = await caches.open(STATIC_CACHE_NAME);
-                    const offlineResponse = await cache.match(OFFLINE_URL);
-                    return offlineResponse || new Response(
-                        '<!DOCTYPE html><html><head><title>Offline</title></head><body><h1>Offline</h1><p>Please check your internet connection.</p></body></html>',
-                        { headers: { 'Content-Type': 'text/html' } }
-                    );
-                } catch (error) {
-                    console.warn('[PWA SW] Could not load offline fallback:', error);
-                    return new Response(
-                        '<!DOCTYPE html><html><head><title>Offline</title></head><body><h1>Unable to reach the school server</h1><p>Retry when the connection is available.</p></body></html>',
-                        { headers: { 'Content-Type': 'text/html' } }
-                    );
-                }
-            })()
-        );
-        return;
-    }
-
 
     // 2. Static Assets (CSS, JS, Web Fonts) -> Stale-While-Revalidate
     const isStyleOrScript = (

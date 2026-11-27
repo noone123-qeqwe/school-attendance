@@ -911,21 +911,7 @@
         initialized = true;
 
         csrfToken = config.csrfToken || document.querySelector('meta[name="csrf-token"]')?.content || '';
-        if (!csrfToken) {
-            try {
-                csrfToken = localStorage.getItem('cached_csrf_token') || '';
-            } catch(e) {}
-        }
         teacherId = config.teacherId || null;
-        if (!teacherId) {
-            try {
-                var rawUser = localStorage.getItem('cached_user_profile');
-                if (rawUser) {
-                    var u = JSON.parse(rawUser);
-                    if (u && u.id) teacherId = u.id;
-                }
-            } catch(e) {}
-        }
 
         if (navigator.storage && typeof navigator.storage.persist === 'function') {
             navigator.storage.persist().then(function(persisted) {

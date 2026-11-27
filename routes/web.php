@@ -26,14 +26,6 @@ Route::get('/', function () {
         ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private');
 })->name('intro');
 
-// Offline page for PWA
-Route::get('/offline', function () {
-    return response()->view('offline', [])
-        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private')
-        ->header('Pragma', 'no-cache')
-        ->header('Expires', '0');
-})->name('offline');
-
 // Service Worker with strict no-cache headers for instant mobile updates
 Route::get('/sw.js', function () {
     $swPath = public_path('sw.js');

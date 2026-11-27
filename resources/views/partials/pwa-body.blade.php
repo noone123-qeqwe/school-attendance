@@ -2412,29 +2412,10 @@
         showNetworkToast('✓ Connection restored! Back online.', 'online');
     });
 
-    // ── 8. Cache User Session for Offline Mode ──
-    @auth
-        @php
-            $offlineUserProfile = [
-                'id' => auth()->id(),
-                'name' => auth()->user()->name,
-                'role' => auth()->user()->role,
-                'email' => auth()->user()->email,
-                'student_number' => auth()->user()->student_number ?? '',
-                'course' => auth()->user()->course ?? '',
-                'year_level' => auth()->user()->year_level ?? '',
-                'section' => auth()->user()->section ?? '',
-                'timestamp' => now()->toIso8601String(),
-            ];
-        @endphp
-        try {
-            const userProfile = @json($offlineUserProfile);
-            localStorage.setItem('cached_user_profile', JSON.stringify(userProfile));
-            localStorage.setItem('cached_student_profile', JSON.stringify(userProfile));
-            const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
-            if (metaCsrf) {
-                localStorage.setItem('cached_csrf_token', metaCsrf);
-            }
-        } catch(e) {}
-    @endauth
+    // Discard profile data left behind by the retired offline page.
+    try {
+        localStorage.removeItem('cached_user_profile');
+        localStorage.removeItem('cached_student_profile');
+        localStorage.removeItem('cached_csrf_token');
+    } catch (e) {}
 </script>

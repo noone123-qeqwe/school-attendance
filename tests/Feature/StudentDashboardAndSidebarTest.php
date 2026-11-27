@@ -860,11 +860,7 @@ class StudentDashboardAndSidebarTest extends TestCase
 
         auth()->logout();
         $this->flushSession();
-        $this->get('/offline')
-            ->assertOk()
-            ->assertSee('--bg:#141010;', false)
-            ->assertDontSee('--bg:#0B0406;', false)
-            ->assertDontSee('--bg:#110A0A;', false);
+        $this->get('/offline')->assertNotFound();
 
         // Verify fixed selector parity in student-portal-master.css & clean student-dashboard.css
         $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
