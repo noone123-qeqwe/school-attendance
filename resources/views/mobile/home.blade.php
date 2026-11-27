@@ -14,26 +14,10 @@
     $featuredRoom = trim((string) ($featuredClass?->schedule?->room ?? ''));
     $featuredInstructor = trim((string) ($featuredClass?->subject?->instructorUser?->name ?? $featuredClass?->subject?->instructor ?? ''));
 
-    $rateVal = $overallRate ?? null;
-    $rateTone = $rateVal === null ? 'empty' : ($rateVal >= 85 ? 'good' : ($rateVal >= 75 ? 'warning' : 'danger'));
-    $rateTier = $rateVal === null ? 'New' : ($rateVal >= 85 ? 'Good Standing' : ($rateVal >= 75 ? 'Fair Standing' : 'Needs Review'));
-    $gaugeRadius = 38;
-    $gaugeCircumference = round(2 * pi() * $gaugeRadius, 2);
-    $gaugePct = $rateVal === null ? 0 : min(100, max(0, (float) $rateVal));
-    $gaugeOffset = round($gaugeCircumference * (1 - ($gaugePct / 100)), 2);
-
     $greetHour = now()->hour;
     $greetIcon = $greetHour < 12 ? 'bi-brightness-alt-high-fill' : ($greetHour < 17 ? 'bi-sun-fill' : 'bi-moon-stars-fill');
-    $weeklyPulseCollection = collect($weeklyPulse ?? []);
     $subjectStatsCollection = collect($subjectStats ?? []);
     $pendingExcuses = (int) ($pendingExcusesCount ?? 0);
-    $totalPresentCount = (int) ($totalPresent ?? 0);
-    $totalLateCount = (int) ($totalLate ?? 0);
-    $totalAbsentCount = (int) ($totalAbsent ?? 0);
-    $totalSessionsCount = $totalPresentCount + $totalLateCount + $totalAbsentCount;
-    $presentPct = $totalSessionsCount > 0 ? round(($totalPresentCount / $totalSessionsCount) * 100, 1) : 0;
-    $latePct = $totalSessionsCount > 0 ? round(($totalLateCount / $totalSessionsCount) * 100, 1) : 0;
-    $absentPct = $totalSessionsCount > 0 ? max(0, round(100 - $presentPct - $latePct, 1)) : 0;
     $peerAvailable = app(\App\Services\PeerBiometricAttendanceService::class)->isAvailable();
 
     $metaParts = [];
@@ -117,9 +101,9 @@
     <span hidden data-alert-resolved="student-attendance-warnings"></span>
     @endif
 
-    {{-- ── Hero Stage + Attendance Standing Telemetry ───────────────────── --}}
-    <div class="sd-hero-grid">
-        <section id="mobileSpotlight"
+    {{-- ── Today's Class Spotlight ──────────────────────────────────────── --}}
+    <div>
+    <section id="mobileSpotlight"
                  class="sd-stage {{ $liveClassItem ? 'is-live' : ($nextClassItem ? 'is-next' : 'is-idle') }}"
                  @if($featuredClass)
                     data-start-ms="{{ $featuredClass->start_time->getTimestampMs() }}"
@@ -195,88 +179,7 @@
                     <strong>{{ $completedTodayCount }}/{{ $todayClassCount }}</strong> done today
                 </span>
             </div>
-        </section>
-
-        <section class="sd-telemetry" aria-label="Attendance standing">
-            <div class="sd-standing-top">
-                <div class="sd-gauge-wrap">
-                    <svg class="sd-gauge-svg" viewBox="0 0 88 88" aria-hidden="true">
-                        <circle class="sd-gauge-track" cx="44" cy="44" r="{{ $gaugeRadius }}"></circle>
-                        <circle class="sd-gauge-fill is-{{ $rateTone }}"
-                                cx="44" cy="44" r="{{ $gaugeRadius }}"
-                                stroke-dasharray="{{ $gaugeCircumference }}"
-                                stroke-dashoffset="{{ $gaugeOffset }}"></circle>
-                    </svg>
-                    <div class="sd-gauge-center">
-                        <span class="sd-gauge-value sd-tabular is-{{ $rateTone }}">{{ $rateVal === null ? '—' : $rateVal.'%' }}</span>
-                        <span class="sd-gauge-sub">Rate</span>
-                    </div>
-                </div>
-
-                <div class="sd-standing-info">
-                    <div class="sd-standing-head-row">
-                        <h3 class="sd-standing-title">Attendance Standing</h3>
-                        <span class="sd-standing-tier is-{{ $rateTone }}">{{ $rateTier }}</span>
-                    </div>
-                    <p class="sd-standing-desc sd-tabular">
-                        @if($weekTotal > 0)
-                            This week: <strong>{{ $weekPresent }}/{{ $weekTotal }}</strong> present ({{ $attendanceRate }}%)
-                        @else
-                            No attendance records yet this week
-                        @endif
-                    </p>
-                    <div class="sd-standing-badges">
-                        @if(($streakCount ?? 0) > 0)
-                            <span class="sd-telemetry-chip is-streak sd-tabular">
-                                <i class="bi bi-fire" aria-hidden="true"></i> {{ $streakCount }} {{ $streakCount === 1 ? 'Day' : 'Days' }}
-                            </span>
-                        @endif
-                        @if($pendingExcuses > 0)
-                            <a href="{{ route('excuses') }}" class="sd-telemetry-chip is-pending sd-tabular">
-                                <i class="bi bi-hourglass-split" aria-hidden="true"></i> {{ $pendingExcuses }} Pending
-                            </a>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <div class="sd-breakdown-strip">
-                <div class="sd-breakdown-bar" role="img" aria-label="Session distribution: {{ $totalPresentCount }} Present, {{ $totalLateCount }} Late, {{ $totalAbsentCount }} Absent">
-                    @if($totalSessionsCount > 0)
-                        @if($presentPct > 0)<span class="sd-seg is-present" style="width: {{ $presentPct }}%;"></span>@endif
-                        @if($latePct > 0)<span class="sd-seg is-late" style="width: {{ $latePct }}%;"></span>@endif
-                        @if($absentPct > 0)<span class="sd-seg is-absent" style="width: {{ $absentPct }}%;"></span>@endif
-                    @else
-                        <span class="sd-seg is-empty" style="width: 100%;"></span>
-                    @endif
-                </div>
-                <div class="sd-breakdown-legend sd-tabular">
-                    <span class="sd-legend-item"><i class="sd-dot is-present" aria-hidden="true"></i> <strong>{{ $totalPresentCount }}</strong> Present</span>
-                    <span class="sd-legend-item"><i class="sd-dot is-late" aria-hidden="true"></i> <strong>{{ $totalLateCount }}</strong> Late</span>
-                    <span class="sd-legend-item"><i class="sd-dot is-absent" aria-hidden="true"></i> <strong>{{ $totalAbsentCount }}</strong> Absent</span>
-                </div>
-            </div>
-
-            @if($weeklyPulseCollection->isNotEmpty())
-            <div class="sd-pulse-band">
-                <div class="sd-pulse-head">
-                    <span class="sd-pulse-title">7-Day Pulse</span>
-                    <a href="{{ route('student.calendar') }}" class="sd-panel-link">Calendar <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                </div>
-                <div class="sd-pulse-grid">
-                    @foreach($weeklyPulseCollection as $pulse)
-                        <a href="{{ route('student.calendar') }}"
-                           class="sd-pulse-day is-status-{{ $pulse->status }} {{ $pulse->is_today ? 'is-today' : '' }}"
-                           aria-label="{{ $pulse->label }}">
-                            <span class="sd-pulse-day-short">{{ $pulse->day_short }}</span>
-                            <span class="sd-pulse-day-num sd-tabular">{{ $pulse->day_num }}</span>
-                            <span class="sd-pulse-pip" aria-hidden="true"></span>
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-        </section>
+    </section>
     </div>
 
     {{-- ── Swipeable Utility Rail ────────────────────────────────────────── --}}
@@ -396,38 +299,6 @@
         </div>
 
         <div class="sd-col-aside">
-            @if($subjectStatsCollection->isNotEmpty())
-            <section class="sd-panel" aria-label="Subject Attendance">
-                <header class="sd-panel-head">
-                    <div class="sd-panel-title-group">
-                        <h3 class="sd-panel-title">Subject Attendance</h3>
-                        <span class="sd-panel-meta">{{ $subjectStatsCollection->count() }} {{ \Illuminate\Support\Str::plural('subject', $subjectStatsCollection->count()) }}</span>
-                    </div>
-                    <a href="{{ route('student.classes') }}" class="sd-panel-link">Classes <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-                </header>
-                <div class="sd-subject-list">
-                    @foreach($subjectStatsCollection->take(5) as $sub)
-                        @php
-                            $hasRecords = $sub->total > 0;
-                            $subTone = !$hasRecords ? 'is-new' : ($sub->rate >= 85 ? 'is-good' : ($sub->rate >= 75 ? 'is-warn' : 'is-risk'));
-                        @endphp
-                        <a href="{{ route('student.classes') }}" class="sd-subject-row">
-                            <div class="sd-subject-row-top">
-                                <div class="sd-subject-id">
-                                    <span class="sd-code-tag sd-mono">{{ $sub->code }}</span>
-                                    <span class="sd-subject-name">{{ $sub->name }}</span>
-                                </div>
-                                <span class="sd-subject-rate sd-tabular {{ $subTone }}">{{ $hasRecords ? $sub->rate.'%' : 'New' }}</span>
-                            </div>
-                            <div class="sd-meter-track" aria-hidden="true">
-                                <span class="sd-meter-fill {{ $subTone }}" style="width: {{ $hasRecords ? min(100, max(3, $sub->rate)) : 0 }}%;"></span>
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            </section>
-            @endif
-
             @if(isset($announcements) && $announcements->isNotEmpty())
             <section class="sd-panel" aria-label="Campus Announcements" data-alert-group>
                 <header class="sd-panel-head">
