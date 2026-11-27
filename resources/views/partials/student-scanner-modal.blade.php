@@ -89,7 +89,7 @@
                             <i class="bi bi-camera me-1"></i> <span id="retryCameraBtnText">Allow Camera</span>
                         </button>
                         <button type="button" class="permission-secondary-link" data-action="switch-code" onclick="if(typeof switchScannerMode==='function'){switchScannerMode('code')}">
-                            Enter Code Manually
+                            Enter code instead
                         </button>
                     </div>
                 </div>
@@ -100,12 +100,11 @@
                 <span class="scanner-instruction-text">Place your teacher’s QR code inside the frame.</span>
             </div>
 
-            <div id="scannerGpsBadge" class="scanner-gps-badge" data-gps-state="searching" role="status" aria-live="polite">
-                <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
-                <span class="scanner-gps-text">Acquiring GPS location…</span>
-            </div>
-
-            <div class="scanner-paste-shortcut">
+            <div class="scanner-camera-actions">
+                <div id="scannerGpsBadge" class="scanner-gps-badge" data-gps-state="searching" role="status" aria-live="polite">
+                    <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
+                    <span class="scanner-gps-text">Acquiring GPS location…</span>
+                </div>
                 <button type="button" class="scanner-alt-btn" data-action="paste-copied-code" id="cameraPasteBtn">
                     <i class="bi bi-clipboard-check" aria-hidden="true"></i> Paste code
                 </button>
@@ -1392,30 +1391,29 @@
         animation: none;
     }
 
-    .scanner-page-screen.scanner-modal-backdrop {
-        inset: 0;
+    #studentScannerModal.scanner-page-screen {
         height: 100dvh;
-        padding: 0;
+        padding: max(16px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
         overflow: hidden auto;
         overscroll-behavior: contain;
         align-items: flex-start;
-        background: linear-gradient(180deg, #1b1714 0%, #11100e 100%);
+        background: #141010;
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
     }
 
-    .scanner-page-screen .scanner-modal-card {
+    body.scanner-page-layout #studentScannerModal.scanner-page-screen .scanner-modal-card {
+        flex: none;
         width: 100%;
-        max-width: 520px;
-        min-height: 0;
+        max-width: 500px;
         max-height: none;
         margin: 0 !important;
-        padding: max(14px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+        padding: clamp(14px, 4vw, 24px);
         overflow: visible !important;
-        border: 0;
-        border-radius: 0;
-        background: transparent;
-        box-shadow: none;
+        border: 1px solid rgba(250, 248, 245, 0.13) !important;
+        border-radius: 20px;
+        background: #1e1515 !important;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28) !important;
         animation: none;
     }
 
@@ -1423,17 +1421,18 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
-        gap: 12px 8px;
-        margin-bottom: 14px;
+        gap: 16px 8px;
+        margin-bottom: 16px;
     }
 
     .scanner-page-title {
         margin: 0;
         text-align: start;
-        color: #f3e7cd;
-        font-size: clamp(1.2rem, 4.6vw, 1.65rem);
+        color: #faf8f5;
+        font-size: clamp(1.2rem, 4.6vw, 1.75rem);
         font-weight: 750;
         letter-spacing: -0.025em;
+        line-height: 1.15;
     }
 
     .scanner-page-screen .scanner-top-actions {
@@ -1442,11 +1441,13 @@
         gap: 6px;
     }
 
-    .scanner-page-screen .scanner-mode-switcher {
+    body.scanner-page-layout #studentScannerModal.scanner-page-screen .scanner-mode-switcher {
         grid-column: 1 / -1;
         grid-row: 2;
-        border-radius: 14px;
-        padding: 3px;
+        border-radius: 12px;
+        padding: 4px;
+        gap: 4px;
+        background: #141010 !important;
     }
 
     .scanner-page-screen .scanner-mode-tab {
@@ -1456,25 +1457,61 @@
         justify-content: center;
         min-height: 44px;
         padding: 6px 8px;
-        border-radius: 10px;
-        font-size: 0.9rem;
+        border-radius: 8px;
+        color: #dfd2c9;
+        font-size: 0.88rem;
+    }
+
+    body.scanner-page-layout #studentScannerModal.scanner-page-screen .scanner-mode-tab.active {
+        background: #f4dfbc !important;
+        color: #2f1c14 !important;
     }
 
     .scanner-page-screen .scanner-icon-btn {
         width: 44px;
         height: 44px;
         flex: 0 0 44px;
+        border-radius: 12px;
     }
 
     .scanner-page-screen .scanner-viewfinder-wrapper {
-        width: min(100%, clamp(210px, calc(100dvh - 280px), 390px));
+        width: min(100%, clamp(225px, calc(100dvh - 290px), 352px));
         margin: 0 auto 12px;
+        border-radius: 16px;
+        border: 1px solid #735842;
+        background: #100c0c;
     }
 
     .scanner-page-screen .scanner-viewfinder-wrapper.camera-unavailable {
-        width: min(100%, 390px);
+        width: 100%;
         min-height: 210px;
         aspect-ratio: auto;
+        background: #181111;
+        border-color: rgba(250, 248, 245, 0.13);
+    }
+
+    .scanner-page-screen .scanner-viewfinder-wrapper.camera-unavailable::before {
+        content: none;
+    }
+
+    .scanner-page-screen .scanner-permission-empty-state {
+        padding: 20px 12px;
+    }
+
+    .scanner-page-screen .permission-headline {
+        font-size: 1rem;
+    }
+
+    .scanner-page-screen .permission-description {
+        max-width: 30ch;
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+
+    .scanner-page-screen .permission-actions {
+        flex-flow: row wrap;
+        justify-content: center;
+        gap: 4px 10px;
     }
 
     .scanner-page-screen .scanner-instruction-container {
@@ -1494,18 +1531,46 @@
         display: none;
     }
 
+    .scanner-page-screen .scanner-camera-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(250, 248, 245, 0.10);
+    }
+
+    .scanner-page-screen .scanner-camera-actions .scanner-gps-badge {
+        min-width: 0;
+        margin: 0;
+        text-align: left;
+    }
+
     .scanner-page-screen :is(.scanner-alt-btn, .scanner-code-actions .btn, .permission-primary-btn, .permission-secondary-link, #resultDoneBtn, #resultRetryBtn) {
         min-height: 44px;
     }
 
     .scanner-page-screen .scanner-alt-btn {
-        padding: 8px 16px;
+        margin-inline-start: auto;
+        padding: 8px 12px;
         border-radius: 11px;
         font-size: 0.85rem;
     }
 
+    .scanner-page-screen .code-entry-container {
+        padding: 14px;
+        border: 1px solid rgba(250, 248, 245, 0.12);
+        background: #181111;
+        box-shadow: none;
+    }
+
     .scanner-page-screen .scanner-code-label {
         text-align: start;
+    }
+
+    .scanner-page-screen .code-entry-input {
+        min-height: 54px;
     }
 
     .scanner-page-screen :is(button, input):focus-visible {
@@ -1514,8 +1579,8 @@
     }
 
     @media (min-width: 768px) and (min-height: 640px) {
-        .scanner-page-screen .scanner-modal-card {
-            padding-top: max(28px, env(safe-area-inset-top, 0px));
+        #studentScannerModal.scanner-page-screen {
+            padding-top: max(clamp(28px, 7vh, 64px), env(safe-area-inset-top, 0px));
         }
     }
 

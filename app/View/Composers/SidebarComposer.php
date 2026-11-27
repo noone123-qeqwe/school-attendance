@@ -20,7 +20,7 @@ class SidebarComposer
     {
         $viewName = $view->name();
 
-        if (in_array($viewName, ['layouts.sidebars.student', 'home', 'components.mobile.role-bottom-nav'], true)) {
+        if (in_array($viewName, ['layouts.sidebars.student', 'home', 'student.classes'], true)) {
             $view->with('hasActiveAssistantAssignment', $this->resolveStudentAssistantStatus());
             return;
         }

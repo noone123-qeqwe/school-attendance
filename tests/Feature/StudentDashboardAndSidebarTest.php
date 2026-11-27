@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Announcement;
 use App\Models\Attendance;
+use App\Models\ClassStudentAssistant;
 use App\Models\Schedule;
 use App\Models\Subject;
 use App\Models\User;
@@ -54,6 +55,43 @@ class StudentDashboardAndSidebarTest extends TestCase
         }
 
         $this->get(route('mobile.home'))->assertRedirect(route('home'));
+    }
+
+    public function test_assigned_student_finds_assistant_tools_in_classes_instead_of_the_mobile_dock(): void
+    {
+        $student = $this->createStudent();
+        $teacher = $this->createStudent([
+            'role' => 'teacher',
+            'email' => 'teacher.assistant.test@example.com',
+            'student_number' => 'TCH-ASST',
+        ]);
+        $subject = Subject::create([
+            'code' => 'CS101',
+            'name' => 'Introduction to Computing',
+            'year_level' => 3,
+            'semester' => 1,
+            'section' => 'A',
+            'instructor_id' => $teacher->id,
+        ]);
+        ClassStudentAssistant::create([
+            'subject_id' => $subject->id,
+            'student_id' => $student->id,
+            'assigned_by_teacher_id' => $teacher->id,
+            'active_slot' => 1,
+            'starts_at' => now()->subDay(),
+            'expires_at' => now()->addDay(),
+        ]);
+
+        $response = $this->actingAs($student)->get(route('student.classes'))->assertOk();
+        $dom = new \DOMDocument();
+        $dom->loadHTML($response->getContent(), LIBXML_NOERROR | LIBXML_NOWARNING);
+        $xpath = new \DOMXPath($dom);
+        $mobileLinks = $xpath->query('//nav[@id="mobileBottomNav"]/a/@href');
+
+        $this->assertSame([
+            route('home'), route('student.classes'), route('mobile.scan'), route('student.calendar'), route('excuses'),
+        ], array_map(fn (\DOMAttr $link) => $link->value, iterator_to_array($mobileLinks)));
+        $this->assertSame(route('student-assistant.classes'), $xpath->evaluate('string(//main//a[normalize-space()="Student Assistant"]/@href)'));
     }
 
     public function test_student_sidebar_omits_profile_settings_scan_pin_and_notifications(): void

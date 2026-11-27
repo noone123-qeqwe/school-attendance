@@ -1098,6 +1098,12 @@
             </h1>
             <p>Your enrolled subjects and weekly class timetable</p>
         </div>
+        @if(!empty($hasActiveAssistantAssignment))
+            <a href="{{ route('student-assistant.classes') }}" class="btn btn-outline-light d-inline-flex d-md-none align-items-center gap-2 px-3 py-2">
+                <i class="bi bi-person-check" aria-hidden="true"></i>
+                Student Assistant
+            </a>
+        @endif
     </div>
 
     <!-- ── THE SCHEDULE SHEET ── -->

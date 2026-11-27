@@ -1,7 +1,7 @@
 @php
     $navUser = auth()->user();
     $role = ucfirst($navUser->role);
-    $items = \App\Support\MobileNavigation::tabs($navUser, !empty($hasActiveAssistantAssignment));
+    $items = \App\Support\MobileNavigation::tabs($navUser);
 @endphp
 
 <nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav" aria-label="{{ $role }} navigation">
@@ -22,7 +22,12 @@
             </button>
         @else
             <a href="{{ route($item['route'], $item['query']) }}"
-               @class(['mbn-item', 'mbn-item-featured' => $item['featured'], 'active' => $isActive])
+               @class([
+                   'mbn-item',
+                   'mbn-item-featured' => $item['featured'],
+                   'mbn-item-scan' => $navUser->isStudent() && $item['key'] === 'scan',
+                   'active' => $isActive,
+               ])
                @if($isActive) aria-current="{{ request()->routeIs($item['route']) ? 'page' : 'location' }}" @endif
                aria-label="{{ $item['label'] }}"
                @if($childAware) data-parent-child-context @endif
