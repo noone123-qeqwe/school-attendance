@@ -62,6 +62,28 @@
         try { sessionStorage.setItem(returnKey, root.dataset.studentView); } catch (e) {}
     };
 
+    function centerActiveMobilePill(instant) {
+        const activeMobilePill = document.querySelector('.settings-mobile-pill.active');
+        const nav = activeMobilePill?.closest('.settings-mobile-nav');
+        if (!activeMobilePill || !nav || nav.clientWidth === 0) return;
+        const navRect = nav.getBoundingClientRect();
+        const pillRect = activeMobilePill.getBoundingClientRect();
+        const maxScroll = Math.max(0, nav.scrollWidth - nav.clientWidth);
+        const rawTarget = nav.scrollLeft + (pillRect.left - navRect.left) - (navRect.width - pillRect.width) / 2;
+        const targetLeft = Math.max(0, Math.min(maxScroll, Math.round(rawTarget)));
+        const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (instant || reduced) {
+            const prevSnap = nav.style.scrollSnapType;
+            nav.style.scrollSnapType = 'none';
+            nav.scrollLeft = targetLeft;
+            requestAnimationFrame(() => {
+                nav.style.scrollSnapType = prevSnap;
+            });
+        } else {
+            nav.scrollTo({ left: targetLeft, behavior: 'smooth' });
+        }
+    }
+
     function navigate(requested, options = {}) {
         let page = aliases[requested] || requested;
         // Older bookmarks still open the corresponding standalone registration page.
@@ -108,12 +130,7 @@
             window.checkDeviceBindingStatus();
         }
 
-        const activeMobilePill = document.querySelector('.settings-mobile-pill.active');
-        if (activeMobilePill && typeof activeMobilePill.scrollIntoView === 'function') {
-            try {
-                activeMobilePill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            } catch (e) {}
-        }
+        requestAnimationFrame(() => centerActiveMobilePill(!started || Boolean(options.fromHistory)));
 
         if ((options.push || (!options.fromHistory && started))) {
             history.replaceState(null, '', '#tab-' + page);
@@ -123,7 +140,10 @@
             heading.focus({ preventScroll: true });
             root.scrollIntoView({ block: 'start', behavior: 'instant' });
         } else if ((!started || options.fromHistory) && location.hash) {
-            requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+            requestAnimationFrame(() => {
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                centerActiveMobilePill(true);
+            });
         }
         started = true;
         return page;
@@ -204,6 +224,27 @@
                 setAccountEditStatus('phoneFormStatus', root.dataset.settingsPhoneErrorMessage || 'Check the phone number and try again.', 'error');
                 document.getElementById('phoneInput')?.focus();
             }
+        } else if (location.hash) {
+            syncHistory();
+        }
+        requestAnimationFrame(() => centerActiveMobilePill(true));
+        setTimeout(() => centerActiveMobilePill(true), 120);
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => centerActiveMobilePill(true));
+        }
+        window.addEventListener('load', () => centerActiveMobilePill(true), { once: true });
+        window.addEventListener('resize', () => centerActiveMobilePill(true), { passive: true });
+        const mobileNav = document.querySelector('.settings-mobile-nav');
+        if (mobileNav && typeof ResizeObserver !== 'undefined') {
+            let lastWidth = mobileNav.clientWidth;
+            const ro = new ResizeObserver(() => {
+                const w = mobileNav.clientWidth;
+                if (w > 0 && w !== lastWidth) {
+                    lastWidth = w;
+                    centerActiveMobilePill(true);
+                }
+            });
+            ro.observe(mobileNav);
         }
     }, { once: true });
 })();

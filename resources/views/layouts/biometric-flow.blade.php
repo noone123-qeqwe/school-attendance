@@ -31,6 +31,7 @@
         <header class="biometric-flow-heading">
             <h1>@yield('title')</h1>
             <p>@yield('description')</p>
+            @yield('aside_notes')
         </header>
         @yield('content')
     </main>

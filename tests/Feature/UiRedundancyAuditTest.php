@@ -384,5 +384,18 @@ class UiRedundancyAuditTest extends TestCase
         $this->assertNotFalse($excusesIndexBlade);
         $this->assertStringContainsString('sd-disclosure-inline', $recordsBlade);
         $this->assertStringContainsString('sd-disclosure-inline', $excusesIndexBlade);
+
+        // 9. Settings deduplicates Full Name for students, exposes tablet pill nav, and auto-centers active mobile pills
+        $settingsHtml = $this->actingAs($student)->get(route('settings'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('<div class="info-lbl academic-spec-label">Full Name</div>', $settingsHtml);
+        $this->assertStringContainsString('settings-mobile-nav d-lg-none', $settingsHtml);
+        $this->assertStringContainsString('copyWithMorph', $settingsHtml);
+
+        $settingsJs = file_get_contents(public_path('js/student-settings.js'));
+        $bioCss = file_get_contents(public_path('css/biometric-flow.css'));
+        $this->assertNotFalse($settingsJs);
+        $this->assertNotFalse($bioCss);
+        $this->assertStringContainsString('centerActiveMobilePill', $settingsJs);
+        $this->assertMatchesRegularExpression('/\.bio-consent-card\s+a\s*\{[^}]*min-height:\s*44px;/s', $bioCss);
     }
 }

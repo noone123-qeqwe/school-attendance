@@ -4,6 +4,23 @@
 @section('description', 'Link this device’s built-in platform authenticator (WebAuthn/FIDO2) for secure sign-in and classroom attendance verification.')
 @section('pageClass', 'fingerprint-registration-page')
 
+@section('aside_notes')
+<ul class="bio-trust-list" aria-label="Passkey security guarantees">
+    <li>
+        <i class="bi bi-cpu" aria-hidden="true"></i>
+        <span><strong>On-device verification</strong>Your OS confirms biometrics or PIN locally — nothing leaves your hardware.</span>
+    </li>
+    <li>
+        <i class="bi bi-key" aria-hidden="true"></i>
+        <span><strong>Public-key cryptography</strong>Smart Attendance stores only a cryptographic public key, never raw templates.</span>
+    </li>
+    <li>
+        <i class="bi bi-shield-x" aria-hidden="true"></i>
+        <span><strong>Instant revocation</strong>Remove any linked device at any time from your Registered Devices list.</span>
+    </li>
+</ul>
+@endsection
+
 @section('content')
 <section class="biometric-flow-card" aria-label="Register this device">
     <ol class="bio-registration-steps" aria-label="Registration steps">

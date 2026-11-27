@@ -133,7 +133,7 @@
         @php
             $mobileNavGroups = \App\Support\SettingsNavigation::groups($user);
         @endphp
-        <nav class="settings-mobile-nav d-md-none" aria-label="Settings sections">
+        <nav class="settings-mobile-nav d-lg-none" aria-label="Settings sections">
             @foreach($mobileNavGroups as $groupItems)
                 @foreach($groupItems as $item)
                     <button type="button"
@@ -218,6 +218,7 @@
             </div>
             <div class="sc-body">
                 <div class="academic-spec-grid">
+                    @unless($user->isStudent())
                     <div class="info-row academic-spec-card">
                         <div class="info-icon academic-spec-icon"><i class="bi bi-person-fill"></i></div>
                         <div class="academic-spec-info">
@@ -225,15 +226,16 @@
                             <div class="info-val academic-spec-value">{{ Auth::user()->name }}</div>
                         </div>
                     </div>
+                    @endunless
                     <div class="info-row academic-spec-card">
                         <div class="info-icon academic-spec-icon"><i class="bi bi-card-text"></i></div>
                         <div class="academic-spec-info">
                             <div class="info-lbl academic-spec-label">Student ID</div>
-                            <div class="info-val academic-spec-value" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-                                <span>{{ Auth::user()->student_number ?: 'Not Assigned' }}</span>
+                            <div class="info-val academic-spec-value" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                                <span style="font-family:'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.03em;">{{ Auth::user()->student_number ?: 'Not Assigned' }}</span>
                                 @if(Auth::user()->student_number)
-                                <button type="button" class="sec-copy-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}');if(typeof showToast==='function')showToast('Student ID copied!','info');" title="Copy Student ID" aria-label="Copy Student ID">
-                                    <i class="bi bi-clipboard" aria-hidden="true"></i>
+                                <button type="button" class="sec-copy-btn copy-student-id-btn" onclick="if (window.StudentMotion && window.StudentMotion.copyWithMorph) { window.StudentMotion.copyWithMorph(this, '{{ Auth::user()->student_number }}', 'Unable to copy Student ID.'); } else { navigator.clipboard.writeText('{{ Auth::user()->student_number }}'); if (typeof showToast === 'function') showToast('Student ID copied!', 'info'); }" title="Copy Student ID" aria-label="Copy Student ID">
+                                    <span class="sm-morph-content"><i class="bi bi-clipboard" aria-hidden="true"></i><span>Copy</span></span>
                                 </button>
                                 @endif
                             </div>
@@ -1178,8 +1180,8 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 24px; text-align: right;">
-                        <button type="submit" class="sbtn btn-gold" style="width:auto;padding:11px 28px;">
+                    <div class="sd-pref-save-wrap" style="margin-top: 24px; text-align: right;">
+                        <button type="submit" class="sbtn btn-gold sd-pref-save-btn" style="width:auto;padding:11px 28px;">
                             <i class="bi bi-save me-2" aria-hidden="true"></i>Save Preferences
                         </button>
                     </div>

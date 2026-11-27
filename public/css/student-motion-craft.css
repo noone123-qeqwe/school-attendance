@@ -546,6 +546,25 @@ body.student-portal .header-account-trigger[aria-expanded="true"] .bi-chevron-do
 }
 
 /* ── 8. Sonner-Grade Student Toast Transitions (No Left Side-Tab) ────────── */
+body.student-portal #toastContainer.toast-container {
+    top: calc(env(safe-area-inset-top, 0px) + 74px) !important;
+    z-index: 100050 !important;
+}
+
+@media (max-width: 575.98px) {
+    body.student-portal #toastContainer.toast-container {
+        top: calc(env(safe-area-inset-top, 0px) + 68px) !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: auto !important;
+    }
+
+    body.student-portal #toastContainer.toast-container .modern-toast.is-student-sonner {
+        width: 100% !important;
+        max-width: none !important;
+    }
+}
+
 body.student-portal .modern-toast.is-student-sonner {
     border-left-width: 1px !important;
     background: rgba(30, 21, 21, 0.96) !important;
@@ -775,16 +794,160 @@ body.student-portal .cor-tba-label {
 }
 
 /* Mobile Settings Horizontal Pill Strip edge-fade hint + scroll snap */
-@media (max-width: 991.98px) {
+@media (max-width: 1023.98px) {
     body.student-portal .settings-mobile-nav {
+        display: flex !important;
         scroll-snap-type: x proximity;
-        -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 88%, transparent 100%);
-        mask-image: linear-gradient(90deg, #000 0%, #000 88%, transparent 100%);
-        padding-right: 28px !important;
+        -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 92%, transparent 100%);
+        mask-image: linear-gradient(90deg, #000 0%, #000 92%, transparent 100%);
+        padding-right: 40px !important;
     }
 
     body.student-portal .settings-mobile-pill {
         scroll-snap-align: center;
+    }
+}
+
+/* ── 11.5 Cycle 8 Responsive Header, Dashboard, Settings & Notification Craft ── */
+
+/* Fix P0 tablet (768px–1023px) bell/avatar collision + narrow phone (320px) title ellipsis */
+@media (max-width: 1023.98px) {
+    body.student-portal .top-header .header-left {
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+        overflow: hidden;
+    }
+
+    body.student-portal .top-header .header-title-container {
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+        overflow: hidden;
+    }
+
+    body.student-portal .top-header .header-page-title {
+        display: block !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        text-wrap: nowrap !important;
+    }
+
+    body.student-portal .top-header .header-right {
+        flex-shrink: 0 !important;
+        gap: 8px !important;
+    }
+
+    body.student-portal .top-header .header-account-trigger {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+        gap: 0 !important;
+    }
+
+    body.student-portal .top-header .header-account-trigger > div,
+    body.student-portal .top-header .header-account-trigger > .bi-chevron-down {
+        display: none !important;
+    }
+}
+
+/* Dashboard mobile Enter PIN pill button + clean hero footer alignment */
+@media (max-width: 767.98px) {
+    body.student-portal .sd-stage-foot {
+        gap: 10px 12px !important;
+    }
+
+    body.student-portal .sd-stage-actions {
+        gap: 10px 12px !important;
+        align-items: center !important;
+    }
+
+    body.student-portal .sd-mobile-pin-btn {
+        min-height: 40px !important;
+        padding: 6px 12px !important;
+        border-radius: 10px !important;
+        background: #261B1B !important;
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+        color: #FAF8F5 !important;
+        font-weight: 650 !important;
+        font-size: 0.8rem !important;
+        gap: 5px !important;
+    }
+}
+
+/* Desktop Dashboard: tighten Subject Standing rows so 'Show all N subjects' sits cleanly above fold */
+@media (min-width: 1024px) {
+    body.student-portal .sd-subject-list {
+        gap: 8px !important;
+    }
+
+    body.student-portal .sd-subject-row {
+        padding: 10px 12px !important;
+        gap: 6px !important;
+    }
+}
+
+/* Notifications mobile polish: keep primary actions + overflow menu on one balanced row at 360px+ */
+@media (max-width: 575.98px) {
+    body.student-portal #mainContent #btnMarkAllRead.notif-btn-mark-all,
+    body.student-portal .notif-hero-actions .notif-btn-mark-all {
+        width: auto !important;
+        min-height: 44px !important;
+        padding: 8px 16px !important;
+        border-radius: 11px !important;
+        font-size: 0.84rem !important;
+    }
+}
+
+@media (min-width: 360px) and (max-width: 575.98px) {
+    body.student-portal .notif-actions-row {
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+        align-items: center !important;
+    }
+
+    body.student-portal .notif-actions-row > .btn-notif-action {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        padding: 8px 9px !important;
+        font-size: 0.76rem !important;
+        white-space: nowrap !important;
+    }
+
+    body.student-portal .notif-actions-row > details.sd-action-menu {
+        margin-left: 0 !important;
+        flex-shrink: 0 !important;
+    }
+}
+
+/* Settings Student ID Copy pill + mobile Save Preferences ergonomics */
+body.student-portal .sp.student-settings .sec-copy-btn.copy-student-id-btn {
+    width: auto !important;
+    min-height: 40px !important;
+    padding: 6px 12px !important;
+    border-radius: 8px !important;
+    font-size: 0.78rem !important;
+    font-weight: 650 !important;
+    background: #261B1B !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    color: #FAF8F5 !important;
+}
+
+@media (max-width: 575.98px) {
+    body.student-portal #mainContent .sp.student-settings[data-student-settings] #tab-preferences .sd-pref-save-wrap {
+        text-align: stretch !important;
+    }
+
+    body.student-portal #mainContent .sp.student-settings[data-student-settings] #tab-preferences .sd-pref-save-btn {
+        display: flex !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-height: 46px !important;
+        justify-content: center !important;
     }
 }
 
