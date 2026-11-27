@@ -33,7 +33,7 @@ class TeacherNavigation
 
     /**
      * Streamlined desktop sidebar items (mirrors the clean single-line Student sidebar).
-     * Notifications and Profile/Settings live in the header bell & account menu.
+     * Notifications, Profile/Settings, and Take Attendance live in the header/dashboard CTAs and mobile bottom nav.
      */
     public static function sidebarSections(): array
     {
@@ -41,7 +41,6 @@ class TeacherNavigation
             [
                 ['home', 'Dashboard', 'teacher.dashboard', 'bi-grid-fill', ['teacher.dashboard'], []],
                 ['classes', 'My Classes', 'teacher.classroom.index', 'bi-journal-bookmark-fill', ['teacher.classroom.index', 'teacher.classroom.show', 'teacher.classroom.assistant-attendance*', 'teacher.subjects*'], []],
-                ['take-attendance', 'Take Attendance', 'teacher.classroom.index', 'bi-qr-code-scan', ['teacher.qr*'], ['task' => 'attendance']],
                 ['attendance', 'Attendance Records', 'teacher.attendance', 'bi-clipboard-check-fill', ['teacher.attendance*'], []],
                 ['students', 'Student Roster', 'teacher.students', 'bi-people-fill', ['teacher.students*', 'teacher.student'], []],
                 ['calendar', 'School Calendar', 'teacher.calendar', 'bi-calendar-event-fill', ['teacher.calendar*'], []],

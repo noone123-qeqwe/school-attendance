@@ -85,6 +85,7 @@ class TeacherPortalRedesignTest extends TestCase
         $this->assertNotEmpty($sidebarHtml);
         $this->assertStringNotContainsString('teacher-nav-description', $sidebarHtml);
         $this->assertStringNotContainsString('My Profile', $sidebarHtml);
+        $this->assertStringNotContainsString('Take Attendance', $sidebarHtml);
         $this->assertStringNotContainsString(route('teacher.notifications'), $sidebarHtml);
         $this->assertStringContainsString(route('teacher.corrections'), $sidebarHtml);
 
