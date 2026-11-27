@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('page-title', 'My Profile')
+@section('page-title', 'Account settings')
 
 @section('content')
 <style>
@@ -162,7 +162,12 @@
 <div class="flash-err"><i class="bi bi-exclamation-circle-fill fs-5"></i><span>{{ $errors->first() }}</span></div>
 @endif
 
-<!-- Profile Header -->
+<header class="admin-section-masthead">
+    <div>
+        <h1>Account settings</h1>
+        <p>Manage your profile details, sign-in methods, and account security.</p>
+    </div>
+</header>
 <div class="adm-profile-header">
     <div class="adm-avatar-wrapper">
         <x-profile-photo-manager :user="$user" :size="96" avatar-id="adminAvatarDisplay" />

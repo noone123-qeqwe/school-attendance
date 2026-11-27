@@ -5,25 +5,21 @@
 @section('page-sub', 'Attendance summaries and downloads')
 
 @section('content')
-<div class="admin-page-heading" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+<header class="admin-section-masthead">
     <div>
-        <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Reports</h1>
-        <p class="saas-text-muted" style="margin:0;">Choose a report, set the dates, then download your results.</p>
+        <h1>Reports &amp; analytics</h1>
+        <p>Review attendance by period, subject, class, or student. Downloads use the filters on this page.</p>
     </div>
-    <div class="admin-page-actions d-flex flex-wrap gap-2">
-        <a href="{{ route('admin.reports.xlsx', request()->query()) }}" class="saas-btn saas-btn-secondary">
-            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Export Excel
-        </a>
-        <a href="{{ route('admin.reports.csv', request()->all()) }}" class="saas-btn saas-btn-secondary" style="color:#34d399; border-color:rgba(52,211,153,0.3); text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-            <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
-        </a>
-        <a href="{{ route('admin.reports.pdf', request()->all()) }}" class="saas-btn saas-btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-            <i class="bi bi-file-earmark-pdf"></i> Export PDF
-        </a>
-    </div>
-</div>
+    <details class="admin-action-menu">
+        <summary><i class="bi bi-download" aria-hidden="true"></i> Export report <i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+        <div class="admin-action-menu-items">
+            <a href="{{ route('admin.reports.xlsx', request()->query()) }}" class="btn"><i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Excel</a>
+            <a href="{{ route('admin.reports.csv', request()->query()) }}" class="btn"><i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i> CSV</a>
+            <a href="{{ route('admin.reports.pdf', request()->query()) }}" class="btn"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> PDF</a>
+        </div>
+    </details>
+</header>
 
-<!-- Report Category Pills -->
 @php
     $reportTypes = [
         'daily' => ['label' => 'Daily', 'icon' => 'calendar-day'],

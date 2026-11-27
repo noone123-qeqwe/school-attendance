@@ -1,22 +1,34 @@
 @php
-    $adminGroup = \App\Support\AdminNavigation::currentGroup(auth()->user(), request()->route()?->getName());
+    $routeName = request()->route()?->getName();
+    $academic = \App\Support\AdminNavigation::academicContext($routeName);
 @endphp
-@if($adminGroup && !request()->routeIs('admin.dashboard'))
-<div class="admin-page-context">
-    <nav aria-label="Breadcrumb" class="admin-breadcrumb">
-        <a href="{{ route('admin.dashboard') }}"><i class="bi bi-house-door" aria-hidden="true"></i> Home</a>
-        <i class="bi bi-chevron-right" aria-hidden="true"></i>
-        <span>{{ $adminGroup['label'] }}</span>
-    </nav>
-    <details class="admin-section-switcher" data-admin-section-switcher>
-        <summary><i class="bi {{ $adminGroup['icon'] }}" aria-hidden="true"></i> In {{ $adminGroup['label'] }} <i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
-        <nav aria-label="Related {{ $adminGroup['label'] }} pages">
-            @foreach($adminGroup['items'] as [$label, $destination, $icon, $patterns])
-                <a href="{{ route($destination) }}" @if(\App\Support\AdminNavigation::matches($patterns, request()->route()?->getName())) aria-current="page" @endif>
-                    <i class="bi {{ $icon }}" aria-hidden="true"></i><span>{{ $label }}</span>
-                </a>
+@if($academic)
+    <div class="academic-workspace">
+        <a class="academic-workspace-title" href="{{ route('admin.academic.overview') }}">
+            <i class="bi bi-mortarboard" aria-hidden="true"></i> Academic Management
+        </a>
+        <nav class="academic-tabs" aria-label="Academic Management tabs">
+            @foreach(\App\Support\AdminNavigation::academicTabs() as $tab)
+                @php($destination = $tab['items'][0][1])
+                <a href="{{ route($destination) }}" @if($tab['label'] === $academic['label']) aria-current="{{ $routeName === $destination ? 'page' : 'location' }}" @endif>{{ $tab['label'] }}</a>
             @endforeach
         </nav>
-    </details>
-</div>
+        @if(count($academic['items']) > 1)
+            <nav class="academic-tools" aria-label="{{ $academic['label'] }} tools">
+                @foreach($academic['items'] as [$label, $destination, $icon])
+                    <a href="{{ route($destination) }}" @if($academic['current'][1] === $destination) aria-current="{{ $routeName === $destination ? 'page' : 'location' }}" @endif>
+                        <i class="bi {{ $icon }}" aria-hidden="true"></i> {{ $label }}
+                    </a>
+                @endforeach
+            </nav>
+        @endif
+    </div>
+@elseif($adminGroup = \App\Support\AdminNavigation::currentGroup(auth()->user(), $routeName))
+    @unless(request()->routeIs('admin.dashboard'))
+        <nav aria-label="Breadcrumb" class="admin-breadcrumb">
+            <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            <span>{{ $adminGroup['label'] }}</span>
+        </nav>
+    @endunless
 @endif

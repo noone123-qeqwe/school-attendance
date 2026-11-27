@@ -35,10 +35,21 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     // DASHBOARD
     // ─────────────────────────────────────────
-    public function index(AnalyticsService $analyticsService)
+    public function index(Request $request, AnalyticsService $analyticsService)
     {
         $data = $analyticsService->getAdminDashboardData();
+        $data['recentNotifications'] = Notification::query()
+            ->whereBelongsTo($request->user(), 'user')
+            ->active()
+            ->latest()
+            ->limit(3)
+            ->get();
         return view('admin.dashboard', $data);
+    }
+
+    public function academicOverview(AnalyticsService $analyticsService)
+    {
+        return view('admin.academic.overview', $analyticsService->getAcademicOverviewData());
     }
 
     /**
@@ -1098,7 +1109,7 @@ class AdminController extends Controller
 
     public function notifications(Request $request)
     {
-        $query = Notification::with(['user', 'sender', 'subject'])->orderBy('created_at', 'desc');
+        $query = Notification::query()->latest()->orderByDesc('id');
 
         // Filter by status (active/archived)
         if ($request->filled('status')) {
@@ -1121,10 +1132,14 @@ class AdminController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        $notifications = $query->paginate(20)->withQueryString();
-        $users = User::where('role', 'student')->orderBy('name')->get();
+        $search = $request->query('q');
+        if (is_string($search) && trim($search) !== '') {
+            $query->whereLike('message', '%'.mb_substr(trim($search), 0, 100).'%');
+        }
 
-        return view('admin.notifications.index', compact('notifications', 'users'));
+        $notifications = $query->paginate(20)->withQueryString();
+
+        return view('admin.notifications.index', compact('notifications'));
     }
 
     public function archiveNotification(Notification $notification)

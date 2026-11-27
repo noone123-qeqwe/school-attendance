@@ -612,8 +612,9 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
 
     // Reset Password
     Route::post('/user/{user}/reset-password', [App\Http\Controllers\AdminController::class, 'resetPassword'])->name('user.reset_password');
-        Route::get('/dashboard', [App\Http\Controllers\AdminController::class, 'index'])->name('dashboard');
-        Route::get('/dashboard/stats', [App\Http\Controllers\AdminController::class, 'dashboardStats'])->name('dashboard.stats');
+    Route::get('/dashboard', [App\Http\Controllers\AdminController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/stats', [App\Http\Controllers\AdminController::class, 'dashboardStats'])->name('dashboard.stats');
+    Route::get('/academic', [App\Http\Controllers\AdminController::class, 'academicOverview'])->name('academic.overview');
 
     // Early Warnings
     Route::get('/early-warnings', [App\Http\Controllers\AdminController::class, 'earlyWarnings'])->name('early-warnings');

@@ -3,6 +3,11 @@
 namespace App\Services;
 
 use App\Models\Attendance;
+use App\Models\AcademicYear;
+use App\Models\AttendanceCorrection;
+use App\Models\ClassSchedule;
+use App\Models\ExcuseSubmission;
+use App\Models\Section;
 use App\Models\User;
 use App\Models\Subject;
 use App\Models\Holiday;
@@ -10,6 +15,8 @@ use App\Models\Event;
 use App\Models\Announcement;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class AnalyticsService
 {
@@ -19,39 +26,16 @@ class AnalyticsService
     public function getAdminDashboardData(): array
     {
         // ── Core counts ──
-        $coreCounts = \Illuminate\Support\Facades\Cache::remember('admin_core_counts', 300, function () {
-            return [
-                'students' => User::where('role', 'student')->count(),
-                'teachers' => User::where('role', 'teacher')->count(),
-            ];
-        });
+        ['students' => $totalStudents, 'teachers' => $totalTeachers] = $this->academicDirectoryCounts();
 
-        $totalStudents = $coreCounts['students'];
-        $totalTeachers = $coreCounts['teachers'];
+        $dailyAttendance = $this->dailyAttendance(7);
+        $todayStats = $dailyAttendance[6];
+        $yesterdayStats = $dailyAttendance[5];
 
-        // ── Today's stats ──
-        $todayStats = Attendance::selectRaw("status, COUNT(*) as total")
-            ->where('date', today()->toDateString())
-            ->groupBy('status')
-            ->pluck('total', 'status');
-
-        $totalPresent  = $todayStats->get('Present', 0);
-        $totalLate     = $todayStats->get('Late', 0);
-        $totalAbsent   = $todayStats->get('Absent', 0);
-        $totalToday    = $totalPresent + $totalLate + $totalAbsent;
-        $attendanceRate = $totalToday > 0 ? round((($totalPresent + $totalLate) / $totalToday) * 100) : 0;
-
-        // ── Yesterday's stats (for trend comparison) ──
-        $yesterdayStats = Attendance::selectRaw("status, COUNT(*) as total")
-            ->where('date', today()->subDay()->toDateString())
-            ->groupBy('status')
-            ->pluck('total', 'status');
-
-        $yesterdayPresent = $yesterdayStats->get('Present', 0);
-        $yesterdayLate    = $yesterdayStats->get('Late', 0);
-        $yesterdayAbsent  = $yesterdayStats->get('Absent', 0);
-        $yesterdayTotal   = $yesterdayPresent + $yesterdayLate + $yesterdayAbsent;
-        $yesterdayRate    = $yesterdayTotal > 0 ? round((($yesterdayPresent + $yesterdayLate) / $yesterdayTotal) * 100) : 0;
+        ['present' => $totalPresent, 'late' => $totalLate, 'absent' => $totalAbsent, 'rate' => $attendanceRate] = $todayStats;
+        ['present' => $yesterdayPresent, 'late' => $yesterdayLate, 'absent' => $yesterdayAbsent, 'rate' => $yesterdayRate] = $yesterdayStats;
+        $attendanceRate ??= 0;
+        $yesterdayRate ??= 0;
 
         // ── Active attendance sessions (batch-optimized, zero N+1) ──
         $todayStr = today()->toDateString();
@@ -113,7 +97,12 @@ class AnalyticsService
         })->filter();
 
         // ── System alerts ──
-        $pendingExcuses = \App\Models\ExcuseSubmission::where('status', 'pending')->count();
+        $pendingExcuses = ExcuseSubmission::where('status', 'pending')->count();
+        $pendingCorrections = AttendanceCorrection::where('status', 'pending')->count();
+        $pendingRegistrations = User::where('role', 'student')
+            ->where('student_registration_pending', true)
+            ->where(fn ($query) => $query->whereNull('is_active')->orWhere('is_active', true))
+            ->count();
         $expiredSessions = \App\Models\AttendanceSession::where('active', true)
             ->where('session_ends_at', '<', now())
             ->count();
@@ -137,8 +126,71 @@ class AnalyticsService
             'totalStudents', 'totalTeachers',
             'totalPresent', 'totalLate', 'totalAbsent', 'attendanceRate',
             'yesterdayPresent', 'yesterdayLate', 'yesterdayAbsent', 'yesterdayRate',
-            'activeSessions', 'activeSessionCount', 'atRiskStudents', 'systemAlerts'
+            'activeSessions', 'activeSessionCount', 'atRiskStudents', 'systemAlerts',
+            'dailyAttendance', 'pendingExcuses', 'pendingCorrections', 'pendingRegistrations'
         );
+    }
+
+    public function getAcademicOverviewData(): array
+    {
+        $directoryCounts = $this->academicDirectoryCounts();
+        $term = AcademicYear::current();
+        $sectionCount = Section::count();
+        $scheduledClasses = ClassSchedule::query()
+            ->whereHas('subject')
+            ->whereHas('section')
+            ->select('subject_id', 'section_id')
+            ->distinct();
+        $activeClassCount = DB::query()->fromSub($scheduledClasses, 'scheduled_classes')->count();
+
+        $recentSchedules = ClassSchedule::query()
+            ->whereHas('subject')
+            ->whereHas('section')
+            ->with(['subject:id,code,name', 'section:id,name'])
+            ->latest('updated_at')->orderByDesc('id')->limit(5)->get();
+
+        $dailyAttendance = collect($this->dailyAttendance(30));
+        $recorded = $dailyAttendance->sum('recorded');
+        $checkedIn = $dailyAttendance->sum('present') + $dailyAttendance->sum('late');
+        $attendanceSummary = [
+            'rate' => $recorded ? (int) round(100 * $checkedIn / $recorded) : null,
+            'recorded' => $recorded,
+            'absent' => $dailyAttendance->sum('absent'),
+        ];
+
+        return compact('directoryCounts', 'term', 'sectionCount', 'activeClassCount', 'recentSchedules', 'attendanceSummary');
+    }
+
+    private function academicDirectoryCounts(): array
+    {
+        return Cache::remember('admin_core_counts', 300, fn () => [
+            'students' => User::where('role', 'student')->count(),
+            'teachers' => User::where('role', 'teacher')->count(),
+        ]);
+    }
+
+    private function dailyAttendance(int $days): array
+    {
+        $today = today()->toImmutable();
+        $start = $today->subDays($days - 1);
+        $rows = Attendance::query()
+            ->whereBetween('date', [$start->toDateString(), $today->toDateString()])
+            ->whereIn('status', ['Present', 'Late', 'Absent'])
+            ->selectRaw('date, status, COUNT(*) as total')
+            ->groupBy('date', 'status')
+            ->toBase()->get()->groupBy('date');
+
+        return array_map(static function (int $offset) use ($start, $rows) {
+            $date = $start->addDays($offset);
+            $counts = $rows->get($date->toDateString(), collect())->pluck('total', 'status');
+            $present = (int) $counts->get('Present', 0);
+            $late = (int) $counts->get('Late', 0);
+            $absent = (int) $counts->get('Absent', 0);
+            $recorded = $present + $late + $absent;
+            $rate = $recorded ? (int) round(100 * ($present + $late) / $recorded) : null;
+
+            return compact('date', 'present', 'late', 'absent', 'recorded', 'rate');
+        }, range(0, $days - 1));
     }
 
     /**

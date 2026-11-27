@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'System Settings')
+@section('page-title', 'System settings')
 
 @section('content')
 <div class="admin-settings-page">
-<div class="admin-settings-header">
+<div class="admin-settings-header admin-section-masthead">
     <div>
-        <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Settings</h1>
+        <h1>System settings</h1>
         <p class="saas-text-muted" style="margin:0;">Open a category to change its settings. Save changes applies all categories.</p>
     </div>
 

@@ -8,41 +8,39 @@
 @php
     $attendanceExportFilters = $tab === 'summary' ? request()->only(['date', 'subject']) : request()->except(['tab', 'page']);
 @endphp
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 admin-page-heading">
+<header class="admin-section-masthead">
     <div>
-        <h1 class="saas-heading saas-heading-lg mb-1">Attendance Records</h1>
-        <p class="saas-text-muted m-0">Find a class or student, review their attendance, and download records.</p>
+        <h1>Attendance records</h1>
+        <p>Find a class or student, review their attendance, and download records.</p>
     </div>
 
-    <div class="d-flex flex-wrap gap-2 admin-page-actions">
+    <div class="admin-page-actions attendance-actions">
         @if(Auth::user()->admin_sub_role !== 'data_entry')
-        <a href="{{ route('admin.activity.log') }}" class="btn btn-outline" style="border-color: rgba(96, 165, 250, 0.3); color: #60a5fa;">
-            <i class="bi bi-shield-lock"></i> Audit Trail
+        <a href="{{ route('admin.activity.log') }}" class="saas-btn saas-btn-secondary">
+            <i class="bi bi-shield-lock" aria-hidden="true"></i> Audit trail
         </a>
         @endif
-        <a href="{{ route('admin.attendance.export', $attendanceExportFilters) }}" class="btn btn-outline" style="border-color: rgba(74, 222, 128, 0.3); color: #4ade80;">
-            <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
-        </a>
-        <a href="{{ route('admin.attendance.xlsx', $attendanceExportFilters) }}" class="btn btn-outline">
-            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Export Excel
-        </a>
-        <a href="{{ route('admin.attendance.preview', $attendanceExportFilters) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
-            <i class="bi bi-file-earmark-pdf"></i> Export PDF
-        </a>
+        <details class="admin-action-menu">
+            <summary><i class="bi bi-download" aria-hidden="true"></i> Export <i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+            <div class="admin-action-menu-items">
+                <a href="{{ route('admin.attendance.export', $attendanceExportFilters) }}" class="btn"><i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i> CSV</a>
+                <a href="{{ route('admin.attendance.xlsx', $attendanceExportFilters) }}" class="btn"><i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Excel</a>
+                <a href="{{ route('admin.attendance.preview', $attendanceExportFilters) }}" class="btn"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> PDF preview</a>
+            </div>
+        </details>
     </div>
-</div>
+</header>
 
-<!-- Tabs: Class Summaries vs Individual Student Records -->
-<div class="admin-view-tabs">
+<nav class="admin-view-tabs attendance-view-tabs" aria-label="Attendance views">
     <a href="{{ route('admin.attendance', array_merge(request()->except('page'), ['tab' => 'summary'])) }}"
-       style="padding:8px 18px; border-radius:10px; font-weight:700; font-size:0.9rem; text-decoration:none; transition:all 0.2s; {{ $tab === 'summary' ? 'background:#cfa46f; color:#141010;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
-        <i class="bi bi-grid-3x3-gap-fill me-1"></i> Class Summaries
+       @if($tab === 'summary') aria-current="page" @endif>
+        <i class="bi bi-grid-3x3-gap-fill" aria-hidden="true"></i> Class summaries
     </a>
     <a href="{{ route('admin.attendance', array_merge(request()->except('page'), ['tab' => 'records'])) }}"
-       style="padding:8px 18px; border-radius:10px; font-weight:700; font-size:0.9rem; text-decoration:none; transition:all 0.2s; {{ $tab === 'records' ? 'background:#cfa46f; color:#141010;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
-        <i class="bi bi-person-lines-fill me-1"></i> Individual Student Records
+       @if($tab === 'records') aria-current="page" @endif>
+        <i class="bi bi-person-lines-fill" aria-hidden="true"></i> Individual student records
     </a>
-</div>
+</nav>
 
 <x-card title="{{ $tab === 'records' ? 'Student Attendance Logs' : 'Class & Subject Summaries' }}" icon="bi bi-clipboard-check">
     <x-slot name="headerActions">

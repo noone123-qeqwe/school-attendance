@@ -1,204 +1,168 @@
 @extends('layouts.app')
 
-@section('title', 'Admin Dashboard')
+@section('page-title', 'Dashboard')
 
 @section('content')
+    @php
+        $isAuditor = auth()->user()->admin_sub_role === 'auditor';
+        $today = $dailyAttendance[6];
+        $yesterday = $dailyAttendance[5];
+        $rateDifference = $today['rate'] !== null && $yesterday['rate'] !== null
+            ? $today['rate'] - $yesterday['rate']
+            : null;
+        $reviewQueue = [
+            ['Excuse reviews', route('admin.excuses'), $pendingExcuses, 'bi-file-earmark-text'],
+            ['Attendance corrections', route('admin.corrections'), $pendingCorrections, 'bi-pencil-square'],
+        ];
+        if (!$isAuditor) {
+            array_unshift($reviewQueue, ['Student registrations', route('admin.students', ['status' => 'pending']), $pendingRegistrations, 'bi-person-check']);
+        }
+    @endphp
 
-@php
-    $presentDiff = $totalPresent - $yesterdayPresent;
-    $rateDiff = $attendanceRate - $yesterdayRate;
-@endphp
+    <header class="admin-section-masthead">
+        <div>
+            <time class="admin-date" datetime="{{ $today['date']->toDateString() }}">{{ $today['date']->format('l, F j') }}</time>
+            <h1>School operations</h1>
+            <p>Track attendance, review pending work, and see what’s happening at school.</p>
+        </div>
+        <a href="{{ route('admin.academic.overview') }}" class="saas-btn saas-btn-primary">
+            <i class="bi bi-mortarboard" aria-hidden="true"></i> Academic Management
+        </a>
+    </header>
 
-<header class="admin-home-heading">
-    <div>
-        <p class="admin-eyebrow">{{ now()->format('l, F j') }}</p>
-        <h1>School overview</h1>
-        <p>Start with a task, or check today's attendance below.</p>
-    </div>
-    <a href="{{ route('admin.reports') }}" class="saas-btn saas-btn-secondary"><i class="bi bi-bar-chart" aria-hidden="true"></i> View reports</a>
-</header>
+    <dl class="admin-metrics" aria-label="Today’s attendance and activity">
+        <div>
+            <dt>Attendance rate</dt>
+            <dd>
+                {{ $today['rate'] === null ? '—' : $today['rate'].'%' }}
+                @if($rateDifference !== null)
+                    <small>{{ sprintf('%+d', $rateDifference) }} percentage points vs yesterday</small>
+                @elseif($today['rate'] === null)
+                    <small>No attendance recorded today</small>
+                @endif
+            </dd>
+        </div>
+        <div><dt>Present today</dt><dd>{{ number_format($totalPresent) }} <small>{{ number_format($totalLate) }} late</small></dd></div>
+        <div><dt>Absent today</dt><dd>{{ number_format($totalAbsent) }}</dd></div>
+        <div><dt>Live QR sessions</dt><dd>{{ number_format($activeSessionCount) }}</dd></div>
+    </dl>
 
+    @if($systemAlerts->contains('severity', 'critical'))
+        <div class="admin-dashboard-alerts" role="status">
+            @foreach($systemAlerts->where('severity', 'critical') as $alert)
+                <div class="alert-card critical">
+                    <i class="bi {{ $alert->icon }}" aria-hidden="true"></i>
+                    <span>{{ $alert->message }}</span>
+                </div>
+            @endforeach
+        </div>
+    @endif
 
-{{-- Important system messages stay near the top so they are not lost below dashboard cards. --}}
-@if($systemAlerts->count() > 0)
-<div class="admin-dashboard-alerts" aria-live="polite">
-    @foreach($systemAlerts as $alert)
-    <div class="alert-card {{ $alert->severity }}">
-        <div class="alert-icon"><i class="bi {{ $alert->icon }}" aria-hidden="true"></i></div>
-        <div class="alert-message">{{ $alert->message }}</div>
-        @if($alert->action)
-            <a href="{{ $alert->action }}" class="alert-action">View <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-        @endif
-    </div>
-    @endforeach
-</div>
-@endif
-
-<section aria-labelledby="adminTodayTitle" class="admin-home-section">
-    <div class="admin-section-title-row">
-        <h2 id="adminTodayTitle">Today at a glance</h2>
-        <span class="admin-secondary-text">{{ $totalLate }} late · {{ $totalAbsent }} absent</span>
-    </div>
-    <div class="admin-dashboard-kpis">
-        <x-kpi-card label="Students" :value="$totalStudents" icon="bi-people" accent="gold" />
-        <x-kpi-card label="Teachers" :value="$totalTeachers" icon="bi-person-badge" accent="info" />
-        <x-kpi-card label="Present today" :value="$totalPresent" icon="bi-check-circle" accent="success"
-            :delta="($presentDiff >= 0 ? '+'.$presentDiff : (string)$presentDiff)"
-            :deltaType="$presentDiff >= 0 ? 'positive' : 'negative'" deltaText="vs yesterday" />
-        <x-kpi-card label="Attendance rate" :value="$attendanceRate . '%'" icon="bi-percent" accent="gold"
-            :delta="($rateDiff >= 0 ? '+'.$rateDiff : (string)$rateDiff) . '%'"
-            :deltaType="$rateDiff >= 0 ? 'positive' : 'negative'" deltaText="vs yesterday" />
-    </div>
-</section>
-
-<section aria-labelledby="adminTasksTitle" class="admin-home-section">
-    <h2 id="adminTasksTitle">Quick actions</h2>
-    <div class="admin-task-grid">
-        @foreach([
-            ['Students', 'Find students and review registrations.', 'admin.students', 'bi-people'],
-            ['Schedules', 'Manage sections, teachers and timetables.', 'admin.class-schedules.index', 'bi-calendar3'],
-            ['Attendance', 'Find and review attendance.', 'admin.attendance', 'bi-clipboard-check'],
-            ['School calendar', 'See holidays and school dates.', 'admin.calendar', 'bi-calendar-event'],
-        ] as [$label, $description, $destination, $icon])
-            <a href="{{ route($destination) }}" class="admin-task-card">
-                <span class="admin-task-icon"><i class="bi {{ $icon }}" aria-hidden="true"></i></span>
-                <span><strong>{{ $label }}</strong><small>{{ $description }}</small></span>
-                <i class="bi bi-arrow-right" aria-hidden="true"></i>
-            </a>
-        @endforeach
-    </div>
-</section>
-
-<section aria-labelledby="adminReviewTitle" class="admin-home-section">
-    <h2 id="adminReviewTitle">{{ Auth::user()->admin_sub_role === 'auditor' ? 'Attendance review' : 'Needs attention' }}</h2>
-    <div class="admin-review-links">
-        @unless(Auth::user()->admin_sub_role === 'auditor')
-            <a href="{{ route('admin.students', ['status' => 'pending']) }}"><i class="bi bi-person-check" aria-hidden="true"></i> Student registrations <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-        @endunless
-        <a href="{{ route('admin.excuses') }}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Excuse reviews <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-        <a href="{{ route('admin.corrections') }}"><i class="bi bi-pencil-square" aria-hidden="true"></i> Attendance corrections <i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-    </div>
-</section>
-
-{{-- ─── LIVE ATTENDANCE QR SESSIONS ─── --}}
-<div class="admin-dashboard-panels">
-<div class="dash-animate admin-dashboard-panel">
-    <x-card type="section" class="adm-card" style="min-width:0;" aria-live="polite">
-        <x-slot:title>
-            <div class="ent-section-title-icon" style="background:rgba(74,222,128,0.12);color:var(--ent-success);">
-                <i class="bi bi-broadcast"></i>
-            </div>
-            Live QR Sessions
-            @if($activeSessionCount > 0)
-                <span class="ent-badge ent-badge-success" id="activeSessionBadge">{{ $activeSessionCount }} active</span>
+    <div class="admin-overview-grid">
+        <section class="admin-panel" aria-labelledby="attendanceTrendTitle">
+            <header class="admin-panel-heading">
+                <div>
+                    <h2 id="attendanceTrendTitle">Attendance trend</h2>
+                    <p>Past seven days · Present or late as a share of recorded results</p>
+                </div>
+                <a href="{{ route('admin.reports') }}" class="admin-panel-link">Reports <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            </header>
+            @if(collect($dailyAttendance)->sum('recorded') === 0)
+                <p class="admin-empty-state">No present, late, or absent records were logged in the past seven days.</p>
+            @else
+                <ol class="admin-attendance-trend" aria-label="Daily attendance rates">
+                    @foreach($dailyAttendance as $day)
+                        <li @class(['is-today' => $loop->last])>
+                            <span class="admin-trend-value" @if($day['rate'] === null) aria-label="No records" @endif>{{ $day['rate'] === null ? '—' : $day['rate'].'%' }}</span>
+                            <span class="admin-trend-track" aria-hidden="true"><span style="--attendance-rate: {{ $day['rate'] ?? 0 }}%"></span></span>
+                            <time datetime="{{ $day['date']->toDateString() }}" aria-label="{{ $day['date']->format('l, F j') }}">{{ $day['date']->format('D') }}</time>
+                        </li>
+                    @endforeach
+                </ol>
             @endif
-        </x-slot:title>
+        </section>
 
-        <div class="table-responsive" style="margin: -20px; padding: 12px 20px;">
-            <table class="adm-table" style="margin-bottom: 0; width: 100%;">
-                <thead>
-                    <tr>
-                        <th style="width: 50%; text-align: left;">Subject & Teacher</th>
-                        <th style="width: 25%; text-align: center;">Checked In</th>
-                        <th style="width: 25%; text-align: right;">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($activeSessions->take(5) as $session)
-                    <tr>
-                        <td data-label="Subject" style="text-align: left;">
-                            <div style="font-weight:600;font-size:0.82rem;">{{ $session->subject?->name ?? $session->subject_code }}</div>
-                            <div class="ent-text-muted" style="font-size:0.72rem;">{{ $session->creator?->name ?? 'Unknown' }}</div>
-                        </td>
-                        <td data-label="Checked In" style="text-align: center;">
-                            <span class="ent-badge ent-badge-neutral">{{ $session->checked_in_count }}</span>
-                        </td>
-                        <td data-label="Status" style="text-align: right;">
-                            <span class="session-status-badge active" style="margin-left: auto;">
-                                <span class="pulse-dot active"></span>
-                                {{ $session->qr_status }}
-                            </span>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="3">
-                            <div class="ent-empty" style="padding:32px 16px; border: none;">
-                                <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;">
-                                    <i class="bi bi-qr-code"></i>
-                                </div>
-                                <div class="ent-empty-text">No active QR sessions right now.</div>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </x-card>
-</div>
+        <section class="admin-panel" aria-labelledby="adminReviewTitle">
+            <header class="admin-panel-heading">
+                <div>
+                    <h2 id="adminReviewTitle">{{ $isAuditor ? 'Attendance review' : 'Needs attention' }}</h2>
+                    <p>Items awaiting review</p>
+                </div>
+            </header>
+            <ul class="admin-queue">
+                @foreach($reviewQueue as [$label, $url, $count, $icon])
+                    <li>
+                        <a href="{{ $url }}">
+                            <i class="bi {{ $icon }}" aria-hidden="true"></i>
+                            <span>{{ $label }}</span>
+                            <strong @class(['has-pending' => $count > 0]) aria-label="{{ $count }} pending">{{ number_format($count) }}</strong>
+                            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </section>
 
-{{-- ─── AT-RISK STUDENTS ─── --}}
-<div class="dash-animate admin-dashboard-panel" id="at-risk-section">
-    <x-card type="section" class="adm-card" style="min-width:0;">
-        <x-slot:title>
-            <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:var(--ent-danger);">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-            </div>
-            At-Risk Students
-        </x-slot:title>
-        <x-slot:headerActions>
-            <a href="{{ route('admin.early-warnings') }}" class="ent-btn ent-btn-xs ent-btn-ghost">View all warnings <i class="bi bi-arrow-right"></i></a>
-        </x-slot:headerActions>
+        <section class="admin-panel" aria-labelledby="adminLiveSessionsTitle">
+            <header class="admin-panel-heading">
+                <h2 id="adminLiveSessionsTitle">Live QR sessions</h2>
+                <a href="{{ route('admin.attendance') }}" class="admin-panel-link">Attendance <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            </header>
+            @if($activeSessions->isEmpty())
+                <p class="admin-empty-state">No QR sessions are open right now.</p>
+            @else
+                @if($activeSessionCount > 5)
+                    <p class="admin-panel-note">Showing the five most recent of {{ $activeSessionCount }} sessions.</p>
+                @endif
+                <ul class="admin-data-list">
+                    @foreach($activeSessions->take(5) as $session)
+                        <li>
+                            <span><strong>{{ $session->subject?->name ?? $session->subject_code }}</strong><small>{{ $session->creator?->name ?? 'Unknown teacher' }}</small></span>
+                            <span class="admin-list-detail">{{ $session->checked_in_count }} checked in <small>{{ $session->qr_status }}</small></span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </section>
 
-        <div class="table-responsive" style="margin: -20px; padding: 12px 20px;">
-            <table class="adm-table" style="margin-bottom: 0; width: 100%;">
-                <thead>
-                    <tr>
-                        <th style="width: 42%; text-align: left;">Student</th>
-                        <th style="width: 28%; text-align: left;">Course</th>
-                        <th style="width: 15%; text-align: center;">Rate</th>
-                        <th style="width: 15%; text-align: right;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($atRiskStudents->take(5) as $student)
-                    <tr>
-                        <td data-label="Student" style="text-align: left;">
-                            <div style="display:flex;align-items:center;gap:10px;">
-                                <div class="ent-avatar ent-avatar-round" style="width:30px;height:30px;font-size:0.7rem;flex-shrink:0;">
-                                    <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : public_storage_url($student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff&size=30' }}" alt="">
-                                </div>
-                                <span class="ent-truncate" style="font-weight:600;font-size:0.82rem;color:#f3ede4;max-width:180px;">{{ $student->name }}</span>
-                            </div>
-                        </td>
-                        <td data-label="Course" style="text-align: left;"><span style="font-size:0.75rem;color:#b39b82;" class="ent-text-muted">{{ $student->course }}</span></td>
-                        <td data-label="Rate" style="text-align: center;">
-                            <span class="risk-badge {{ $student->attendance_rate >= 70 ? 'watch' : 'critical' }}">
-                                {{ $student->attendance_rate }}%
-                            </span>
-                        </td>
-                        <td data-label="Action" style="text-align: right;">
-                            <a href="{{ route('admin.student', $student->id) }}" class="ent-btn ent-btn-xs ent-btn-ghost">View</a>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="4">
-                            <div class="ent-empty" style="padding:32px 16px; border: none;">
-                                <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;background:rgba(74,222,128,0.08);color:var(--ent-success);">
-                                    <i class="bi bi-shield-check"></i>
-                                </div>
-                                <div class="ent-empty-text">No students with low attendance in the current results.</div>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </x-card>
-</div>
-</div>
+        <section class="admin-panel" id="at-risk-section" aria-labelledby="adminRiskTitle">
+            <header class="admin-panel-heading">
+                <h2 id="adminRiskTitle">Students with low attendance</h2>
+                <a href="{{ route('admin.early-warnings') }}" class="admin-panel-link">Warnings <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            </header>
+            @if($atRiskStudents->isEmpty())
+                <p class="admin-empty-state">No students with low attendance in the current results.</p>
+            @else
+                <ul class="admin-data-list">
+                    @foreach($atRiskStudents->take(5) as $student)
+                        <li>
+                            <span><a href="{{ route('admin.student', $student) }}">{{ $student->name }}</a><small>{{ $student->course }}</small></span>
+                            <span class="admin-risk {{ $student->attendance_rate < 70 ? 'is-critical' : '' }}">{{ $student->attendance_rate }}%</span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </section>
 
+        <section class="admin-panel admin-panel-wide" aria-labelledby="adminRecentTitle">
+            <header class="admin-panel-heading">
+                <h2 id="adminRecentTitle">Recent notifications</h2>
+                <a href="{{ route('admin.notifications') }}" class="admin-panel-link">All notifications <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            </header>
+            @if($recentNotifications->isEmpty())
+                <p class="admin-empty-state">You have no recent notifications.</p>
+            @else
+                <ul class="admin-data-list">
+                    @foreach($recentNotifications as $notification)
+                        <li>
+                            <span>{{ Str::limit(strip_tags($notification->message ?? ''), 180) }}</span>
+                            @if($notification->created_at)
+                                <time datetime="{{ $notification->created_at->toAtomString() }}">{{ $notification->created_at->diffForHumans() }}</time>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </section>
+    </div>
 @endsection

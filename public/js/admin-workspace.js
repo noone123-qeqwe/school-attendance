@@ -6,31 +6,22 @@
     document.querySelectorAll('[data-admin-navigation]').forEach(nav => {
         const search = nav.querySelector('[data-admin-nav-search]');
         const groups = [...nav.querySelectorAll('[data-admin-nav-group]')];
-        let previousOpen = null;
         search?.addEventListener('input', () => {
             const query = search.value.trim().toLocaleLowerCase();
-            if (query && !previousOpen) previousOpen = groups.map(group => group.open);
             let total = 0;
-            groups.forEach((group, index) => {
+            groups.forEach(group => {
                 let count = 0;
                 group.querySelectorAll('[data-admin-nav-link]').forEach(link => {
                     const terms = `${link.textContent} ${link.dataset.adminNavKeywords || ''}`.toLocaleLowerCase();
                     const matches = !query || terms.includes(query);
-                    link.hidden = !matches;
+                    link.closest('[data-admin-nav-entry]').hidden = !matches;
                     if (matches) count++;
                 });
                 group.hidden = count === 0;
-                if (query) group.open = count > 0;
-                else if (previousOpen) group.open = previousOpen[index];
                 total += count;
             });
             nav.querySelector('[data-admin-nav-empty]').hidden = total > 0;
-            if (!query) previousOpen = null;
         });
-        groups.forEach(group => group.addEventListener('toggle', () => {
-            if (!group.open || search?.value.trim()) return;
-            groups.forEach(other => { if (other !== group) other.open = false; });
-        }));
         if (nav.closest('#moreSheet')) {
             nav.addEventListener('click', event => {
                 if (event.target.closest('a[href]')) window.closeMoreSheet?.();
@@ -38,7 +29,14 @@
         }
     });
 
-    const actionMenus = [...document.querySelectorAll('.admin-action-menu, [data-admin-section-switcher]')];
+    document.querySelectorAll('.academic-tools').forEach(nav => {
+        const selected = nav.querySelector('[aria-current]');
+        if (!selected || nav.scrollWidth <= nav.clientWidth) return;
+        const clipped = selected.getBoundingClientRect().right - nav.getBoundingClientRect().right;
+        if (clipped > 0) nav.scrollLeft += clipped + 12;
+    });
+
+    const actionMenus = [...document.querySelectorAll('.admin-action-menu')];
     document.addEventListener('click', event => {
         actionMenus.forEach(menu => {
             if (!menu.contains(event.target) || event.target.closest('.admin-action-menu-items a, .admin-action-menu-items button')) menu.open = false;
