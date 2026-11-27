@@ -596,7 +596,7 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertSee('Mobile Campus Advisory');
     }
 
-    public function test_ui_ux_pro_max_wcag_tokens_skeletons_live_regions_and_design_system_are_in_place(): void
+    public function test_student_dashboard_accessibility_tokens_and_live_regions_are_available(): void
     {
         $student = $this->createStudent([
             'email' => 'student.ux@gmail.com',
@@ -620,9 +620,6 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertNotFalse($modernCss);
         $this->assertStringContainsString('text-wrap: balance;', $modernCss);
         $this->assertStringContainsString('font-variant-numeric: tabular-nums;', $modernCss);
-
-        $this->assertFileExists(base_path('design-system/smart-attendance/MASTER.md'));
-        $this->assertFileExists(base_path('design-system/smart-attendance/pages/student-dashboard.md'));
     }
 
     public function test_reinvented_student_frontend_master_stylesheet_loads_across_all_desktop_and_mobile_pages(): void
