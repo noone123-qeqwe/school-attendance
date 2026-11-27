@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    @include('partials.alert-banner-assets')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Attendance Check-in — Smart Attendance</title>
@@ -150,7 +151,7 @@
         </div>
 
         @if($errors->any())
-            <div class="alert alert-danger" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; border-radius: 12px; font-size: 0.85rem; padding: 10px 14px; margin-bottom: 20px;">
+            <div class="alert alert-danger" role="alert" data-alert-transient style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; border-radius: 12px; font-size: 0.85rem; padding: 10px 14px; margin-bottom: 20px;">
                 <i class="bi bi-exclamation-circle me-1"></i> {{ $errors->first() }}
             </div>
         @endif

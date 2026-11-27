@@ -112,7 +112,7 @@
     @endif
 
     @if(isset($activeWarnings) && $activeWarnings->count() > 0)
-    <section class="sd-warning-panel" role="region" aria-label="Attendance Warnings">
+    <section class="sd-warning-panel" role="region" aria-label="Attendance Warnings" @include('partials.student-warning-alert-attributes')>
         <div class="sd-warning-top">
             <div class="sd-warning-icon" aria-hidden="true">
                 <i class="bi bi-exclamation-triangle-fill"></i>
@@ -144,6 +144,8 @@
             </a>
         </div>
     </section>
+    @else
+    <span hidden data-alert-resolved="student-attendance-warnings"></span>
     @endif
 
     {{-- ── 3. Signature Asymmetric Hero Canvas (Stage + Telemetry) ─────────── --}}
@@ -529,7 +531,7 @@
 
             {{-- Campus & Class Announcements --}}
             @if(isset($announcements) && $announcements->isNotEmpty())
-            <section class="sd-panel" id="studentAnnouncementsSection" aria-labelledby="studentAnnouncementsHeading">
+            <section class="sd-panel" id="studentAnnouncementsSection" aria-labelledby="studentAnnouncementsHeading" data-alert-group>
                 <header class="sd-panel-head">
                     <div class="sd-panel-title-group">
                         <h2 id="studentAnnouncementsHeading" class="sd-panel-title">Campus &amp; Class Announcements</h2>
@@ -545,7 +547,10 @@
                             $annUrgent = \Illuminate\Support\Str::contains(strtolower((string) $announcement->title . ' ' . ($announcement->target_audience ?? '')), ['urgent', 'important', 'alert']);
                             $annCopyId = 'sdAnnouncementCopy' . $loop->index;
                         @endphp
-                        <article class="sd-ann-card {{ $annUrgent ? 'is-urgent' : '' }}">
+                        <article class="sd-ann-card {{ $annUrgent ? 'is-urgent' : '' }}" data-alert-banner
+                                 data-alert-key="student-announcement-{{ $announcement->id }}"
+                                 data-alert-version="{{ $announcement->updated_at?->format('U.u') }}"
+                                 data-alert-label="Dismiss announcement">
                             <div class="sd-ann-head">
                                 <h3 class="sd-ann-title">{{ $announcement->title }}</h3>
                                 <span class="sd-code-tag sd-mono">{{ $announcement->target_audience ?? 'All' }}</span>

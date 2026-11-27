@@ -227,7 +227,9 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertSee('Class section not assigned')
             ->assertSee('sd-notice-banner')
             ->assertSee('id="closeMissingSectionNoticeBtn"', false)
-            ->assertSee('aria-label="Close notice"', false)
+            ->assertSee('aria-label="Dismiss class section notice"', false)
+            ->assertSee('data-alert-key="missing-class-section"', false)
+            ->assertSee('js/alert-banners.js', false)
             ->assertSee('Free schedule today');
 
         $this->actingAs($student)
@@ -235,7 +237,9 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertOk()
             ->assertSee('Class section not assigned')
             ->assertSee('id="closeMissingSectionNoticeBtn"', false)
-            ->assertSee('aria-label="Close notice"', false);
+            ->assertSee('aria-label="Dismiss class section notice"', false)
+            ->assertSee('data-alert-key="missing-class-section"', false)
+            ->assertSee('js/alert-banners.js', false);
     }
 
     public function test_student_settings_replaces_app_sidebar_with_single_settings_sidebar(): void

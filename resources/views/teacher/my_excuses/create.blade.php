@@ -38,7 +38,7 @@
     @endif
 
     @if($subjects->isEmpty())
-        <div class="portal-banner is-warning" role="status">
+        <div class="portal-banner is-warning" role="status" data-alert-required>
             <div class="portal-banner-lead">
                 <span class="portal-banner-icon" aria-hidden="true"><i class="bi bi-journal-x"></i></span>
                 <div>

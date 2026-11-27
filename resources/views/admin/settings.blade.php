@@ -21,7 +21,7 @@
     <div class="alert alert-success" role="status">{{ session('success') }}</div>
 @endif
 @if($errors->any())
-    <div class="alert alert-danger" role="alert"><p>Check these settings before saving:</p><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+    <div class="alert alert-danger" role="alert" data-alert-required><p>Check these settings before saving:</p><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
 @endif
 
 <div class="admin-settings-layout">

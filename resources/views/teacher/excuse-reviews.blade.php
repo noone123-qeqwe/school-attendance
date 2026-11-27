@@ -309,7 +309,7 @@
 </style>
 
 @if(session('success'))
-<div class="alert-success">
+<div class="alert-success" role="status" data-alert-banner data-alert-transient>
     <i class="bi bi-check-circle-fill"></i><span>{{ session('success') }}</span>
 </div>
 @endif

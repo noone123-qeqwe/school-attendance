@@ -10,7 +10,7 @@
     $initialChangelog = $initialChangelog ?? app(\App\Services\ChangelogService::class)->getRelease((string) $latestVersion);
 @endphp
 <!-- Floating PWA Install Banner -->
-<div class="pwa-install-banner" id="pwaInstallBanner" style="display: none;">
+<div class="pwa-install-banner" id="pwaInstallBanner" style="display: none;" data-alert-controls>
     <div class="pwa-banner-icon">
         <img src="/images/icons/icon-72x72.png" alt="Smart Attendance">
     </div>
@@ -24,8 +24,10 @@
            style="display:none; background:linear-gradient(135deg,#22C55E 0%,#16A34A 100%); color:#fff; border:none; border-radius:10px; padding:9px 14px; font-size:0.82rem; font-weight:700; cursor:pointer; text-decoration:none; align-items:center; gap:5px; white-space:nowrap;">
             ⬇ APK
         </a>
-        <button type="button" class="pwa-btn-close" id="pwaBannerCloseBtn" aria-label="Dismiss">&times;</button>
     </div>
+    <button type="button" class="alert-dismiss-button" id="pwaBannerCloseBtn" aria-label="Dismiss install banner">
+        <span aria-hidden="true">&times;</span>
+    </button>
 </div>
 
 <!-- Universal PWA Install & Download Modal (Android, iOS & Desktop) -->
@@ -168,7 +170,7 @@
     <div class="pwa-update-accent-bar"></div>
     <div class="pwa-update-glow"></div>
     <div class="pwa-update-inner">
-        <div class="pwa-update-banner-header">
+        <div class="pwa-update-banner-header" data-alert-controls>
             <div class="pwa-update-icon-container">
                 <div class="pwa-update-icon-glow-ring"></div>
                 <img src="/images/icons/icon-72x72.png" class="pwa-update-app-icon" alt="Smart Attendance">
@@ -183,7 +185,9 @@
                 <div class="pwa-update-subtitle" id="pwaUpdateSubtitle">Improvements and fixes are ready to install.</div>
                 <span style="display:none;" aria-hidden="true">Update Ready Refresh Now</span>
             </div>
-            <button type="button" class="pwa-update-close-btn" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss">&times;</button>
+            <button type="button" class="alert-dismiss-button" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss update notice">
+                <span aria-hidden="true">&times;</span>
+            </button>
         </div>
         <div class="pwa-update-banner-actions">
             <button type="button" class="pwa-btn-update-later" id="pwaLaterUpdateBtn">Later</button>

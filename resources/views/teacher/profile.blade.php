@@ -427,7 +427,7 @@
                     </div>
                 </div>
                 <div class="ts-card-body">
-                    <div id="webauthnUnsupported" role="status" class="ts-flash ts-flash-err" style="display:none;">
+                    <div id="webauthnUnsupported" role="status" class="ts-flash ts-flash-err" style="display:none;" data-alert-required>
                         <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                         <div id="webauthnUnsupportedMsg">Passkey setup is unavailable on this device.</div>
                     </div>

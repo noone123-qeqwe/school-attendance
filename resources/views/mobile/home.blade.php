@@ -95,7 +95,7 @@
     ])
 
     @if(isset($activeWarnings) && $activeWarnings->count() > 0)
-    <section class="sd-warning-panel" role="region" aria-label="Attendance Warnings">
+    <section class="sd-warning-panel" role="region" aria-label="Attendance Warnings" @include('partials.student-warning-alert-attributes')>
         <div class="sd-warning-top">
             <div class="sd-warning-icon" aria-hidden="true"><i class="bi bi-exclamation-triangle-fill"></i></div>
             <div>
@@ -123,6 +123,8 @@
             </a>
         </div>
     </section>
+    @else
+    <span hidden data-alert-resolved="student-attendance-warnings"></span>
     @endif
 
     {{-- ── Hero Stage + Attendance Standing Telemetry ───────────────────── --}}
@@ -437,7 +439,7 @@
             @endif
 
             @if(isset($announcements) && $announcements->isNotEmpty())
-            <section class="sd-panel" aria-label="Campus Announcements">
+            <section class="sd-panel" aria-label="Campus Announcements" data-alert-group>
                 <header class="sd-panel-head">
                     <div class="sd-panel-title-group">
                         <h3 class="sd-panel-title">Announcements</h3>
@@ -446,7 +448,8 @@
                 </header>
                 <div class="sd-ann-stack">
                     @foreach($announcements as $announcement)
-                        <article class="sd-ann-card">
+                        <article class="sd-ann-card" data-alert-banner data-alert-key="student-announcement-{{ $announcement->id }}"
+                                 data-alert-version="{{ $announcement->updated_at?->format('U.u') }}" data-alert-label="Dismiss announcement">
                             <div class="sd-ann-head">
                                 <h4 class="sd-ann-title">{{ $announcement->title }}</h4>
                                 <span class="sd-code-tag sd-mono">{{ $announcement->target_audience ?? 'All' }}</span>

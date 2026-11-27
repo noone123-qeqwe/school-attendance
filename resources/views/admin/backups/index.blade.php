@@ -44,25 +44,23 @@
     </div>
 
     @if(session('success'))
-    <div class="hub-alert hub-alert-success">
+    <x-alert-banner class="hub-alert hub-alert-success" role="status" data-alert-transient>
         <div class="hub-alert-icon"><i class="bi bi-check-circle-fill"></i></div>
         <div class="hub-alert-content">
             <div class="hub-alert-title">Operation Successful</div>
             <div class="hub-alert-text">{{ session('success') }}</div>
         </div>
-        <button type="button" class="hub-alert-close" onclick="this.parentElement.remove()"><i class="bi bi-x"></i></button>
-    </div>
+    </x-alert-banner>
     @endif
 
     @if(session('error'))
-    <div class="hub-alert hub-alert-danger">
+    <x-alert-banner class="hub-alert hub-alert-danger" role="alert" data-alert-transient>
         <div class="hub-alert-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
         <div class="hub-alert-content">
             <div class="hub-alert-title">Attention Required</div>
             <div class="hub-alert-text">{{ session('error') }}</div>
         </div>
-        <button type="button" class="hub-alert-close" onclick="this.parentElement.remove()"><i class="bi bi-x"></i></button>
-    </div>
+    </x-alert-banner>
     @endif
 
     <!-- Quick Telemetry Strip -->
@@ -1039,18 +1037,6 @@
     opacity: 0.9;
 }
 
-.hub-alert-close {
-    background: transparent;
-    border: none;
-    color: inherit;
-    font-size: 1.3rem;
-    cursor: pointer;
-    opacity: 0.7;
-}
-
-.hub-alert-close:hover {
-    opacity: 1;
-}
 </style>
 
 <script @cspNonce>

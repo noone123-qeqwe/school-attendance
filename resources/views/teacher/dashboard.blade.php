@@ -65,40 +65,38 @@
     </header>
 
     {{-- ── 2. Contextual Alert Rail (Flashes, Live Echo & Pending Reviews) ── --}}
-    <div class="portal-alert-rail">
+    <div class="portal-alert-rail" data-alert-group>
         @if(session('error'))
-            <div class="portal-banner is-error" role="alert">
+            <x-alert-banner class="portal-banner is-error" role="alert" data-alert-transient>
                 <div class="portal-banner-lead">
                     <span class="portal-banner-icon" aria-hidden="true"><i class="bi bi-exclamation-circle-fill"></i></span>
                     <div><div class="portal-banner-title">{{ session('error') }}</div></div>
                 </div>
-            </div>
+            </x-alert-banner>
         @endif
 
         @if(session('success'))
-            <div class="portal-banner is-success" role="status">
+            <x-alert-banner class="portal-banner is-success" role="status" data-alert-transient>
                 <div class="portal-banner-lead">
                     <span class="portal-banner-icon" aria-hidden="true"><i class="bi bi-check-circle-fill"></i></span>
                     <div><div class="portal-banner-title">{{ session('success') }}</div></div>
                 </div>
-            </div>
+            </x-alert-banner>
         @endif
 
-        <div id="peerLiveNotice" class="portal-banner is-live portal-banner-dismissible" role="status" aria-live="polite" hidden>
+        <x-alert-banner id="peerLiveNotice" class="portal-banner is-live" role="status" alert-key="peer-live-attendance"
+                        dismiss-label="Dismiss live attendance notification" hidden>
             <span class="portal-banner-message" data-banner-message></span>
-            <button type="button" class="portal-banner-close" data-banner-dismiss="peerLiveNotice" aria-label="Dismiss live notification" title="Close">
-                <i class="bi bi-x-lg" aria-hidden="true"></i>
-            </button>
-        </div>
-        <div id="peerLiveConnection" class="portal-banner is-info portal-banner-dismissible" role="status" hidden>
+        </x-alert-banner>
+        <x-alert-banner id="peerLiveConnection" class="portal-banner is-info" role="status" alert-key="peer-live-connection"
+                        version="disconnected" dismiss-label="Dismiss live updates notice" hidden>
             <span class="portal-banner-message" data-banner-message></span>
-            <button type="button" class="portal-banner-close" data-banner-dismiss="peerLiveConnection" aria-label="Dismiss live updates notice" title="Close">
-                <i class="bi bi-x-lg" aria-hidden="true"></i>
-            </button>
-        </div>
+        </x-alert-banner>
+        <span id="peerLiveConnectionResolved" hidden></span>
 
         @if(isset($pendingExcuses) && $pendingExcuses > 0)
-            <div class="portal-banner is-warning" role="region" aria-label="Pending excuse reviews">
+            <x-alert-banner class="portal-banner is-warning" role="region" aria-label="Pending excuse reviews"
+                            alert-key="teacher-pending-excuses" :version="$pendingExcuses">
                 <div class="portal-banner-lead">
                     <span class="portal-banner-icon" aria-hidden="true"><i class="bi bi-file-earmark-text-fill"></i></span>
                     <div>
@@ -109,7 +107,9 @@
                 <a href="{{ route('teacher.excuse.reviews') }}" class="portal-banner-btn">
                     Review Excuses <i class="bi bi-arrow-right" aria-hidden="true"></i>
                 </a>
-            </div>
+            </x-alert-banner>
+        @else
+            <span hidden data-alert-resolved="teacher-pending-excuses"></span>
         @endif
     </div>
 
@@ -285,35 +285,20 @@
 // Peer verification events update this dashboard without a page reload.
 (function subscribeToPeerAttendance() {
     let attempts = 0;
-    let connectionDismissed = false;
     const status = document.getElementById('peerLiveConnection');
+    const connectionResolved = document.getElementById('peerLiveConnectionResolved');
     const seen = new Set();
     function setBannerMessage(bannerEl, message) {
         if (!bannerEl) return;
         const messageEl = bannerEl.querySelector('[data-banner-message]') || bannerEl;
         messageEl.textContent = message || '';
     }
-    document.querySelectorAll('[data-banner-dismiss]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetId = btn.getAttribute('data-banner-dismiss');
-            const banner = targetId ? document.getElementById(targetId) : btn.closest('.portal-banner');
-            if (!banner) return;
-            if (banner === status) {
-                connectionDismissed = true;
-            }
-            banner.hidden = true;
-        });
-    });
     function setConnectionMessage(message) {
         if (!status) return;
-        if (!message) {
-            connectionDismissed = false;
-            setBannerMessage(status, '');
-            status.hidden = true;
-            return;
-        }
         setBannerMessage(status, message);
-        status.hidden = connectionDismissed;
+        status.hidden = !message;
+        if (message) connectionResolved?.removeAttribute('data-alert-resolved');
+        else connectionResolved?.setAttribute('data-alert-resolved', status.dataset.alertKey);
     }
     function connectionMessageFor(state) {
         if (state === 'connected') return '';
@@ -337,6 +322,7 @@
                 seen.add(payload.attendance_id);
                 const notice = document.getElementById('peerLiveNotice');
                 if (notice) {
+                    notice.dataset.alertVersion = payload.attendance_id;
                     setBannerMessage(notice, `${payload.student_name} checked in by Peer Biometric for ${payload.subject_code}. Vouched by ${payload.voucher_student_name}.`);
                     notice.hidden = false;
                 }

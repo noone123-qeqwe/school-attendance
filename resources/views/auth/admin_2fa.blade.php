@@ -144,7 +144,7 @@
 
         @isset($emailError)
         @if($emailError)
-        <div class="alert-err"><i class="bi bi-envelope-x me-2"></i>{{ $emailError }}</div>
+        <div class="alert-err" data-alert-required><i class="bi bi-envelope-x me-2"></i>{{ $emailError }}</div>
         @endif
         @else
         @if(session('info'))
@@ -152,7 +152,7 @@
         @endif
         @endisset
         @if($errors->any())
-        <div class="alert-err"><i class="bi bi-exclamation-circle me-2"></i>{{ $errors->first() }}</div>
+        <div class="alert-err" data-alert-required><i class="bi bi-exclamation-circle me-2"></i>{{ $errors->first() }}</div>
         @endif
         
         <div id="resendAlert" class="alert-info" style="display: none;"></div>

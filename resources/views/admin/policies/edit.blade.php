@@ -153,17 +153,15 @@
 
 <div class="container-fluid px-4 py-3">
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" style="background:rgba(34,197,94,0.18); border-color:rgba(34,197,94,0.4); color:#86efac; border-radius:14px;" role="alert">
+        <x-alert-banner class="alert alert-success" style="background:rgba(34,197,94,0.18); border-color:rgba(34,197,94,0.4); color:#86efac; border-radius:14px;" role="status" data-alert-transient>
             <i class="bi bi-check-circle-fill me-2"></i> {{ session('success') }}
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+        </x-alert-banner>
     @endif
 
     @if($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show" style="background:rgba(239,68,68,0.18); border-color:rgba(239,68,68,0.4); color:#fca5a5; border-radius:14px;" role="alert">
+        <x-alert-banner class="alert alert-danger" style="background:rgba(239,68,68,0.18); border-color:rgba(239,68,68,0.4); color:#fca5a5; border-radius:14px;" role="alert" data-alert-transient>
             <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ $errors->first() }}
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+        </x-alert-banner>
     @endif
 
     <div class="policy-admin-card">

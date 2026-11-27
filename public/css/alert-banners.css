@@ -1,0 +1,61 @@
+[data-alert-enhanced].alert-with-relative-position {
+    position: relative;
+}
+
+[data-alert-enhanced] {
+    min-block-size: 44px;
+}
+
+.alert-dismiss-button {
+    display: none;
+}
+
+:is([data-alert-enhanced], [data-alert-controls]) > .alert-dismiss-button {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0.25rem;
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 0.5rem;
+    color: inherit;
+    background: transparent;
+    font: 400 1.375rem/1 system-ui, sans-serif;
+    cursor: pointer;
+    transition: background-color 140ms ease;
+}
+
+:is([data-alert-enhanced], [data-alert-controls]) > .alert-dismiss-button:is(:hover, :focus-visible) {
+    background-color: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+:is([data-alert-enhanced], [data-alert-controls]) > .alert-dismiss-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -3px;
+}
+
+[data-alert-closing] {
+    overflow: hidden !important;
+}
+
+/* These properties must also win against existing portal utility styles. */
+@layer alert-banner-overrides {
+    [data-alert-enhanced] {
+        padding-inline-end: 3.5rem !important;
+    }
+
+    [data-alert-enhanced][hidden],
+    [data-alert-dismissed],
+    [data-alert-group]:not(:has([data-alert-banner]:not([hidden], [data-alert-dismissed]))) {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .alert-dismiss-button {
+        transition: none;
+    }
+}

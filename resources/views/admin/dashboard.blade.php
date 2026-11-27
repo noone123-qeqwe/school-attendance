@@ -18,10 +18,10 @@
 
     @if($expiredSessions > 0)
         <div class="admin-dashboard-alerts" role="status">
-            <div class="alert-card critical">
+            <x-alert-banner class="alert-card critical" :required="true">
                 <i class="bi bi-exclamation-octagon-fill" aria-hidden="true"></i>
                 <span>{{ $expiredSessions }} QR session(s) have expired but are still marked active.</span>
-            </div>
+            </x-alert-banner>
         </div>
     @endif
 

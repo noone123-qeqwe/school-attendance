@@ -884,6 +884,11 @@ function renderStatusAlert(variantClass, iconClass, iconColor, titleIconClass, t
 
     const alertBox = document.createElement('div');
     alertBox.className = `qr-alert ${variantClass}`;
+    // A blocked start needs to show the reason until the teacher can take action.
+    if (variantClass === 'qr-alert-success' || variantClass === 'qr-alert-info') {
+        alertBox.setAttribute('data-alert-banner', '');
+        alertBox.setAttribute('role', 'status');
+    }
 
     const leadIcon = document.createElement('i');
     leadIcon.className = `bi ${iconClass} mb-2`;

@@ -131,8 +131,10 @@ class TeacherPortalRedesignTest extends TestCase
         // Preserved real-time Echo DOM hooks
         $this->assertStringContainsString('id="peerLiveNotice"', $html);
         $this->assertStringContainsString('id="peerLiveConnection"', $html);
-        $this->assertStringContainsString('data-banner-dismiss="peerLiveConnection"', $html);
-        $this->assertStringContainsString('data-banner-dismiss="peerLiveNotice"', $html);
+        $this->assertStringContainsString('data-alert-key="peer-live-connection"', $html);
+        $this->assertStringContainsString('data-alert-key="peer-live-attendance"', $html);
+        $this->assertStringContainsString('aria-label="Dismiss live updates notice"', $html);
+        $this->assertStringContainsString('aria-label="Dismiss live attendance notification"', $html);
         $this->assertStringContainsString('data-banner-message', $html);
 
         // Command palette points Live QR directly to attendance picker & includes Corrections

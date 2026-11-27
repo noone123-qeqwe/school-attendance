@@ -891,10 +891,11 @@
 
         var banner = document.createElement('div');
         banner.className = 'oa-offline-banner success';
+        banner.setAttribute('role', 'status');
+        banner.setAttribute('data-alert-banner', '');
+        banner.setAttribute('data-alert-transient', '');
         banner.innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + count + ' record' + (count !== 1 ? 's' : '') + ' saved locally. Will auto-sync when connection is restored.';
         formEl.parentElement.insertBefore(banner, formEl);
-
-        setTimeout(function() { banner.style.opacity = '0'; setTimeout(function() { banner.remove(); }, 300); }, 8000);
     }
 
     // ──────────────────────────────────────────────

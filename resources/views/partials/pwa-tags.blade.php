@@ -61,9 +61,11 @@
         max-width: 440px;
         margin: 0 auto;
         background: rgba(26, 17, 16, 0.96);
+        color: #F3E7CD;
         border: 1px solid rgba(207, 164, 111, 0.35);
         border-radius: 20px;
         padding: 16px 20px;
+        padding-inline-end: 3.5rem;
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 25px rgba(207, 164, 111, 0.2);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
@@ -142,24 +144,6 @@
     .pwa-btn-install:hover {
         background: linear-gradient(135deg, #DFB783 0%, #9E7B54 100%);
         transform: translateY(-1px);
-    }
-
-    .pwa-btn-close {
-        background: transparent;
-        border: none;
-        color: #B39B82;
-        font-size: 1.25rem;
-        cursor: pointer;
-        padding: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        transition: color 0.2s;
-    }
-
-    .pwa-btn-close:hover {
-        color: #F3E7CD;
     }
 
     /* ── Redesigned Mobile App Download & Installation Modal ── */
@@ -760,6 +744,7 @@
     }
     .pwa-update-banner-header {
         position: relative; z-index: 1;
+        color: #F3E7CD;
         display: flex; align-items: center; gap: 14px;
     }
     .pwa-update-icon-container {
@@ -789,7 +774,8 @@
         box-shadow: 0 0 10px #22C55E;
         animation: pwaPulseDot 2s infinite ease-in-out; z-index: 2;
     }
-    .pwa-update-text-area { flex: 1; min-width: 0; padding-right: 36px; }
+    .pwa-update-text-area { flex: 1; min-width: 0; }
+    .pwa-update-banner:not([data-update-mode="critical"]) .pwa-update-text-area { padding-inline-end: 3.5rem; }
     .pwa-update-meta { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
     .pwa-update-tag {
         font-size: 0.6rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;
@@ -807,21 +793,6 @@
         line-height: 1.2; letter-spacing: -0.3px; margin-bottom: 3px;
     }
     .pwa-update-subtitle { font-size: 0.8rem; color: rgba(255,255,255,0.5); line-height: 1.5; }
-    .pwa-update-close-btn {
-        position: absolute; top: 0; right: 0;
-        background: rgba(255,255,255,0.07) !important;
-        border: 1px solid rgba(255,255,255,0.13) !important;
-        color: rgba(255,255,255,0.6) !important; font-size: 1.1rem !important;
-        cursor: pointer !important; width: 30px !important; height: 30px !important;
-        border-radius: 50% !important; display: flex !important;
-        align-items: center !important; justify-content: center !important;
-        line-height: 1 !important; padding: 0 !important;
-        transition: all 0.2s ease !important; z-index: 2 !important; outline: none !important;
-    }
-    .pwa-update-close-btn:hover {
-        background: rgba(255,255,255,0.18) !important; color: #fff !important;
-        transform: rotate(90deg) !important;
-    }
     .pwa-update-banner-actions {
         position: relative; z-index: 1;
         display: flex !important; align-items: center !important;

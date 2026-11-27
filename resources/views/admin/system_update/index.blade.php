@@ -76,25 +76,23 @@
 
     <!-- Alert Messages (for backup actions etc.) -->
     @if(session('success'))
-    <div class="hub-alert hub-alert-success">
+    <x-alert-banner class="hub-alert hub-alert-success" role="status" data-alert-transient>
         <div class="hub-alert-icon"><i class="bi bi-check-circle-fill"></i></div>
         <div class="hub-alert-content">
             <div class="hub-alert-title">Operation Successful</div>
             <div class="hub-alert-text">{{ session('success') }}</div>
         </div>
-        <button type="button" class="hub-alert-close" onclick="this.parentElement.remove()"><i class="bi bi-x"></i></button>
-    </div>
+    </x-alert-banner>
     @endif
 
     @if(session('error'))
-    <div class="hub-alert hub-alert-danger">
+    <x-alert-banner class="hub-alert hub-alert-danger" role="alert" data-alert-transient>
         <div class="hub-alert-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
         <div class="hub-alert-content">
             <div class="hub-alert-title">Attention Required</div>
             <div class="hub-alert-text">{{ session('error') }}</div>
         </div>
-        <button type="button" class="hub-alert-close" onclick="this.parentElement.remove()"><i class="bi bi-x"></i></button>
-    </div>
+    </x-alert-banner>
     @endif
 
     <!-- ══════════════════════════════════════════════════════════════
@@ -372,7 +370,7 @@
             <div id="updateStepsList" class="update-results-list" style="display:none;"></div>
 
             <!-- Post-Update Rollback / Success Banner -->
-            <div id="updateSuccessBanner" class="update-banner-card banner-success" style="display:none;">
+            <div id="updateSuccessBanner" class="update-banner-card banner-success" role="status" style="display:none;" data-alert-banner data-alert-transient>
                 <div class="banner-icon-box">
                     <i class="bi bi-check-circle-fill"></i>
                 </div>
@@ -1244,19 +1242,6 @@
     opacity: 0.9;
 }
 
-.hub-alert-close {
-    background: transparent;
-    border: none;
-    color: inherit;
-    font-size: 1.3rem;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-}
-
-.hub-alert-close:hover {
-    opacity: 1;
-}
 
 /* ── Tab Panes ── */
 .maintenance-tab-pane {

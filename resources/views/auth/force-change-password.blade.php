@@ -15,7 +15,7 @@
                 </div>
 
                 @if($errors->any())
-                <div class="alert alert-danger" role="alert" style="background:rgba(153,27,45,0.18);border:1px solid rgba(251,113,133,0.34);border-left:3px solid #FB7185;color:#FFE4E8;border-radius:10px;font-size:0.86rem;">
+                <div class="alert alert-danger" role="alert" data-alert-required style="background:rgba(153,27,45,0.18);border:1px solid rgba(251,113,133,0.34);border-left:3px solid #FB7185;color:#FFE4E8;border-radius:10px;font-size:0.86rem;">
                     <ul class="mb-0 ps-3">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>

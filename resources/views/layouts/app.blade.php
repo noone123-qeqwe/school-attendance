@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+    @include('partials.alert-banner-assets')
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -1157,24 +1158,6 @@
     @endauth
 
     @yield('scripts')
-    <script @cspNonce>
-        document.addEventListener('DOMContentLoaded', () => {
-            const inlineFlashes = document.querySelectorAll('.flash-ok, .flash-error');
-            if (inlineFlashes.length > 0) {
-                setTimeout(() => {
-                    inlineFlashes.forEach(el => {
-                        el.style.transition = 'opacity 0.5s ease, height 0.5s ease, padding 0.5s ease, margin 0.5s ease';
-                        el.style.opacity = '0';
-                        el.style.height = '0';
-                        el.style.padding = '0';
-                        el.style.margin = '0';
-                        el.style.overflow = 'hidden';
-                        setTimeout(() => el.remove(), 500);
-                    });
-                }, 4500);
-            }
-        });
-    </script>
 
     <!-- Global Loading Overlay -->
     <div id="global-loader" style="display: none; position: fixed; inset: 0; background: rgba(20, 14, 14, 0.88); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column;">

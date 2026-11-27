@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    @include('partials.alert-banner-assets')
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
     <title>Sign In - {{ config('app.name') }}</title>
@@ -317,10 +318,10 @@ if (document.readyState === 'loading') {
 
         <!-- Errors -->
         @if(session('error'))
-        <div class="glass-alert"><i class="bi bi-exclamation-circle me-2"></i>{{ session('error') }}</div>
+        <div class="glass-alert" role="alert" data-alert-transient><i class="bi bi-exclamation-circle me-2"></i>{{ session('error') }}</div>
         @endif
         @if($errors->any())
-        <div class="glass-alert"><i class="bi bi-exclamation-circle me-2"></i>{{ $errors->first() }}</div>
+        <div class="glass-alert" role="alert" data-alert-transient><i class="bi bi-exclamation-circle me-2"></i>{{ $errors->first() }}</div>
         @endif
 
         <!-- Single unified form -->
