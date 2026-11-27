@@ -1,5 +1,5 @@
-const APP_VERSION = '9.1.118';
-const CACHE_VERSION = 'v20261127020';
+const APP_VERSION = '9.1.119';
+const CACHE_VERSION = 'v20261127021';
 const CACHE_NAME = `attendance-${CACHE_VERSION}`;
 const STATIC_CACHE_NAME = CACHE_NAME;
 const RUNTIME_CACHE_NAME = `attendance-runtime-${CACHE_VERSION}`;
