@@ -1,52 +1,17 @@
 /* Shared student navigation styles — Obsidian Oxblood & Alabaster v3.0 */
 @media (max-width: 767.98px) {
     body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item.mbn-item-scan {
-        flex-direction: row !important;
-        justify-content: center !important;
-        gap: 4px !important;
-        max-width: 112px;
-        margin-inline: 2px;
-        border: 1px solid rgba(246, 218, 173, 0.36) !important;
-        border-radius: 12px !important;
-        background: #612529 !important;
         color: #fae2bc !important;
     }
 
-    body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item.mbn-item-scan:is(:hover, :active) {
-        border-color: #f1ca8c !important;
-        background: #793136 !important;
-    }
-
-    body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item.mbn-item-scan:focus-visible {
-        outline: 2px solid #f1ca8c !important;
-        outline-offset: -4px;
-    }
-
-    body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item.mbn-item-scan > .mbn-featured-btn {
-        position: static !important;
-        transform: none !important;
-        flex: 0 0 17px;
-        width: 17px !important;
-        height: 20px !important;
-        min-height: 0 !important;
-        margin: 0 !important;
-        border: 0 !important;
-        box-shadow: none !important;
-        background: transparent !important;
-        color: inherit !important;
-    }
-
-    body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item.mbn-item-scan > .mbn-featured-btn svg {
-        width: 17px !important;
-        height: 17px !important;
-        color: inherit !important;
-    }
-
-    body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item.mbn-item-scan > span:last-child {
-        color: inherit !important;
-        font-size: 0.73rem !important;
-        letter-spacing: 0 !important;
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item-scan > .mbn-scan-icon {
         opacity: 1 !important;
+    }
+
+    .mbn-scan-icon svg {
+        display: block;
+        width: 26px;
+        height: 26px;
     }
 }
 
