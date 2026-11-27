@@ -4,9 +4,8 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\AcademicYear;
-use App\Models\AttendanceCorrection;
+use App\Models\AttendanceSession;
 use App\Models\ClassSchedule;
-use App\Models\ExcuseSubmission;
 use App\Models\Section;
 use App\Models\User;
 use App\Models\Subject;
@@ -25,21 +24,11 @@ class AnalyticsService
      */
     public function getAdminDashboardData(): array
     {
-        // ── Core counts ──
-        ['students' => $totalStudents, 'teachers' => $totalTeachers] = $this->academicDirectoryCounts();
-
         $dailyAttendance = $this->dailyAttendance(7);
-        $todayStats = $dailyAttendance[6];
-        $yesterdayStats = $dailyAttendance[5];
-
-        ['present' => $totalPresent, 'late' => $totalLate, 'absent' => $totalAbsent, 'rate' => $attendanceRate] = $todayStats;
-        ['present' => $yesterdayPresent, 'late' => $yesterdayLate, 'absent' => $yesterdayAbsent, 'rate' => $yesterdayRate] = $yesterdayStats;
-        $attendanceRate ??= 0;
-        $yesterdayRate ??= 0;
 
         // ── Active attendance sessions (batch-optimized, zero N+1) ──
         $todayStr = today()->toDateString();
-        $activeSessions = \App\Models\AttendanceSession::where('active', true)
+        $activeSessions = AttendanceSession::where('active', true)
             ->where(function($q) {
                 $q->whereNull('session_ends_at')->orWhere('session_ends_at', '>', now());
             })
@@ -63,72 +52,11 @@ class AnalyticsService
 
         $activeSessionCount = $activeSessions->count();
 
-        // ── At-risk students (optimized eager loading) ──
-        $attendanceRateSql = "ROUND(100.0 * SUM(CASE WHEN status IN ('Present', 'Late', 'Excused') THEN 1 ELSE 0 END) / COUNT(*))";
-        $studentStats = Attendance::select('user_id',
-            \Illuminate\Support\Facades\DB::raw('count(*) as total_sessions'),
-            \Illuminate\Support\Facades\DB::raw("sum(case when status in ('Present', 'Late', 'Excused') then 1 else 0 end) as present_sessions"),
-            \Illuminate\Support\Facades\DB::raw('max(date) as last_attendance')
-        )
-        ->whereHas('user', fn($query) => $query->where('role', 'student'))
-        ->groupBy('user_id')
-        ->havingRaw($attendanceRateSql . ' < ?', [80])
-        ->orderByRaw($attendanceRateSql . ' ASC')
-        ->limit(15)
-        ->with(['user' => function($q) {
-            $q->select('id', 'name', 'student_number', 'role', 'course', 'year_level', 'section');
-        }])
-        ->get();
-
-        $atRiskStudents = $studentStats->map(function ($stat) {
-            $rate = $stat->total_sessions > 0 ? round(($stat->present_sessions / $stat->total_sessions) * 100) : 100;
-            if ($rate < 80 && $stat->user && $stat->user->role === 'student') {
-                $student = $stat->user;
-                $student->attendance_rate = $rate;
-                $student->last_attendance = $stat->last_attendance ? \Carbon\Carbon::parse($stat->last_attendance)->format('M d, Y') : '—';
-                $student->risk_level = match(true) {
-                    $rate >= 70 => 'Watch',
-                    $rate >= 50 => 'Warning',
-                    default => 'Critical',
-                };
-                return $student;
-            }
-            return null;
-        })->filter();
-
-        // ── System alerts ──
-        $pendingExcuses = ExcuseSubmission::where('status', 'pending')->count();
-        $pendingCorrections = AttendanceCorrection::where('status', 'pending')->count();
-        $pendingRegistrations = User::where('role', 'student')
-            ->where('student_registration_pending', true)
-            ->where(fn ($query) => $query->whereNull('is_active')->orWhere('is_active', true))
-            ->count();
-        $expiredSessions = \App\Models\AttendanceSession::where('active', true)
+        $expiredSessions = AttendanceSession::where('active', true)
             ->where('session_ends_at', '<', now())
             ->count();
-        $lowAttendanceStudents = $atRiskStudents->where('risk_level', 'Critical')->count();
 
-        $systemAlerts = collect();
-        if ($expiredSessions > 0) {
-            $systemAlerts->push((object)['severity' => 'critical', 'icon' => 'bi-exclamation-octagon-fill', 'message' => "{$expiredSessions} QR session(s) have expired but are still marked active.", 'action' => null]);
-        }
-        if ($lowAttendanceStudents > 0) {
-            $systemAlerts->push((object)['severity' => 'warning', 'icon' => 'bi-exclamation-triangle-fill', 'message' => "{$lowAttendanceStudents} student(s) have critically low attendance (below 50%).", 'action' => '#at-risk-section']);
-        }
-        if ($pendingExcuses > 0) {
-            $systemAlerts->push((object)['severity' => 'warning', 'icon' => 'bi-file-earmark-text', 'message' => "{$pendingExcuses} excuse submission(s) awaiting review.", 'action' => route('admin.excuses')]);
-        }
-        if ($totalStudents === 0) {
-            $systemAlerts->push((object)['severity' => 'info', 'icon' => 'bi-info-circle-fill', 'message' => "No students registered yet. Add students to get started.", 'action' => route('admin.student.create')]);
-        }
-
-        return compact(
-            'totalStudents', 'totalTeachers',
-            'totalPresent', 'totalLate', 'totalAbsent', 'attendanceRate',
-            'yesterdayPresent', 'yesterdayLate', 'yesterdayAbsent', 'yesterdayRate',
-            'activeSessions', 'activeSessionCount', 'atRiskStudents', 'systemAlerts',
-            'dailyAttendance', 'pendingExcuses', 'pendingCorrections', 'pendingRegistrations'
-        );
+        return compact('dailyAttendance', 'activeSessions', 'activeSessionCount', 'expiredSessions');
     }
 
     public function getAcademicOverviewData(): array

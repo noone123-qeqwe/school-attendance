@@ -3,58 +3,25 @@
 @section('page-title', 'Dashboard')
 
 @section('content')
-    @php
-        $isAuditor = auth()->user()->admin_sub_role === 'auditor';
-        $today = $dailyAttendance[6];
-        $yesterday = $dailyAttendance[5];
-        $rateDifference = $today['rate'] !== null && $yesterday['rate'] !== null
-            ? $today['rate'] - $yesterday['rate']
-            : null;
-        $reviewQueue = [
-            ['Excuse reviews', route('admin.excuses'), $pendingExcuses, 'bi-file-earmark-text'],
-            ['Attendance corrections', route('admin.corrections'), $pendingCorrections, 'bi-pencil-square'],
-        ];
-        if (!$isAuditor) {
-            array_unshift($reviewQueue, ['Student registrations', route('admin.students', ['status' => 'pending']), $pendingRegistrations, 'bi-person-check']);
-        }
-    @endphp
+    @php($today = now())
 
     <header class="admin-section-masthead">
         <div>
-            <time class="admin-date" datetime="{{ $today['date']->toDateString() }}">{{ $today['date']->format('l, F j') }}</time>
+            <time class="admin-date" datetime="{{ $today->toDateString() }}">{{ $today->format('l, F j') }}</time>
             <h1>School operations</h1>
-            <p>Track attendance, review pending work, and see what’s happening at school.</p>
+            <p>Monitor attendance trends and live QR sessions.</p>
         </div>
         <a href="{{ route('admin.academic.overview') }}" class="saas-btn saas-btn-primary">
             <i class="bi bi-mortarboard" aria-hidden="true"></i> Academic Management
         </a>
     </header>
 
-    <dl class="admin-metrics" aria-label="Today’s attendance and activity">
-        <div>
-            <dt>Attendance rate</dt>
-            <dd>
-                {{ $today['rate'] === null ? '—' : $today['rate'].'%' }}
-                @if($rateDifference !== null)
-                    <small>{{ sprintf('%+d', $rateDifference) }} percentage points vs yesterday</small>
-                @elseif($today['rate'] === null)
-                    <small>No attendance recorded today</small>
-                @endif
-            </dd>
-        </div>
-        <div><dt>Present today</dt><dd>{{ number_format($totalPresent) }} <small>{{ number_format($totalLate) }} late</small></dd></div>
-        <div><dt>Absent today</dt><dd>{{ number_format($totalAbsent) }}</dd></div>
-        <div><dt>Live QR sessions</dt><dd>{{ number_format($activeSessionCount) }}</dd></div>
-    </dl>
-
-    @if($systemAlerts->contains('severity', 'critical'))
+    @if($expiredSessions > 0)
         <div class="admin-dashboard-alerts" role="status">
-            @foreach($systemAlerts->where('severity', 'critical') as $alert)
-                <div class="alert-card critical">
-                    <i class="bi {{ $alert->icon }}" aria-hidden="true"></i>
-                    <span>{{ $alert->message }}</span>
-                </div>
-            @endforeach
+            <div class="alert-card critical">
+                <i class="bi bi-exclamation-octagon-fill" aria-hidden="true"></i>
+                <span>{{ $expiredSessions }} QR session(s) have expired but are still marked active.</span>
+            </div>
         </div>
     @endif
 
@@ -82,27 +49,6 @@
             @endif
         </section>
 
-        <section class="admin-panel" aria-labelledby="adminReviewTitle">
-            <header class="admin-panel-heading">
-                <div>
-                    <h2 id="adminReviewTitle">{{ $isAuditor ? 'Attendance review' : 'Needs attention' }}</h2>
-                    <p>Items awaiting review</p>
-                </div>
-            </header>
-            <ul class="admin-queue">
-                @foreach($reviewQueue as [$label, $url, $count, $icon])
-                    <li>
-                        <a href="{{ $url }}">
-                            <i class="bi {{ $icon }}" aria-hidden="true"></i>
-                            <span>{{ $label }}</span>
-                            <strong @class(['has-pending' => $count > 0]) aria-label="{{ $count }} pending">{{ number_format($count) }}</strong>
-                            <i class="bi bi-chevron-right" aria-hidden="true"></i>
-                        </a>
-                    </li>
-                @endforeach
-            </ul>
-        </section>
-
         <section class="admin-panel" aria-labelledby="adminLiveSessionsTitle">
             <header class="admin-panel-heading">
                 <h2 id="adminLiveSessionsTitle">Live QR sessions</h2>
@@ -125,44 +71,5 @@
             @endif
         </section>
 
-        <section class="admin-panel" id="at-risk-section" aria-labelledby="adminRiskTitle">
-            <header class="admin-panel-heading">
-                <h2 id="adminRiskTitle">Students with low attendance</h2>
-                <a href="{{ route('admin.early-warnings') }}" class="admin-panel-link">Warnings <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-            </header>
-            @if($atRiskStudents->isEmpty())
-                <p class="admin-empty-state">No students with low attendance in the current results.</p>
-            @else
-                <ul class="admin-data-list">
-                    @foreach($atRiskStudents->take(5) as $student)
-                        <li>
-                            <span><a href="{{ route('admin.student', $student) }}">{{ $student->name }}</a><small>{{ $student->course }}</small></span>
-                            <span class="admin-risk {{ $student->attendance_rate < 70 ? 'is-critical' : '' }}">{{ $student->attendance_rate }}%</span>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </section>
-
-        <section class="admin-panel admin-panel-wide" aria-labelledby="adminRecentTitle">
-            <header class="admin-panel-heading">
-                <h2 id="adminRecentTitle">Recent notifications</h2>
-                <a href="{{ route('admin.notifications') }}" class="admin-panel-link">All notifications <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
-            </header>
-            @if($recentNotifications->isEmpty())
-                <p class="admin-empty-state">You have no recent notifications.</p>
-            @else
-                <ul class="admin-data-list">
-                    @foreach($recentNotifications as $notification)
-                        <li>
-                            <span>{{ Str::limit(strip_tags($notification->message ?? ''), 180) }}</span>
-                            @if($notification->created_at)
-                                <time datetime="{{ $notification->created_at->toAtomString() }}">{{ $notification->created_at->diffForHumans() }}</time>
-                            @endif
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </section>
     </div>
 @endsection

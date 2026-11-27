@@ -35,16 +35,9 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     // DASHBOARD
     // ─────────────────────────────────────────
-    public function index(Request $request, AnalyticsService $analyticsService)
+    public function index(AnalyticsService $analyticsService)
     {
-        $data = $analyticsService->getAdminDashboardData();
-        $data['recentNotifications'] = Notification::query()
-            ->whereBelongsTo($request->user(), 'user')
-            ->active()
-            ->latest()
-            ->limit(3)
-            ->get();
-        return view('admin.dashboard', $data);
+        return view('admin.dashboard', $analyticsService->getAdminDashboardData());
     }
 
     public function academicOverview(AnalyticsService $analyticsService)

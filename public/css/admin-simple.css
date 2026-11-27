@@ -12,7 +12,6 @@
     body.admin-portal .admin-breadcrumb > .bi { font-size: .6rem; }
 
     body.admin-portal .admin-dashboard-alerts { display: grid; gap: 10px; margin-bottom: 22px; }
-    body.admin-portal #at-risk-section { scroll-margin-top: 100px; }
 
     /* Keep page actions consistent and remove decorative competition. */
     body.admin-portal .page-enter :is(.directory-page-header, .admin-page-heading, .sch-header-bar, .par-header-bar, .ann-header-bar, .audit-page-header, .admin-settings-header) { margin-bottom: 24px; gap: 16px; }
@@ -252,7 +251,6 @@
         border: 1px solid var(--admin-rule);
         border-radius: var(--admin-radius);
     }
-    body.admin-portal .admin-panel-wide { grid-column: 1 / -1; }
     body.admin-portal .admin-panel-heading { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 12px; margin-bottom: 12px; }
     body.admin-portal .admin-panel-heading h2 { margin: 0; font-size: 1rem; font-weight: 700; }
     body.admin-portal :is(.admin-panel-heading p, .admin-panel-note, .admin-empty-state) { margin: 4px 0; color: var(--admin-muted); font-size: .83rem; }
@@ -278,22 +276,11 @@
     body.admin-portal .admin-trend-track > span { width: 100%; height: var(--attendance-rate); background: #9f7959; border-radius: inherit; }
     body.admin-portal .admin-attendance-trend .is-today .admin-trend-track > span { background: var(--admin-accent); }
 
-    body.admin-portal :is(.admin-queue, .admin-data-list) { list-style: none; padding: 0; margin: 0; }
-    body.admin-portal :is(.admin-queue, .admin-data-list) > li + li { border-top: 1px solid var(--admin-rule); }
-    body.admin-portal .admin-queue a {
-        display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px;
-        min-height: 50px; padding: 7px 4px; color: var(--admin-ink); text-decoration: none; font-size: .85rem;
-    }
-    body.admin-portal .admin-queue a:hover { color: var(--admin-accent); }
-    body.admin-portal .admin-queue i { color: var(--admin-muted); }
-    body.admin-portal .admin-queue strong { border-radius: var(--ds-radius-xs); background: var(--admin-field); padding: 2px 7px; }
-    body.admin-portal .admin-queue .has-pending { color: var(--admin-accent); background: var(--admin-selected); }
+    body.admin-portal .admin-data-list { list-style: none; padding: 0; margin: 0; }
+    body.admin-portal .admin-data-list > li + li { border-top: 1px solid var(--admin-rule); }
     body.admin-portal .admin-data-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px 0; font-size: .84rem; overflow-wrap: anywhere; }
-    body.admin-portal .admin-data-list li a { color: var(--admin-ink); text-decoration-color: var(--admin-muted); display: inline-flex; align-items: center; min-height: 44px; }
     body.admin-portal .admin-data-list :is(small, time) { display: block; color: var(--admin-muted); font-size: .75rem; }
     body.admin-portal .admin-list-detail { text-align: end; }
-    body.admin-portal .admin-risk { color: var(--ds-warning); font-size: .84rem; font-variant-numeric: tabular-nums; }
-    body.admin-portal .admin-risk.is-critical { color: var(--ds-danger); }
 
     body.admin-portal .page-enter :is(.saas-card, .ent-card, .sch-card, .par-card, .ann-card, .adm-card, .adm-info-card) {
         background: var(--admin-surface);

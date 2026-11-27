@@ -88,7 +88,11 @@ class AdminWorkspaceTest extends TestCase
         $this->get(route('admin.dashboard'))->assertOk()
             ->assertSee('Attendance trend')
             ->assertSee('100%')
-            ->assertSee('Live QR sessions');
+            ->assertSee('Live QR sessions')
+            ->assertDontSee('class="admin-metrics"', false)
+            ->assertDontSee('Items awaiting review')
+            ->assertDontSee('Students with low attendance')
+            ->assertDontSee('id="adminRecentTitle"', false);
         $this->get(route('admin.academic.overview'))->assertOk()
             ->assertSee('67%')
             ->assertSee('Past 30 days')
