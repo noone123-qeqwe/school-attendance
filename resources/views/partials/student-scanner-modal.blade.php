@@ -1331,18 +1331,18 @@
         display: none;
     }
 
-    body:not(.mobile-app-layout):not(:has(.mobile-app)) .scanner-mode-switcher {
+    body:not(.scanner-page-layout) .scanner-mode-switcher {
         display: none !important;
     }
-    body:not(.mobile-app-layout):not(:has(.mobile-app)) #desktopScannerHeader {
+    body:not(.scanner-page-layout) #desktopScannerHeader {
         display: flex !important;
     }
-    body:not(.mobile-app-layout):not(:has(.mobile-app)) #torchCameraBtn,
-    body:not(.mobile-app-layout):not(:has(.mobile-app)) #flipCameraBtn,
-    body:not(.mobile-app-layout):not(:has(.mobile-app)) #switchToCameraBtn {
+    body:not(.scanner-page-layout) #torchCameraBtn,
+    body:not(.scanner-page-layout) #flipCameraBtn,
+    body:not(.scanner-page-layout) #switchToCameraBtn {
         display: none !important;
     }
-    body:not(.mobile-app-layout):not(:has(.mobile-app)) .scanner-modal-card:not(.mode-scan) #scannerActiveView {
+    body:not(.scanner-page-layout) .scanner-modal-card:not(.mode-scan) #scannerActiveView {
         display: none !important;
     }
     .scanner-modal-card {
@@ -1370,17 +1370,26 @@
         background: #100d0b;
     }
 
-    body.scanner-page-layout :is(.mobile-header, #mobileBottomNav, #installPrompt, .mobile-menu-backdrop, .mobile-navigation-menu, .mobile-scan-page) {
+    body.scanner-page-layout :is(#sidebar, #sidebarOverlay, #topHeader, #mobileBottomNav) {
         display: none !important;
     }
 
-    body.scanner-page-layout .mobile-app {
+    body.scanner-page-layout .main-wrapper {
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    body.scanner-page-layout #mainContent {
         width: 100%;
         max-width: none;
         min-height: 100dvh;
-        height: 100dvh;
-        margin: 0;
-        padding: 0;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    body.scanner-page-layout #mainContent > .page-enter {
+        padding: 0 !important;
+        animation: none;
     }
 
     .scanner-page-screen.scanner-modal-backdrop {
@@ -1688,7 +1697,7 @@ if (navigator.geolocation) {
 }
 
 function isDesktopDevice() {
-    if (document.querySelector('.mobile-app') || document.body.classList.contains('mobile-app-layout') || window.location.pathname.includes('/mobile')) {
+    if (isDedicatedStudentScannerPage) {
         return false;
     }
     return window.innerWidth >= 768;
@@ -2970,7 +2979,7 @@ function finishScanAndRefresh() {
     clearAutoCloseTimer();
     if (window.location.pathname.includes('/mobile/scan')) {
         closeStudentScanner(false);
-        window.location.href = '{{ route("mobile.history") }}';
+        window.location.href = '{{ route("student.calendar") }}#attendance-records';
     } else {
         closeStudentScanner();
         window.location.reload();

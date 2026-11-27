@@ -1,9 +1,9 @@
-@extends('layouts.mobile-app')
+@extends('layouts.app')
 
-@section('title', 'Check in for a Classmate')
+@section('page-title', 'Peer Check-in')
 
 @section('content')
-<main class="peer-page">
+<div class="peer-page">
     <header class="peer-heading">
         <span class="peer-eyebrow">PHONE-LESS ATTENDANCE</span>
         <h1>Check in for a Classmate</h1>
@@ -37,7 +37,7 @@
 
     <section id="peerResult" class="peer-card peer-result" role="status" aria-live="polite" tabindex="-1" hidden></section>
     <p class="peer-privacy"><i class="bi bi-shield-lock"></i> Live verification frames are processed transiently against the classmate's encrypted enrollment and are not saved to either student's attendance account.</p>
-</main>
+</div>
 
 <style>
 .peer-page{max-width:720px;margin:0 auto;padding:12px 2px 104px;color:#FAF8F5}

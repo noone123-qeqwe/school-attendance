@@ -893,60 +893,6 @@
         color: var(--sdc-muted) !important;
     }
 
-    body.student-portal .cor-summary-chip {
-        background: var(--sdc-surface-2) !important;
-        border: 1px solid var(--sdc-border) !important;
-        color: var(--sdc-text-soft) !important;
-        border-radius: 8px !important;
-        padding: 4px 10px !important;
-        font-size: 0.75rem !important;
-        font-weight: 650 !important;
-        font-variant-numeric: tabular-nums;
-    }
-
-    body.student-portal .cor-summary-chip i {
-        color: var(--sdc-rose-accent);
-    }
-
-    body.student-portal .cor-summary-chip.cor-chip-today {
-        background: rgba(52, 211, 153, 0.1) !important;
-        border-color: rgba(52, 211, 153, 0.26) !important;
-        color: #6ee7b7 !important;
-    }
-
-    body.student-portal .cor-summary-chip.cor-chip-today i {
-        color: var(--sdc-emerald) !important;
-    }
-
-    body.student-portal .cor-btn-action {
-        min-height: 42px;
-        border-radius: 10px !important;
-    }
-
-    body.student-portal .cor-btn-pdf {
-        background: var(--sdc-cta-grad) !important;
-        border-color: rgba(255, 255, 255, 0.5) !important;
-        color: var(--sdc-cta-text) !important;
-        box-shadow: var(--sdc-shadow-sm) !important;
-    }
-
-    body.student-portal .cor-btn-pdf:hover {
-        filter: brightness(0.96);
-        color: #180308 !important;
-        box-shadow: var(--sdc-shadow-sm) !important;
-    }
-
-    body.student-portal .cor-btn-print {
-        background: var(--sdc-surface-2) !important;
-        border-color: var(--sdc-border) !important;
-        color: var(--sdc-text) !important;
-    }
-
-    body.student-portal .cor-btn-print:hover {
-        background: var(--sdc-surface-3) !important;
-        border-color: var(--sdc-border-strong) !important;
-    }
-
     body.student-portal .cor-sheet {
         background: var(--sdc-surface) !important;
         border: 1px solid var(--sdc-border) !important;
@@ -3051,15 +2997,6 @@
         body.student-portal .student-profile-summary:not(.sc) {
             padding: 16px !important;
             border-radius: 14px !important;
-        }
-
-        body.student-portal .cor-btn-group {
-            width: 100%;
-        }
-
-        body.student-portal .cor-btn-group .cor-btn-action {
-            flex: 1 1 0;
-            justify-content: center;
         }
 
         body.student-portal .sd-excuse-form-footer > * {

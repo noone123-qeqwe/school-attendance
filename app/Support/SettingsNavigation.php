@@ -6,19 +6,34 @@ use App\Models\User;
 
 class SettingsNavigation
 {
-    public static function dashboardUrl(?User $user): string
+    public static function dashboardUrl(?User $user, array $query = []): string
     {
-        if ($user?->isAdmin()) {
-            return route('admin.dashboard');
-        }
-        if ($user?->isTeacher()) {
-            return route('teacher.dashboard');
-        }
-        if ($user?->isParent()) {
-            return route('parent.dashboard');
-        }
+        return route(match (true) {
+            $user?->isAdmin() => 'admin.dashboard',
+            $user?->isTeacher() => 'teacher.dashboard',
+            $user?->isParent() => 'parent.dashboard',
+            default => 'home',
+        }, $query);
+    }
 
-        return route('home');
+    public static function accountRoute(User $user): string
+    {
+        return match (true) {
+            $user->isAdmin() => 'admin.profile',
+            $user->isTeacher() => 'teacher.profile',
+            $user->isParent() => 'parent.profile',
+            default => 'settings',
+        };
+    }
+
+    public static function profileRoute(User $user): string
+    {
+        return match (true) {
+            $user->isAdmin() => 'admin.profile',
+            $user->isTeacher() => 'teacher.profile',
+            $user->isParent() => 'parent.profile',
+            default => 'profile',
+        };
     }
 
     /**

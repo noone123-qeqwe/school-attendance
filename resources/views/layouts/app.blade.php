@@ -86,7 +86,7 @@
     @endif
 </head>
 
-<body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher(), 'admin-portal' => Auth::user()?->isAdmin(), 'parent-portal' => Auth::user()?->isParent(), 'attendance-verification-page' => View::hasSection('focused-attendance-verification')]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
+<body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher(), 'admin-portal' => Auth::user()?->isAdmin(), 'parent-portal' => Auth::user()?->isParent(), 'attendance-verification-page' => View::hasSection('focused-attendance-verification'), 'scanner-page-layout' => request()->routeIs('mobile.scan')]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
 
     @php
         $parentUnreadCount = Auth::user()?->isParent() ? \App\Support\ParentNavigation::unreadCount(Auth::user()) : 0;
@@ -391,27 +391,10 @@
                                 </div>
                             </div>
                             <div class="fb-dropdown-divider my-2"></div>
-                            @if(Auth::user()->isTeacher())
-                            <a class="fb-dropdown-item" href="{{ route('teacher.profile') }}">
+                            <a class="fb-dropdown-item" href="{{ route(\App\Support\SettingsNavigation::accountRoute(Auth::user())) }}">
                                 <div class="fb-icon-circle fb-icon-settings"><i class="bi bi-gear-fill"></i></div>
                                 <span>Settings</span>
                             </a>
-                            @elseif(Auth::user()->isAdmin())
-                            <a class="fb-dropdown-item" href="{{ route('admin.profile') }}">
-                                <div class="fb-icon-circle fb-icon-settings"><i class="bi bi-gear-fill"></i></div>
-                                <span>Settings</span>
-                            </a>
-                            @elseif(Auth::user()->isParent())
-                            <a class="fb-dropdown-item" href="{{ route('parent.profile') }}">
-                                <div class="fb-icon-circle fb-icon-settings"><i class="bi bi-gear-fill"></i></div>
-                                <span>Settings</span>
-                            </a>
-                            @elseif(Auth::user()->isStudent())
-                            <a class="fb-dropdown-item" href="{{ route('settings') }}">
-                                <div class="fb-icon-circle fb-icon-settings"><i class="bi bi-gear-fill"></i></div>
-                                <span>Settings</span>
-                            </a>
-                            @endif
                             <form id="globalLogoutForm" action="{{ route('logout') }}" method="POST" class="d-none">
                                 @csrf
                             </form>
@@ -960,15 +943,12 @@
     </script>
 
     @auth
-        @if(Auth::user()->isAdmin())
-            @include('layouts.mbn.admin')
-        @elseif(Auth::user()->isTeacher())
-            @include('layouts.mbn.teacher')
-        @elseif(Auth::user()->isParent())
-            @include('layouts.mbn.parent')
-        @else
-            @include('layouts.mbn.student')
+        @if(Auth::user()->isStudent() && !request()->routeIs('mobile.scan'))
+            @include('components.mobile.install-prompt')
         @endif
+        @unless(request()->routeIs('mobile.scan'))
+            @include('components.mobile.role-bottom-nav')
+        @endunless
 
         @if(Auth::user()->isAdmin() || Auth::user()->isTeacher() || Auth::user()->isParent())
         <!-- More Bottom Sheet -->
@@ -983,7 +963,7 @@
             </div>
             <div class="more-sheet-grid" id="moreSheetContent">
                 @if(Auth::user()->isAdmin())
-                    @include('partials.admin-workspace-navigation', ['navigationId' => 'adminMobile'])
+                    @include('partials.admin-workspace-navigation', ['navigationId' => 'adminMobile', 'mobile' => true])
                 @elseif(Auth::user()->isTeacher())
                     @include('partials.teacher-navigation', ['mobile' => true])
                 @else
@@ -1152,11 +1132,9 @@
         });
         </script>
         @else
-            @if(request()->routeIs('mobile.scan'))
-                @include('partials.student-scanner-modal')
-            @else
+            @unless(request()->routeIs('mobile.scan'))
                 @include('partials.student-scanner-launcher')
-            @endif
+            @endunless
             @include('partials.student-presence-guardian')
         @endif
     @endauth

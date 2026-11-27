@@ -96,7 +96,6 @@ body.student-portal .scal-tips-card {
 
 body.student-portal .ent-btn,
 body.student-portal .tch-btn,
-body.student-portal .cor-btn-action,
 body.student-portal .back-btn {
     min-height: 42px;
     border-radius: 12px;
@@ -398,10 +397,6 @@ body.student-mobile-portal .mobile-scan-page .scan-paste-btn {
 
     body.student-portal .cor-page-wrapper { padding: 0 !important; }
     body.student-portal .cor-actions-bar { gap: 16px; padding-bottom: 20px; }
-    body.student-portal .cor-summary-chips-row { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 3px; scrollbar-width: none; }
-    body.student-portal .cor-summary-chip { flex: 0 0 auto; }
-    body.student-portal .cor-btn-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
-    body.student-portal .cor-btn-action { justify-content: center; }
     body.student-portal .cor-sheet { border-radius: 18px; }
     body.student-portal .cor-toolbar { gap: 10px; }
     body.student-portal .cor-search-box { flex: 1 1 100%; }

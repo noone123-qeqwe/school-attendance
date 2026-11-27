@@ -36,7 +36,7 @@ class StudentDashboardAndSidebarTest extends TestCase
     {
         $this->actingAs($this->createStudent());
 
-        foreach (['home', 'mobile.home', 'excuses', 'excuses.create_general'] as $route) {
+        foreach (['home', 'excuses', 'excuses.create_general'] as $route) {
             $response = $this->get(route($route))->assertOk();
             $dom = new \DOMDocument();
             $dom->loadHTML($response->getContent(), LIBXML_NOERROR | LIBXML_NOWARNING);
@@ -47,10 +47,13 @@ class StudentDashboardAndSidebarTest extends TestCase
             $link = $xpath->query('./a[span[normalize-space()="Excuses"]]', $nav)->item(0);
             $this->assertInstanceOf(\DOMElement::class, $link);
             $this->assertSame(route('excuses'), $link->getAttribute('href'));
-            $this->assertSame(str_starts_with($route, 'excuses') ? 'page' : '', $link->getAttribute('aria-current'));
+            $expectedCurrent = $route === 'excuses' ? 'page' : ($route === 'excuses.create_general' ? 'location' : '');
+            $this->assertSame($expectedCurrent, $link->getAttribute('aria-current'));
             $this->assertSame(0, $xpath->query('.//*[normalize-space()="More"]', $nav)->length);
             $this->assertSame(0, $xpath->query('//*[@id="moreSheet"]')->length);
         }
+
+        $this->get(route('mobile.home'))->assertRedirect(route('home'));
     }
 
     public function test_student_sidebar_omits_profile_settings_scan_pin_and_notifications(): void
@@ -234,12 +237,7 @@ class StudentDashboardAndSidebarTest extends TestCase
 
         $this->actingAs($student)
             ->get(route('mobile.home'))
-            ->assertOk()
-            ->assertSee('Class section not assigned')
-            ->assertSee('id="closeMissingSectionNoticeBtn"', false)
-            ->assertSee('aria-label="Dismiss class section notice"', false)
-            ->assertSee('data-alert-key="missing-class-section"', false)
-            ->assertSee('js/alert-banners.js', false);
+            ->assertRedirect(route('home'));
     }
 
     public function test_student_settings_replaces_app_sidebar_with_single_settings_sidebar(): void
@@ -583,16 +581,17 @@ class StudentDashboardAndSidebarTest extends TestCase
             'scheduled_for' => now()->subMinute(),
         ]);
 
-        $response = $this->actingAs($student)->get(route('mobile.home'));
+        $this->actingAs($student)->get(route('mobile.home'))
+            ->assertRedirect(route('home'));
+
+        $response = $this->followingRedirects()->get(route('mobile.home'));
 
         $response->assertOk()
             ->assertSee('student-dashboard.css', false)
-            ->assertSee('sd-mobile-cockpit', false)
+            ->assertSee('class="sd-masthead-actions d-none d-md-flex"', false)
+            ->assertSee('class="sd-telemetry d-none d-md-flex"', false)
+            ->assertSee('class="sd-panel d-none d-md-block"', false)
             ->assertDontSee('id="quickActionScanBtn"', false)
-            ->assertDontSee('Enter PIN')
-            ->assertDontSee('Attendance Standing')
-            ->assertDontSee('7-Day Pulse')
-            ->assertDontSee('Subject Standing')
             ->assertSee('Mobile Systems')
             ->assertSee('Mobile Campus Advisory');
     }
@@ -645,7 +644,6 @@ class StudentDashboardAndSidebarTest extends TestCase
 
         $studentRoutes = [
             route('home'),
-            route('mobile.home'),
             route('student.classes'),
             route('student.schedule'),
             route('student.calendar'),
@@ -653,7 +651,6 @@ class StudentDashboardAndSidebarTest extends TestCase
             route('excuses.create_general'),
             route('notifications'),
             route('profile'),
-            route('mobile.profile'),
             route('mobile.scan'),
             route('settings'),
             route('settings.biometrics.face'),
@@ -666,6 +663,16 @@ class StudentDashboardAndSidebarTest extends TestCase
                 ->assertOk()
                 ->assertSee('student-portal-master.css', false);
         }
+
+        $this->actingAs($student)
+            ->followingRedirects()
+            ->get(route('mobile.home'))
+            ->assertOk()
+            ->assertSee('student-portal-master.css', false);
+
+        $this->actingAs($student)
+            ->get(route('mobile.profile'))
+            ->assertRedirect(route('profile'));
 
         // mobile.history redirects cleanly to the unified calendar & records view
         $this->actingAs($student)
@@ -761,12 +768,14 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertSee('highlighted border', false)
             ->assertDontSee('The <strong>golden border</strong> marks today', false);
 
-        // Mobile scan page drops redundant 101KB student-desktop-ux.css stylesheet
+        // The dedicated scanner shares the app layout without a mobile dashboard shell.
         $this->actingAs($student)
             ->get(route('mobile.scan'))
             ->assertOk()
-            ->assertDontSee('student-desktop-ux.css', false)
-            ->assertSee('sd-scan-desktop-bar', false);
+            ->assertSee('id="scannerPageTitle"', false)
+            ->assertSee('id="tabCodeMode"', false)
+            ->assertDontSee('id="mobileBottomNav"', false)
+            ->assertDontSee('class="sd-scan-desktop-bar', false);
 
         // Schedule route renders unified Classes & Schedule view cleanly with Login-Matched Smoked Charcoal & Warm Gold palette
         $this->actingAs($student)

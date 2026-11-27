@@ -33,17 +33,12 @@ class TeacherNavigation
      */
     public static function sidebarSections(): array
     {
-        return [
-            [
-                ['home', 'Dashboard', 'teacher.dashboard', 'bi-grid-fill', ['teacher.dashboard'], []],
-                ['classes', 'My Classes', 'teacher.classroom.index', 'bi-journal-bookmark-fill', ['teacher.classroom.index', 'teacher.classroom.show', 'teacher.classroom.assistant-attendance*', 'teacher.subjects*', 'teacher.attendance*'], []],
-                ['calendar', 'School Calendar', 'teacher.calendar', 'bi-calendar-event-fill', ['teacher.calendar*'], []],
-            ],
-            [
-                ['requests', 'Excuses & Corrections', 'teacher.excuse.reviews', 'bi-file-earmark-text-fill', ['teacher.excuse.*', 'teacher.corrections*', 'teacher.excuses*', 'teacher.absent*'], []],
-                ['reports', 'Attendance Reports', 'teacher.reports', 'bi-graph-up-arrow', ['teacher.reports*'], []],
-            ],
-        ];
+        $items = array_column(array_merge(...array_column(self::groups(), 'items')), null, 0);
+
+        return array_map(
+            fn (array $keys) => array_map(fn (string $key) => $items[$key], $keys),
+            [['home', 'classes', 'calendar'], ['requests', 'reports']],
+        );
     }
 
     public static function isActive(string $key, array $patterns): bool

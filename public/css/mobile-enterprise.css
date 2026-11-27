@@ -448,6 +448,7 @@
 
     .mobile-bottom-nav .mbn-item {
         flex: 1 !important;
+        min-width: 0;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -489,8 +490,14 @@
         opacity: 0.88 !important;
         white-space: nowrap !important;
         text-overflow: ellipsis !important;
+        overflow: hidden;
         max-width: 95% !important;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    #mobileBottomNav > .mbn-item:focus-visible {
+        outline: 2px solid var(--ds-gold, #cfa46f) !important;
+        outline-offset: -3px;
     }
 
     .mobile-bottom-nav .mbn-item:active {

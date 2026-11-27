@@ -82,7 +82,7 @@
             </div>
         </div>
 
-        <div class="sd-masthead-actions">
+        <div class="sd-masthead-actions d-none d-md-flex">
             <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sd-cta-primary">
                 <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
                 <span>Scan QR</span>
@@ -226,6 +226,11 @@
                     <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-stage-link">
                         View timetable <i class="bi bi-arrow-right" aria-hidden="true"></i>
                     </a>
+                    @if($peerAvailable)
+                        <a href="{{ route('peer-snap.index') }}" class="sd-stage-link is-subtle">
+                            <i class="bi bi-person-check" aria-hidden="true"></i> Check in for a classmate
+                        </a>
+                    @endif
                     @if(!$featuredClass)
                         <a href="{{ route('student.calendar') }}" class="sd-stage-link is-subtle">
                             Calendar <i class="bi bi-calendar-event" aria-hidden="true"></i>
@@ -243,7 +248,7 @@
             </div>
         </section>
 
-        <section class="sd-telemetry" aria-label="Attendance Standing and Weekly Pulse">
+        <section class="sd-telemetry d-none d-md-flex" aria-label="Attendance Standing and Weekly Pulse">
             <div class="sd-standing-top">
                 <div class="sd-gauge-wrap">
                     <svg class="sd-gauge-svg" viewBox="0 0 88 88" aria-hidden="true">
@@ -430,7 +435,7 @@
 
         <div class="sd-col-aside">
             {{-- Subject Standing --}}
-            <section class="sd-panel" aria-labelledby="sdSubjectStandingHeading">
+            <section class="sd-panel d-none d-md-block" aria-labelledby="sdSubjectStandingHeading">
                 <header class="sd-panel-head">
                     <div class="sd-panel-title-group">
                         <h2 id="sdSubjectStandingHeading" class="sd-panel-title">Subject Standing</h2>

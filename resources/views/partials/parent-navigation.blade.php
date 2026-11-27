@@ -5,6 +5,7 @@
     <div class="parent-nav-group {{ $mobile ? 'parent-nav-group-mobile' : '' }}">
         <p class="parent-nav-group-title">{{ $group['label'] }}</p>
         @foreach($group['items'] as [$label, $destination, $icon, $patterns, $color, $description])
+            @continue($mobile && in_array($destination, \App\Support\MobileNavigation::primaryRoutes(auth()->user()), true))
             @php
                 $active = request()->routeIs(...$patterns);
                 $childAware = in_array($destination, ['parent.dashboard', 'parent.schedule', 'parent.calendar'], true);

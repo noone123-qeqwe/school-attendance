@@ -8,47 +8,6 @@
     /** @var \App\Models\User $user */
     $user = $user ?? auth()->user();
 
-    // ── ACADEMIC YEAR & SEMESTER MAPPINGS ──
-    $yearLevelMap = [
-        1 => 'First Year',
-        2 => 'Second Year',
-        3 => 'Third Year',
-        4 => 'Fourth Year',
-        5 => 'Fifth Year',
-    ];
-    $yearText = $yearLevelMap[(int) $user->year_level] ?? ('Year ' . ($user->year_level ?? '1'));
-
-    $semesterMap = [
-        1 => 'First Semester',
-        2 => 'Second Semester',
-        3 => 'Summer Term',
-    ];
-    $semesterText = $semesterMap[(int) $user->semester] ?? ('Semester ' . ($user->semester ?? '1'));
-
-    $currentYear = (int) date('Y');
-    // Compute current academic year span
-    $academicYear = (date('n') >= 6) ? $currentYear . ' - ' . ($currentYear + 1) : ($currentYear - 1) . ' - ' . $currentYear;
-
-    // ── COURSE FULL NAME EXPANSION ──
-    $courseNames = [
-        'BSCS'  => 'Bachelor of Science in Computer Science',
-        'BSIT'  => 'Bachelor of Science in Information Technology',
-        'BSIS'  => 'Bachelor of Science in Information Systems',
-        'BSEMC' => 'Bachelor of Science in Entertainment and Multimedia Computing',
-        'BSEd'  => 'Bachelor of Secondary Education',
-        'BEEd'  => 'Bachelor of Elementary Education',
-        'BSBA'  => 'Bachelor of Science in Business Administration',
-        'BSCrim'=> 'Bachelor of Science in Criminology',
-        'BSHM'  => 'Bachelor of Science in Hospitality Management',
-        'BSTM'  => 'Bachelor of Science in Tourism Management',
-        'BSN'   => 'Bachelor of Science in Nursing',
-    ];
-    $courseCode = $user->course ?? 'BSCS';
-    $courseFull = $courseNames[$courseCode] ?? ($courseCode ?: 'Bachelor of Science in Computer Science');
-
-    $studentNumber = !empty($user->student_number) ? $user->student_number : ('ST-' . str_pad((string)$user->id, 6, '0', STR_PAD_LEFT));
-    $sectionDisplay = $user->section ?: 'Not assigned';
-
     // ── SCHEDULE DAY HELPER ──
     $todayName = now()->format('l');
 
@@ -159,8 +118,6 @@
         }
     }
 
-    $totalUnits = $subjects->sum(fn($s) => (float) ($s->units ?: 3.0));
-    $todayClassesCount = collect($groupedSchedules)->where('is_today', true)->count();
 @endphp
 
 @if(blank($user->section))
@@ -223,73 +180,6 @@
     font-size: 0.88rem;
     color: var(--cor-text-muted);
     margin: 0;
-}
-
-.cor-summary-chips-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 8px;
-}
-
-.cor-summary-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 8px;
-    font-size: 0.76rem;
-    font-weight: 700;
-    background: rgba(207, 164, 111, 0.1);
-    border: 1px solid rgba(207, 164, 111, 0.25);
-    color: var(--cor-gold-bright);
-}
-
-.cor-btn-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.cor-btn-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 9px 18px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    cursor: pointer;
-    text-decoration: none;
-    border: 1px solid transparent;
-}
-
-.cor-btn-pdf {
-    background: linear-gradient(135deg, rgba(207, 164, 111, 0.24), rgba(184, 134, 56, 0.14));
-    border-color: rgba(207, 164, 111, 0.45);
-    color: var(--cor-gold-bright);
-}
-
-.cor-btn-pdf:hover {
-    background: linear-gradient(135deg, rgba(207, 164, 111, 0.38), rgba(184, 134, 56, 0.24));
-    color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
-}
-
-.cor-btn-print {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.14);
-    color: var(--cor-text-main);
-}
-
-.cor-btn-print:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    transform: translateY(-1px);
 }
 
 /* ── THE OFFICIAL DOCUMENT SHEET (Inspired by Reference Slip) ── */
@@ -692,36 +582,6 @@
     text-transform: uppercase;
 }
 
-/* Table Footer Row for Total Units */
-.cor-table tfoot td {
-    background: rgba(207, 164, 111, 0.12);
-    padding: 13px 14px;
-    border-top: 2px solid var(--cor-border-gold);
-    border-right: 1.5px solid var(--cor-border-gold);
-    font-weight: 800;
-    color: var(--cor-gold-amber);
-    vertical-align: middle;
-}
-
-.cor-table tfoot td:last-child {
-    border-right: none;
-}
-
-.cor-total-units-label {
-    text-align: right;
-    font-size: 0.82rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--cor-gold-bright);
-}
-
-.cor-total-units-val {
-    font-size: 1.05rem;
-    font-weight: 900;
-    color: var(--cor-gold-amber);
-    font-family: 'JetBrains Mono', monospace;
-}
-
 /* ── MOBILE RESPONSIVE CARDS VIEW (Clean Touch Layout Without Excessive Horizontal Scrolling) ── */
     .cor-mobile-cards-view {
         display: flex;
@@ -963,18 +823,6 @@
             align-items: flex-start;
             gap: 12px;
         }
-        .cor-btn-group {
-            width: 100%;
-        }
-        .cor-btn-action {
-            flex: 1;
-            justify-content: center;
-            padding: 10px 16px;
-            font-size: 0.84rem;
-            min-height: 44px;
-            border-radius: 12px;
-        }
-
         /* Demographic table stacks cleanly on mobile phones */
         .cor-student-info-grid .cor-info-row.four-col,
         .cor-student-info-grid .cor-info-row.two-col {
@@ -1217,11 +1065,6 @@
     .cor-today-indicator {
         display: none !important;
     }
-    .cor-table tfoot td {
-        background: #f4f4f4 !important;
-        color: #000000 !important;
-        border-top-color: #000000 !important;
-    }
     .cor-footer-section {
         border-top-color: #000000 !important;
     }
@@ -1254,36 +1097,6 @@
                 Classes & Schedule
             </h1>
             <p>Your enrolled subjects and weekly class timetable</p>
-            <div class="cor-summary-chips-row">
-                <span class="cor-summary-chip">
-                    <i class="bi bi-person-fill"></i> {{ $user->name }} ({{ $studentNumber }})
-                </span>
-                <span class="cor-summary-chip">
-                    <i class="bi bi-mortarboard-fill"></i> {{ $courseCode }} &bull; {{ $yearText }} (Sec {{ $sectionDisplay }})
-                </span>
-                <span class="cor-summary-chip">
-                    <i class="bi bi-journal-check"></i> {{ $subjects->count() }} Subjects
-                </span>
-                <span class="cor-summary-chip">
-                    <i class="bi bi-award"></i> {{ number_format($totalUnits, 1) }} Total Units
-                </span>
-                @if($todayClassesCount > 0)
-                    <span class="cor-summary-chip cor-chip-today">
-                        <i class="bi bi-clock-history" aria-hidden="true"></i> {{ $todayClassesCount }} Meeting Today
-                    </span>
-                @endif
-            </div>
-        </div>
-
-        <div class="cor-btn-group">
-            <a href="{{ route('student.classes.pdf') }}" class="cor-btn-action cor-btn-pdf" id="downloadPdfBtn" title="Download schedule PDF">
-                <i class="bi bi-file-earmark-pdf-fill"></i>
-                <span>Download PDF</span>
-            </a>
-            <button type="button" class="cor-btn-action cor-btn-print" onclick="window.print()" id="printCorBtn" title="Print Schedule">
-                <i class="bi bi-printer-fill"></i>
-                <span>Print Schedule</span>
-            </button>
         </div>
     </div>
 

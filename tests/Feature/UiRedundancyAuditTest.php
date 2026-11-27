@@ -66,15 +66,71 @@ class UiRedundancyAuditTest extends TestCase
         $this->assertStringNotContainsString('Back to Settings', $html);
     }
 
-    public function test_mobile_home_menu_deduplicates_navigation_links(): void
+    public function test_role_bottom_navigation_stays_synchronized_without_repeating_primary_links(): void
+    {
+        $cases = [
+            ['teacher', 'teacher.dashboard', 'teacher.profile', ['Home', 'Classes', 'QR', 'Calendar', 'Menu'], []],
+            ['parent', 'parent.dashboard', 'parent.profile', ['Home', 'Calendar', 'Alerts', 'Menu'], []],
+            ['admin', 'admin.dashboard', 'admin.profile', ['Home', 'Academic', 'Reports', 'Alerts', 'Menu'], ['admin_sub_role' => 'super_admin']],
+        ];
+
+        foreach ($cases as [$role, $dashboardRoute, $profileRoute, $expectedLabels, $overrides]) {
+            $user = $this->createUser($role, $overrides);
+            $this->actingAs($user)
+                ->get(route('mobile.home'))
+                ->assertRedirect(route($dashboardRoute));
+            $this->get(route('mobile.profile'))
+                ->assertRedirect(route($profileRoute));
+
+            $response = $this->actingAs($user)
+                ->withSession($role === 'admin' ? ['admin_2fa_verified' => true] : [])
+                ->get(route($dashboardRoute))
+                ->assertOk();
+            $dom = new \DOMDocument();
+            $dom->loadHTML($response->getContent(), LIBXML_NOERROR | LIBXML_NOWARNING);
+            $xpath = new \DOMXPath($dom);
+            $nav = $xpath->query('//nav[@id="mobileBottomNav"]')->item(0);
+            $this->assertNotNull($nav, "{$role} dashboard should render shared mobile navigation.");
+
+            $labels = [];
+            foreach ($xpath->query('./a/span[last()] | ./button/span[last()]', $nav) as $label) {
+                $labels[] = trim(preg_replace('/\s+/', ' ', $label->textContent));
+            }
+            $this->assertSame($expectedLabels, $labels, "{$role} mobile tabs should match its desktop workspace.");
+
+            $primaryPaths = array_map(
+                fn ($node) => parse_url($node->nodeValue, PHP_URL_PATH),
+                iterator_to_array($xpath->query('//nav[@id="mobileBottomNav"]/a/@href')),
+            );
+            $morePaths = array_map(
+                fn ($node) => parse_url($node->nodeValue, PHP_URL_PATH),
+                iterator_to_array($xpath->query('//*[@id="moreSheetContent"]//a[@href]/@href')),
+            );
+            $this->assertSame([], array_values(array_intersect($primaryPaths, $morePaths)), "{$role} More sheet should not repeat primary tabs.");
+            $this->flushSession();
+        }
+    }
+
+    public function test_student_classes_schedule_removes_profile_summary_and_export_actions(): void
     {
         $student = $this->createUser('student');
+        $html = $this->actingAs($student)->get(route('student.classes'))->assertOk()->getContent();
 
-        $response = $this->actingAs($student)->get(route('mobile.home'));
-        $response->assertOk();
+        foreach ([
+            'Total Units',
+            'Meeting Today',
+            'Download PDF',
+            'Print Schedule',
+            'id="downloadPdfBtn"',
+            'id="printCorBtn"',
+            'cor-summary-chips-row',
+        ] as $removedContent) {
+            $this->assertStringNotContainsString($removedContent, $html);
+        }
 
-        $html = $response->getContent();
-        $this->assertStringContainsString('seenPaths.has(normalizeMenuPath', $html);
+        $this->assertStringContainsString('id="corCertificateSheet"', $html);
+        $this->assertStringContainsString('id="corMobileCardsView"', $html);
+        $this->assertStringContainsString('id="scheduleSearchInput"', $html);
     }
 
     public function test_parent_profile_and_subpages_remove_redundant_controls(): void

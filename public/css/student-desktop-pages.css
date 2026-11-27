@@ -248,20 +248,10 @@
         padding-bottom: 0 !important;
     }
 
-    /* Classes and weekly schedules retain all details in readable desktop groups. */
+    /* Classes and weekly schedules keep the shared page header aligned. */
     body.student-portal[data-student-layout] .cor-actions-bar {
         align-items: flex-start;
         gap: 24px;
-    }
-
-    body.student-portal[data-student-layout] .cor-summary-chips-row {
-        gap: 7px 14px;
-        margin-top: 14px;
-    }
-
-    body.student-portal[data-student-layout] .cor-btn-group {
-        gap: 10px;
-        padding-top: 4px;
     }
 
     body.student-portal[data-student-layout] .cor-sheet {
@@ -625,7 +615,7 @@
         line-height: 1.6;
     }
 
-    body.student-portal[data-student-layout] #mainContent :is(.student-page-link, .cor-btn-action, .student-view-switcher button) {
+    body.student-portal[data-student-layout] #mainContent :is(.student-page-link, .student-view-switcher button) {
         min-height: 42px;
     }
 

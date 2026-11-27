@@ -543,25 +543,6 @@
         padding: 0 !important;
     }
 
-    body.student-portal .cor-summary-chips-row {
-        gap: 8px !important;
-        margin-top: 10px !important;
-    }
-
-    body.student-portal .cor-summary-chip {
-        background: var(--sd-surface) !important;
-        border: 1px solid var(--sd-border) !important;
-        border-radius: 8px !important;
-        font-size: 0.76rem !important;
-        padding: 4px 10px !important;
-    }
-
-    body.student-portal .cor-btn-action {
-        border-radius: 9px !important;
-        padding: 8px 14px !important;
-        font-size: 0.82rem !important;
-    }
-
     body.student-portal[data-student-layout] .cor-sheet {
         background: transparent !important;
         border: 0 !important;

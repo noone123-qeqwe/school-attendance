@@ -40,10 +40,10 @@ class VisualConsistencyAuditTest extends TestCase
         $this->assertStringContainsString('header-account-trigger', $settingsHtml);
         $this->assertStringContainsString('sidebar-logo', $settingsHtml);
 
-        $mobileHomeHtml = $this->actingAs($student)->get(route('mobile.home'))->assertOk()->getContent();
-        $this->assertStringContainsString('header-avatar-pill', $mobileHomeHtml);
-        $this->assertStringContainsString('padding: 0;', $mobileHomeHtml);
-        $this->assertStringNotContainsString('padding: 2px;', $mobileHomeHtml);
+        $mobileHomeHtml = $this->actingAs($student)->followingRedirects()->get(route('mobile.home'))->assertOk()->getContent();
+        $this->assertStringContainsString('header-account-trigger', $mobileHomeHtml);
+        $this->assertStringContainsString('header-profile-img', $mobileHomeHtml);
+        $this->assertStringNotContainsString('header-avatar-pill', $mobileHomeHtml);
     }
 
     public function test_login_page_renders_glass_logo_without_decorative_ring(): void

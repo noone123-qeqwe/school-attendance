@@ -1,9 +1,19 @@
 @php $mobile = $mobile ?? false; @endphp
 @if($mobile)
+    @php
+        $primaryRoutes = \App\Support\MobileNavigation::primaryRoutes(auth()->user());
+        $sidebarItems = array_merge(...\App\Support\TeacherNavigation::sidebarSections());
+        $sidebarItems = array_filter($sidebarItems, fn (array $item) => !in_array($item[2], $primaryRoutes, true));
+        $sidebarKeys = array_column($sidebarItems, 0);
+    @endphp
     @foreach(\App\Support\TeacherNavigation::groups() as $group)
+        @php
+            $items = array_filter($group['items'], fn ($item) => in_array($item[0], $sidebarKeys, true));
+        @endphp
+        @continue(!$items)
         <div class="teacher-nav-group">
             <p class="teacher-nav-label">{{ $group['label'] }}</p>
-            @foreach($group['items'] as [$key, $label, $destination, $icon, $patterns, $description, $query])
+            @foreach($items as [$key, $label, $destination, $icon, $patterns, $description, $query])
                 @php
                     $active = \App\Support\TeacherNavigation::isActive($key, $patterns);
                     $pendingCount = $key === 'requests' ? (($pendingExcusesCount ?? 0) + ($pendingCorrectionsCount ?? 0)) : 0;
@@ -22,7 +32,7 @@
     @endforeach
 @else
     @foreach(\App\Support\TeacherNavigation::sidebarSections() as $sectionIndex => $items)
-        @foreach($items as [$key, $label, $destination, $icon, $patterns, $query])
+        @foreach($items as [$key, $label, $destination, $icon, $patterns, , $query])
             @php
                 $active = \App\Support\TeacherNavigation::isActive($key, $patterns);
                 $pendingCount = $key === 'requests' ? (($pendingExcusesCount ?? 0) + ($pendingCorrectionsCount ?? 0)) : 0;
