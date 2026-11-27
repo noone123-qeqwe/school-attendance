@@ -719,29 +719,7 @@ class TeacherController extends Controller
     // ─────────────────────────────────────────
     public function absentReport(Request $request)
     {
-        $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-            ->get();
-        
-        $subjectCodes = $teacherSubjects->pluck('code');
-        $date = $request->filled('date') ? $request->date : today()->toDateString();
-        
-        // Only show absent records for teacher's subjects
-        $absentRecords = Attendance::with(['user','subject'])
-            ->where('status','Absent')
-            ->whereDate('date',$date)
-            ->whereIn('subject_code', $subjectCodes)
-            ->orderBy('created_at','desc')
-            ->get();
-
-        if ($request->filled('year_level')) {
-            $absentRecords = $absentRecords->filter(fn($r) => $r->user && $r->user->year_level == $request->year_level);
-        }
-        if ($request->filled('semester')) {
-            $absentRecords = $absentRecords->filter(fn($r) => $r->user && $r->user->semester == $request->semester);
-        }
-
-        return view('teacher.absent-report', compact('absentRecords','date','teacherSubjects'));
+        return $this->renderRequestsHub($request, 'absent');
     }
 
     // ─────────────────────────────────────────
@@ -1038,7 +1016,7 @@ class TeacherController extends Controller
     private function renderRequestsHub(Request $request, string $defaultTab)
     {
         $requestedTab = $request->query('tab');
-        $activeTab = in_array($requestedTab, ['excuses', 'corrections', 'my-excuses'], true)
+        $activeTab = in_array($requestedTab, ['excuses', 'corrections', 'absent', 'my-excuses'], true)
             ? $requestedTab
             : $defaultTab;
 
@@ -1115,7 +1093,29 @@ class TeacherController extends Controller
             ->paginate(20, ['*'], 'correction_page')
             ->withQueryString();
 
-        // 3. My Excuses (teacher's own faculty excuse submissions)
+        // 3. Absent Report (student absences across teacher's subjects)
+        $absentDate = $request->filled('date') ? $request->input('date') : today()->toDateString();
+
+        $absentRecords = Attendance::with(['user', 'subject'])
+            ->where('status', 'Absent')
+            ->where('user_id', '!=', $teacher->id)
+            ->whereDate('date', $absentDate)
+            ->whereIn('subject_code', $subjectCodes)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        if ($request->filled('year_level')) {
+            $absentRecords = $absentRecords->filter(fn ($r) => $r->user && $r->user->year_level == $request->year_level);
+        }
+        if ($request->filled('semester')) {
+            $absentRecords = $absentRecords->filter(fn ($r) => $r->user && $r->user->semester == $request->semester);
+        }
+
+        $absentRecordsCount = $absentRecords->count();
+        $absentUnexcusedCount = $absentRecords->where('excused', false)->count();
+        $absentExcusedCount = $absentRecords->where('excused', true)->count();
+
+        // 4. My Excuses (teacher's own faculty excuse submissions)
         $myExcuseSubmissions = ExcuseSubmission::with(['attendance.subject'])
             ->where('user_id', $teacher->id)
             ->orderBy('created_at', 'desc')
@@ -1136,6 +1136,11 @@ class TeacherController extends Controller
             'corrections',
             'totalCorrectionsCount',
             'pendingCorrectionsTotal',
+            'absentRecords',
+            'absentDate',
+            'absentRecordsCount',
+            'absentUnexcusedCount',
+            'absentExcusedCount',
             'myExcuseSubmissions',
             'myExcusesCount'
         ));

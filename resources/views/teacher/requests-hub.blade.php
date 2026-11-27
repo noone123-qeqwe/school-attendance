@@ -28,7 +28,7 @@
             <div class="tc-header-copy">
                 <h1 class="tc-title" style="margin-top: 0;">Excuses &amp; Corrections</h1>
                 <p style="margin: 6px 0 0; font-size: 0.9rem; color: #a49890;">
-                    Review student excuse letters, attendance correction requests, and your own faculty excuses.
+                    Review student excuse letters, attendance correction requests, daily absent records, and your own faculty excuses.
                 </p>
             </div>
             <div class="tc-actions-bar">
@@ -77,6 +77,23 @@
         <button
             type="button"
             role="tab"
+            id="tab-btn-absent"
+            class="tc-tab-btn {{ $activeTab === 'absent' ? 'active' : '' }}"
+            data-tab="absent"
+            data-url="{{ route('teacher.absent') }}"
+            aria-controls="absent-tab"
+            aria-selected="{{ $activeTab === 'absent' ? 'true' : 'false' }}">
+            <i class="bi bi-person-x-fill" aria-hidden="true"></i>
+            <span>Absent Report</span>
+            <span class="tc-tab-count portal-mono">{{ $absentRecordsCount }}</span>
+            @if($absentUnexcusedCount > 0)
+                <span style="background: rgba(251, 113, 133, 0.16); color: #fda4af; padding: 1px 6px; border-radius: 999px; font-size: 0.68rem; font-weight: 700;">{{ $absentUnexcusedCount }} unexcused</span>
+            @endif
+        </button>
+
+        <button
+            type="button"
+            role="tab"
             id="tab-btn-my-excuses"
             class="tc-tab-btn {{ $activeTab === 'my-excuses' ? 'active' : '' }}"
             data-tab="my-excuses"
@@ -105,6 +122,15 @@
         class="tc-tab-panel {{ $activeTab === 'corrections' ? 'active' : '' }}"
         @if($activeTab !== 'corrections') hidden @endif>
         @include('teacher.partials.correction-requests-tab')
+    </section>
+
+    <section
+        id="absent-tab"
+        role="tabpanel"
+        aria-labelledby="tab-btn-absent"
+        class="tc-tab-panel {{ $activeTab === 'absent' ? 'active' : '' }}"
+        @if($activeTab !== 'absent') hidden @endif>
+        @include('teacher.partials.absent-report-tab')
     </section>
 
     <section
@@ -190,6 +216,8 @@
         const path = window.location.pathname;
         if (path.endsWith('/corrections')) {
             activateTab('corrections', { updateHistory: false });
+        } else if (path.endsWith('/absent')) {
+            activateTab('absent', { updateHistory: false });
         } else if (path.endsWith('/excuses')) {
             activateTab('my-excuses', { updateHistory: false });
         } else {

@@ -13,8 +13,7 @@ class TeacherNavigation
                 ['take-attendance', 'Take Attendance', 'teacher.classroom.index', 'bi-qr-code-scan', ['teacher.qr*'], 'Choose a class and open its attendance QR', ['task' => 'attendance']],
             ]],
             ['label' => 'Attendance & requests', 'items' => [
-                ['absent', 'Absent Report', 'teacher.absent', 'bi-person-x-fill', ['teacher.absent*'], 'Review missed classes and follow up', []],
-                ['requests', 'Excuses & Corrections', 'teacher.excuse.reviews', 'bi-file-earmark-text-fill', ['teacher.excuse.*', 'teacher.corrections*', 'teacher.excuses*'], 'Review student excuses, attendance corrections, and your own requests', []],
+                ['requests', 'Excuses & Corrections', 'teacher.excuse.reviews', 'bi-file-earmark-text-fill', ['teacher.excuse.*', 'teacher.corrections*', 'teacher.excuses*', 'teacher.absent*'], 'Review student excuses, attendance corrections, absent report, and your own requests', []],
             ]],
             ['label' => 'Students & school', 'items' => [
                 ['students', 'Student Record', 'teacher.students', 'bi-people-fill', ['teacher.students*', 'teacher.student'], 'Find students and view their progress', []],
@@ -41,8 +40,7 @@ class TeacherNavigation
                 ['calendar', 'School Calendar', 'teacher.calendar', 'bi-calendar-event-fill', ['teacher.calendar*'], []],
             ],
             [
-                ['requests', 'Excuses & Corrections', 'teacher.excuse.reviews', 'bi-file-earmark-text-fill', ['teacher.excuse.*', 'teacher.corrections*', 'teacher.excuses*'], []],
-                ['absent', 'Absent Report', 'teacher.absent', 'bi-person-x-fill', ['teacher.absent*'], []],
+                ['requests', 'Excuses & Corrections', 'teacher.excuse.reviews', 'bi-file-earmark-text-fill', ['teacher.excuse.*', 'teacher.corrections*', 'teacher.excuses*', 'teacher.absent*'], []],
                 ['reports', 'Attendance Reports', 'teacher.reports', 'bi-graph-up-arrow', ['teacher.reports*'], []],
             ],
         ];
@@ -94,7 +92,7 @@ class TeacherNavigation
             'teacher.qr*' => ['title' => 'Live QR Attendance', 'group' => 'Daily teaching'],
             'teacher.attendance.preview' => ['title' => 'Attendance Preview', 'group' => 'Attendance & records'],
             'teacher.attendance*' => ['title' => 'Attendance Records', 'group' => 'Attendance & records'],
-            'teacher.absent*' => ['title' => 'Absent Report', 'group' => 'Attendance & records'],
+            'teacher.absent*' => ['title' => 'Excuses & Corrections', 'group' => 'Attendance & requests'],
             'teacher.excuses.create' => ['title' => 'Submit New Excuse', 'group' => 'Excuses & Corrections'],
             'teacher.excuse.*' => ['title' => 'Excuses & Corrections', 'group' => 'Attendance & requests'],
             'teacher.corrections*' => ['title' => 'Excuses & Corrections', 'group' => 'Attendance & requests'],

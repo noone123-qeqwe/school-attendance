@@ -119,8 +119,10 @@ class TeacherRequestsHubTest extends TestCase
         $this->assertStringContainsString('aria-label="3 pending requests"', $sidebarHtml);
         $this->assertStringNotContainsString(route('teacher.corrections'), $sidebarHtml);
         $this->assertStringNotContainsString(route('teacher.excuses'), $sidebarHtml);
+        $this->assertStringNotContainsString(route('teacher.absent'), $sidebarHtml);
         $this->assertStringNotContainsString('Excuse Reviews', $sidebarHtml);
         $this->assertStringNotContainsString('Correction Requests', $sidebarHtml);
+        $this->assertStringNotContainsString('Absent Report', $sidebarHtml);
         $this->assertStringNotContainsString('My Excuses', $sidebarHtml);
 
         $moreSheetHtml = $this->extractHtmlBlock($html, '/<div class="more-sheet-grid" id="moreSheetContent">.*?<script/s');
@@ -130,6 +132,7 @@ class TeacherRequestsHubTest extends TestCase
         $this->assertStringContainsString('aria-label="3 pending requests"', $moreSheetHtml);
         $this->assertStringNotContainsString(route('teacher.corrections'), $moreSheetHtml);
         $this->assertStringNotContainsString(route('teacher.excuses'), $moreSheetHtml);
+        $this->assertStringNotContainsString(route('teacher.absent'), $moreSheetHtml);
         $this->assertStringNotContainsString('My Excuse Requests', $moreSheetHtml);
     }
 
@@ -141,6 +144,7 @@ class TeacherRequestsHubTest extends TestCase
         $cases = [
             route('teacher.excuse.reviews') => 'tab-btn-excuses',
             route('teacher.corrections') => 'tab-btn-corrections',
+            route('teacher.absent') => 'tab-btn-absent',
             route('teacher.excuses') => 'tab-btn-my-excuses',
         ];
 
@@ -150,6 +154,7 @@ class TeacherRequestsHubTest extends TestCase
             $this->assertStringContainsString('id="requestsHubWorkspace"', $html);
             $this->assertStringContainsString('id="tab-btn-excuses"', $html);
             $this->assertStringContainsString('id="tab-btn-corrections"', $html);
+            $this->assertStringContainsString('id="tab-btn-absent"', $html);
             $this->assertStringContainsString('id="tab-btn-my-excuses"', $html);
 
             // Desktop sidebar item stays highlighted on every tab route
@@ -245,10 +250,35 @@ class TeacherRequestsHubTest extends TestCase
             'status' => 'pending',
         ]);
 
+        // Today's student absence for current teacher vs today's foreign student absence & teacher's own absence
+        $absentStudent = $this->createUser('student', ['name' => 'Marco Absentee', 'student_number' => '2026-ABS-1', 'year_level' => '3rd Year', 'semester' => '1st Semester']);
+        Attendance::create([
+            'user_id' => $absentStudent->id,
+            'subject_code' => $mySubject->code,
+            'date' => today()->toDateString(),
+            'status' => 'Absent',
+            'excused' => false,
+        ]);
+        Attendance::create([
+            'user_id' => $teacher->id,
+            'subject_code' => $mySubject->code,
+            'date' => today()->toDateString(),
+            'status' => 'Absent',
+            'excused' => false,
+        ]);
+        Attendance::create([
+            'user_id' => $otherStudent->id,
+            'subject_code' => $otherSubject->code,
+            'date' => today()->toDateString(),
+            'status' => 'Absent',
+            'excused' => false,
+        ]);
+
         $html = $this->actingAs($teacher)->get(route('teacher.excuse.reviews'))->assertOk()->getContent();
 
         $excusesPanel = $this->extractHtmlBlock($html, '/<section\s+id="excuses-tab".*?<section\s+id="corrections-tab"/s');
-        $correctionsPanel = $this->extractHtmlBlock($html, '/<section\s+id="corrections-tab".*?<section\s+id="my-excuses-tab"/s');
+        $correctionsPanel = $this->extractHtmlBlock($html, '/<section\s+id="corrections-tab".*?<section\s+id="absent-tab"/s');
+        $absentPanel = $this->extractHtmlBlock($html, '/<section\s+id="absent-tab".*?<section\s+id="my-excuses-tab"/s');
         $myExcusesPanel = $this->extractHtmlBlock($html, '/<section\s+id="my-excuses-tab".*?<script @?cspNonce|<section\s+id="my-excuses-tab".*?<\/div>\s*<script/s');
 
         $this->assertStringContainsString('MyStudent Fever Excuse', $excusesPanel);
@@ -258,8 +288,20 @@ class TeacherRequestsHubTest extends TestCase
         $this->assertStringContainsString('MyClass QR scanner timeout', $correctionsPanel);
         $this->assertStringNotContainsString('Secret OtherClass Correction', $correctionsPanel);
 
+        $this->assertStringContainsString('Marco Absentee', $absentPanel);
+        $this->assertStringNotContainsString($otherStudent->name, $absentPanel);
+        $this->assertStringNotContainsString($teacher->name, $absentPanel);
+
         $this->assertStringContainsString('Faculty Symposium Travel', $myExcusesPanel);
         $this->assertStringNotContainsString('MyStudent Fever Excuse', $myExcusesPanel);
+
+        // Filtering Absent Report by mismatched year_level excludes Marco Absentee cleanly
+        $absentFilteredHtml = $this->actingAs($teacher)
+            ->get(route('teacher.absent', ['date' => today()->toDateString(), 'year_level' => '1st Year']))
+            ->assertOk()
+            ->getContent();
+        $filteredAbsentPanel = $this->extractHtmlBlock($absentFilteredHtml, '/<section\s+id="absent-tab".*?<section\s+id="my-excuses-tab"/s');
+        $this->assertStringNotContainsString('Marco Absentee', $filteredAbsentPanel);
     }
 
     public function test_filtering_correction_approval_and_teacher_excuse_submission_work_end_to_end(): void
