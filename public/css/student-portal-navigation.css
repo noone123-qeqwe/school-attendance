@@ -5,6 +5,7 @@
         display: grid !important;
         grid-auto-flow: column;
         grid-auto-columns: minmax(0, 1fr);
+        inset: auto 0 0 !important;
         height: auto !important;
         padding: 6px max(6px, env(safe-area-inset-right, 0px))
             calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)) !important;
@@ -55,6 +56,7 @@
     body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item[aria-current] > i {
         background: var(--gold-bright);
         color: var(--sdc-canvas) !important;
+        filter: none !important;
     }
 
     body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item[aria-current] > span {
