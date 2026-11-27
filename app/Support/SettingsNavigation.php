@@ -28,6 +28,47 @@ class SettingsNavigation
      */
     public static function groups(?User $user): array
     {
+        if ($user?->isTeacher()) {
+            return [
+                'Account' => [
+                    [
+                        'destination' => 'profile',
+                        'icon' => 'bi-person-circle',
+                        'label' => 'Profile & faculty details',
+                        'description' => 'Photo, employee details, and department info',
+                    ],
+                ],
+                'Security' => [
+                    [
+                        'destination' => 'credentials',
+                        'icon' => 'bi-shield-lock',
+                        'label' => 'Password & email',
+                        'description' => 'Update your sign-in email and password',
+                    ],
+                    [
+                        'destination' => 'passkeys',
+                        'icon' => 'bi-fingerprint',
+                        'label' => 'Device passkeys',
+                        'description' => 'Sign in faster with your device lock or biometrics',
+                    ],
+                    [
+                        'destination' => 'recovery',
+                        'icon' => 'bi-life-preserver',
+                        'label' => 'Recovery codes',
+                        'description' => 'Backup keys for account access',
+                    ],
+                ],
+                'Preferences' => [
+                    [
+                        'destination' => 'preferences',
+                        'icon' => 'bi-sliders',
+                        'label' => 'Notification preferences',
+                        'description' => 'Email alerts, push notifications, and layout',
+                    ],
+                ],
+            ];
+        }
+
         $accountItems = [
             [
                 'destination' => 'profile',

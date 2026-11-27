@@ -41,7 +41,7 @@ class SidebarBrandUnificationTest extends TestCase
             ['parent', route('parent.dashboard'), 'parent-sidebar-brand'],
             ['parent', route('parent.profile'), 'parent-sidebar-brand'],
             ['teacher', route('teacher.dashboard'), 'teacher-sidebar-brand'],
-            ['teacher', route('teacher.profile'), 'teacher-sidebar-brand'],
+            ['teacher', route('teacher.profile'), 'settings-sidebar-brand'],
             ['student', route('home'), 'student-sidebar-brand'],
             ['student', route('settings'), 'settings-sidebar-brand'],
         ];

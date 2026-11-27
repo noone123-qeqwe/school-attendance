@@ -1,6 +1,7 @@
 @php
     $settingsUser = $settingsUser ?? Auth::user();
     $isStudentUser = (bool) $settingsUser?->isStudent();
+    $contentId = $settingsUser?->isTeacher() ? 'teacherSettingsContent' : 'studentSettingsContent';
     $dashboardUrl = \App\Support\SettingsNavigation::dashboardUrl($settingsUser);
     $settingsGroups = \App\Support\SettingsNavigation::groups($settingsUser);
 @endphp
@@ -41,7 +42,7 @@
                     data-title="{{ $item['label'] }}"
                     title="{{ $item['label'] }}"
                     aria-label="{{ $item['label'] }}"
-                    aria-controls="studentSettingsContent"
+                    aria-controls="{{ $contentId }}"
                     @if($isInitialActive) aria-current="page" @endif>
                 <i class="bi {{ $item['icon'] }}" aria-hidden="true"></i>
                 <span class="nav-link-text">{{ $item['label'] }}</span>

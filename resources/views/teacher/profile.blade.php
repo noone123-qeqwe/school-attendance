@@ -1,571 +1,578 @@
 @extends('layouts.app')
-@section('page-title', 'My Profile')
+
+@section('page-title', 'Settings')
+@section('role-sidebar')
+    @include('layouts.sidebars.settings', ['settingsUser' => $teacher])
+@endsection
 
 @section('content')
-<style>
-    .tch-profile-header {
-        display: flex; align-items: center; gap: 18px;
-        padding: 18px 22px;
-        flex-wrap: wrap;
-        background: rgba(255,235,190,0.04);
-        border: 1px solid rgba(255,215,145,0.1);
-        border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.18);
-        margin-bottom: 22px;
-    }
-    .tch-profile-avatar {
-        width: 100px; height: 100px;
-        border-radius: 50%;
-        border: 4px solid #f1f5f9;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        background: white;
-        overflow: hidden;
-        cursor: pointer;
-        transition: transform 0.3s, box-shadow 0.3s;
-        flex-shrink: 0;
-    }
-    .tch-profile-avatar:hover { transform: scale(1.05); box-shadow: 0 8px 28px rgba(0,0,0,0.25); }
-    .tch-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .tch-profile-header-info { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-    .tch-profile-name { font-size: 1.3rem; font-weight: 800; color: #f3e7cd; letter-spacing: -0.3px; }
-    .tch-profile-email { font-size: 0.9rem; color: #b39b82; }
-    .tch-role-badge {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: rgba(255,235,190,0.08); color: #f3e7cd;
-        font-size: 0.75rem; font-weight: 700;
-        padding: 5px 14px; border-radius: 99px;
-        border: 1px solid rgba(255,215,145,0.15);
-    }
-    .tch-info-card {
-        background: rgba(255,235,190,0.04); border-radius: 14px;
-        border: 1px solid rgba(255,215,145,0.1);
-        box-shadow: 0 12px 36px rgba(0,0,0,0.2);
-        overflow: hidden; margin-bottom: 16px;
-        transition: box-shadow 0.25s;
-    }
-    .tch-info-card:hover { box-shadow: 0 18px 42px rgba(0,0,0,0.28); }
-    .tch-info-card-head {
-        padding: 16px 22px; border-bottom: 1px solid rgba(255,215,145,0.12);
-        display: flex; align-items: center; gap: 10px;
-    }
-    .tch-info-card-icon {
-        width: 34px; height: 34px; border-radius: 9px;
-        display: flex; align-items: center; justify-content: center; font-size: 0.95rem;
-    }
-    .tch-info-card-title { font-size: 0.9rem; font-weight: 700; color: var(--portal-text); }
-    .tch-info-card-sub { font-size: 0.75rem; color: var(--portal-muted); margin-top: 1px; }
-    .tch-info-card-body { padding: 6px 22px 18px; }
-    .tch-info-row {
-        display: flex; align-items: center; gap: 14px;
-        padding: 13px 0; border-bottom: 1px solid rgba(255,215,145,0.08);
-    }
-    .tch-info-row:last-child { border-bottom: none; }
-    .tch-info-icon {
-        width: 34px; height: 34px; border-radius: 9px;
-        background: rgba(255,235,190,0.06); border: 1px solid rgba(255,215,145,0.12);
-        display: flex; align-items: center; justify-content: center;
-        color: #d4ab62; font-size: 0.9rem; flex-shrink: 0;
-    }
-    .tch-info-lbl { font-size: 0.7rem; font-weight: 600; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; }
-    .tch-info-val { font-size: 0.95rem; font-weight: 600; color: #f3e7cd; margin-top: 2px; }
-    .tch-form-input {
-        width: 100%; padding: 11px 14px;
-        border-radius: 10px; border: 1.5px solid rgba(255,215,145,0.12);
-        font-size: 0.875rem; font-family: 'Inter', sans-serif;
-        background: rgba(255,235,190,0.04); color: #f3e7cd;
-        transition: all 0.2s; outline: none;
-    }
-    .tch-form-input:hover { border-color: rgba(255,215,145,0.22); background: rgba(255,235,190,0.06); }
-    .tch-form-input:focus {
-        border-color: #cfa46f; background: rgba(255,235,190,0.06);
-        box-shadow: 0 0 0 3px rgba(207,164,111,0.12);
-    }
-    .pw-wrap { position: relative; }
-    .pw-wrap .tch-form-input { padding-right: 44px; }
-    .eye-btn {
-        position: absolute; right: 13px; top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8; font-size: 1rem;
-        cursor: pointer; background: none; border: none; padding: 0;
-        transition: color 0.2s; line-height: 1;
-    }
-    .eye-btn:hover { color: #7c2d12; }
-    .tch-save-btn {
-        padding: 11px 28px;
-        background: #7f432e;
-        color: #f3e7cd; font-weight: 700; font-size: 0.875rem;
-        border: none; border-radius: 10px; cursor: pointer;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-        transition: all 0.25s;
-    }
-    .tch-save-btn:hover {
-        background: #8f4f37;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 22px rgba(0,0,0,0.32);
-    }
-    .tch-save-btn:active { transform: translateY(0); }
-    .flash-ok {
-        background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d;
-        border-radius: 12px; padding: 12px 16px; font-size: 0.875rem;
-        margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
-    }
-    .flash-err {
-        background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;
-        border-radius: 12px; padding: 12px 16px; font-size: 0.875rem;
-        margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
-    }
-    @media (max-width: 768px) {
-        .tch-profile-header { flex-direction: column; align-items: flex-start; }
-        .tch-profile-avatar { width: 84px; height: 84px; }
-    }
-</style>
+@php
+    $prefs = is_string($teacher->notification_preferences)
+        ? json_decode($teacher->notification_preferences, true)
+        : (is_array($teacher->notification_preferences) ? $teacher->notification_preferences : []);
+    $emailNotif = $prefs['email'] ?? true;
+    $pushNotif = $prefs['push'] ?? true;
+    $mobileNavGroups = \App\Support\SettingsNavigation::groups($teacher);
+    $assignedCount = $assignedClassesCount ?? 0;
+@endphp
 
-@if(session('success'))
-<div class="flash-ok"><i class="bi bi-check-circle-fill fs-5"></i><span>{{ session('success') }}</span></div>
-@endif
-@if($errors->any())
-<div class="flash-err"><i class="bi bi-exclamation-circle-fill fs-5"></i><span>{{ $errors->first() }}</span></div>
-@endif
+<div class="sp teacher-settings"
+     data-teacher-settings="{{ $teacher->id }}"
+     data-settings-view="profile"
+     data-settings-feedback="{{ $errors->any() || session('success') ? 'true' : 'false' }}"
+     data-settings-email-error="{{ $errors->has('new_email') || $errors->has('otp') ? 'true' : 'false' }}"
+     data-settings-email-address-error="{{ $errors->has('new_email') ? 'true' : 'false' }}"
+     data-settings-email-error-message="{{ $errors->first('new_email') ?: $errors->first('otp') }}"
+     data-settings-password-error="{{ $errors->has('password') || $errors->has('password_confirmation') || $errors->has('otp') ? 'true' : 'false' }}"
+     data-settings-password-error-message="{{ $errors->first('password') ?: $errors->first('password_confirmation') ?: $errors->first('otp') }}">
 
-<div class="tch-profile-header">
-    <div class="tch-avatar-wrapper">
-        <x-profile-photo-manager :user="$teacher" :size="96" avatar-id="teacherAvatarDisplay" />
-    </div>
+    <header class="teacher-settings-heading">
+        <h1>Your settings</h1>
+        <p>Manage your faculty profile, account security, and notification preferences.</p>
+    </header>
 
-        <div class="tch-profile-header-info">
-            <div class="tch-profile-name">{{ $teacher->name }}</div>
-            <div class="tch-profile-email">{{ $teacher->email }}</div>
-            <div class="tch-role-badge"><i class="bi bi-person-workspace"></i> Teacher</div>
+    @if(session('success'))
+        <div class="ts-flash ts-flash-ok" role="status">
+            <i class="bi bi-check-circle-fill fs-5" aria-hidden="true"></i>
+            <span>{{ session('success') }}</span>
         </div>
-</div>
+    @endif
+    @if($errors->any())
+        <div class="ts-flash ts-flash-err" role="alert">
+            <i class="bi bi-exclamation-circle-fill fs-5" aria-hidden="true"></i>
+            <span>{{ $errors->first() }}</span>
+        </div>
+    @endif
 
-<!-- Grid -->
-<div class="row g-3">
+    <section class="settings-main-content" id="teacherSettingsContent" aria-labelledby="teacherSettingsPageTitle">
+        <nav class="settings-mobile-nav d-md-none" aria-label="Settings sections">
+            @foreach($mobileNavGroups as $groupItems)
+                @foreach($groupItems as $item)
+                    <button type="button"
+                            class="settings-mobile-pill {{ $item['destination'] === 'profile' ? 'active' : '' }}"
+                            data-settings-page="{{ $item['destination'] }}"
+                            aria-controls="teacherSettingsContent"
+                            @if($item['destination'] === 'profile') aria-current="page" @endif>
+                        <i class="bi {{ $item['icon'] }}" aria-hidden="true"></i>
+                        <span>{{ $item['label'] }}</span>
+                    </button>
+                @endforeach
+            @endforeach
+        </nav>
 
-    <!-- LEFT: Account Info -->
-    <div class="col-lg-7">
-        <div class="tch-info-card">
-            <div class="tch-info-card-head">
-                <div class="tch-info-card-icon" style="background:rgba(255,235,190,0.08);color:#cfa46f;"><i class="bi bi-person-fill"></i></div>
-                <div>
-                    <div class="tch-info-card-title">Account Information</div>
-                    <div class="tch-info-card-sub">Your teacher account details</div>
+        <header class="teacher-settings-detail-heading">
+            <button type="button" class="teacher-settings-back" data-account-back hidden>
+                <i class="bi bi-arrow-left" aria-hidden="true"></i>
+                <span data-account-back-label>Back to Password &amp; email</span>
+            </button>
+            <h2 id="teacherSettingsPageTitle" tabindex="-1">Profile &amp; faculty details</h2>
+            <p id="teacherSettingsPageDescription">Manage your profile photo and review your faculty account details.</p>
+        </header>
+
+        <!-- ── PANEL: PROFILE & FACULTY DETAILS ── -->
+        <div id="tab-profile" class="spanel active">
+            <div class="ts-card ts-profile-summary">
+                <div class="ts-card-head">
+                    <div class="ts-card-icon"><i class="bi bi-person-bounding-box" aria-hidden="true"></i></div>
+                    <div>
+                        <div class="ts-card-title">Profile Photo</div>
+                        <div class="ts-card-sub">Manage your avatar and account appearance</div>
+                    </div>
+                </div>
+                <div class="ts-card-body">
+                    <div class="ts-profile-inner">
+                        <x-profile-photo-manager :user="$teacher" :size="96" avatar-id="teacherAvatarDisplay" />
+
+                        <div class="ts-profile-details">
+                            <div class="ts-user-name">{{ $teacher->name }}</div>
+                            <div class="ts-user-id">
+                                <i class="bi bi-person-badge" aria-hidden="true"></i>
+                                <span>{{ $teacher->employee_id ?: $teacher->email }}</span>
+                            </div>
+                            <div class="ts-badges-row">
+                                <span class="ts-role-pill"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i> Faculty</span>
+                                @if($teacher->department)
+                                    <span class="ts-role-pill">{{ $teacher->department }}</span>
+                                @endif
+                                @if($teacher->position)
+                                    <span class="ts-role-pill">{{ $teacher->position }}</span>
+                                @endif
+                            </div>
+                            <div>
+                                <label for="ppmFileInput" class="ts-photo-change-btn">
+                                    <i class="bi bi-camera-fill" aria-hidden="true"></i>
+                                    <span>Change photo</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="tch-info-card-body">
-                <div class="tch-info-row">
-                    <div class="tch-info-icon"><i class="bi bi-person-fill"></i></div>
-                    <div><div class="tch-info-lbl">Full Name</div><div class="tch-info-val">{{ $teacher->name }}</div></div>
+
+            <div class="ts-card ts-faculty-details">
+                <div class="ts-card-head">
+                    <div class="ts-card-icon"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></div>
+                    <div>
+                        <div class="ts-card-title">Faculty Information</div>
+                        <div class="ts-card-sub">Verified institutional faculty record</div>
+                    </div>
                 </div>
-                <div class="tch-info-row">
-                    <div class="tch-info-icon"><i class="bi bi-envelope-fill"></i></div>
-                    <div><div class="tch-info-lbl">Email Address</div><div class="tch-info-val">{{ $teacher->email }}</div></div>
-                </div>
-                <div class="tch-info-row">
-                    <div class="tch-info-icon"><i class="bi bi-card-text"></i></div>
-                    <div><div class="tch-info-lbl">Employee ID</div><div class="tch-info-val">{{ $teacher->employee_id ?? 'Not set' }}</div></div>
-                </div>
-                @if($teacher->department)
-                <div class="tch-info-row">
-                    <div class="tch-info-icon"><i class="bi bi-building"></i></div>
-                    <div><div class="tch-info-lbl">Department</div><div class="tch-info-val">{{ $teacher->department }}</div></div>
-                </div>
-                @endif
-                @if($teacher->position)
-                <div class="tch-info-row">
-                    <div class="tch-info-icon"><i class="bi bi-briefcase"></i></div>
-                    <div><div class="tch-info-lbl">Position</div><div class="tch-info-val">{{ $teacher->position }}</div></div>
-                </div>
-                @endif
-                <div class="tch-info-row">
-                    <div class="tch-info-icon"><i class="bi bi-calendar3"></i></div>
-                    <div><div class="tch-info-lbl">Member Since</div><div class="tch-info-val">{{ $teacher->created_at->format('F j, Y') }}</div></div>
+                <div class="ts-card-body">
+                    <div class="ts-spec-grid">
+                        <div class="ts-spec-tile">
+                            <div class="ts-spec-label">Full Name</div>
+                            <div class="ts-spec-value"><span>{{ $teacher->name }}</span></div>
+                        </div>
+
+                        <div class="ts-spec-tile">
+                            <div class="ts-spec-label">Employee ID</div>
+                            <div class="ts-spec-value">
+                                <span>{{ $teacher->employee_id ?: 'Not Assigned' }}</span>
+                                @if($teacher->employee_id)
+                                    <button type="button"
+                                            class="ts-copy-btn"
+                                            data-copy-text="{{ $teacher->employee_id }}"
+                                            data-copy-label="Employee ID"
+                                            title="Copy Employee ID"
+                                            aria-label="Copy Employee ID">
+                                        <i class="bi bi-clipboard" aria-hidden="true"></i>
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="ts-spec-tile">
+                            <div class="ts-spec-label">Primary Email</div>
+                            <div class="ts-spec-value">
+                                <span>{{ $teacher->email }}</span>
+                                <button type="button"
+                                        class="ts-copy-btn"
+                                        data-copy-text="{{ $teacher->email }}"
+                                        data-copy-label="Email address"
+                                        title="Copy Email Address"
+                                        aria-label="Copy Email Address">
+                                    <i class="bi bi-clipboard" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="ts-spec-tile">
+                            <div class="ts-spec-label">Department</div>
+                            <div class="ts-spec-value"><span>{{ $teacher->department ?: 'Not Assigned' }}</span></div>
+                        </div>
+
+                        <div class="ts-spec-tile">
+                            <div class="ts-spec-label">Position</div>
+                            <div class="ts-spec-value"><span>{{ $teacher->position ?: 'Faculty Member' }}</span></div>
+                        </div>
+
+                        <div class="ts-spec-tile">
+                            <div class="ts-spec-label">Assigned Classes</div>
+                            <div class="ts-spec-value"><span>{{ $assignedCount }} {{ \Illuminate\Support\Str::plural('class', $assignedCount) }}</span></div>
+                        </div>
+
+                        <div class="ts-spec-tile">
+                            <div class="ts-spec-label">Member Since</div>
+                            <div class="ts-spec-value"><span>{{ $teacher->created_at?->format('F j, Y') ?: '—' }}</span></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- RIGHT: Update Security -->
-    <div class="col-lg-5">
-        <div class="tch-info-card">
-            <div class="tch-info-card-head">
-                <div class="tch-info-card-icon" style="background:rgba(255,235,190,0.08);color:#f3e7cd;"><i class="bi bi-shield-lock-fill"></i></div>
-                <div><div class="tch-info-card-title">Security & Contact</div><div class="tch-info-card-sub">Update email and password</div></div>
+        <!-- ── PANEL: PASSWORD & EMAIL ── -->
+        <div id="tab-credentials" class="spanel">
+            <div class="ts-account-shortcuts" id="teacherCredentialShortcuts" hidden>
+                <article class="ts-account-shortcut">
+                    <span class="ts-account-shortcut-icon"><i class="bi bi-envelope-at" aria-hidden="true"></i></span>
+                    <span class="ts-account-shortcut-copy">
+                        <strong>Email address</strong>
+                        <span>{{ $teacher->email }}<br>Used for sign-in, security codes, and faculty alerts.</span>
+                    </span>
+                    <button type="button" data-account-page="change-email">Change</button>
+                </article>
+                <article class="ts-account-shortcut">
+                    <span class="ts-account-shortcut-icon"><i class="bi bi-key" aria-hidden="true"></i></span>
+                    <span class="ts-account-shortcut-copy">
+                        <strong>Password</strong>
+                        <span>Change your password after verifying a one-time code sent to your email.</span>
+                    </span>
+                    <button type="button" data-account-page="change-password">Change</button>
+                </article>
             </div>
-            <div class="tch-info-card-body" style="padding-top:16px;">
 
-                <!-- Change Email via OTP -->
-                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.08);">
-                    <div style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Email Address</div>
-                    
-                    <div id="tchEmailStep1">
-                        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--portal-canvas);border-radius:10px;border:1px solid rgba(255,255,255,0.1);margin-bottom:12px;">
-                            <i class="bi bi-envelope-fill" style="color:var(--portal-gold);"></i>
-                            <span style="font-size:.875rem;font-weight:600;color:var(--portal-text);">{{ $teacher->email }}</span>
+            <div id="teacherCredentialFormGrid">
+                <!-- Change Email Card -->
+                <div class="ts-card" data-account-edit-source="email">
+                    <div class="ts-card-head">
+                        <div class="ts-card-icon"><i class="bi bi-envelope-check-fill" aria-hidden="true"></i></div>
+                        <div>
+                            <div class="ts-card-title">Email address</div>
+                            <div class="ts-card-sub">Used for account recovery, security codes, and notifications.</div>
                         </div>
-                        <p style="font-size:.85rem;color:var(--portal-muted);margin-bottom:12px;">
-                            An OTP will be sent to your <strong style="color:var(--portal-text);">current email</strong> to verify it's you before changing.
-                        </p>
-                        <button type="button" onclick="tchRequestEmailOtp()" id="tchSendEmailOtpBtn" class="tch-save-btn">
-                            <i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email
-                        </button>
                     </div>
+                    <div class="ts-card-body">
+                        <ol class="ts-edit-progress" id="emailEditProgress" aria-label="Email change steps">
+                            <li aria-current="step" data-account-step="1"><span class="ts-step-number">1</span><span>New email</span></li>
+                            <li data-account-step="2"><span class="ts-step-number">2</span><span>Verify code</span></li>
+                        </ol>
+                        <div id="emailFormStatus" class="ts-edit-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
-                    <div id="tchEmailStep2" style="display:none;">
-                        <div style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:var(--portal-emerald);border-radius:10px;padding:10px 14px;font-size:.82rem;margin-bottom:14px;">
-                            <i class="bi bi-envelope-check me-2"></i>OTP sent to <strong>{{ $teacher->email }}</strong>
+                        <div id="emailStep1">
+                            <div class="ts-input-display">
+                                <i class="bi bi-envelope-at-fill text-warning" aria-hidden="true"></i>
+                                <span class="ts-input-val">{{ $teacher->email }}</span>
+                                <button type="button"
+                                        class="ts-copy-btn"
+                                        data-copy-text="{{ $teacher->email }}"
+                                        data-copy-label="Email address"
+                                        title="Copy email"
+                                        aria-label="Copy current email address">
+                                    <i class="bi bi-clipboard" aria-hidden="true"></i>
+                                </button>
+                            </div>
+                            <label class="ts-label" for="inputNewEmail">New email address</label>
+                            <input type="email"
+                                   id="inputNewEmail"
+                                   class="ts-input"
+                                   placeholder="name@gmail.com"
+                                   value="{{ old('new_email') }}"
+                                   autocomplete="email"
+                                   inputmode="email"
+                                   maxlength="254"
+                                   required>
+                            <p class="ts-help">Enter a Gmail address you can open. We&rsquo;ll send a one-time code there to verify the change.</p>
+                            <button type="button" id="sendEmailOtpBtn" class="ts-btn ts-btn-gold">
+                                <i class="bi bi-send-fill" aria-hidden="true"></i>
+                                <span>Send verification code</span>
+                            </button>
                         </div>
-                        <form action="{{ route('otp.email.change') }}" method="POST">
-                            @csrf
-                            <label style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Enter OTP</label>
-                            <div style="display:flex;gap:8px;margin-bottom:14px;">
-                                @for($j=1;$j<=6;$j++)
-                                <input type="text" class="tch-email-otp-digit" maxlength="1" inputmode="numeric" id="ted{{$j}}" style="width:42px;height:48px;border-radius:9px;border:1px solid rgba(212,175,55,0.28);font-size:1.2rem;font-weight:800;text-align:center;color:var(--portal-text);background:var(--portal-canvas);outline:none;transition:all .2s;">
-                                @endfor
+
+                        <div id="emailStep2" style="display:none;">
+                            <div class="ts-status-tile" role="status">
+                                <i class="bi bi-envelope-check-fill" aria-hidden="true"></i>
+                                <span>Code sent to <strong id="emailSentDestination">{{ old('new_email', $teacher->email) }}</strong></span>
                             </div>
-                            <input type="hidden" name="otp" id="tchEmailOtpHidden">
-                            <div class="mb-3">
-                                <label style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Email Address</label>
-                                <input type="email" name="new_email" class="tch-form-input" placeholder="newemail@example.com" required>
-                            </div>
-                            <div style="display:flex;gap:10px;">
-                                <button type="button" onclick="tchCancelEmailOtp()" class="tch-btn tch-btn-ghost" style="padding:11px 20px;border-radius:10px;font-weight:600;font-size:.875rem;cursor:pointer;">Cancel</button>
-                                <button type="submit" class="tch-save-btn" style="flex:1;" onclick="tchCollectEmailOtp()"><i class="bi bi-check2 me-2"></i>Change Email</button>
-                            </div>
-                        </form>
+                            <form action="{{ route('otp.email.change') }}" method="POST">
+                                @csrf
+                                <label class="ts-label" for="ed1">6-digit verification code</label>
+                                <div class="ts-otp-grid" role="group" aria-label="Email verification code">
+                                    @for($j = 1; $j <= 6; $j++)
+                                        <input type="text"
+                                               class="email-otp-digit ts-otp-input"
+                                               maxlength="1"
+                                               inputmode="numeric"
+                                               pattern="[0-9]"
+                                               id="ed{{ $j }}"
+                                               aria-label="Digit {{ $j }} of 6"
+                                               @if($j === 1) autocomplete="one-time-code" @endif
+                                               required>
+                                    @endfor
+                                </div>
+                                <p class="ts-help">Enter the 6-digit code sent to your new email. You can paste all six digits into the first box.</p>
+                                <input type="hidden" name="otp" id="emailOtpHidden">
+
+                                <label class="ts-label" for="confirmNewEmailInput">New email address</label>
+                                <input type="email"
+                                       name="new_email"
+                                       id="confirmNewEmailInput"
+                                       class="ts-input"
+                                       placeholder="name@gmail.com"
+                                       value="{{ old('new_email') }}"
+                                       readonly
+                                       required>
+
+                                <div class="ts-form-actions">
+                                    <button type="button" id="cancelEmailOtpBtn" class="ts-btn ts-btn-ghost">Back</button>
+                                    <button type="button" id="verifyEmailOtpBtn" class="ts-btn ts-btn-gold">
+                                        <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                                        <span>Verify and update email</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
 
-                <!-- OTP Password Change -->
-                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,0.08);">
-                    <div style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Change Password</div>
-                    <div id="tchOtpStep1">
-                        <p style="font-size:.85rem;color:var(--portal-muted);margin-bottom:12px;">
-                            We'll send a 6-digit OTP to <strong style="color:var(--portal-text);">{{ $teacher->email }}</strong> to verify it's you.
-                        </p>
-                        <button type="button" onclick="tchRequestOtp()" id="tchSendOtpBtn" class="tch-save-btn">
-                            <i class="bi bi-send-fill me-2"></i>Send OTP to Email
-                        </button>
-                    </div>
-                    <div id="tchOtpStep2" style="display:none;">
-                        <div style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:var(--portal-emerald);border-radius:10px;padding:10px 14px;font-size:.82rem;margin-bottom:14px;">
-                            <i class="bi bi-check-circle me-2"></i>OTP sent to {{ $teacher->email }}
+                <!-- Change Password Card -->
+                <div class="ts-card" data-account-edit-source="password">
+                    <div class="ts-card-head">
+                        <div class="ts-card-icon"><i class="bi bi-key-fill" aria-hidden="true"></i></div>
+                        <div>
+                            <div class="ts-card-title">Password</div>
+                            <div class="ts-card-sub">Use a strong, unique password to protect your faculty account.</div>
                         </div>
-                        <form action="{{ route('otp.change') }}" method="POST">
-                            @csrf
-                            <label style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Enter OTP</label>
-                            <div style="display:flex;gap:8px;margin-bottom:14px;">
-                                @for($i=1;$i<=6;$i++)
-                                <input type="text" class="tch-otp-digit" maxlength="1" inputmode="numeric" id="tc{{$i}}" style="width:42px;height:48px;border-radius:9px;border:1px solid rgba(212,175,55,0.28);font-size:1.2rem;font-weight:800;text-align:center;color:var(--portal-text);background:var(--portal-canvas);outline:none;transition:all .2s;">
-                                @endfor
+                    </div>
+                    <div class="ts-card-body">
+                        <ol class="ts-edit-progress" id="passwordEditProgress" aria-label="Password change steps">
+                            <li aria-current="step" data-account-step="1"><span class="ts-step-number">1</span><span>Request code</span></li>
+                            <li data-account-step="2"><span class="ts-step-number">2</span><span>Verify &amp; update</span></li>
+                        </ol>
+                        <div id="passwordFormStatus" class="ts-edit-status" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+
+                        <div id="otpStep1">
+                            <div class="ts-status-tile">
+                                <i class="bi bi-shield-check" aria-hidden="true"></i>
+                                <span>Your current password stays private</span>
                             </div>
-                            <input type="hidden" name="otp" id="tchOtpHidden">
-                            <div class="mb-3">
-                                <label style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Password</label>
-                                <div class="pw-wrap">
-                                    <input type="password" name="password" id="tpw1" class="tch-form-input" placeholder="12+ chars, mixed case, number, symbol" minlength="12" required>
-                                    <button type="button" class="eye-btn" onclick="togglePw('tpw1',this,event)" data-toggle-password="tpw1" aria-controls="tpw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
+                            <p class="ts-help">We&rsquo;ll send a 6-digit verification code to <strong>{{ $teacher->email }}</strong> before saving your new password.</p>
+                            <button type="button" id="sendPasswordOtpBtn" class="ts-btn ts-btn-gold">
+                                <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
+                                <span>Send verification code</span>
+                            </button>
+                        </div>
+
+                        <div id="otpStep2" style="display:none;">
+                            <div class="ts-status-tile" role="status">
+                                <i class="bi bi-envelope-check-fill" aria-hidden="true"></i>
+                                <span>Code sent to <strong>{{ $teacher->email }}</strong></span>
+                            </div>
+                            <form action="{{ route('otp.change') }}" method="POST">
+                                @csrf
+                                <label class="ts-label" for="sd1">6-digit verification code</label>
+                                <div class="ts-otp-grid" role="group" aria-label="Password verification code">
+                                    @for($i = 1; $i <= 6; $i++)
+                                        <input type="text"
+                                               class="otp-digit-s ts-otp-input"
+                                               maxlength="1"
+                                               inputmode="numeric"
+                                               pattern="[0-9]"
+                                               id="sd{{ $i }}"
+                                               aria-label="Digit {{ $i }} of 6"
+                                               @if($i === 1) autocomplete="one-time-code" @endif
+                                               required>
+                                    @endfor
+                                </div>
+                                <input type="hidden" name="otp" id="settingsOtpHidden">
+
+                                <div class="mb-3 mt-3">
+                                    <label class="ts-label" for="tpw1">New password</label>
+                                    <div class="ts-pw-wrap">
+                                        <input type="password"
+                                               name="password"
+                                               id="tpw1"
+                                               class="ts-input"
+                                               placeholder="12+ characters with mixed case, number, and symbol"
+                                               minlength="12"
+                                               autocomplete="new-password"
+                                               required>
+                                        <button type="button"
+                                                class="ts-eye-btn"
+                                                data-toggle-password="tpw1"
+                                                aria-controls="tpw1"
+                                                aria-label="Show password"
+                                                title="Show password"
+                                                aria-pressed="false">
+                                            <i class="bi bi-eye-slash" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="ts-label" for="tpw2">Confirm new password</label>
+                                    <div class="ts-pw-wrap">
+                                        <input type="password"
+                                               name="password_confirmation"
+                                               id="tpw2"
+                                               class="ts-input"
+                                               placeholder="Repeat new password"
+                                               minlength="12"
+                                               autocomplete="new-password"
+                                               required>
+                                        <button type="button"
+                                                class="ts-eye-btn"
+                                                data-toggle-password="tpw2"
+                                                aria-controls="tpw2"
+                                                aria-label="Show password confirmation"
+                                                title="Show password confirmation"
+                                                aria-pressed="false">
+                                            <i class="bi bi-eye-slash" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="ts-form-actions">
+                                    <button type="button" id="cancelPasswordOtpBtn" class="ts-btn ts-btn-ghost">Back</button>
+                                    <button type="button" id="verifyPasswordOtpBtn" class="ts-btn ts-btn-gold">
+                                        <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                                        <span>Verify and update password</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── SUB-PANELS FOR PROGRESSIVE CREDENTIAL FLOWS ── -->
+        <div id="tab-account-email" class="spanel ts-account-edit-panel" aria-label="Change email address">
+            <div class="ts-account-edit-intro">Enter a Gmail address you can open. We&rsquo;ll send a verification code there before changing your account email.</div>
+            <div id="teacherAccountEmailSlot"></div>
+        </div>
+
+        <div id="tab-account-password" class="spanel ts-account-edit-panel" aria-label="Change password">
+            <div class="ts-account-edit-intro">We&rsquo;ll send a security code to your current email. Enter it and choose a strong new password.</div>
+            <div id="teacherAccountPasswordSlot"></div>
+        </div>
+
+        <!-- ── PANEL: DEVICE PASSKEYS ── -->
+        <div id="tab-passkeys" class="spanel">
+            <div class="ts-card">
+                <div class="ts-card-head">
+                    <div class="ts-card-icon"><i class="bi bi-fingerprint" aria-hidden="true"></i></div>
+                    <div>
+                        <div class="ts-card-title">Registered Device Passkeys</div>
+                        <div class="ts-card-sub">Use your device&rsquo;s built-in biometrics or screen lock to sign in securely</div>
+                    </div>
+                </div>
+                <div class="ts-card-body">
+                    <div id="webauthnUnsupported" role="status" class="ts-flash ts-flash-err" style="display:none;">
+                        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                        <div id="webauthnUnsupportedMsg">Passkey setup is unavailable on this device.</div>
+                    </div>
+
+                    <div id="deviceList" class="mb-3">
+                        <div id="noDevices" class="ts-passkey-empty">
+                            <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                            <div>No active passkeys registered on this account yet.</div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="registerFpBtn" disabled class="ts-btn ts-btn-emerald">
+                        <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                        <span>Set up a passkey</span>
+                    </button>
+                    <div id="fpMessage" style="margin-top:12px;font-size:.84rem;display:none;" role="status" aria-live="polite"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── PANEL: RECOVERY CODES ── -->
+        <div id="tab-recovery" class="spanel">
+            <div class="ts-card">
+                <div class="ts-card-head">
+                    <div class="ts-card-icon"><i class="bi bi-safe-fill" aria-hidden="true"></i></div>
+                    <div>
+                        <div class="ts-card-title">Backup Recovery Codes</div>
+                        <div class="ts-card-sub">One-time offline keys to restore access if credentials or devices are lost</div>
+                    </div>
+                </div>
+                <div class="ts-card-body">
+                    <div class="ts-status-tile">
+                        <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+                        <span>Generating new keys immediately invalidates all previous recovery codes</span>
+                    </div>
+                    <p class="ts-help">Store generated codes safely in a secure password manager or offline notes.</p>
+                    <button type="button" id="generateCodesBtn" class="ts-btn ts-btn-gold">
+                        <i class="bi bi-key-fill" aria-hidden="true"></i>
+                        <span>Generate Recovery Codes</span>
+                    </button>
+
+                    <div id="recoveryCodesList" class="ts-recovery-vault" style="display:none;">
+                        <div style="font-size:.82rem;font-weight:700;color:#fda4af;display:flex;align-items:center;gap:8px;">
+                            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                            <span>Save these codes in a safe place. They will only be shown once.</span>
+                        </div>
+                        <div id="codesContainer" class="ts-recovery-grid"></div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="button" id="copyAllRecoveryBtn" class="ts-btn ts-btn-gold">
+                                <i class="bi bi-clipboard-check" aria-hidden="true"></i>
+                                <span>Copy All</span>
+                            </button>
+                            <button type="button" id="downloadRecoveryBtn" class="ts-btn ts-btn-ghost">
+                                <i class="bi bi-download" aria-hidden="true"></i>
+                                <span>Download TXT</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── PANEL: NOTIFICATION PREFERENCES ── -->
+        <div id="tab-preferences" class="spanel">
+            <div class="ts-card">
+                <div class="ts-card-head">
+                    <div class="ts-card-icon"><i class="bi bi-sliders" aria-hidden="true"></i></div>
+                    <div>
+                        <div class="ts-card-title">Notification Preferences</div>
+                        <div class="ts-card-sub">Choose how you receive faculty alerts and adjust your sidebar layout</div>
+                    </div>
+                </div>
+                <div class="ts-card-body">
+                    <form action="{{ route('teacher.profile.update') }}" method="POST" id="teacherPreferencesForm">
+                        @csrf
+                        <div class="ts-pref-section-lbl">Notification Alerts</div>
+
+                        <div class="ts-pref-tile">
+                            <div class="ts-pref-left">
+                                <div class="ts-pref-icon"><i class="bi bi-envelope" aria-hidden="true"></i></div>
+                                <div>
+                                    <label class="ts-pref-title" for="notifEmailToggle">Email Notifications</label>
+                                    <div class="ts-pref-sub">Receive excuse submission notices, attendance summaries, and security updates via email</div>
                                 </div>
                             </div>
-                            <div class="mb-4">
-                                <label style="font-size:.72rem;font-weight:700;color:var(--portal-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Confirm Password</label>
-                                <div class="pw-wrap">
-                                    <input type="password" name="password_confirmation" id="tpw2" class="tch-form-input" placeholder="Repeat new password" minlength="12" required>
-                                    <button type="button" class="eye-btn" onclick="togglePw('tpw2',this,event)" data-toggle-password="tpw2" aria-controls="tpw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="notifEmailToggle" name="notif_email" value="1" {{ $emailNotif ? 'checked' : '' }}>
+                            </div>
+                        </div>
+
+                        <div class="ts-pref-tile">
+                            <div class="ts-pref-left">
+                                <div class="ts-pref-icon"><i class="bi bi-bell" aria-hidden="true"></i></div>
+                                <div>
+                                    <label class="ts-pref-title" for="notifPushToggle">Push Notifications</label>
+                                    <div class="ts-pref-sub">Receive real-time portal alerts for student requests and live sessions</div>
                                 </div>
                             </div>
-                            <div style="display:flex;gap:10px;">
-                                <button type="button" onclick="tchCancelOtp()" class="tch-btn tch-btn-ghost" style="padding:11px 20px;border-radius:10px;font-weight:600;font-size:.875rem;cursor:pointer;">Cancel</button>
-                                <button type="submit" class="tch-save-btn" style="flex:1;" onclick="tchCollectOtp()"><i class="bi bi-check2 me-2"></i>Change Password</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Device passkey -->
-                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,215,145,0.08);">
-                    <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Device passkeys</div>
-                    
-                    <div id="webauthnUnsupported" role="status" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:12px;padding:14px 18px;font-size:.85rem;margin-bottom:14px;">
-                        <div style="display:flex;align-items:flex-start;gap:10px;">
-                            <i class="bi bi-exclamation-triangle" style="font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
-                            <div id="webauthnUnsupportedMsg" style="font-size:.8rem;line-height:1.4;">
-                                Passkey setup is unavailable on this device.
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="notifPushToggle" name="notif_push" value="1" {{ $pushNotif ? 'checked' : '' }}>
                             </div>
                         </div>
-                    </div>
 
-                    <div style="margin-bottom:16px;">
-                        <div id="deviceList">
-                            <div style="text-align:center;padding:16px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:10px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
-                                <i class="bi bi-shield-lock" style="font-size:1.8rem;display:block;margin-bottom:6px;opacity:.4;color:var(--gold,#CFA46F);"></i>
-                                No passkeys registered yet.
+                        <div class="ts-pref-section-lbl mt-4">Display &amp; Layout</div>
+
+                        <div class="ts-pref-tile">
+                            <div class="ts-pref-left">
+                                <div class="ts-pref-icon"><i class="bi bi-layout-sidebar" aria-hidden="true"></i></div>
+                                <div>
+                                    <label class="ts-pref-title" for="compactToggle">Compact Sidebar</label>
+                                    <div class="ts-pref-sub">Keep sidebar collapsed on desktop for extra workspace width</div>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="compactToggle">
                             </div>
                         </div>
-                    </div>
 
-                    <button type="button" onclick="registerDevicePasskey()" id="registerFpBtn" disabled class="tch-save-btn" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);color:white;">
-                        <i class="bi bi-shield-lock me-2"></i>Set up a passkey
-                    </button>
-                    <div id="fpMessage" style="margin-top:12px;font-size:.82rem;display:none;"></div>
-                </div>
-
-                <!-- Recovery Codes -->
-                <div>
-                    <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Recovery Codes</div>
-                    <p style="font-size:.85rem;color:#64748b;margin-bottom:12px;">
-                        Recovery codes can be used to log in if you lose access to your email or passkey.
-                    </p>
-                    <button type="button" onclick="generateRecoveryCodes()" id="generateCodesBtn" class="tch-save-btn" style="background:linear-gradient(135deg,#eab308,#ca8a04);border-color:#ca8a04;color:white;">
-                        <i class="bi bi-key-fill me-2"></i>Generate Recovery Codes
-                    </button>
-                    
-                    <div id="recoveryCodesList" style="display:none;margin-top:16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.28);border-radius:10px;padding:16px;">
-                        <div style="font-size:.875rem;font-weight:600;color:var(--portal-amber);margin-bottom:12px;">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Save these codes in a safe place. They will not be shown again.
+                        <div class="ts-form-actions justify-content-end">
+                            <button type="submit" class="ts-btn ts-btn-gold">
+                                <i class="bi bi-save" aria-hidden="true"></i>
+                                <span>Save Preferences</span>
+                            </button>
                         </div>
-                        <div id="codesContainer" style="display:flex;flex-wrap:wrap;gap:10px;">
-                            <!-- Codes will be injected here -->
-                        </div>
-                    </div>
+                    </form>
                 </div>
-
             </div>
         </div>
-    </div>
-
-    <!-- Notification Preferences -->
-    <div class="col-lg-5 mt-4">
-        <div class="tch-info-card">
-            <div class="tch-info-card-head">
-                <div class="tch-info-card-icon" style="background:rgba(255,235,190,0.08);color:#f3e7cd;"><i class="bi bi-bell-fill"></i></div>
-                <div><div class="tch-info-card-title">Notification Preferences</div><div class="tch-info-card-sub">Manage your alerts</div></div>
-            </div>
-            <div class="tch-info-card-body" style="padding-top:16px;">
-                @php 
-                    $prefs = is_string($teacher->notification_preferences) ? json_decode($teacher->notification_preferences, true) : (is_array($teacher->notification_preferences) ? $teacher->notification_preferences : []);
-                    $emailNotif = $prefs['email'] ?? true;
-                    $pushNotif = $prefs['push'] ?? true;
-                @endphp
-                <form action="{{ route('teacher.profile.update') }}" method="POST">
-                    @csrf
-                    
-                    <div class="d-flex justify-content-between align-items-center mb-3 pb-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <div>
-                            <div style="font-weight: 700; color: #f3e7cd; font-size: 0.9rem;">Email Notifications</div>
-                            <div style="font-size: 0.8rem; color: #b39b82;">Receive updates via email</div>
-                        </div>
-                        <div class="form-check form-switch" style="font-size: 1.25rem;">
-                            <input class="form-check-input" type="checkbox" name="notif_email" value="1" {{ $emailNotif ? 'checked' : '' }} style="cursor: pointer;">
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div>
-                            <div style="font-weight: 700; color: #f3e7cd; font-size: 0.9rem;">Push Notifications</div>
-                            <div style="font-size: 0.8rem; color: #b39b82;">Receive system alerts</div>
-                        </div>
-                        <div class="form-check form-switch" style="font-size: 1.25rem;">
-                            <input class="form-check-input" type="checkbox" name="notif_push" value="1" {{ $pushNotif ? 'checked' : '' }} style="cursor: pointer;">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="tch-save-btn w-100">
-                        <i class="bi bi-save-fill me-2"></i>Save Preferences
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
+    </section>
 </div>
 
-@include('partials.profile-device-passkey-capability')
+@php
+    $teacherSettingsConfig = [
+        'csrfToken' => csrf_token(),
+        'userEmail' => $teacher->email,
+        'routes' => [
+            'otpChangeSend' => route('otp.change.send'),
+            'otpEmailSend' => route('otp.email.send'),
+            'recoveryGenerate' => route('recovery.generate'),
+        ],
+    ];
+@endphp
 <script @cspNonce>
-function togglePw(id, btn, e) {
-    if (e) {
-        if (e._pwToggled) return;
-        e._pwToggled = true;
-        if (e.preventDefault) e.preventDefault();
-        if (e.stopPropagation) e.stopPropagation();
-    }
-    if (window.togglePassword) {
-        window.togglePassword(id, btn, e);
-        return;
-    }
-    const i = typeof id === 'string' ? document.getElementById(id) : id;
-    if (!i) return;
-
-    let start = null;
-    let end = null;
-    try {
-        start = i.selectionStart;
-        end = i.selectionEnd;
-    } catch (err) {}
-
-    const isPw = i.type === 'password';
-    i.type = isPw ? 'text' : 'password';
-    const ic = btn ? btn.querySelector('i') : null;
-    if (ic) ic.className = isPw ? 'bi bi-eye' : 'bi bi-eye-slash';
-    if (btn) {
-        btn.style.color = isPw ? '#7c2d12' : '';
-        const isConf = i.name === 'password_confirmation' || i.id === 'tpw2';
-        const label = isPw 
-            ? (isConf ? 'Hide password confirmation' : 'Hide password')
-            : (isConf ? 'Show password confirmation' : 'Show password');
-        btn.setAttribute('aria-label', label);
-        btn.setAttribute('title', label);
-        btn.setAttribute('aria-pressed', isPw ? 'true' : 'false');
-    }
-
-    try {
-        i.focus();
-        if (start !== null && end !== null) {
-            i.setSelectionRange(start, end);
-        }
-    } catch (err) {}
-}
-
-// Teacher OTP digit handling
-const tchDigits = document.querySelectorAll('.tch-otp-digit');
-tchDigits.forEach((input, idx) => {
-    input.addEventListener('input', (e) => {
-        e.target.value = e.target.value.replace(/\D/g, '');
-        if (e.target.value && idx < tchDigits.length - 1) tchDigits[idx + 1].focus();
-    });
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !e.target.value && idx > 0) tchDigits[idx - 1].focus();
-    });
-});
-
-function tchCollectOtp() {
-    document.getElementById('tchOtpHidden').value = Array.from(tchDigits).map(d => d.value).join('');
-}
-
-function tchRequestOtp() {
-    const btn = document.getElementById('tchSendOtpBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sending...';
-    fetch('{{ route("otp.change.send") }}', {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            document.getElementById('tchOtpStep1').style.display = 'none';
-            document.getElementById('tchOtpStep2').style.display = 'block';
-            if (data.dev_otp && tchDigits) {
-                const str = String(data.dev_otp).trim();
-                tchDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
-                tchCollectOtp();
-            }
-            if (tchDigits[0]) tchDigits[0].focus();
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send OTP to Email';
-            alert(data.message || 'Failed to send OTP.');
-        }
-    });
-}
-
-function tchCancelOtp() {
-    document.getElementById('tchOtpStep1').style.display = 'block';
-    document.getElementById('tchOtpStep2').style.display = 'none';
-    tchDigits.forEach(d => d.value = '');
-}
-
-// Teacher Email OTP
-const tchEmailDigits = document.querySelectorAll('.tch-email-otp-digit');
-tchEmailDigits.forEach((input, idx) => {
-    input.addEventListener('input', (e) => {
-        e.target.value = e.target.value.replace(/\D/g, '');
-        if (e.target.value && idx < tchEmailDigits.length - 1) tchEmailDigits[idx + 1].focus();
-    });
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && !e.target.value && idx > 0) tchEmailDigits[idx - 1].focus();
-    });
-});
-
-function tchCollectEmailOtp() {
-    document.getElementById('tchEmailOtpHidden').value = Array.from(tchEmailDigits).map(d => d.value).join('');
-}
-
-function tchRequestEmailOtp() {
-    const btn = document.getElementById('tchSendEmailOtpBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sending...';
-    fetch('{{ route("otp.email.send") }}', {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            document.getElementById('tchEmailStep1').style.display = 'none';
-            document.getElementById('tchEmailStep2').style.display = 'block';
-            if (data.dev_otp && tchEmailDigits) {
-                const str = String(data.dev_otp).trim();
-                tchEmailDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
-                tchCollectEmailOtp();
-            }
-            if (tchEmailDigits[0]) tchEmailDigits[0].focus();
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email';
-            alert(data.message || 'Failed to send OTP.');
-        }
-    }).catch(() => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email';
-        alert('Network error. Please try again.');
-    });
-}
-
-function tchCancelEmailOtp() {
-    document.getElementById('tchEmailStep1').style.display = 'block';
-    document.getElementById('tchEmailStep2').style.display = 'none';
-    tchEmailDigits.forEach(d => d.value = '');
-}
-
-function generateRecoveryCodes() {
-    if(!confirm("Are you sure? Generating new recovery codes will invalidate all your old codes.")) return;
-    
-    const btn = document.getElementById('generateCodesBtn');
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
-    
-    fetch('{{ route("recovery.generate") }}', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        }
-    })
-    .then(r => r.json())
-    .then(data => {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        if(data.success) {
-            const container = document.getElementById('codesContainer');
-            container.innerHTML = '';
-            data.codes.forEach(code => {
-                const codeEl = document.createElement('div');
-                codeEl.style.cssText = 'background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:6px;font-family:monospace;font-size:1.1rem;color:#f3e7cd;letter-spacing:1px;font-weight:700;';
-                codeEl.textContent = code;
-                container.appendChild(codeEl);
-            });
-            document.getElementById('recoveryCodesList').style.display = 'block';
-            alert('New recovery codes generated successfully. Please save them now.');
-        } else {
-            alert(data.message || 'Failed to generate recovery codes.');
-        }
-    })
-    .catch(err => {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        alert('Network error. Please try again.');
-    });
-}
-
-// Passkey device loading & revocation handled centrally by partials.profile-device-passkey-capability.
+window.__TEACHER_SETTINGS_CONFIG__ = @json($teacherSettingsConfig);
 </script>
+@include('partials.profile-device-passkey-capability')
+<script src="{{ asset('js/teacher-settings.js') }}?v={{ filemtime(public_path('js/teacher-settings.js')) }}" @cspNonce></script>
 @endsection

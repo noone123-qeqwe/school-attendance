@@ -1530,7 +1530,9 @@ class TeacherController extends Controller
     public function profile()
     {
         $teacher = Auth::user();
-        return view('teacher.profile', compact('teacher'));
+        $assignedClassesCount = Subject::where('instructor_id', $teacher->id)->count();
+
+        return view('teacher.profile', compact('teacher', 'assignedClassesCount'));
     }
 
     public function updateProfile(Request $request)

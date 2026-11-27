@@ -2118,4 +2118,1086 @@
             flex: 1 1 0;
         }
     }
+
+    /* ── Teacher Settings Sidebar (1:1 Student Settings Sidebar Chrome) ─────── */
+    body.teacher-portal .settings-sidebar-back-wrap {
+        padding: 10px 12px 6px;
+        flex-shrink: 0;
+    }
+
+    body.teacher-portal .settings-sidebar-back-btn {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        min-height: 42px !important;
+        padding: 8px 12px !important;
+        margin: 0 !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+        color: #faf8f5 !important;
+        font-size: 0.82rem !important;
+        font-weight: 650 !important;
+        text-decoration: none !important;
+        transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+    }
+
+    body.teacher-portal .settings-sidebar-back-btn:hover {
+        background: rgba(122, 26, 26, 0.24) !important;
+        border-color: rgba(255, 255, 255, 0.24) !important;
+        color: #ffffff !important;
+    }
+
+    body.teacher-portal .settings-sidebar-back-btn > i {
+        font-size: 0.92rem !important;
+        width: 22px !important;
+        text-align: center;
+        flex-shrink: 0;
+        color: #d4af37 !important;
+        transition: transform 0.16s ease, color 0.16s ease;
+    }
+
+    body.teacher-portal .settings-sidebar-back-btn:hover > i {
+        transform: translateX(-2px);
+        color: #ffffff !important;
+    }
+
+    body.teacher-portal .sidebar .settings-sidebar-nav {
+        padding: 10px 10px 24px !important;
+        display: flex;
+        flex-direction: column;
+        gap: 4px !important;
+    }
+
+    body.teacher-portal .sidebar .settings-sidebar-nav .nav-section-label {
+        padding: 12px 10px 4px;
+        color: #a49890 !important;
+        font-size: 0.66rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+    }
+
+    body.teacher-portal .sidebar .settings-sidebar-nav .nav-section-label:first-child {
+        padding-top: 4px;
+    }
+
+    body.teacher-portal .sidebar .settings-sidebar-nav button.nav-link {
+        width: 100%;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        display: flex !important;
+        align-items: center !important;
+        min-height: 40px !important;
+        margin: 0 !important;
+        padding: 7px 10px !important;
+        gap: 10px !important;
+        color: #c7b6bc !important;
+        font-size: 0.84rem !important;
+        font-weight: 600 !important;
+        line-height: 1.35 !important;
+        border: 1px solid transparent !important;
+        border-radius: 10px !important;
+        background: transparent;
+        box-shadow: none !important;
+        white-space: nowrap;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    body.teacher-portal .sidebar .settings-sidebar-nav button.nav-link > i {
+        display: grid !important;
+        width: 26px !important;
+        height: 26px !important;
+        flex: 0 0 26px !important;
+        place-items: center;
+        color: #a49890 !important;
+        font-size: 0.9rem !important;
+        border-radius: 7px;
+        background: transparent !important;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    body.teacher-portal .sidebar .settings-sidebar-nav button.nav-link:hover {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 255, 255, 0.09) !important;
+        color: #ffffff !important;
+    }
+
+    body.teacher-portal .sidebar .settings-sidebar-nav button.nav-link:hover > i {
+        background: rgba(122, 26, 26, 0.24) !important;
+        color: #ffffff !important;
+    }
+
+    body.teacher-portal .sidebar .settings-sidebar-nav button.nav-link:is(.active, [aria-current="page"]) {
+        background: rgba(122, 26, 26, 0.24) !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        box-shadow: inset 2.5px 0 0 #faf8f5 !important;
+    }
+
+    body.teacher-portal .sidebar .settings-sidebar-nav button.nav-link:is(.active, [aria-current="page"]) > i {
+        background: rgba(255, 255, 255, 0.13) !important;
+        color: #ffffff !important;
+    }
+
+    body.teacher-portal .sidebar.collapsed .settings-sidebar-back-wrap {
+        padding: 10px 0 6px;
+        display: flex;
+        justify-content: center;
+    }
+
+    body.teacher-portal .sidebar.collapsed .settings-sidebar-back-btn {
+        width: 42px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+    }
+
+    body.teacher-portal .sidebar.collapsed .settings-sidebar-nav {
+        padding: 10px 10px 20px !important;
+        align-items: center;
+    }
+
+    body.teacher-portal .sidebar.collapsed .settings-sidebar-nav button.nav-link {
+        width: 42px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+    }
+
+    body.teacher-portal .sidebar.collapsed .settings-sidebar-nav .nav-section-label {
+        height: 8px;
+        padding: 0;
+        margin: 2px 0;
+        overflow: hidden;
+        visibility: hidden;
+    }
+
+    /* ── Teacher Settings Page Workspace (Matched 1:1 to Student Settings) ─── */
+    body.teacher-portal .sp.teacher-settings[data-teacher-settings] {
+        width: 100%;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 0 32px;
+    }
+
+    body.teacher-portal .teacher-settings-heading {
+        margin: 0 0 24px;
+        padding: 0 0 22px;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.14);
+    }
+
+    body.teacher-portal .teacher-settings-heading h1 {
+        margin: 0 0 7px;
+        color: #f5f0e8;
+        font-size: clamp(1.65rem, 2.4vw, 2.2rem);
+        font-weight: 700;
+        letter-spacing: -0.045em;
+        line-height: 1.17;
+    }
+
+    body.teacher-portal .teacher-settings-heading p {
+        margin: 0;
+        color: #b9ada1;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    body.teacher-portal .teacher-settings-detail-heading {
+        min-height: 68px;
+        margin: 0 0 24px;
+        scroll-margin-top: 88px;
+    }
+
+    body.teacher-portal .teacher-settings-detail-heading h2 {
+        margin: 0 0 8px;
+        color: #faf8f5;
+        font-size: 1.35rem;
+        font-weight: 700;
+        line-height: 1.35;
+        letter-spacing: -0.025em;
+        overflow-wrap: anywhere;
+    }
+
+    body.teacher-portal .teacher-settings-detail-heading p {
+        margin: 0;
+        max-width: 64ch;
+        color: #a49890;
+        font-size: 0.86rem;
+        line-height: 1.65;
+        overflow-wrap: anywhere;
+    }
+
+    body.teacher-portal .teacher-settings .teacher-settings-back {
+        display: none;
+    }
+
+    body.teacher-portal .teacher-settings[data-settings-view^="change-"] .teacher-settings-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 44px;
+        margin: 0 0 12px;
+        padding: 6px 0;
+        border: 0;
+        background: transparent;
+        color: #d4af37;
+        font-size: 0.87rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    body.teacher-portal .teacher-settings .teacher-settings-back:hover {
+        color: #f5dfa8;
+    }
+
+    body.teacher-portal .teacher-settings .settings-mobile-nav {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 2px 0 12px;
+        margin: 0 0 16px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    body.teacher-portal .teacher-settings .settings-mobile-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    body.teacher-portal .teacher-settings .settings-mobile-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        flex: 0 0 auto;
+        min-height: 44px;
+        padding: 8px 13px;
+        border-radius: 10px;
+        border: 1px solid rgba(212, 175, 55, 0.16);
+        background: #1e1515;
+        color: #d6ccc6;
+        font-size: 0.8rem;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    body.teacher-portal .teacher-settings .settings-mobile-pill i {
+        color: #d4af37;
+        font-size: 0.92rem;
+    }
+
+    body.teacher-portal .teacher-settings .settings-mobile-pill:is(.active, [aria-current="page"]) {
+        background: linear-gradient(135deg, #f5dfa8 0%, #d4af37 100%);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: #141010;
+        font-weight: 750;
+    }
+
+    body.teacher-portal .teacher-settings .settings-mobile-pill:is(.active, [aria-current="page"]) i {
+        color: #141010;
+    }
+
+    body.teacher-portal .teacher-settings [hidden] {
+        display: none !important;
+    }
+
+    body.teacher-portal .teacher-settings .spanel {
+        display: none;
+    }
+
+    body.teacher-portal .teacher-settings .spanel.active {
+        display: block;
+    }
+
+    body.teacher-portal .teacher-settings .ts-flash {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 13px 16px;
+        border-radius: 12px;
+        font-size: 0.86rem;
+        font-weight: 600;
+        margin-bottom: 18px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-flash-ok {
+        background: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(52, 211, 153, 0.3);
+        color: #6ee7b7;
+    }
+
+    body.teacher-portal .teacher-settings .ts-flash-err {
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(251, 113, 133, 0.34);
+        color: #fda4af;
+    }
+
+    /* Section cards aligned cleanly to Student .sc / .sec-card dimensions */
+    body.teacher-portal .teacher-settings .ts-card {
+        background: #201b18;
+        border: 1px solid rgba(212, 175, 55, 0.16);
+        border-radius: 14px;
+        margin: 0 0 20px;
+        overflow: hidden;
+    }
+
+    body.teacher-portal .teacher-settings .ts-card-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 24px;
+        background: rgba(255, 255, 255, 0.02);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    body.teacher-portal .teacher-settings .ts-card-icon {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: rgba(122, 26, 26, 0.24);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        color: #ffffff;
+        font-size: 1rem;
+    }
+
+    body.teacher-portal .teacher-settings .ts-card-title {
+        font-size: 0.98rem;
+        font-weight: 650;
+        color: #faf8f5;
+        line-height: 1.35;
+    }
+
+    body.teacher-portal .teacher-settings .ts-card-sub {
+        font-size: 0.8rem;
+        color: #a49890;
+        line-height: 1.55;
+        margin-top: 2px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-card-body {
+        padding: 24px;
+    }
+
+    /* Profile Card & Faculty Spec Grid */
+    body.teacher-portal .teacher-settings .ts-profile-inner {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-profile-details {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-user-name {
+        color: #faf8f5;
+        font-size: 1.22rem;
+        font-weight: 750;
+        letter-spacing: -0.02em;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+    }
+
+    body.teacher-portal .teacher-settings .ts-user-id {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #a49890;
+        font-size: 0.84rem;
+        overflow-wrap: anywhere;
+    }
+
+    body.teacher-portal .teacher-settings .ts-user-id i {
+        color: #d4af37;
+    }
+
+    body.teacher-portal .teacher-settings .ts-badges-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-role-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 11px;
+        border-radius: 999px;
+        background: rgba(212, 175, 55, 0.12);
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        color: #f5dfa8;
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+
+    body.teacher-portal .teacher-settings .ts-photo-change-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 40px;
+        margin-top: 4px;
+        padding: 8px 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: #2f2222;
+        color: #faf8f5;
+        font-size: 0.82rem;
+        font-weight: 650;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    body.teacher-portal .teacher-settings .ts-photo-change-btn:hover {
+        background: #7a1a1a;
+        border-color: rgba(212, 175, 55, 0.38);
+    }
+
+    body.teacher-portal .teacher-settings .ppm-avatar-ring {
+        border: 2.5px solid rgba(212, 175, 55, 0.36);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.48);
+        background: #141010;
+    }
+
+    body.teacher-portal .teacher-settings .ppm-badge-btn {
+        width: 34px;
+        height: 34px;
+        border: 3px solid #201b18;
+    }
+
+    body.teacher-portal .teacher-settings .ts-spec-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-spec-tile {
+        padding: 14px 16px;
+        border-radius: 11px;
+        background: #261b1b;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        min-width: 0;
+    }
+
+    body.teacher-portal .teacher-settings .ts-spec-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #a49890;
+        letter-spacing: 0.02em;
+    }
+
+    body.teacher-portal .teacher-settings .ts-spec-value {
+        margin-top: 5px;
+        color: #faf8f5;
+        font-size: 0.89rem;
+        font-weight: 550;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-copy-btn {
+        color: #d6ccc6;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 6px 8px;
+        min-width: 34px;
+        min-height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    body.teacher-portal .teacher-settings .ts-copy-btn:hover {
+        color: #ffffff;
+        border-color: rgba(212, 175, 55, 0.34);
+        background: rgba(122, 26, 26, 0.32);
+    }
+
+    /* Security Shortcuts & Step-by-step Edit Panels */
+    body.teacher-portal .teacher-settings .ts-account-shortcuts {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-account-shortcut {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        min-width: 0;
+        padding: 24px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: #201b18;
+    }
+
+    body.teacher-portal .teacher-settings .ts-account-shortcut-icon {
+        display: grid;
+        place-items: center;
+        flex: 0 0 42px;
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(212, 175, 55, 0.26);
+        border-radius: 10px;
+        background: rgba(122, 26, 26, 0.24);
+        color: #d4af37;
+        font-size: 1.05rem;
+    }
+
+    body.teacher-portal .teacher-settings .ts-account-shortcut-copy {
+        flex: 1;
+        min-width: 0;
+    }
+
+    body.teacher-portal .teacher-settings .ts-account-shortcut-copy strong,
+    body.teacher-portal .teacher-settings .ts-account-shortcut-copy span {
+        display: block;
+        overflow-wrap: anywhere;
+    }
+
+    body.teacher-portal .teacher-settings .ts-account-shortcut-copy strong {
+        color: #faf8f5;
+        font-size: 0.98rem;
+        margin-bottom: 4px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-account-shortcut-copy span {
+        color: #a49890;
+        font-size: 0.84rem;
+        line-height: 1.6;
+    }
+
+    body.teacher-portal .teacher-settings .ts-account-shortcut button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: 42px;
+        padding: 10px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 10px;
+        background: #2f2222;
+        color: #faf8f5;
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    body.teacher-portal .teacher-settings .ts-account-shortcut button:hover {
+        background: #7a1a1a;
+        border-color: rgba(212, 175, 55, 0.38);
+        color: #ffffff;
+    }
+
+    body.teacher-portal .teacher-settings .ts-account-edit-panel {
+        width: 100%;
+        max-width: 680px;
+        margin: 0;
+    }
+
+    body.teacher-portal .teacher-settings .ts-account-edit-intro {
+        margin-bottom: 20px;
+        padding: 16px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        background: #201b18;
+        color: #d6ccc6;
+        font-size: 0.85rem;
+        line-height: 1.65;
+    }
+
+    body.teacher-portal .teacher-settings .ts-edit-progress {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin: 0 0 22px;
+        padding: 0;
+        list-style: none;
+    }
+
+    body.teacher-portal .teacher-settings .ts-edit-progress li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        min-height: 48px;
+        padding: 9px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 10px;
+        background: #141010;
+        color: #a49890;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    body.teacher-portal .teacher-settings .ts-step-number {
+        display: grid;
+        place-items: center;
+        flex: 0 0 26px;
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        color: #d6ccc6;
+        font-size: 0.74rem;
+    }
+
+    body.teacher-portal .teacher-settings .ts-edit-progress li[aria-current="step"] {
+        border-color: rgba(212, 175, 55, 0.4);
+        color: #faf8f5;
+        background: #261b1b;
+    }
+
+    body.teacher-portal .teacher-settings .ts-edit-progress li[aria-current="step"] > .ts-step-number,
+    body.teacher-portal .teacher-settings .ts-edit-progress li.is-complete > .ts-step-number {
+        border-color: #faf8f5;
+        color: #800000;
+        background: #faf8f5;
+    }
+
+    body.teacher-portal .teacher-settings .ts-edit-status {
+        margin: 0 0 14px;
+        padding: 11px 13px;
+        border: 1px solid rgba(212, 175, 55, 0.26);
+        border-radius: 10px;
+        background: #261b1b;
+        color: #faf8f5;
+        font-size: 0.84rem;
+        line-height: 1.45;
+    }
+
+    body.teacher-portal .teacher-settings .ts-edit-status[data-tone="error"] {
+        border-color: rgba(251, 113, 133, 0.34);
+        color: #fda4af;
+        background: rgba(153, 27, 45, 0.18);
+    }
+
+    body.teacher-portal .teacher-settings .ts-edit-status[data-tone="success"] {
+        border-color: rgba(52, 211, 153, 0.3);
+        color: #6ee7b7;
+        background: rgba(16, 185, 129, 0.1);
+    }
+
+    body.teacher-portal .teacher-settings .ts-status-tile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 11px;
+        background: #261b1b;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #d6ccc6;
+        font-size: 0.85rem;
+        margin-bottom: 14px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-status-tile i {
+        color: #d4af37;
+        flex-shrink: 0;
+    }
+
+    body.teacher-portal .teacher-settings .ts-input-display {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 14px;
+        border-radius: 10px;
+        background: #141010;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #faf8f5;
+        font-size: 0.9rem;
+        margin-bottom: 14px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-input-val {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    body.teacher-portal .teacher-settings .ts-label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.82rem;
+        font-weight: 650;
+        color: #f3e7cd;
+    }
+
+    body.teacher-portal .teacher-settings .ts-input {
+        width: 100%;
+        min-height: 46px;
+        padding: 11px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(212, 175, 55, 0.22);
+        background: #141010;
+        color: #faf8f5;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    body.teacher-portal .teacher-settings .ts-input:focus {
+        border-color: #d4af37;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.16);
+    }
+
+    body.teacher-portal .teacher-settings .ts-pw-wrap {
+        position: relative;
+    }
+
+    body.teacher-portal .teacher-settings .ts-pw-wrap .ts-input {
+        padding-right: 46px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-eye-btn {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: 0;
+        color: #a49890;
+        padding: 4px;
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    body.teacher-portal .teacher-settings .ts-eye-btn:hover {
+        color: #f5dfa8;
+    }
+
+    body.teacher-portal .teacher-settings .ts-help {
+        margin: 8px 0 16px;
+        color: #a49890;
+        font-size: 0.8rem;
+        line-height: 1.55;
+    }
+
+    body.teacher-portal .teacher-settings .ts-otp-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+        width: min(100%, 350px);
+        margin: 8px 0 10px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-otp-input {
+        width: 100%;
+        min-width: 0;
+        height: 50px;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 10px;
+        color: #faf8f5;
+        background: #141010;
+        font-size: 1.15rem;
+        font-weight: 700;
+        text-align: center;
+        outline: none;
+    }
+
+    body.teacher-portal .teacher-settings .ts-otp-input:focus {
+        border-color: #d4af37;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
+    }
+
+    body.teacher-portal .teacher-settings .ts-form-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 22px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 10px 20px;
+        border-radius: 9px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    body.teacher-portal .teacher-settings .ts-btn-gold {
+        background: linear-gradient(135deg, #f5dfa8 0%, #d4af37 100%);
+        color: #141010;
+    }
+
+    body.teacher-portal .teacher-settings .ts-btn-gold:hover {
+        filter: brightness(1.06);
+    }
+
+    body.teacher-portal .teacher-settings .ts-btn-emerald {
+        background: rgba(16, 185, 129, 0.16);
+        border-color: rgba(52, 211, 153, 0.35);
+        color: #6ee7b7;
+    }
+
+    body.teacher-portal .teacher-settings .ts-btn-emerald:hover:not(:disabled) {
+        background: rgba(16, 185, 129, 0.26);
+        color: #ffffff;
+    }
+
+    body.teacher-portal .teacher-settings .ts-btn-emerald:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    body.teacher-portal .teacher-settings .ts-btn-ghost {
+        background: #261b1b;
+        border-color: rgba(255, 255, 255, 0.14);
+        color: #d6ccc6;
+    }
+
+    body.teacher-portal .teacher-settings .ts-btn-ghost:hover {
+        background: #2f2222;
+        color: #ffffff;
+    }
+
+    /* Passkey empty state & Recovery vault */
+    body.teacher-portal .teacher-settings .ts-passkey-empty {
+        text-align: center;
+        padding: 26px 18px;
+        color: #a49890;
+        font-size: 0.85rem;
+        background: #141010;
+        border-radius: 12px;
+        border: 1px dashed rgba(212, 175, 55, 0.22);
+    }
+
+    body.teacher-portal .teacher-settings .ts-passkey-empty i {
+        font-size: 2rem;
+        display: block;
+        margin-bottom: 8px;
+        color: #d4af37;
+        opacity: 0.65;
+    }
+
+    body.teacher-portal .teacher-settings .ts-recovery-vault {
+        margin-top: 18px;
+        padding: 16px;
+        border-radius: 12px;
+        background: #141010;
+        border: 1px solid rgba(212, 175, 55, 0.25);
+    }
+
+    body.teacher-portal .teacher-settings .ts-recovery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+        gap: 8px;
+        margin: 12px 0;
+    }
+
+    body.teacher-portal .teacher-settings .recovery-code-chip {
+        background: #261b1b;
+        border: 1px solid rgba(212, 175, 55, 0.22);
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #f5dfa8;
+        letter-spacing: 0.06em;
+        text-align: center;
+        user-select: all;
+    }
+
+    /* Notification Preferences Tiles (1:1 Student .pref-tile) */
+    body.teacher-portal .teacher-settings .ts-pref-section-lbl {
+        margin: 4px 0 12px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: #a49890;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    body.teacher-portal .teacher-settings .ts-pref-tile {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 16px 18px;
+        margin: 0 0 10px;
+        border-radius: 11px;
+        background: #261b1b;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    body.teacher-portal .teacher-settings .ts-pref-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    body.teacher-portal .teacher-settings .ts-pref-icon {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: rgba(212, 175, 55, 0.12);
+        color: #f5dfa8;
+        font-size: 1rem;
+    }
+
+    body.teacher-portal .teacher-settings .ts-pref-title {
+        display: block;
+        color: #faf8f5;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    body.teacher-portal .teacher-settings .ts-pref-sub {
+        color: #a49890;
+        font-size: 0.8rem;
+        line-height: 1.55;
+        margin-top: 3px;
+    }
+
+    body.teacher-portal .teacher-settings .ts-pref-tile .form-check.form-switch {
+        padding-left: 0;
+        margin: 0;
+        min-height: 0;
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    body.teacher-portal .teacher-settings .ts-pref-tile .form-check-input {
+        width: 42px;
+        height: 24px;
+        margin: 0;
+        float: none;
+        cursor: pointer;
+    }
+
+    @media (min-width: 1024px) {
+        body.teacher-portal .sp.teacher-settings[data-teacher-settings] #tab-profile.active {
+            display: grid;
+            grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.35fr);
+            align-items: start;
+            gap: 22px;
+        }
+
+        body.teacher-portal .sp.teacher-settings[data-teacher-settings] #tab-profile.active > .ts-card {
+            margin: 0;
+        }
+
+        body.teacher-portal .sp.teacher-settings[data-teacher-settings] #tab-profile .ts-profile-inner {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        body.teacher-portal .sp.teacher-settings[data-teacher-settings] .ts-account-shortcuts {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: start;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        body.teacher-portal .teacher-settings .ts-spec-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        body.teacher-portal .teacher-settings .ts-card-head {
+            padding: 18px;
+        }
+
+        body.teacher-portal .teacher-settings .ts-card-body {
+            padding: 20px 18px;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        body.teacher-portal .sp.teacher-settings[data-teacher-settings] {
+            padding: 4px 0 calc(20px + env(safe-area-inset-bottom));
+        }
+
+        body.teacher-portal .teacher-settings:not([data-settings-view^="change-"]) .teacher-settings-detail-heading {
+            min-height: 0;
+            margin-bottom: 14px;
+        }
+
+        body.teacher-portal .teacher-settings:not([data-settings-view^="change-"]) .teacher-settings-detail-heading h2 {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        body.teacher-portal .teacher-settings .ts-profile-inner {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        body.teacher-portal .teacher-settings .ts-account-shortcut {
+            flex-wrap: wrap;
+            padding: 16px;
+        }
+
+        body.teacher-portal .teacher-settings .ts-account-shortcut button,
+        body.teacher-portal .teacher-settings .ts-btn,
+        body.teacher-portal .teacher-settings .ts-form-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        body.teacher-portal .teacher-settings :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]), select, textarea) {
+            font-size: 16px !important;
+            max-width: 100%;
+        }
+
+        body.teacher-portal .teacher-settings .ts-otp-grid {
+            gap: 6px;
+        }
+
+        body.teacher-portal .teacher-settings .ts-otp-input {
+            height: 46px;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        body.teacher-portal .teacher-settings *,
+        body.teacher-portal .settings-sidebar-back-btn,
+        body.teacher-portal .settings-sidebar-nav button.nav-link {
+            transition-duration: 0.01ms !important;
+        }
+    }
 }

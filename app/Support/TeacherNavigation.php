@@ -102,7 +102,7 @@ class TeacherNavigation
             'teacher.reports*' => ['title' => 'Attendance Reports', 'group' => 'Reports & analytics'],
             'teacher.calendar*' => ['title' => 'School Calendar', 'group' => 'Academic calendar'],
             'teacher.notifications*' => ['title' => 'Notifications', 'group' => 'My account'],
-            'teacher.profile*' => ['title' => 'My Profile', 'group' => 'My account'],
+            'teacher.profile*' => ['title' => 'Settings', 'group' => 'My account'],
             'teacher.excuses*' => ['title' => 'Excuses & Corrections', 'group' => 'Attendance & requests'],
         ];
 

@@ -165,7 +165,7 @@
                         }
                     @endphp
                     @if(!$isRootPage)
-                        <button type="button" class="mobile-back-btn d-md-none" onclick="(function(fallback){var settingsBack=document.querySelector('.student-settings[data-student-view^=&quot;change-&quot;] [data-account-back]:not([hidden])');if(settingsBack){settingsBack.click();return;}var sameOrigin=document.referrer&amp;&amp;document.referrer.indexOf(window.location.origin)===0&amp;&amp;document.referrer.split('#')[0]!==window.location.href.split('#')[0];if(sameOrigin&amp;&amp;window.history.length&gt;1){window.history.back();}else{window.location.href=fallback;}})('{{ $fallbackBackUrl }}')" aria-label="Go back" title="Back">
+                        <button type="button" class="mobile-back-btn d-md-none" onclick="(function(fallback){var settingsBack=document.querySelector('[data-teacher-settings][data-settings-view^=&quot;change-&quot;] [data-account-back]:not([hidden]), .student-settings[data-student-view^=&quot;change-&quot;] [data-account-back]:not([hidden])');if(settingsBack){settingsBack.click();return;}var sameOrigin=document.referrer&amp;&amp;document.referrer.indexOf(window.location.origin)===0&amp;&amp;document.referrer.split('#')[0]!==window.location.href.split('#')[0];if(sameOrigin&amp;&amp;window.history.length&gt;1){window.history.back();}else{window.location.href=fallback;}})('{{ $fallbackBackUrl }}')" aria-label="Go back" title="Back">
                             <i class="bi bi-chevron-left"></i>
                         </button>
                     @endif
