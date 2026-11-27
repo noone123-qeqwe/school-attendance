@@ -42,13 +42,15 @@
     }
 
     body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item-scan > .mbn-scan-icon {
+        grid-row: 1 / -1;
+        align-self: center;
         opacity: 1 !important;
     }
 
     .mbn-scan-icon svg {
         display: block;
-        width: var(--student-dock-icon-size);
-        height: var(--student-dock-icon-size);
+        width: 40px;
+        height: 40px;
     }
 }
 
