@@ -19,7 +19,7 @@ final class MobileNavigation
             $tabs = [];
             foreach (StudentNavigation::sidebarItems() as $item) {
                 if ($item['key'] === 'attendance') {
-                    $tabs[] = self::tab('scan', 'Scan Attendance QR', 'mobile.scan', 'qr-code-scan', ['mobile.scan'], 'Scan', featured: true);
+                    $tabs[] = self::tab('scan', 'Scan Attendance QR', 'mobile.scan', 'qr-code-scan', ['mobile.scan'], 'Scan');
                 }
                 [$shortLabel, $icon] = match ($item['key']) {
                     'home' => ['Home', 'house-door'],

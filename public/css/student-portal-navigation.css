@@ -30,7 +30,7 @@
         color: var(--sdc-text-soft) !important;
     }
 
-    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item > span:not(.mbn-scan-icon) {
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item > span:last-child {
         max-width: 100% !important;
         font-size: inherit !important;
         letter-spacing: normal !important;
@@ -41,41 +41,28 @@
     body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item > i {
         display: grid;
         place-items: center;
-        width: min(54px, 100%);
+        width: var(--student-dock-icon-row);
         height: var(--student-dock-icon-row);
-        border-radius: 999px;
         font-size: 28px !important;
         line-height: 1 !important;
         transform: none !important;
     }
 
     body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item[aria-current]::before {
-        content: none !important;
+        top: auto !important;
+        bottom: 0;
+        height: 2px !important;
+        background: var(--gold-bright) !important;
+        box-shadow: none !important;
     }
 
     body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item[aria-current] > i {
-        background: var(--gold-bright);
-        color: var(--sdc-canvas) !important;
+        color: var(--gold-bright) !important;
         filter: none !important;
     }
 
     body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item[aria-current] > span {
         color: var(--gold-bright) !important;
-    }
-
-    body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item.mbn-item-scan {
-        color: var(--gold-bright) !important;
-    }
-
-    body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item-scan > .mbn-scan-icon {
-        align-self: center;
-        opacity: 1 !important;
-    }
-
-    body.student-portal .mbn-scan-icon svg {
-        display: block;
-        width: 40px;
-        height: 40px;
     }
 }
 

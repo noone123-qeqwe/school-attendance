@@ -12,7 +12,6 @@
                 : request()->routeIs(...$item['active']);
             $childAware = in_array($item['route'], ['parent.dashboard', 'parent.calendar'], true);
             $isParentAlerts = $item['route'] === 'parent.notifications';
-            $isStudentScan = $navUser->isStudent() && $item['key'] === 'scan';
         @endphp
         @if($item['route'] === null)
             <button type="button" @class(['mbn-item', 'mbn-item-more', 'active' => $isActive])
@@ -25,8 +24,7 @@
             <a href="{{ route($item['route'], $item['query']) }}"
                @class([
                    'mbn-item',
-                   'mbn-item-featured' => $item['featured'] && !$isStudentScan,
-                   'mbn-item-scan' => $isStudentScan,
+                   'mbn-item-featured' => $item['featured'],
                    'active' => $isActive,
                ])
                @if($isActive) aria-current="{{ request()->routeIs($item['route']) ? 'page' : 'location' }}" @endif
@@ -34,7 +32,7 @@
                @if($childAware) data-parent-child-context @endif
                @if($isParentAlerts) id="parentMobileAlertsLink" @endif>
                 @if($item['featured'])
-                    <span class="{{ $isStudentScan ? 'mbn-scan-icon' : 'mbn-featured-btn' }}" aria-hidden="true">
+                    <span class="mbn-featured-btn" aria-hidden="true">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M3.5 8.5V5.5C3.5 4.4 4.4 3.5 5.5 3.5H8.5M15.5 3.5H18.5C19.6 3.5 20.5 4.4 20.5 5.5V8.5M3.5 15.5V18.5C3.5 19.6 4.4 20.5 5.5 20.5H8.5M15.5 20.5H18.5C19.6 20.5 20.5 19.6 20.5 18.5V15.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                             <path d="M7 7h3.5v3.5H7zM13.5 7H17v3.5h-3.5zM7 13.5h3.5V17H7z" fill="currentColor"/>
