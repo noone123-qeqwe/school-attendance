@@ -31,613 +31,6 @@
 @endphp
 
 <link rel="stylesheet" href="{{ asset('css/settings-page.css') }}?v={{ filemtime(public_path('css/settings-page.css')) }}">
-<style>
-/* ── Student settings redesign ─────────────────────────────────────────── */
-.student-settings {
-    --student-panel: #1E1515;
-    --student-panel-strong: #1E1515;
-    --student-line: rgba(255, 255, 255, 0.11);
-    --student-space: clamp(16px, 2.3vw, 28px);
-    max-width: 1360px;
-    padding: 24px var(--student-space) 64px;
-}
-.student-settings .settings-command-header {
-    min-height: 128px;
-    padding: 20px 24px;
-    border-radius: 14px;
-    border-color: var(--student-line);
-    border-top: 2px solid #7A1A1A;
-    background: #1E1515;
-    box-shadow: none;
-}
-.student-settings .settings-command-header::after { display: none; }
-.student-settings .settings-top-left { align-self: stretch; }
-.student-settings .settings-avatar-chip {
-    width: 60px;
-    height: 60px;
-    border-radius: 14px;
-    padding: 2px;
-    background: rgba(255, 255, 255, 0.18);
-}
-.student-settings .settings-chip-avatar { border-radius: 12px; }
-.student-settings .settings-chip-status { width: 14px; height: 14px; }
-.student-settings .settings-breadcrumb-bar {
-    padding: 3px 9px;
-    margin-bottom: 6px;
-    background: #261B1B;
-    border-color: rgba(255, 255, 255, 0.1);
-}
-.student-settings .pg-title {
-    font-size: clamp(1.4rem, 1.9vw, 1.85rem);
-    letter-spacing: -0.03em;
-}
-.student-settings .pg-sub { max-width: 560px; line-height: 1.5; }
-.student-settings .settings-top-right {
-    align-items: center;
-    gap: 12px;
-    flex: 0 1 600px;
-}
-.student-settings .settings-search-box {
-    min-width: min(100%, 260px);
-    flex: 1 1 250px;
-    border-radius: 10px;
-    background: #141010;
-    border-color: rgba(255, 255, 255, 0.12);
-}
-.student-settings .settings-command-telemetry {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(96px, 1fr));
-    gap: 8px;
-    width: 100%;
-}
-.student-settings .telemetry-pill {
-    min-height: 50px;
-    padding: 8px 11px;
-    border-radius: 10px;
-    background: #261B1B;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-.student-settings .telemetry-pill:hover { background: #2F2222; }
-.student-settings .telemetry-lbl { font-size: 0.64rem; color: #A49890; }
-.student-settings .telemetry-val { font-size: 0.78rem; color: #FAF8F5; }
-
-.student-settings .settings-layout-grid {
-    display: block;
-    margin-top: 2px;
-}
-.student-settings .settings-main-content { min-width: 0; }
-.student-settings .spanel { animation: studentPanelIn .2s ease-out; }
-@keyframes studentPanelIn { from { opacity: .45; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-.student-settings .sc,
-.student-settings .sec-health-hero,
-.student-settings .sec-card,
-.student-settings .sec-group-panel {
-    border-color: var(--student-line);
-    background: #1E1515;
-    box-shadow: none;
-}
-.student-settings .sc { border-radius: 14px; overflow: hidden; }
-.student-settings .sc + .sc { margin-top: 16px; }
-.student-settings .sc-head { padding: 18px 22px 15px; border-bottom-color: rgba(255, 255, 255, 0.08); }
-.student-settings .sc-body { padding: 22px; }
-.student-settings .sc-title, .student-settings .sec-group-title { font-size: 1rem; color: #FAF8F5; }
-.student-settings .sc-sub, .student-settings .sec-group-desc { line-height: 1.48; color: #A49890; }
-.student-settings .profile-card-inner {
-    gap: 18px;
-    padding: 4px;
-}
-.student-settings .profile-details-col { gap: 8px; }
-.student-settings .profile-user-name { font-size: 1.2rem; }
-.student-settings .academic-spec-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.student-settings .academic-spec-card {
-    min-height: 86px;
-    padding: 13px 14px;
-    border-radius: 10px;
-    background: #141010;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-.student-settings .academic-spec-card:hover { border-color: rgba(212, 175, 55, 0.28); background: #261B1B; }
-.student-settings .si { min-height: 46px; border-radius: 10px; }
-.student-settings .sbtn, .student-settings .sec-action-btn { min-height: 44px; border-radius: 10px; }
-.student-settings .flash-ok, .student-settings .flash-err { border-radius: 12px; }
-
-.student-settings .sec-health-hero {
-    margin-bottom: 14px;
-    padding: 20px 22px;
-    border-radius: 14px;
-}
-.student-settings .sec-health-title { font-size: 1.1rem; }
-.student-settings .sec-matrix-bar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
-    gap: 8px;
-    padding: 10px;
-    border-radius: 12px;
-    background: #141010;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-.student-settings .sec-matrix-item {
-    justify-content: flex-start;
-    min-height: 42px;
-    padding: 8px 10px;
-    border-radius: 9px;
-    background: #1E1515;
-}
-.student-settings .sec-subnav-bar {
-    position: sticky;
-    top: 10px;
-    z-index: 10;
-    margin: 14px 0;
-    padding: 6px;
-    border-radius: 12px;
-    background: rgba(11, 4, 6, 0.94);
-    border: 1px solid var(--student-line);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-.student-settings .sec-subnav-pill { min-height: 38px; border-radius: 8px; }
-.student-settings .sec-group-panel { margin-bottom: 18px; border-radius: 14px; padding: 20px; }
-.student-settings .sec-group-header { margin-bottom: 16px; }
-.student-settings .sec-cards-grid { gap: 16px; }
-.student-settings .sec-card { border-radius: 12px; padding: 18px 20px; }
-.student-settings .student-account-shortcuts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-.student-settings .student-account-shortcuts[hidden] { display:none !important; }
-.student-settings .student-account-shortcut {
-    display:flex; align-items:center; gap:14px; min-width:0; padding:16px;
-    border:1px solid rgba(255, 255, 255,.1); border-radius:12px;
-    background:#261B1B;
-}
-.student-settings .student-account-shortcut-icon {
-    display:grid; place-items:center; flex:0 0 42px; width:42px; height:42px;
-    border:1px solid rgba(212, 175, 55,.26); border-radius:10px;
-    background:rgba(122, 26, 26, 0.24); color:#D4AF37; font-size:1.05rem;
-}
-.student-settings .student-account-shortcut-copy { flex:1; min-width:0; }
-.student-settings .student-account-shortcut-copy strong,
-.student-settings .student-account-shortcut-copy span { display:block; overflow-wrap:anywhere; }
-.student-settings .student-account-shortcut-copy strong { color:#FAF8F5; font-size:.9rem; }
-.student-settings .student-account-shortcut-copy span { margin-top:3px; color:#A49890; font-size:.78rem; line-height:1.45; }
-.student-settings .student-account-shortcut button {
-    display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:42px;
-    padding:9px 13px; border:1px solid rgba(255, 255, 255,.16); border-radius:9px;
-    background:#2F2222; color:#FAF8F5; font:inherit; font-size:.8rem; font-weight:700;
-}
-.student-settings .student-account-shortcut button:hover { background:#7A1A1A; border-color:rgba(212, 175, 55,.38); color:#FFFFFF; }
-.student-settings .student-account-edit-panel { max-width:760px; margin:0 auto; padding:0; border:0; background:transparent; box-shadow:none; }
-.student-settings .student-account-edit-panel > .student-account-edit-intro {
-    margin-bottom:14px; padding:15px 18px; border:1px solid rgba(255, 255, 255,.1);
-    border-radius:12px; background:#1E1515; color:#D6CCC6; line-height:1.5;
-}
-.student-settings .student-account-edit-card { border-radius:14px; }
-.student-settings .account-edit-progress {
-    display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;
-    margin:0 0 18px; padding:0; list-style:none;
-}
-.student-settings .account-edit-progress li {
-    display:flex; align-items:center; gap:10px; min-width:0; min-height:46px;
-    padding:9px 12px; border:1px solid rgba(255, 255, 255,.09); border-radius:10px;
-    color:#A49890; background:#141010; font-size:.8rem; font-weight:600;
-}
-.student-settings .account-edit-progress li > .account-step-number {
-    display:grid; place-items:center; flex:0 0 26px; width:26px; height:26px;
-    border-radius:7px; border:1px solid rgba(255, 255, 255,.16); color:#D6CCC6; font-size:.74rem;
-}
-.student-settings .account-edit-progress li[aria-current="step"] {
-    border-color:rgba(212, 175, 55,.4); color:#FAF8F5; background:#261B1B;
-}
-.student-settings .account-edit-progress li[aria-current="step"] > .account-step-number,
-.student-settings .account-edit-progress li.is-complete > .account-step-number {
-    border-color:#FAF8F5; color:#800000; background:#FAF8F5;
-}
-.student-settings .account-edit-progress li.is-complete { color:#D6CCC6; }
-.student-settings .account-edit-status {
-    margin:0 0 14px; padding:11px 13px; border:1px solid rgba(212, 175, 55,.26);
-    border-radius:10px; color:#FAF8F5; background:#261B1B; font-size:.84rem; line-height:1.45;
-}
-.student-settings .account-edit-status[hidden] { display:none !important; }
-.student-settings .account-edit-status[data-tone="error"] { border-color:rgba(251,113,133,.34); color:#FDA4AF; background:rgba(153,27,45,.18); }
-.student-settings .account-edit-status[data-tone="success"] { border-color:rgba(52,211,153,.3); color:#6EE7B7; background:rgba(16,185,129,.1); }
-.student-settings .account-edit-current-value {
-    display:flex; align-items:center; gap:10px; min-width:0; margin:12px 0 16px;
-    padding:12px 14px; border:1px solid rgba(255, 255, 255,.1); border-radius:10px;
-    background:#141010; color:#D6CCC6; font-size:.85rem;
-}
-.student-settings .account-edit-current-value i { flex:0 0 auto; color:#D4AF37; }
-.student-settings .account-edit-current-value strong { color:#FAF8F5; overflow-wrap:anywhere; }
-.student-settings .account-edit-help { margin:7px 0 16px; color:#A49890; font-size:.8rem; line-height:1.5; }
-.student-settings .account-otp-grid {
-    display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px;
-    max-width:390px; margin:8px 0 7px;
-}
-.student-settings .account-otp-input {
-    width:100%; min-width:0; height:50px; padding:0; border:1px solid rgba(255, 255, 255,.16);
-    border-radius:10px; color:#FAF8F5; background:#141010;
-    font-size:1.15rem; font-weight:700; text-align:center; outline:none;
-    transition:border-color .15s ease, box-shadow .15s ease;
-}
-.student-settings .account-otp-input:focus-visible {
-    border-color:#D4AF37; background:#1E1515; box-shadow:0 0 0 3px rgba(212, 175, 55,.18);
-}
-.student-settings .account-form-actions { display:flex; align-items:center; gap:10px; margin-top:16px; }
-.student-settings .account-form-actions > * { min-height:46px; }
-.student-settings .account-form-actions .sec-action-btn { flex:1; }
-.student-settings .student-account-edit-card .sec-card-content { min-width:0; }
-.student-settings .student-account-edit-card .si { min-height:48px; }
-.student-settings .student-account-edit-panel .sec-card,
-.student-settings .student-account-edit-panel .sc { margin:0; }
-.student-settings .sec-card-top { margin-bottom: 14px; }
-.student-settings .sec-card-name { font-size: .95rem; }
-.student-settings .sec-card-subtitle { line-height: 1.4; }
-.student-settings .sec-status-tile, .student-settings .pref-tile {
-    border-radius: 14px;
-    border-color: rgba(255,255,255,.08);
-    background: rgba(255,255,255,.025);
-}
-.student-settings .pref-tile { min-height: 72px; padding: 14px; }
-.student-settings .pref-tile:hover { background: rgba(207,164,111,.06); border-color: rgba(207,164,111,.18); }
-.student-settings .device-item-card { border-radius: 13px; }
-
-@media (max-width: 1100px) {
-    .student-settings .settings-command-header { align-items: flex-start; }
-    .student-settings .settings-top-right { flex: 1 1 100%; }
-    .student-settings .settings-layout-grid { display: block; }
-}
-@media (max-width: 991.98px) {
-    .student-settings { padding: 14px 14px calc(28px + env(safe-area-inset-bottom)); }
-    .student-settings .settings-command-header {
-        min-height: 0;
-        padding: 18px;
-        margin-bottom: 12px;
-        border-radius: 19px;
-    }
-    .student-settings .settings-top-left { flex: 1 1 100%; gap: 13px; }
-    .student-settings .settings-avatar-chip { width: 52px; height: 52px; border-radius: 17px; }
-    .student-settings .settings-chip-avatar { border-radius: 14px; }
-    .student-settings .settings-breadcrumb-bar { display: none; }
-    .student-settings .pg-title { font-size: 1.35rem; }
-    .student-settings .pg-sub { font-size: .78rem; }
-    .student-settings .settings-top-right { gap: 9px; }
-    .student-settings .settings-search-box { order: 2; flex-basis: 100%; min-width: 100%; }
-    .student-settings .settings-command-telemetry { grid-template-columns: repeat(3, minmax(0, 1fr)); order: 1; }
-    .student-settings .telemetry-pill { min-height: 48px; padding: 7px 8px; gap: 7px; }
-    .student-settings .telemetry-pill i { font-size: .95rem; }
-    .student-settings .telemetry-lbl { font-size: .56rem; }
-    .student-settings .telemetry-val { font-size: .68rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .student-settings .stabs-wrapper {
-        position: sticky;
-        top: 0;
-        z-index: 30;
-        padding: 7px 0;
-        margin: 0 -2px 14px;
-        background: linear-gradient(180deg, rgba(18, 12, 9, .98) 76%, rgba(18, 12, 9, 0));
-    }
-    .student-settings .stabs {
-        gap: 8px;
-        padding: 0 40px 8px 2px;
-        scrollbar-width: none;
-        scroll-padding-inline: 8px;
-    }
-    .student-settings .stabs::-webkit-scrollbar { display: none; }
-    .student-settings .stabs-wrapper::before,
-    .student-settings .stabs-wrapper::after {
-        content: "";
-        position: absolute;
-        z-index: 1;
-        top: 1px;
-        bottom: 1px;
-        width: 42px;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity .2s ease;
-    }
-    .student-settings .stabs-wrapper::before {
-        left: 1px;
-        background: linear-gradient(90deg, rgba(18, 14, 11, .98), rgba(18, 14, 11, 0));
-    }
-    .student-settings .stabs-wrapper::after {
-        right: 1px;
-        background: linear-gradient(270deg, rgba(18, 14, 11, .98), rgba(18, 14, 11, 0));
-    }
-    .student-settings .stabs-wrapper.has-scroll-left::before,
-    .student-settings .stabs-wrapper.has-scroll-right::after { opacity: 1; }
-    .student-settings .stabs-arrow {
-        position: absolute;
-        z-index: 3;
-        top: 50%;
-        width: 30px;
-        height: 30px;
-        transform: translateY(-50%);
-        background: rgba(30, 24, 20, .98);
-        border-color: rgba(207, 164, 111, .7);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, .5), 0 0 12px rgba(207, 164, 111, .16);
-    }
-    .student-settings .stabs-arrow-left { left: 7px; }
-    .student-settings .stabs-arrow-right { right: 7px; }
-    .student-settings .stabs-wrapper.has-scroll-left .stabs { padding-left: 40px; }
-    .student-settings .stabs-wrapper.has-scroll-right .stabs-arrow-right i {
-        animation: studentSettingsScrollNudge 1.1s ease-in-out infinite;
-    }
-    @keyframes studentSettingsScrollNudge {
-        0%, 100% { transform: translateX(-2px); opacity: .72; }
-        50% { transform: translateX(3px); opacity: 1; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .student-settings .stabs-wrapper.has-scroll-right .stabs-arrow-right i { animation: none; }
-    }
-    .student-settings .stab {
-        flex: 0 0 auto;
-        min-height: 42px;
-        padding: 9px 13px;
-        border-radius: 12px;
-        font-size: .78rem;
-        background: rgba(255,255,255,.045);
-        border: 1px solid rgba(255,255,255,.08);
-    }
-    .student-settings .stab.active { background: linear-gradient(135deg, rgba(207,164,111,.25), rgba(143,39,31,.2)); border-color: rgba(207,164,111,.4); }
-    .student-settings .settings-layout-grid { display: block; margin-top: 0; }
-    .student-settings .settings-sidebar { display: none; }
-    .student-settings .sc { border-radius: 17px; }
-    .student-settings .sc-head { padding: 20px 18px 16px; }
-    .student-settings .sc-body { padding: 22px 18px; }
-    .student-settings .sec-health-hero { padding: 22px 18px; border-radius: 17px; }
-    .student-settings .sec-matrix-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .student-settings .sec-subnav-bar { top: 58px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
-    .student-settings .sec-subnav-pill { flex: 0 0 auto; white-space: nowrap; }
-    .student-settings .sec-group-panel { padding: 20px 16px; border-radius: 16px; }
-    .student-settings .sec-card { padding: 20px 16px; }
-}
-@media (max-width: 575.98px) {
-    .student-settings { padding-inline: 10px; }
-    .student-settings .settings-command-header { padding: 16px; border-radius: 17px; }
-    .student-settings .settings-command-telemetry { grid-template-columns: 1fr; gap: 8px; }
-    .student-settings .telemetry-pill { min-width: 0; min-height: 52px; padding: 10px 12px; }
-    .student-settings .telemetry-pill:nth-child(n+4) { display: none; }
-    .student-settings .profile-card-inner { align-items: flex-start; flex-direction: column; }
-    .student-settings .profile-details-col { width: 100%; }
-    .student-settings .academic-spec-grid { grid-template-columns: 1fr; gap: 9px; }
-    .student-settings .academic-spec-card { min-height: 72px; }
-    .student-settings .sec-matrix-bar { grid-template-columns: 1fr; gap: 6px; }
-    .student-settings .sec-matrix-item { min-height: 38px; }
-    .student-settings .sec-health-left { align-items: flex-start; }
-    .student-settings .sec-health-icon { width: 42px; height: 42px; font-size: 1.05rem; }
-    .student-settings .sec-health-title { font-size: 1rem; }
-    .student-settings .sec-health-sub { font-size: .75rem; }
-    .student-settings .sec-cards-grid { grid-template-columns: 1fr; }
-    .student-settings .sc-head { padding: 20px 14px 16px; align-items: flex-start; }
-    .student-settings .sc-body { padding: 22px 14px; }
-    .student-settings .sec-health-hero { padding: 22px 14px; }
-    .student-settings .sec-group-panel { padding: 18px 12px; }
-    .student-settings .sec-card { padding: 20px 14px; }
-    .student-settings .student-account-shortcuts { grid-template-columns:minmax(0,1fr); gap:10px; }
-    .student-settings .student-account-shortcut { padding:14px; align-items:flex-start; }
-    .student-settings .student-account-shortcut button { flex:0 0 auto; padding:9px 10px; }
-    .student-settings .student-account-edit-panel > .student-account-edit-intro { padding:15px; }
-    .student-settings .account-edit-progress { gap:7px; }
-    .student-settings .account-edit-progress li { gap:7px; min-height:44px; padding:7px 9px; font-size:.74rem; }
-    .student-settings .account-otp-grid { gap:6px; }
-    .student-settings .account-otp-input { height:46px; border-radius:10px; }
-    .student-settings .account-form-actions { flex-direction:column-reverse; align-items:stretch; }
-    .student-settings .account-form-actions > * { width:100%; }
-    .student-settings .bio-method-grid { grid-template-columns: 1fr; gap: 18px; }
-    .student-settings .bio-method-card { padding: 22px 16px 20px; }
-    .student-settings .bio-action-row { align-items: stretch; flex-direction: column; gap: 12px; }
-    .student-settings .pref-tile { align-items: center; flex-wrap: wrap; gap: 14px; padding: 18px 14px; }
-    .student-settings .pref-tile > * { min-width: 0; }
-    .student-settings .pref-tile .form-check.form-switch { padding: 0; margin: 0; min-height: 0; display: inline-flex; align-items: center; flex-shrink: 0; }
-    .student-settings .pref-tile .form-check.form-switch .form-check-input { margin: 0; float: none; }
-    .student-settings .pref-tile select { width: 100% !important; min-width: 0 !important; margin-top: 8px; }
-    .student-settings .sbtn, .student-settings .sec-action-btn { width: 100%; justify-content: center; }
-    .student-settings #tabDeviceBoundTile > div:last-child,
-    .student-settings #tabDeviceBoundTile div[style*="display:flex;gap:10px"] { flex-direction: column; }
-}
-
-/* Student settings: calmer hierarchy and easier category navigation. */
-.student-settings .settings-command-header {
-    background: linear-gradient(135deg, rgba(35, 25, 19, 0.98), rgba(20, 14, 11, 0.98));
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-.student-settings .settings-avatar-chip {
-    box-shadow: none;
-}
-.student-settings .pg-title {
-    background: none;
-    color: #f3e7cd;
-    -webkit-text-fill-color: currentColor;
-}
-.student-settings .pg-sub { max-width: 520px; }
-.student-settings .settings-search-box { min-width: min(100%, 240px); }
-.student-settings .settings-search-input {
-    box-shadow: none;
-    border-color: rgba(207, 164, 111, 0.22);
-}
-.student-settings .settings-command-telemetry { gap: 8px; }
-.student-settings .telemetry-pill {
-    backdrop-filter: none;
-    transition: background-color 0.18s ease, border-color 0.18s ease;
-}
-.student-settings .telemetry-pill:hover { transform: none; }
-.student-settings .settings-sidebar {
-    background: rgba(23, 16, 12, 0.98);
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-.student-settings .snav-group-header { letter-spacing: 0.07em; }
-.student-settings .snav-item {
-    min-height: 62px;
-    align-items: center;
-    transition: background-color 0.18s ease, border-color 0.18s ease;
-}
-.student-settings .snav-item:hover { transform: none; }
-.student-settings .snav-item-desc {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    line-height: 1.35;
-}
-.student-settings .snav-item.active {
-    background: rgba(207, 164, 111, 0.12);
-    border-color: rgba(207, 164, 111, 0.3);
-    box-shadow: inset 3px 0 var(--gold-primary);
-}
-.student-settings .snav-sub-item,
-.student-settings .snav-sub-item.active {
-    margin-left: 0 !important;
-    padding: 9px 10px !important;
-    border: 1px solid transparent !important;
-    border-radius: 12px !important;
-    background: transparent !important;
-    opacity: 1;
-}
-.student-settings .snav-sub-item.active {
-    background: rgba(207, 164, 111, 0.12) !important;
-    border-color: rgba(207, 164, 111, 0.3) !important;
-    box-shadow: inset 3px 0 var(--gold-primary);
-}
-.student-settings .snav-footer-card { box-shadow: none; }
-.student-settings .sc,
-.student-settings .sec-health-hero,
-.student-settings .sec-card,
-.student-settings .sec-group-panel {
-    background: rgba(25, 18, 14, 0.96);
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
-}
-.student-settings .sc { border-radius: 18px; }
-.student-settings .sc-head { background: rgba(255, 255, 255, 0.015); }
-.student-settings .sc + .sc { margin-top: 20px; }
-.student-settings .sec-subnav-bar {
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-.student-settings .sec-subnav-pill {
-    min-height: 42px;
-    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-}
-.student-settings .sec-subnav-pill:hover { transform: none; }
-.student-settings :is(button, a, input, select, textarea):focus-visible {
-    outline: 2px solid var(--gold-bright);
-    outline-offset: 3px;
-}
-
-@media (max-width: 575.98px) {
-    .student-settings { padding-inline: 14px; }
-    .student-settings .settings-command-header {
-        gap: 16px;
-        padding: 18px;
-        margin-bottom: 14px;
-    }
-    .student-settings .settings-top-left { gap: 12px; }
-    .student-settings .settings-title-group { flex-basis: calc(100% - 64px); }
-    .student-settings .pg-title { font-size: 1.3rem; }
-    .student-settings .pg-sub { max-width: 36ch; line-height: 1.45; }
-    .student-settings .settings-command-telemetry {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-    }
-    .student-settings .telemetry-pill {
-        min-height: 54px;
-        align-items: center;
-        padding: 9px 10px;
-    }
-    .student-settings .telemetry-pill:nth-child(n+4) { display: inline-flex; }
-    .student-settings .telemetry-val {
-        overflow: visible;
-        text-overflow: clip;
-        white-space: normal;
-        line-height: 1.25;
-    }
-    .student-settings .stabs-wrapper {
-        position: sticky;
-        top: 0;
-        margin: 0 0 16px;
-        padding: 8px;
-        border-radius: 16px;
-        background: rgba(18, 14, 11, 0.98);
-        border-color: rgba(207, 164, 111, 0.2);
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
-    }
-    .student-settings .stabs {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 8px;
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: 0 40px 8px 2px;
-        scroll-behavior: smooth;
-        -webkit-overflow-scrolling: touch;
-    }
-    .student-settings .stab {
-        width: max-content;
-        min-width: max-content;
-        flex: 0 0 auto;
-        min-height: 46px;
-        justify-content: center;
-        padding: 10px 12px;
-        border-radius: 11px;
-        font-size: 0.78rem;
-    }
-    .student-settings .stab:hover { transform: none; }
-    .student-settings .stab.active {
-        color: #fffbeb !important;
-        background: rgba(207, 164, 111, 0.16) !important;
-        border-color: rgba(207, 164, 111, 0.38) !important;
-        box-shadow: inset 0 -2px var(--gold-primary);
-    }
-    .student-settings .sec-subnav-bar {
-        position: static;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-        overflow: visible;
-        margin: 12px 0 18px;
-        padding: 8px;
-    }
-    .student-settings .sec-subnav-pill {
-        min-width: 0;
-        justify-content: flex-start;
-        white-space: normal;
-        text-align: left;
-        padding: 9px 10px;
-        line-height: 1.25;
-    }
-    .student-settings .sc-head { padding: 20px 18px 16px; }
-    .student-settings .sc-body { padding: 22px 18px; }
-    .student-settings .sec-group-panel { padding: 20px 16px; }
-    .student-settings .sec-card { padding: 20px 16px; }
-}
-
-@media (max-width: 767.98px) {
-    .student-settings { padding: 10px 12px calc(20px + env(safe-area-inset-bottom)) !important; }
-    .student-settings .settings-command-header { gap: 12px; margin-bottom: 10px; padding: 14px; }
-    .student-settings .stabs-wrapper { margin-bottom: 10px; }
-    .student-settings .stabs-wrapper:not(.has-scroll-right) .stabs { padding-right: 2px !important; }
-    .student-settings .stabs-wrapper.has-scroll-right .stabs { padding-right: 40px !important; }
-    .student-settings .sc + .sc { margin-top: 14px; }
-    .student-settings .sc-head { padding: 16px 14px 14px; }
-    .student-settings .sc-body { padding: 18px 14px; }
-    .student-settings .sec-health-hero { margin-bottom: 10px; padding: 18px 14px; }
-    .student-settings .sec-subnav-bar { margin: 8px 0 12px; padding: 6px; }
-    .student-settings .sec-group-panel { padding: 16px 12px; }
-    .student-settings .sec-card { padding: 16px 12px; }
-    .student-settings .pref-tile { gap: 10px; padding: 14px 12px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .student-settings *,
-    .student-settings *::before,
-    .student-settings *::after {
-        scroll-behavior: auto !important;
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-</style>
 
 <div class="sp {{ $user?->isStudent() ? 'student-settings' : '' }}" @if($user?->isStudent()) data-student-settings="{{ $user->id }}" data-student-view="profile" data-settings-feedback="{{ $errors->any() || session('success') ? 'true' : 'false' }}" data-settings-phone-error="{{ $errors->has('phone') ? 'true' : 'false' }}" data-settings-phone-error-message="{{ $errors->first('phone') }}" data-settings-email-error="{{ $errors->has('new_email') || $errors->has('otp') ? 'true' : 'false' }}" data-settings-email-address-error="{{ $errors->has('new_email') ? 'true' : 'false' }}" data-settings-email-error-message="{{ $errors->first('new_email') ?: $errors->first('otp') }}" data-settings-password-error="{{ $errors->has('password') || $errors->has('password_confirmation') || $errors->has('otp') ? 'true' : 'false' }}" data-settings-password-error-message="{{ $errors->first('password') ?: $errors->first('password_confirmation') ?: $errors->first('otp') }}" @endif>
 
@@ -771,16 +164,27 @@
                 <div class="sc-icon" style="background:rgba(207,164,111,0.14);color:#cfa46f;"><i class="bi bi-person-bounding-box"></i></div>
                 <div>
                     <div class="sc-title">Profile Photo</div>
+                    @unless($user->isStudent())
                     <div class="sc-sub">Manage your avatar and account appearance</div>
+                    @endunless
                 </div>
             </div>
             <div class="sc-body">
                 <div class="profile-card-inner">
-                    <x-profile-photo-manager :user="Auth::user()" :size="96" avatar-id="settingsAvatarDisplay" />
+                    <x-profile-photo-manager :user="Auth::user()" :size="96" avatar-id="settingsAvatarDisplay" :show-overlay-trigger="!$user->isStudent()" />
 
                     <!-- User details column -->
                     <div class="profile-details-col">
                         <div class="profile-user-name">{{ Auth::user()->name }}</div>
+                        @if($user->isStudent())
+                        <div class="profile-user-hint" style="font-size:0.8rem;color:#ACA099;margin-top:4px;">JPG, PNG, or WebP · max 2 MB</div>
+                        <div class="student-profile-photo-actions">
+                            <label for="ppmFileInput" class="student-photo-change-btn" tabindex="0">
+                                <i class="bi bi-camera-fill" aria-hidden="true"></i>
+                                <span>Change photo</span>
+                            </label>
+                        </div>
+                        @else
                         <div class="profile-user-id">
                             <i class="bi bi-person-badge"></i>
                             <span>{{ Auth::user()->student_number ?? Auth::user()->email }}</span>
@@ -792,13 +196,6 @@
                             @if(Auth::user()->year_level)
                                 <span class="profile-badge-year">Year {{ Auth::user()->year_level }}</span>
                             @endif
-                        </div>
-                        @if($user->isStudent())
-                        <div class="student-profile-photo-actions">
-                            <label for="ppmFileInput" class="student-photo-change-btn">
-                                <i class="bi bi-camera-fill" aria-hidden="true"></i>
-                                <span>Change photo</span>
-                            </label>
                         </div>
                         @endif
                     </div>
@@ -1682,11 +1079,12 @@
                 <div class="sc-icon" style="background:rgba(59,130,246,0.14);color:#60a5fa;"><i class="bi bi-sliders"></i></div>
                 <div>
                     <div class="sc-title">Notifications &amp; app</div>
-                    <div class="sc-sub">Customize alerts, language, interface layout, and offline updates</div>
+                    <div class="sc-sub">Customize alerts, layout, and offline updates</div>
                 </div>
             </div>
             <div class="sc-body">
 
+                @unless($user?->isStudent())
                 <!-- Language Selection -->
                 <div class="pref-tile">
                     <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
@@ -1702,10 +1100,11 @@
                         <option>Bikolano</option>
                     </select>
                 </div>
+                @endunless
 
                 <form action="{{ route('settings.preferences.update') }}" method="POST">
                     @csrf
-                    <div style="margin:20px 0 10px;font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Notification Alerts</div>
+                    <div style="margin:{{ $user?->isStudent() ? '0' : '20px' }} 0 10px;font-size:.75rem;font-weight:700;color:#ACA099;text-transform:uppercase;letter-spacing:.06em;">Notification Alerts</div>
                     
                     @php
                         $prefs = Auth::user()->notification_preferences ?? ['in_app' => true, 'email' => true];
@@ -1714,64 +1113,74 @@
                     <!-- In-App Notifications -->
                     <div class="pref-tile">
                         <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
-                            <div class="pref-tile-icon"><i class="bi bi-app-indicator"></i></div>
+                            <div class="pref-tile-icon"><i class="bi bi-app-indicator" aria-hidden="true"></i></div>
                             <div style="flex:1;min-width:0;">
-                                <label class="tlabel" for="preferenceInApp">In-App Notifications</label>
-                                <div class="tsub">Receive instant badges and banners inside the portal</div>
+                                <label class="d-block m-0" for="preferenceInApp" style="cursor:pointer;">
+                                    <span class="tlabel d-block">In-App Notifications</span>
+                                    <span class="tsub d-block">Receive instant badges and banners inside the portal</span>
+                                </label>
                             </div>
                         </div>
-                        <div class="form-check form-switch mb-0" style="flex-shrink:0;">
+                        <label class="form-check form-switch mb-0" style="flex-shrink:0;cursor:pointer;">
                             <input class="form-check-input" type="checkbox" id="preferenceInApp" name="prefs[in_app]" value="1" {{ !empty($prefs['in_app']) ? 'checked' : '' }}>
-                        </div>
+                        </label>
                     </div>
                     
                     <!-- Email Notifications -->
                     <div class="pref-tile">
                         <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
-                            <div class="pref-tile-icon"><i class="bi bi-envelope"></i></div>
+                            <div class="pref-tile-icon"><i class="bi bi-envelope" aria-hidden="true"></i></div>
                             <div style="flex:1;min-width:0;">
-                                <label class="tlabel" for="preferenceEmail">Email Notifications</label>
-                                <div class="tsub">Receive attendance summaries, excuse approvals, and security alerts via email</div>
+                                <label class="d-block m-0" for="preferenceEmail" style="cursor:pointer;">
+                                    <span class="tlabel d-block">Email Notifications</span>
+                                    <span class="tsub d-block">Receive attendance summaries, excuse approvals, and security alerts via email</span>
+                                </label>
                             </div>
                         </div>
-                        <div class="form-check form-switch mb-0" style="flex-shrink:0;">
+                        <label class="form-check form-switch mb-0" style="flex-shrink:0;cursor:pointer;">
                             <input class="form-check-input" type="checkbox" id="preferenceEmail" name="prefs[email]" value="1" {{ !empty($prefs['email']) ? 'checked' : '' }}>
-                        </div>
+                        </label>
                     </div>
 
                     <!-- SMS Notifications -->
                     <div class="pref-tile">
                         <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
-                            <div class="pref-tile-icon"><i class="bi bi-chat-dots"></i></div>
+                            <div class="pref-tile-icon"><i class="bi bi-chat-dots" aria-hidden="true"></i></div>
                             <div style="flex:1;min-width:0;">
-                                <label class="tlabel" for="preferenceSms">SMS Urgent Notifications</label>
-                                <div class="tsub">Emergency announcements and absence warnings via text message</div>
+                                <label class="d-block m-0" for="preferenceSms" style="cursor:pointer;">
+                                    <span class="tlabel d-block">SMS Urgent Notifications</span>
+                                    <span class="tsub d-block">Emergency announcements and absence warnings via text message</span>
+                                </label>
                             </div>
                         </div>
-                        <div class="form-check form-switch mb-0" style="flex-shrink:0;">
+                        <label class="form-check form-switch mb-0" style="flex-shrink:0;cursor:pointer;">
                             <input class="form-check-input" type="checkbox" id="preferenceSms" name="prefs[sms]" value="1" {{ !empty($prefs['sms']) ? 'checked' : '' }}>
-                        </div>
+                        </label>
                     </div>
 
-                    <!-- Display Interface -->
-                    <div style="margin:20px 0 10px;font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Display & Layout</div>
-                    
-                    <div class="pref-tile">
-                        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
-                            <div class="pref-tile-icon"><i class="bi bi-layout-sidebar"></i></div>
-                            <div style="flex:1;min-width:0;">
-                                <label class="tlabel" for="compactToggle">Compact Sidebar</label>
-                                <div class="tsub">Keep sidebar collapsed on desktop for extra dashboard space</div>
+                    <!-- Display Interface (Desktop Only) -->
+                    <div class="d-none d-lg-block">
+                        <div style="margin:20px 0 10px;font-size:.75rem;font-weight:700;color:#ACA099;text-transform:uppercase;letter-spacing:.06em;">Display &amp; Layout</div>
+                        
+                        <div class="pref-tile">
+                            <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
+                                <div class="pref-tile-icon"><i class="bi bi-layout-sidebar" aria-hidden="true"></i></div>
+                                <div style="flex:1;min-width:0;">
+                                    <label class="d-block m-0" for="compactToggle" style="cursor:pointer;">
+                                        <span class="tlabel d-block">Compact Sidebar</span>
+                                        <span class="tsub d-block">Keep sidebar collapsed on desktop for extra dashboard space</span>
+                                    </label>
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-check form-switch mb-0" style="flex-shrink:0;">
-                            <input class="form-check-input" type="checkbox" id="compactToggle">
+                            <label class="form-check form-switch mb-0" style="flex-shrink:0;cursor:pointer;">
+                                <input class="form-check-input" type="checkbox" id="compactToggle">
+                            </label>
                         </div>
                     </div>
 
                     <div style="margin-top: 24px; text-align: right;">
                         <button type="submit" class="sbtn btn-gold" style="width:auto;padding:11px 28px;">
-                            <i class="bi bi-save me-2"></i>Save Preferences
+                            <i class="bi bi-save me-2" aria-hidden="true"></i>Save Preferences
                         </button>
                     </div>
                 </form>
@@ -1779,21 +1188,21 @@
                 <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin: 26px 0 20px;">
 
                 <!-- App & System Software Updates -->
-                <div style="margin-bottom:10px;font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">App & System Updates</div>
+                <div style="margin-bottom:10px;font-size:.75rem;font-weight:700;color:#ACA099;text-transform:uppercase;letter-spacing:.06em;">App &amp; System Updates</div>
                 <div class="pref-tile pref-tile-update" style="gap: 16px;">
                     <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
-                        <div class="pref-tile-icon"><i class="bi bi-arrow-repeat"></i></div>
+                        <div class="pref-tile-icon"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></div>
                         <div style="flex:1;min-width:0;">
                             <div class="tlabel" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                 <span>App updates</span>
-                                <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);border:1px solid rgba(207,164,111,0.3);font-size:0.72rem;font-weight:700;flex-shrink:0;">v{{ app(\App\Services\VersionService::class)->getInstalledVersion() }}</span>
+                                <span class="badge" style="background:rgba(212,175,55,0.14);color:#D4AF37;border:1px solid rgba(212,175,55,0.3);font-size:0.72rem;font-weight:700;flex-shrink:0;">v{{ app(\App\Services\VersionService::class)->getInstalledVersion() }}</span>
                             </div>
                             <div class="tsub" id="updateStatusText">Check for latest software features, security patches, and offline assets.</div>
                         </div>
                     </div>
                     <div class="pref-tile-btn-wrap">
                         <button type="button" id="checkUpdateBtn" onclick="checkForAppUpdates()" class="sbtn btn-gold" style="padding:8px 18px;font-size:0.82rem;white-space:nowrap;">
-                            <i class="bi bi-cloud-arrow-down me-1"></i> Check Updates
+                            <i class="bi bi-cloud-arrow-down me-1" aria-hidden="true"></i> Check Updates
                         </button>
                     </div>
                 </div>
@@ -1854,7 +1263,7 @@ window.__SETTINGS_CONFIG__ = @json($settingsJsConfig);
 @endunless
 <script @cspNonce src="{{ asset('js/settings-page.js') }}?v={{ filemtime(public_path('js/settings-page.js')) }}"></script>
 @if(Auth::user()->isStudent())
-<script src="{{ asset('js/qrcode.min.js') }}"></script>
-<script src="{{ asset('js/student-settings.js') }}?v={{ filemtime(public_path('js/student-settings.js')) }}"></script>
+<script @cspNonce src="{{ asset('js/qrcode.min.js') }}"></script>
+<script @cspNonce src="{{ asset('js/student-settings.js') }}?v={{ filemtime(public_path('js/student-settings.js')) }}"></script>
 @endif
 @endsection

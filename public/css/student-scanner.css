@@ -1,0 +1,1117 @@
+/* ── OUTSIDE RANGE POPUP DIALOG ── */
+.outside-range-popup-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 3, 5, 0.88);
+    z-index: 100002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: fadeIn 0.2s ease-out forwards;
+}
+
+.outside-range-popup-card {
+    background: #1E1515;
+    border: 1px solid rgba(248, 113, 113, 0.36);
+    border-top: 2px solid #F87171;
+    border-radius: 14px;
+    max-width: 440px;
+    width: 100%;
+    padding: 24px 20px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.58);
+    animation: scaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes scaleUp {
+    0% { transform: scale(0.95); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.outside-range-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #261B1B;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #FAF8F5;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.outside-range-close-btn:hover {
+    background: rgba(251, 113, 133, 0.2);
+    color: #FFFFFF;
+}
+
+.outside-range-icon-pulse {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 14px;
+    border-radius: 14px;
+    background: rgba(251, 113, 133, 0.14);
+    border: 1px solid rgba(251, 113, 133, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.outside-range-icon-pulse::after {
+    display: none;
+}
+
+.outside-range-icon-inner {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: rgba(251, 113, 133, 0.22);
+    color: #FB7185;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+}
+
+.outside-range-badge {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(251, 113, 133, 0.14);
+    border: 1px solid rgba(251, 113, 133, 0.3);
+    color: #FDA4AF;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 3px 9px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.outside-range-headline {
+    font-size: 1.28rem;
+    font-weight: 700;
+    color: #FAF8F5;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+}
+
+.outside-range-desc {
+    font-size: 0.86rem;
+    color: #D6CCC6;
+    line-height: 1.5;
+    margin-bottom: 18px;
+}
+
+.outside-range-metrics-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #141010;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 12px;
+    padding: 13px 16px;
+    margin-bottom: 16px;
+}
+
+.outside-range-metric-col {
+    flex: 1;
+    text-align: center;
+}
+
+.outside-range-metric-col .metric-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #ACA099;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.outside-range-metric-col .metric-val {
+    font-size: 1.38rem;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+.outside-range-metric-col.detected .metric-val {
+    color: #FB7185;
+}
+
+.outside-range-metric-col.allowed .metric-val {
+    color: #FBBF24;
+}
+
+.outside-range-metric-col .metric-sub {
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.outside-range-divider {
+    width: 1px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 12px;
+}
+
+.outside-range-tip-box {
+    display: flex;
+    align-items: flex-start;
+    background: #261B1B;
+    border: 1px solid rgba(212, 175, 55, 0.24);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 0.8rem;
+    color: #D6CCC6;
+    text-align: left;
+    margin-bottom: 18px;
+    line-height: 1.45;
+}
+
+.outside-range-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.outside-range-btn-primary {
+    background: #FAF8F5;
+    color: #800000;
+    font-weight: 700;
+    font-size: 0.9rem;
+    min-height: 46px;
+    padding: 11px 18px;
+    border-radius: 10px;
+    border: 1px solid #FAF8F5;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.outside-range-btn-primary:hover {
+    background: #FFFFFF;
+    color: #800000;
+}
+
+.outside-range-btn-secondary {
+    background: #261B1B;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #FAF8F5;
+    font-weight: 700;
+    font-size: 0.86rem;
+    min-height: 44px;
+    padding: 10px 18px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.outside-range-btn-secondary:hover {
+    background: rgba(207, 164, 111, 0.15);
+    color: #ffffff;
+}
+
+.outside-range-btn-text {
+    background: transparent;
+    border: none;
+    color: #b39b82;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 6px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.outside-range-btn-text:hover {
+    color: #f3e7cd;
+}
+
+/* ── STUDENT SCANNER & CODE MODAL STYLES ── */
+.scanner-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(14, 10, 10, 0.88);
+    z-index: 100000 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.scanner-modal-card {
+    background: #1E1515;
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    border-radius: 16px;
+    max-width: 420px;
+    width: 100%;
+    padding: 16px 18px max(18px, calc(env(safe-area-inset-bottom, 0px) + 12px));
+    color: #FAF8F5;
+    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.72);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: scannerCardEnter 0.18s ease-out;
+}
+
+@keyframes scannerCardEnter {
+    from { opacity: 0; transform: scale(0.96) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Drag indicator - hidden for clean card presentation */
+.scanner-drag-handle {
+    display: none !important;
+}
+
+/* Mode Switcher (QR vs Code) */
+.scanner-mode-switcher {
+    display: inline-flex;
+    background: #141010;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+}
+
+.scanner-mode-tab {
+    background: transparent;
+    border: none;
+    color: #ACA099;
+    font-size: 0.78rem;
+    font-weight: 600;
+    min-height: 38px;
+    padding: 6px 14px;
+    border-radius: 7px;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.scanner-mode-tab.active {
+    background: #FAF8F5;
+    color: #7A1A1A;
+    font-weight: 700;
+    box-shadow: none !important;
+}
+
+.scanner-mode-tab:not(.active):hover, .scanner-mode-tab:not(.active):active {
+    color: #f3e7cd;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.scanner-mode-tab:active {
+    transform: scale(0.97);
+}
+
+/* Top Floating Bar */
+.scanner-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.scanner-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.scanner-icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #D8CEC8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.scanner-icon-btn:hover, .scanner-icon-btn:active {
+    background: rgba(122, 26, 26, 0.28);
+    color: #ffffff;
+    border-color: rgba(212, 175, 55, 0.38);
+}
+
+.scanner-icon-btn.active-torch {
+    background: #D4AF37;
+    color: #141010;
+    border-color: #D4AF37;
+}
+
+.scanner-icon-btn.close-btn:hover, .scanner-icon-btn.close-btn:active {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* Heading */
+.scanner-hero-heading {
+    margin-bottom: 10px;
+}
+
+.scanner-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #ffffff;
+    margin-bottom: 0;
+    letter-spacing: -0.015em;
+}
+
+/* Viewfinder Area */
+.scanner-viewfinder-wrapper {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #181212;
+    width: min(72vw, 248px);
+    aspect-ratio: 1 / 1;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid rgba(212, 175, 55, 0.32);
+    box-shadow: none;
+}
+
+.scanner-viewfinder-wrapper:not(.camera-active)::before {
+    content: "";
+    position: absolute;
+    inset: 14px;
+    border: 1px dashed rgba(212, 175, 55, 0.24);
+    border-radius: 10px;
+    pointer-events: none;
+}
+
+.scanner-reader-feed {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    display: block !important;
+}
+
+.scanner-reader-feed video {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 16px !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+/* Guard against split screens: Only show the single active video feed */
+.scanner-reader-feed video:not(:last-of-type) {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    pointer-events: none !important;
+}
+
+.scanner-reader-feed canvas {
+    display: none !important;
+}
+
+.scanner-reader-feed #reader__scan_region {
+    border: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+}
+
+.scanner-reader-feed #reader__scan_region video {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 16px !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+.scanner-reader-feed #reader__scan_region video:not(:last-of-type) {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+.scanner-reader-feed #reader__dashboard {
+    display: none !important;
+}
+
+/* Hide html5-qrcode's default clashing white inner box/shaded region overlay */
+#qr-shaded-region {
+    display: none !important;
+}
+
+/* Subtle Reticle Corner Markers - Only visible when camera is active */
+.reticle-corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: #D4AF37;
+    border-style: solid;
+    border-width: 0;
+    z-index: 14;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.scanner-viewfinder-wrapper.camera-active .reticle-corner {
+    opacity: 1;
+}
+
+.reticle-corner.top-left {
+    top: 12px;
+    left: 12px;
+    border-top-width: 2.5px;
+    border-left-width: 2.5px;
+    border-top-left-radius: 8px;
+}
+
+.reticle-corner.top-right {
+    top: 12px;
+    right: 12px;
+    border-top-width: 2.5px;
+    border-right-width: 2.5px;
+    border-top-right-radius: 8px;
+}
+
+.reticle-corner.bottom-left {
+    bottom: 12px;
+    left: 12px;
+    border-bottom-width: 2.5px;
+    border-left-width: 2.5px;
+    border-bottom-left-radius: 8px;
+}
+
+.reticle-corner.bottom-right {
+    bottom: 12px;
+    right: 12px;
+    border-bottom-width: 2.5px;
+    border-right-width: 2.5px;
+    border-bottom-right-radius: 8px;
+}
+
+/* Laser Scan Line - Only active when camera is live */
+.scanner-laser-line {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: #D4AF37;
+    box-shadow: none;
+    z-index: 15;
+    animation: modernLaserScan 2.2s ease-in-out infinite;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.scanner-viewfinder-wrapper.camera-active .scanner-laser-line {
+    opacity: 1;
+}
+
+@keyframes modernLaserScan {
+    0% { top: 14%; opacity: 0.3; }
+    50% { top: 84%; opacity: 1; }
+    100% { top: 14%; opacity: 0.3; }
+}
+
+/* Camera Loading Overlay */
+.scanner-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 16, 16, 0.94);
+    z-index: 22;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    padding: 16px;
+}
+
+.loading-title {
+    font-weight: 700;
+    color: #FAF8F5;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    letter-spacing: -0.01em;
+}
+
+/* Processing Overlay */
+.scanner-processing-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 16, 16, 0.94);
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    padding: 16px;
+}
+
+.processing-title {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 0.92rem;
+    letter-spacing: -0.01em;
+    text-align: center;
+}
+
+.processing-sub {
+    font-size: 0.72rem;
+    color: #a89582;
+    margin-top: 2px;
+    text-align: center;
+}
+
+/* Fallback Notice (Permission / Unavailable Empty State) */
+.scanner-permission-empty-state {
+    padding: 16px 14px;
+    color: #a89582;
+    text-align: center;
+    z-index: 50 !important;
+    position: relative !important;
+    width: 100%;
+    pointer-events: auto !important;
+}
+
+.permission-icon-bubble {
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    color: #D4AF37;
+    font-size: 1.85rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+    pointer-events: none;
+}
+
+.permission-headline {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 0.92rem;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+    pointer-events: none;
+}
+
+.permission-description {
+    font-size: 0.74rem;
+    color: #c4b5a2;
+    max-width: 240px;
+    margin: 0 auto 10px;
+    line-height: 1.4;
+    pointer-events: none;
+}
+
+.permission-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    z-index: 52 !important;
+    pointer-events: auto !important;
+}
+
+.permission-primary-btn {
+    background: #FAF8F5;
+    color: #7A1A1A;
+    font-size: 0.84rem;
+    font-weight: 750;
+    min-height: 44px;
+    border: 1px solid #FAF8F5;
+    border-radius: 10px;
+    padding: 9px 20px;
+    cursor: pointer !important;
+    box-shadow: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    z-index: 55 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background-color 0.15s ease;
+}
+
+.permission-primary-btn:hover {
+    background: #FFFFFF;
+}
+
+.permission-secondary-link {
+    background: transparent;
+    border: none;
+    color: #D4AF37;
+    font-size: 0.8rem;
+    font-weight: 600;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer !important;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 8px 14px;
+    position: relative;
+    z-index: 55 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: color 0.2s;
+}
+
+.permission-secondary-link:hover, .permission-secondary-link:active {
+    color: #f3e7cd;
+}
+
+/* Instruction container placed cleanly below scanner */
+.scanner-instruction-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(207, 164, 111, 0.07);
+    border: 1px solid rgba(207, 164, 111, 0.16);
+    border-radius: 999px;
+    padding: 5px 12px;
+    margin: 0 auto 10px;
+    max-width: 94%;
+}
+
+.scanner-instruction-text {
+    color: #e5d7c3;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+}
+
+.scanner-gps-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin: 0 auto 10px;
+    border: 1px solid rgba(251, 191, 36, 0.32);
+    background: rgba(251, 191, 36, 0.12);
+    color: #FDE68A;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.scanner-gps-badge[data-gps-state="ready"] {
+    border-color: rgba(52, 211, 153, 0.36);
+    background: rgba(52, 211, 153, 0.14);
+    color: #A7F3D0;
+}
+.scanner-gps-badge[data-gps-state="error"] {
+    border-color: rgba(248, 113, 113, 0.42);
+    background: rgba(248, 113, 113, 0.14);
+    color: #FEE2E2;
+}
+
+.scanner-alt-btn {
+    background: rgba(207, 164, 111, 0.12);
+    border: 1px solid rgba(207, 164, 111, 0.28);
+    color: #dfb784;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 8px;
+    min-height: 44px;
+    padding: 8px 12px;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    user-select: none;
+    -webkit-user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.scanner-alt-btn:hover, .scanner-alt-btn:active {
+    background: rgba(207, 164, 111, 0.22);
+    color: #ffffff;
+    border-color: rgba(207, 164, 111, 0.45);
+    transform: scale(0.98);
+}
+
+/* Code Entry Panel */
+.scanner-code-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #f3e7cd;
+}
+
+.code-entry-container {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1.5px solid rgba(207, 164, 111, 0.25);
+    border-radius: 16px;
+    padding: 14px 12px;
+    margin-bottom: 12px;
+    box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.6);
+}
+
+.code-entry-input {
+    background: rgba(0, 0, 0, 0.6) !important;
+    border: 1.5px solid rgba(207, 164, 111, 0.35) !important;
+    color: #dfb784 !important;
+    font-family: 'Consolas', 'Courier New', monospace !important;
+    font-size: 1.8rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 5px !important;
+    text-align: center !important;
+    border-radius: 12px !important;
+    padding: 8px 6px !important;
+    width: 100% !important;
+    text-transform: uppercase !important;
+    box-shadow: 0 0 12px rgba(207, 164, 111, 0.12) !important;
+    transition: all 0.2s !important;
+}
+
+.code-entry-input:focus {
+    border-color: #dfb784 !important;
+    box-shadow: 0 0 16px rgba(207, 164, 111, 0.3) !important;
+    outline: none !important;
+}
+
+.code-entry-input.is-invalid {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.35) !important;
+}
+
+.code-entry-hint {
+    font-size: 0.74rem;
+    color: #a89582;
+}
+
+/* Result View */
+.scanner-result-content {
+    padding: 4px 0 2px;
+    text-align: center;
+}
+
+.result-status-icon-wrap {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin: 0 auto 10px;
+    animation: resultPop 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes resultPop {
+    0% { transform: scale(0.94); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.result-headline {
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -0.015em;
+    margin-bottom: 3px;
+}
+
+.result-caption {
+    color: #a89582;
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.result-summary-card {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.result-row.no-border {
+    border-bottom: none;
+    padding-bottom: 2px;
+}
+
+.result-label {
+    font-size: 0.7rem;
+    color: #a89582;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.result-val {
+    font-size: 0.8rem;
+    color: #f3e7cd;
+    font-weight: 600;
+    text-align: right;
+}
+
+.result-val.highlight {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.result-val.text-gold {
+    color: #D4AF37;
+    font-weight: 700;
+}
+
+/* Auto Close Countdown Box */
+.result-autoclose-box {
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.24);
+    border-radius: 10px;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.autoclose-text {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #4ade80;
+    margin-bottom: 4px;
+}
+
+.autoclose-progress-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.autoclose-progress-fill {
+    height: 100%;
+    width: 100%;
+    background: #4ade80;
+    transition: width 0.1s linear;
+}
+
+.scanner-primary-action-btn {
+    background: #FAF8F5 !important;
+    color: #7A1A1A !important;
+    font-weight: 700 !important;
+    min-height: 44px !important;
+    padding: 10px 14px !important;
+    border-radius: 10px !important;
+    font-size: 0.88rem !important;
+    border: 1px solid #FAF8F5 !important;
+    box-shadow: none !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+.scanner-primary-action-btn:active {
+    transform: scale(0.98) !important;
+}
+
+.scanner-paste-action-btn {
+    background: #261B1B !important;
+    border: 1px solid rgba(212, 175, 55, 0.36) !important;
+    color: #FAF8F5 !important;
+    font-weight: 700 !important;
+    min-height: 44px !important;
+    padding: 10px 14px !important;
+    border-radius: 10px !important;
+    font-size: 0.88rem !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease !important;
+    box-shadow: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.scanner-paste-action-btn:hover, .scanner-paste-action-btn:focus {
+    background: rgba(122, 26, 26, 0.28) !important;
+    border-color: #D4AF37 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+.scanner-paste-action-btn:active {
+    transform: scale(0.98) !important;
+}
+
+.scanner-secondary-action-btn {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #e5d5c0 !important;
+    font-weight: 600 !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    font-size: 0.88rem !important;
+    transition: all 0.2s !important;
+}
+
+.scanner-secondary-action-btn:active {
+    transform: scale(0.98) !important;
+}
+
+/* ── MOBILE ADAPTIVE VIEWPORT & SAFE AREA OPTIMIZATIONS ── */
+@media (max-width: 767px) {
+    .scanner-modal-backdrop {
+        padding: max(16px, env(safe-area-inset-top, 16px)) 12px max(24px, calc(env(safe-area-inset-bottom, 0px) + 20px)) 12px;
+        align-items: flex-start !important;
+        justify-content: center !important;
+    }
+
+    .scanner-modal-card {
+        max-width: 390px;
+        width: 100%;
+        margin-top: clamp(12px, 5vh, 40px) !important;
+        margin-bottom: auto !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        max-height: calc(100dvh - 36px);
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior: contain;
+        border-radius: 24px;
+        border: 1px solid rgba(207, 164, 111, 0.22);
+        padding: 14px 16px max(18px, calc(env(safe-area-inset-bottom, 0px) + 12px));
+        box-shadow: 0 16px 50px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(207, 164, 111, 0.12);
+    }
+
+    .scanner-drag-handle {
+        display: none !important;
+    }
+
+    .scanner-viewfinder-wrapper {
+        width: min(72vw, 248px);
+        aspect-ratio: 1 / 1;
+        border-radius: 18px;
+        margin: 0 auto 10px;
+    }
+
+    .scanner-reader-feed video {
+        border-radius: 16px !important;
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+
+    .scanner-reader-feed video:not(:last-of-type) {
+        display: none !important;
+    }
+
+    .scanner-title {
+        font-size: 1.05rem;
+    }
+
+    .code-entry-input {
+        font-size: 1.8rem !important;
+        letter-spacing: 5px !important;
+        padding: 10px 6px !important;
+    }
+}
+
+/* ── DESKTOP ONLY / MOBILE ONLY RESPONSIVE RULES ── */
+@media (min-width: 768px) {
+    .scanner-drag-handle {
+        display: none;
+    }
+
+    body:not(.scanner-page-layout) .scanner-mode-switcher {
+        display: none !important;
+    }
+    body:not(.scanner-page-layout) #desktopScannerHeader {
+        display: flex !important;
+    }
+    body:not(.scanner-page-layout) #torchCameraBtn,
+    body:not(.scanner-page-layout) #flipCameraBtn,
+    body:not(.scanner-page-layout) #switchToCameraBtn {
+        display: none !important;
+    }
+    body:not(.scanner-page-layout) .scanner-modal-card:not(.mode-scan) #scannerActiveView {
+        display: none !important;
+    }
+    .scanner-modal-card {
+        max-width: 460px;
+        width: 100%;
+        padding: 24px 24px 22px;
+        border-radius: 28px;
+    }
+}
+
+@media (max-width: 767px) {
+    #desktopScannerHeader {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #studentScannerModal *,
+    #outsideRangePopupModal * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

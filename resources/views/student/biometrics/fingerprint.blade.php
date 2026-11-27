@@ -13,7 +13,6 @@
     </ol>
 
     <div id="bioIdleView">
-        <div class="bio-flow-kicker"><i class="bi bi-shield-lock-fill" aria-hidden="true"></i> WebAuthn / FIDO2 Passkey</div>
         <div class="bio-flow-title-row">
             <span class="bio-flow-symbol" aria-hidden="true"><i class="bi bi-shield-lock" id="bioMethodHeroIcon"></i></span>
             <div>

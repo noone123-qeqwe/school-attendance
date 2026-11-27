@@ -1,6 +1,6 @@
 .assistant-workspace {
-    --assistant-accent: #cfa46f;
-    --assistant-curve: 16px;
+    --assistant-accent: #d4af37;
+    --assistant-curve: 12px;
     display: grid;
     gap: clamp(16px, 2.5vw, 24px);
     max-width: 1040px;
@@ -53,11 +53,29 @@
 .assistant-text-link { color: var(--assistant-accent); }
 .assistant-text-link:hover { color: var(--gold-soft); }
 .assistant-back { justify-self: start; margin-bottom: -12px; }
-.assistant-quick-links { display: flex; flex-wrap: wrap; column-gap: 16px; }
+.assistant-quick-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.assistant-quick-links .assistant-text-link {
+    padding: 8px 13px;
+    border: 1px solid var(--student-border, rgba(212, 175, 55, 0.22));
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #FAF8F5;
+    font-size: 0.82rem;
+    font-weight: 650;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.assistant-quick-links .assistant-text-link:hover {
+    background: rgba(122, 26, 26, 0.24);
+    border-color: rgba(212, 175, 55, 0.38);
+    color: #ffffff;
+}
+.assistant-quick-links .assistant-text-link > i {
+    color: var(--assistant-accent);
+}
 .assistant-button { padding: 10px 16px; border: 1px solid transparent; border-radius: 10px; }
 .assistant-button > i, .assistant-text-link > i { flex: none; }
-.assistant-button--primary { background: var(--assistant-accent); color: var(--ds-bg); }
-.assistant-button--primary:hover { background: var(--gold-soft); color: var(--ds-bg); }
+.assistant-button--primary { background: #FAF8F5; color: #7A1A1A; border-color: #FAF8F5; font-weight: 750; }
+.assistant-button--primary:hover { background: #FFFFFF; color: #561313; }
 .assistant-button--secondary { background: var(--surface-soft); color: var(--text-primary); border-color: var(--student-border-strong, var(--surface-border)); }
 .assistant-button--secondary:hover { background: var(--surface-hover); color: var(--text-primary); }
 .assistant-button:disabled { opacity: .55; cursor: wait; }
@@ -167,6 +185,12 @@
 .assistant-report-entry { display: grid; gap: 5px; padding: 12px; border: 1px solid var(--student-border, var(--surface-border)); border-radius: 10px; }
 .assistant-report-note { font-size: .875rem; }
 
+@media (min-width: 1024px) {
+    .assistant-class-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+}
 @media (min-width: 1100px) {
     .assistant-session--with-reports { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }

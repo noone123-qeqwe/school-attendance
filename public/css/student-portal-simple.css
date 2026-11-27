@@ -84,7 +84,7 @@ body.student-portal[data-student-layout] .cor-toolbar { display: grid !important
 .student-filter-field { display: grid; gap: 7px; margin: 0; color: #b39b82; font-size: .78rem; font-weight: 600; min-width: 0; }
 .student-filter-field select, .student-record-search input { width: 100%; min-height: 46px; padding: 10px 13px; border: 1px solid var(--student-border); border-radius: 9px; background: #120e0b; color: #f3e7cd; font: inherit; font-size: .85rem; }
 body.student-portal[data-student-layout] .cor-search-input { min-height: 46px; border-radius: 9px; font-size: .85rem; }
-body.student-portal[data-student-layout] .student-filter-field .cor-search-input { padding: 10px 13px !important; }
+body.student-portal[data-student-layout] .student-filter-field .cor-search-input { padding: 10px 13px 10px 38px !important; }
 body.student-portal[data-student-layout] .cor-mobile-cards-view { display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
 body.student-portal[data-student-layout] .cor-card-item { margin: 0 !important; padding: 20px !important; border-radius: 12px; box-shadow: none; }
 body.student-portal[data-student-layout] .cor-card-subj-title { font-size: 1rem !important; line-height: 1.5; margin: 10px 0 16px; }

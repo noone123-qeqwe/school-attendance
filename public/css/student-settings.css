@@ -21,7 +21,7 @@
 .student-biometric-choices strong, .student-biometric-choices small { display: block; overflow-wrap: anywhere; }
 .student-biometric-choices small { margin-top: 6px; color: var(--text-muted); line-height: 1.6; }
 .sp.student-settings[data-student-settings] [hidden] { display: none !important; }
-.sp.student-settings[data-student-settings] .spanel { animation: none !important; }
+.sp.student-settings[data-student-settings] .spanel { animation: none !important; scroll-margin-top: 220px; }
 .sp.student-settings[data-student-settings] .sc { border-radius: 14px !important; background: var(--surface-card) !important; box-shadow: none !important; margin: 0 0 20px !important; transform: none !important; }
 .sp.student-settings[data-student-settings] .sc::before { display: none; }
 .sp.student-settings[data-student-settings] .sc-head { padding: 20px 24px 16px !important; gap: 12px !important; }
@@ -54,7 +54,7 @@
 .sp.student-settings[data-student-settings] .bio-method-grid { grid-template-columns: minmax(0, 1fr) !important; }
 .sp.student-settings[data-student-settings] .bio-method-card { padding: 18px !important; box-shadow: none !important; border-radius: 12px !important; }
 .sp.student-settings[data-student-settings] .pref-tile { padding: 18px 0 !important; margin: 0 !important; border: 0 !important; border-bottom: 1px solid var(--gold-border) !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; transform: none !important; gap: 16px !important; }
-.sp.student-settings[data-student-settings] .pref-tile .form-check.form-switch { padding-left: 0 !important; margin: 0 !important; min-height: 0 !important; display: inline-flex !important; align-items: center !important; flex-shrink: 0 !important; }
+.sp.student-settings[data-student-settings] .pref-tile .form-check.form-switch { padding-left: 0 !important; margin: 0 !important; min-height: 44px !important; min-width: 52px !important; display: inline-flex !important; align-items: center !important; justify-content: flex-end !important; flex-shrink: 0 !important; }
 .sp.student-settings[data-student-settings] .pref-tile .form-check.form-switch .form-check-input { margin: 0 !important; float: none !important; flex-shrink: 0 !important; }
 .sp.student-settings[data-student-settings] .tlabel { font-size: .88rem !important; font-weight: 600; }
 .sp.student-settings[data-student-settings] .tsub { font-size: .8rem !important; line-height: 1.6 !important; margin-top: 5px; }
@@ -76,6 +76,9 @@
     font-weight: 600;
     cursor: pointer;
 }
+@media (max-width: 767.98px) {
+    .student-settings-heading { display: none; }
+}
 @media (max-width: 991.98px) {
     .sp.student-settings[data-student-settings] { padding: 8px 0 20px !important; }
     .sp.student-settings[data-student-settings] .settings-layout-grid { display: block !important; }
@@ -91,10 +94,230 @@
     .sp.student-settings[data-student-settings] .profile-card-inner { gap: 20px !important; }
     .sp.student-settings[data-student-settings] .pref-tile { flex-direction: row !important; align-items: center !important; }
     .sp.student-settings[data-student-settings] .pref-tile-update { flex-wrap: wrap; }
-    .sp.student-settings[data-student-settings] .pref-tile:has(.pref-lang-select) { flex-wrap: wrap; }
-    .sp.student-settings[data-student-settings] .pref-lang-select { width: 100% !important; }
     .sp.student-settings[data-student-settings] .pref-tile-btn-wrap { width: 100%; }
     .sp.student-settings[data-student-settings] .pref-tile-btn-wrap button { width: 100%; }
+}
+
+/* Student Settings Account Flows, Matrix & Preferences Structure */
+.sp.student-settings[data-student-settings] {
+    --student-panel: #1E1515;
+    --student-panel-strong: #1E1515;
+    --student-line: rgba(255, 255, 255, 0.11);
+}
+.sp.student-settings[data-student-settings] .sc-title,
+.sp.student-settings[data-student-settings] .sec-group-title { font-size: 1rem; color: #FAF8F5; }
+.sp.student-settings[data-student-settings] .sc-sub,
+.sp.student-settings[data-student-settings] .sec-group-desc { line-height: 1.48; color: #ACA099; }
+.sp.student-settings[data-student-settings] .academic-spec-card {
+    min-height: 0;
+    padding: 13px 0;
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sp.student-settings[data-student-settings] .sec-matrix-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 8px;
+    padding: 10px;
+    border-radius: 12px;
+    background: #141010;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sp.student-settings[data-student-settings] .sec-matrix-item {
+    justify-content: flex-start;
+    min-height: 44px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    background: #1E1515;
+}
+.sp.student-settings[data-student-settings] .student-account-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sp.student-settings[data-student-settings] .student-account-shortcuts[hidden] { display: none !important; }
+.sp.student-settings[data-student-settings] .student-account-shortcut {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: #261B1B;
+}
+.sp.student-settings[data-student-settings] .student-account-shortcut-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: #D4AF37;
+    font-size: 1.05rem;
+}
+.sp.student-settings[data-student-settings] .student-account-shortcut-copy { flex: 1; min-width: 0; }
+.sp.student-settings[data-student-settings] .student-account-shortcut-copy strong,
+.sp.student-settings[data-student-settings] .student-account-shortcut-copy span { display: block; overflow-wrap: anywhere; }
+.sp.student-settings[data-student-settings] .student-account-shortcut-copy strong { color: #FAF8F5; font-size: 0.9rem; }
+.sp.student-settings[data-student-settings] .student-account-shortcut-copy span { margin-top: 3px; color: #ACA099; font-size: 0.78rem; line-height: 1.45; }
+.sp.student-settings[data-student-settings] .student-account-shortcut button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 44px;
+    padding: 9px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 9px;
+    background: #2F2222;
+    color: #FAF8F5;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+.sp.student-settings[data-student-settings] .student-account-shortcut button:hover {
+    background: #7A1A1A;
+    border-color: rgba(212, 175, 55, 0.38);
+    color: #FFFFFF;
+}
+.sp.student-settings[data-student-settings] .student-account-edit-panel { max-width: 760px; margin: 0 auto; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.sp.student-settings[data-student-settings] .student-account-edit-panel > .student-account-edit-intro {
+    margin-bottom: 14px;
+    padding: 15px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: #1E1515;
+    color: #D8CEC8;
+    line-height: 1.5;
+}
+.sp.student-settings[data-student-settings] .student-account-edit-card { border-radius: 14px; }
+.sp.student-settings[data-student-settings] .account-edit-progress {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0 0 18px;
+    padding: 0;
+    list-style: none;
+}
+.sp.student-settings[data-student-settings] .account-edit-progress li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: 46px;
+    padding: 9px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 10px;
+    color: #ACA099;
+    background: #141010;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.sp.student-settings[data-student-settings] .account-edit-progress li > .account-step-number {
+    display: grid;
+    place-items: center;
+    flex: 0 0 26px;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #D8CEC8;
+    font-size: 0.74rem;
+}
+.sp.student-settings[data-student-settings] .account-edit-progress li[aria-current="step"] {
+    border-color: rgba(212, 175, 55, 0.4);
+    color: #FAF8F5;
+    background: #261B1B;
+}
+.sp.student-settings[data-student-settings] .account-edit-progress li[aria-current="step"] > .account-step-number,
+.sp.student-settings[data-student-settings] .account-edit-progress li.is-complete > .account-step-number {
+    border-color: #FAF8F5;
+    color: #7A1A1A;
+    background: #FAF8F5;
+}
+.sp.student-settings[data-student-settings] .account-edit-progress li.is-complete { color: #D8CEC8; }
+.sp.student-settings[data-student-settings] .account-edit-status {
+    margin: 0 0 14px;
+    padding: 11px 13px;
+    border: 1px solid rgba(212, 175, 55, 0.26);
+    border-radius: 10px;
+    color: #FAF8F5;
+    background: #261B1B;
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+.sp.student-settings[data-student-settings] .account-edit-status[hidden] { display: none !important; }
+.sp.student-settings[data-student-settings] .account-edit-status[data-tone="error"] { border-color: rgba(248, 113, 113, 0.34); color: #F87171; background: rgba(153, 27, 45, 0.18); }
+.sp.student-settings[data-student-settings] .account-edit-status[data-tone="success"] { border-color: rgba(74, 222, 128, 0.3); color: #4ADE80; background: rgba(74, 222, 128, 0.1); }
+.sp.student-settings[data-student-settings] .account-edit-current-value {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    margin: 12px 0 16px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    background: #141010;
+    color: #D8CEC8;
+    font-size: 0.85rem;
+}
+.sp.student-settings[data-student-settings] .account-edit-current-value i { flex: 0 0 auto; color: #D4AF37; }
+.sp.student-settings[data-student-settings] .account-edit-current-value strong { color: #FAF8F5; overflow-wrap: anywhere; }
+.sp.student-settings[data-student-settings] .account-edit-help { margin: 7px 0 16px; color: #ACA099; font-size: 0.8rem; line-height: 1.5; }
+.sp.student-settings[data-student-settings] .account-otp-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+    max-width: 390px;
+    margin: 8px 0 7px;
+}
+.sp.student-settings[data-student-settings] .account-otp-input {
+    width: 100%;
+    min-width: 0;
+    height: 50px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 10px;
+    color: #FAF8F5;
+    background: #141010;
+    font-size: 1.15rem;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.sp.student-settings[data-student-settings] .account-otp-input:focus-visible {
+    border-color: #D4AF37;
+    background: #1E1515;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
+}
+.sp.student-settings[data-student-settings] .account-form-actions { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+.sp.student-settings[data-student-settings] .account-form-actions > * { min-height: 46px; }
+.sp.student-settings[data-student-settings] .account-form-actions .sec-action-btn { flex: 1; }
+.sp.student-settings[data-student-settings] .student-account-edit-card .sec-card-content { min-width: 0; }
+.sp.student-settings[data-student-settings] .student-account-edit-card .si { min-height: 48px; }
+.sp.student-settings[data-student-settings] .student-account-edit-panel .sec-card,
+.sp.student-settings[data-student-settings] .student-account-edit-panel .sc { margin: 0; }
+.sp.student-settings[data-student-settings] .btn-gold {
+    background: #FAF8F5 !important;
+    color: #7A1A1A !important;
+    border: 1px solid #FAF8F5 !important;
+    font-weight: 750 !important;
+}
+.sp.student-settings[data-student-settings] .btn-gold:hover {
+    background: #FFFFFF !important;
+    color: #561313 !important;
+}
+@media (max-width: 575.98px) {
+    .sp.student-settings[data-student-settings] .student-account-shortcuts { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .sp.student-settings[data-student-settings] .student-account-shortcut { padding: 14px; align-items: flex-start; }
+    .sp.student-settings[data-student-settings] .student-account-shortcut button { flex: 0 0 auto; padding: 9px 12px; }
+    .sp.student-settings[data-student-settings] .account-edit-progress { gap: 7px; }
+    .sp.student-settings[data-student-settings] .account-edit-progress li { gap: 7px; min-height: 44px; padding: 7px 9px; font-size: 0.74rem; }
+    .sp.student-settings[data-student-settings] .account-otp-grid { gap: 6px; }
+    .sp.student-settings[data-student-settings] .account-otp-input { height: 46px; }
+    .sp.student-settings[data-student-settings] .account-form-actions { flex-direction: column-reverse; align-items: stretch; }
+    .sp.student-settings[data-student-settings] .account-form-actions > * { width: 100%; }
+    .sp.student-settings[data-student-settings] #tabDeviceBoundTile > div:last-child,
+    .sp.student-settings[data-student-settings] #tabDeviceBoundTile div[style*="display:flex;gap:10px"] { flex-direction: column; }
 }
 @media (max-width: 768px) {
     /* Student settings navigation scrolls this page below the fixed app header.

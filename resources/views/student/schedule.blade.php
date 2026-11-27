@@ -11,10 +11,10 @@
     </div>
     <div class="d-none d-lg-flex align-items-center gap-2 flex-wrap">
         <div class="sd-view-toggle" role="group" aria-label="Schedule layout">
-            <button type="button" class="sd-view-toggle-btn is-active" id="schedGridBtn" data-sched-view="grid">
+            <button type="button" class="sd-view-toggle-btn is-active" id="schedGridBtn" data-sched-view="grid" aria-pressed="true">
                 <i class="bi bi-columns-gap" aria-hidden="true"></i> Grid
             </button>
-            <button type="button" class="sd-view-toggle-btn" id="schedListBtn" data-sched-view="list">
+            <button type="button" class="sd-view-toggle-btn" id="schedListBtn" data-sched-view="list" aria-pressed="false">
                 <i class="bi bi-list-ul" aria-hidden="true"></i> Detailed List
             </button>
         </div>
@@ -29,80 +29,6 @@
     $validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     $defaultDay = in_array($currentDay, $validDays) ? $currentDay : 'Monday';
 @endphp
-
-<style>
-    @media (max-width: 767px) {
-        .mobile-sched-hidden {
-            display: none !important;
-        }
-        .schedule-day-rail {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            padding: 4px 2px 8px 2px;
-            margin-bottom: 12px;
-            scrollbar-width: none;
-        }
-        .schedule-day-rail::-webkit-scrollbar {
-            display: none;
-        }
-        .schedule-day-pill {
-            flex-shrink: 0;
-            min-height: 44px;
-            padding: 8px 15px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: #1E1515;
-            color: #A49890;
-            font-size: 0.84rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            touch-action: manipulation;
-            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-            cursor: pointer;
-        }
-        .schedule-day-pill:active {
-            transform: scale(0.96);
-        }
-        .schedule-day-pill.active {
-            background: rgba(122, 26, 26, 0.28) !important;
-            border-color: rgba(212, 175, 55, 0.42) !important;
-            color: #FAF8F5 !important;
-        }
-        .schedule-day-pill-badge {
-            font-size: 0.7rem;
-            padding: 2px 7px;
-            border-radius: 6px;
-            background: rgba(212, 175, 55, 0.14);
-            color: #D4AF37;
-            font-weight: 700;
-        }
-        .schedule-day-pill.active .schedule-day-pill-badge {
-            background: #FAF8F5;
-            color: #800000;
-        }
-        .schedule-day-today-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #34D399;
-            flex-shrink: 0;
-        }
-        .sched-mobile-card {
-            border-left: 3px solid #D4AF37;
-            background: #261B1B;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            padding: 14px;
-            margin-bottom: 10px;
-        }
-    }
-</style>
 
 <!-- Mobile Day Selector Pill Rail -->
 <div class="d-md-none">
@@ -223,7 +149,7 @@
                 @else
                     <div class="text-center py-4">
                         <i class="bi bi-cup-hot" aria-hidden="true" style="font-size: 2.2rem; color: rgba(255, 255, 255,0.16); margin-bottom: 12px; display: block;"></i>
-                        <div style="color: #A49890; font-size: 0.88rem; margin-top: 6px;">No classes scheduled for this day.</div>
+                        <div style="color: #ACA099; font-size: 0.88rem; margin-top: 6px;">No classes scheduled for this day.</div>
                     </div>
                 @endif
             </x-card>
@@ -262,6 +188,8 @@
             gridEl.classList.toggle('sd-week-columns', isGrid);
             gridBtn.classList.toggle('is-active', isGrid);
             listBtn.classList.toggle('is-active', !isGrid);
+            gridBtn.setAttribute('aria-pressed', isGrid ? 'true' : 'false');
+            listBtn.setAttribute('aria-pressed', !isGrid ? 'true' : 'false');
             try { localStorage.setItem('sdScheduleView', isGrid ? 'grid' : 'list'); } catch (e) {}
         }
 

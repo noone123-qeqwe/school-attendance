@@ -131,7 +131,7 @@
     body.student-portal :is(a, button, input, select, textarea, summary):focus-visible { outline: 2px solid #cfa46f !important; outline-offset: 3px; }
     body.student-portal :is(.student-page-header, .assistant-page-head) { scroll-margin-top: 100px; }
     body.student-portal .assistant-workspace { max-width: none; }
-    body.student-portal .assistant-class-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+    body.student-portal .assistant-class-list { grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 20px; }
     body.student-portal .assistant-class { grid-template-columns: minmax(0, 1fr); padding: 24px; }
     body.student-portal .assistant-class-actions { justify-items: start; }
     body.student-portal .assistant-class-actions .assistant-button { width: 100%; }

@@ -230,4 +230,58 @@ class UiRedundancyAuditTest extends TestCase
         auth()->logout();
         $this->get('/non-existent-audit-route')->assertNotFound();
     }
+
+    public function test_student_portal_eliminates_duplicate_photo_triggers_desktop_only_mobile_controls_and_inline_css_bloat(): void
+    {
+        $student = $this->createUser('student', [
+            'email' => 'student.dedupe@example.test',
+            'student_number' => '2026-DEDUPE-1',
+        ]);
+
+        // 1. Settings: single Change photo trigger, desktop-only Compact Sidebar, cached external CSS
+        $settingsHtml = $this->actingAs($student)->get(route('settings'))->assertOk()->getContent();
+        $this->assertSame(1, substr_count($settingsHtml, 'for="ppmFileInput"'));
+        $this->assertStringNotContainsString('id="ppmCameraBadge"', $settingsHtml);
+        $this->assertStringNotContainsString('id="ppmHoverOverlay"', $settingsHtml);
+        $this->assertMatchesRegularExpression('/<div class="d-none d-lg-block">[\s\S]*id="compactToggle"/', $settingsHtml);
+
+        preg_match_all('/<style[^>]*>([\s\S]*?)<\/style>/i', $settingsHtml, $settingsStyles);
+        $settingsInlineChars = array_sum(array_map('strlen', $settingsStyles[1] ?? []));
+        $this->assertLessThan(10000, $settingsInlineChars, 'Settings inline <style> bloat should be extracted to cached stylesheets.');
+
+        // 2. Standalone Profile: single Change photo trigger and no duplicate Full Name row
+        $profileHtml = $this->actingAs($student)->get(route('profile'))->assertOk()->getContent();
+        $this->assertSame(1, substr_count($profileHtml, 'for="ppmFileInput"'));
+        $this->assertStringNotContainsString('id="ppmCameraBadge"', $profileHtml);
+        $this->assertStringNotContainsString('<div class="info-row-label">Full Name</div>', $profileHtml);
+
+        // 3. Dashboard: extracted external stylesheets keep inline <style> minimal
+        $homeHtml = $this->actingAs($student)->get(route('home'))->assertOk()->getContent();
+        preg_match_all('/<style[^>]*>([\s\S]*?)<\/style>/i', $homeHtml, $homeStyles);
+        $homeInlineChars = array_sum(array_map('strlen', $homeStyles[1] ?? []));
+        $this->assertLessThan(10000, $homeInlineChars, 'Dashboard inline <style> bloat should be extracted to cached stylesheets.');
+
+        // 4. Excuses: single primary button hierarchy & deduplicated panel header counts
+        $excusesHtml = $this->actingAs($student)->get(route('excuses'))->assertOk()->getContent();
+        $this->assertSame(1, substr_count($excusesHtml, 'ent-btn-primary'));
+        $this->assertStringNotContainsString('Needs an excuse</span>', $excusesHtml);
+
+        // 5. CSS brace integrity & deep-link / notification counter wiring
+        $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
+        $this->assertNotFalse($masterCss);
+        $this->assertSame(substr_count($masterCss, '{'), substr_count($masterCss, '}'), 'student-portal-master.css must keep balanced braces so screen rules never leak to @media print.');
+
+        $cmdBlade = file_get_contents(resource_path('views/components/command-palette.blade.php'));
+        $qrVerifyBlade = file_get_contents(resource_path('views/qr/verify.blade.php'));
+        $this->assertNotFalse($cmdBlade);
+        $this->assertNotFalse($qrVerifyBlade);
+        $this->assertStringNotContainsString("route(\"home\") }}?open_code=1", $cmdBlade);
+        $this->assertStringNotContainsString("route('home') }}?open_code=1", $qrVerifyBlade);
+
+        $this->actingAs($student)->get(route('notifications'))
+            ->assertOk()
+            ->assertSee('id="tabCountActive"', false)
+            ->assertSee('id="tabCountUnread"', false)
+            ->assertSee('id="tabCountArchived"', false);
+    }
 }

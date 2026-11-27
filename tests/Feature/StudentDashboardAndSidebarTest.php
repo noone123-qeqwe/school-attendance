@@ -506,8 +506,12 @@ class StudentDashboardAndSidebarTest extends TestCase
                 ->assertSee('data-sched-filter="remaining"', false)
                 ->assertSee('data-sched-filter="done"', false)
                 ->assertSee('id="sdScheduleLiveRegion"', false)
-                ->assertSee('#cmdPaletteOverlay .cmd-palette-input:focus-visible', false)
+                ->assertSee('css/command-palette.css', false)
                 ->assertSee('id="cmdPaletteCategories" role="group"', false);
+
+            $cmdCss = file_get_contents(public_path('css/command-palette.css'));
+            $this->assertNotFalse($cmdCss);
+            $this->assertStringContainsString('#cmdPaletteOverlay .cmd-palette-input:focus-visible', $cmdCss);
         } finally {
             \Carbon\Carbon::setTestNow();
         }
@@ -627,8 +631,8 @@ class StudentDashboardAndSidebarTest extends TestCase
         $response->assertOk()
             ->assertSee('student-dashboard.css', false)
             ->assertSee('class="sd-masthead-actions d-none d-md-flex"', false)
-            ->assertSee('class="sd-telemetry d-none d-md-flex"', false)
-            ->assertSee('class="sd-panel d-none d-md-block"', false)
+            ->assertSee('class="sd-telemetry"', false)
+            ->assertSee('class="sd-panel"', false)
             ->assertDontSee('id="quickActionScanBtn"', false)
             ->assertSee('Mobile Systems')
             ->assertSee('Mobile Campus Advisory');
@@ -730,7 +734,9 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->actingAs($student)
             ->get(route('profile'))
             ->assertOk()
-            ->assertSee('sd-profile-quick-link', false);
+            ->assertDontSee('sd-profile-quick-link', false)
+            ->assertSee('Academic Information', false)
+            ->assertSee('Attendance Summary', false);
 
         // Verify non-student portals (Teacher) do NOT load the student portal master stylesheet
         $this->flushSession();
@@ -762,7 +768,7 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->actingAs($student)
             ->get(route('settings.biometrics.face'))
             ->assertOk()
-            ->assertSee('Encrypted Biometric Studio', false)
+            ->assertSee('Biometric Verification', false)
             ->assertSee('bio-face-studio-grid', false)
             ->assertSee('bio-viewfinder-corner', false)
             ->assertSee('bio-consent-card', false)
@@ -773,7 +779,7 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->actingAs($student)
             ->get(route('settings.biometrics.fingerprint'))
             ->assertOk()
-            ->assertSee('Encrypted Biometric Studio', false)
+            ->assertSee('Biometric Verification', false)
             ->assertSee('bio-sensor-stage', false)
             ->assertSee('bio-sensor-pad', false)
             ->assertSee('id="startBioBtn"', false)
@@ -1057,19 +1063,19 @@ class StudentDashboardAndSidebarTest extends TestCase
         $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
         $this->assertNotFalse($masterCss);
         $this->assertMatchesRegularExpression(
-            '/\.sp\.student-settings\[data-student-settings\]\s+\.academic-spec-grid\s*\{[^}]*gap:\s*12px\s*!important;/s',
+            '/\.sp\.student-settings\[data-student-settings\]\s+\.academic-spec-grid\s*\{[^}]*gap:\s*0\s+28px\s*!important;/s',
             $masterCss
         );
         $this->assertMatchesRegularExpression(
-            '/\.sp\.student-settings\[data-student-settings\]\s+\.academic-spec-card\s*,\s*body\.student-portal\s+\.sp\.student-settings\[data-student-settings\]\s+\.pref-tile\s*,\s*body\.student-portal\s+\.sp\.student-settings\[data-student-settings\]\s+\.sec-status-tile\s*\{[^}]*border:\s*1px\s+solid\s+var\(--sdc-border-subtle\)\s*!important;/s',
+            '/\.sp\.student-settings\[data-student-settings\]\s+\.sec-status-tile\s*\{[^}]*border:\s*1px\s+solid\s+var\(--sdc-border-subtle\)\s*!important;/s',
             $masterCss
         );
         $this->assertMatchesRegularExpression(
-            '/\.sp\.student-settings\[data-student-settings\]\s+\.academic-spec-card\s*\{[^}]*padding:\s*14px\s+16px\s*!important;/s',
+            '/\.sp\.student-settings\[data-student-settings\]\s+\.academic-spec-card\s*\{[^}]*border-bottom:\s*1px\s+solid\s+var\(--sdc-border-subtle\)\s*!important;[^}]*padding:\s*14px\s+0\s*!important;/s',
             $masterCss
         );
         $this->assertMatchesRegularExpression(
-            '/\.sp\.student-settings\[data-student-settings\]\s+\.pref-tile\s*\{[^}]*padding:\s*16px\s+18px\s*!important;/s',
+            '/\.sp\.student-settings\[data-student-settings\]\s+\.pref-tile\s*\{[^}]*border-bottom:\s*1px\s+solid\s+var\(--sdc-border-subtle\)\s*!important;[^}]*padding:\s*16px\s+0\s*!important;/s',
             $masterCss
         );
 
@@ -1104,7 +1110,9 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertOk()
             ->assertSee('class="student-photo-change-btn"', false)
             ->assertSee('for="ppmFileInput"', false)
-            ->assertSee('Change photo', false);
+            ->assertSee('Change photo', false)
+            ->assertDontSee('id="ppmCameraBadge"', false)
+            ->assertDontSee('id="ppmHoverOverlay"', false);
 
         $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
         $this->assertNotFalse($masterCss);

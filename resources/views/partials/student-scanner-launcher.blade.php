@@ -9,4 +9,11 @@
 
         window.location.assign(scanUrl.toString());
     };
+
+    (function () {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('open_code') || params.has('open_scanner')) {
+            window.openStudentScanner(params.has('open_code') ? 'code' : 'scan', params.has('paste'));
+        }
+    })();
 </script>

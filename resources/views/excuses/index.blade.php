@@ -1,6 +1,5 @@
 @extends('layouts.app')
 @section('page-title', 'Excuse Submissions')
-@section('page-sub', 'Manage and track your absence excuse letters')
 
 @section('content')
 @php
@@ -60,7 +59,7 @@
         </div>
     </div>
 
-    <div class="row g-4">
+    <div class="row g-4 align-items-start">
         <!-- Absent Records Requiring Excuses -->
         <div class="col-12 col-lg-5" id="excuseNeedsPanel" data-excuse-panel="needs">
             <div class="sd-excuse-panel">
@@ -69,9 +68,6 @@
                         <i class="bi bi-person-x-fill text-danger" aria-hidden="true"></i>
                         Action Required: Absences
                     </h2>
-                    <x-badge :variant="$absentRecords->count() > 0 ? 'danger' : 'success'" size="sm">
-                        {{ $absentRecords->count() }} {{ \Illuminate\Support\Str::plural('item', $absentRecords->count()) }}
-                    </x-badge>
                 </div>
 
                 <div>
@@ -83,13 +79,13 @@
                                     <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>{{ \Carbon\Carbon::parse($record->date)->format('F j, Y') }}
                                 </div>
                             </div>
-                            <a href="{{ route('excuses.create', $record) }}" class="ent-btn ent-btn-primary" style="padding: 8px 15px; font-size: 0.82rem;">
+                            <a href="{{ route('excuses.create', $record) }}" class="ent-btn ent-btn-secondary" style="padding: 8px 15px; font-size: 0.82rem;">
                                 <i class="bi bi-plus-circle-fill me-1" aria-hidden="true"></i> Submit Excuse
                             </a>
                         </div>
                     @empty
                         <div class="sd-excuse-empty">
-                            <i class="bi bi-check2-circle" style="font-size: 3rem; color: #34d399;" aria-hidden="true"></i>
+                            <i class="bi bi-check2-circle" style="font-size: 2.5rem; color: #4ADE80;" aria-hidden="true"></i>
                             <h4>All caught up!</h4>
                             <p>You don't have any unexcused absences right now.</p>
                         </div>
@@ -106,7 +102,6 @@
                         <i class="bi bi-file-earmark-text-fill" style="color: #7dd3fc;" aria-hidden="true"></i>
                         Submission History
                     </h2>
-                    <x-badge variant="info" size="sm">{{ $excuseSubmissions->count() }} total</x-badge>
                 </div>
 
                 <div class="excuse-history-scroll" style="max-height: 620px; overflow-y: auto;">
@@ -114,9 +109,9 @@
                         <div class="sd-excuse-row">
                             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                                 <div class="min-w-0">
-                                    <h3 class="sd-excuse-row-title">{{ $excuse->attendance->subject->name ?? $excuse->attendance->subject_code }}</h3>
+                                    <h3 class="sd-excuse-row-title">{{ $excuse->attendance?->subject?->name ?? $excuse->attendance?->subject_code ?? 'Attendance Record' }}</h3>
                                     <div class="sd-excuse-row-meta">
-                                        <span style="color: #ff8e9b; font-weight: 700;">Absent:</span> {{ \Carbon\Carbon::parse($excuse->attendance->date)->format('M d, Y') }}
+                                        <span style="color: #F87171; font-weight: 700;">Absent:</span> {{ $excuse->attendance?->date ? \Carbon\Carbon::parse($excuse->attendance->date)->format('M d, Y') : 'Date unavailable' }}
                                         <span class="mx-1 opacity-50" aria-hidden="true">&bull;</span>
                                         Submitted {{ $excuse->created_at->diffForHumans() }}
                                     </div>
@@ -185,7 +180,7 @@
         }
     }
     buttons.forEach(button => button.addEventListener('click', () => showExcuseView(button.dataset.excuseView)));
-    const initialView = window.innerWidth >= 1024 ? 'all' : @json($absentRecords->isNotEmpty() ? 'needs' : 'history');
+    const initialView = window.innerWidth >= 992 ? 'all' : @json($absentRecords->isNotEmpty() ? 'needs' : 'history');
     showExcuseView(initialView);
 })();
 </script>

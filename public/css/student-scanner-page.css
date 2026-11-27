@@ -1,0 +1,242 @@
+    html:has(body.scanner-page-layout),
+    body.scanner-page-layout {
+        width: 100%;
+        min-height: 100%;
+        overflow: hidden;
+        background: #100d0b;
+    }
+
+    body.scanner-page-layout :is(#sidebar, #sidebarOverlay, #topHeader, #mobileBottomNav) {
+        display: none !important;
+    }
+
+    body.scanner-page-layout .main-wrapper {
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    body.scanner-page-layout #mainContent {
+        width: 100%;
+        max-width: none;
+        min-height: 100dvh;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    body.scanner-page-layout #mainContent > .page-enter {
+        padding: 0 !important;
+        animation: none;
+    }
+
+    #studentScannerModal.scanner-page-screen {
+        height: 100dvh;
+        padding: max(16px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+        overflow: hidden auto;
+        overscroll-behavior: contain;
+        align-items: flex-start;
+        background: #141010;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+
+    body.scanner-page-layout #studentScannerModal.scanner-page-screen .scanner-modal-card {
+        flex: none;
+        width: 100%;
+        max-width: 500px;
+        max-height: none;
+        margin: 0 !important;
+        padding: clamp(14px, 4vw, 24px);
+        overflow: visible !important;
+        border: 1px solid rgba(250, 248, 245, 0.13) !important;
+        border-radius: 20px;
+        background: #1e1515 !important;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28) !important;
+        animation: none;
+    }
+
+    .scanner-page-screen .scanner-top-bar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 16px 8px;
+        margin-bottom: 16px;
+    }
+
+    .scanner-page-title {
+        margin: 0;
+        text-align: start;
+        color: #faf8f5;
+        font-size: clamp(1.2rem, 4.6vw, 1.75rem);
+        font-weight: 750;
+        letter-spacing: -0.025em;
+        line-height: 1.15;
+    }
+
+    .scanner-page-screen .scanner-top-actions {
+        grid-column: 2;
+        grid-row: 1;
+        gap: 6px;
+    }
+
+    body.scanner-page-layout #studentScannerModal.scanner-page-screen .scanner-mode-switcher {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        border-radius: 12px;
+        padding: 4px;
+        gap: 4px;
+        background: #141010 !important;
+    }
+
+    .scanner-page-screen .scanner-mode-tab {
+        display: inline-flex !important;
+        flex: 1 1 0;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 6px 8px;
+        border-radius: 8px;
+        color: #dfd2c9;
+        font-size: 0.88rem;
+    }
+
+    body.scanner-page-layout #studentScannerModal.scanner-page-screen .scanner-mode-tab.active {
+        background: #FFFFFF !important;
+        color: #800000 !important;
+        box-shadow: none !important;
+    }
+
+    .scanner-page-screen .scanner-icon-btn {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        border-radius: 12px;
+    }
+
+    .scanner-page-screen .scanner-viewfinder-wrapper {
+        width: min(100%, clamp(225px, calc(100dvh - 290px), 352px));
+        margin: 0 auto 12px;
+        border-radius: 16px;
+        border: 1px solid #735842;
+        background: #100c0c;
+    }
+
+    .scanner-page-screen .scanner-viewfinder-wrapper.camera-unavailable {
+        width: 100%;
+        min-height: 210px;
+        aspect-ratio: auto;
+        background: #181111;
+        border-color: rgba(250, 248, 245, 0.13);
+    }
+
+    .scanner-page-screen .scanner-viewfinder-wrapper.camera-unavailable::before {
+        content: none;
+    }
+
+    .scanner-page-screen .scanner-permission-empty-state {
+        padding: 20px 12px;
+    }
+
+    .scanner-page-screen .permission-headline {
+        font-size: 1rem;
+    }
+
+    .scanner-page-screen .permission-description {
+        max-width: 30ch;
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+
+    .scanner-page-screen .permission-actions {
+        flex-flow: row wrap;
+        justify-content: center;
+        gap: 4px 10px;
+    }
+
+    .scanner-page-screen .scanner-instruction-container {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        margin: 0 auto 8px;
+        padding: 0;
+    }
+
+    .scanner-page-screen .scanner-instruction-text {
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    .scanner-page-screen .camera-unavailable + .scanner-instruction-container {
+        display: none;
+    }
+
+    .scanner-page-screen .scanner-camera-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(250, 248, 245, 0.10);
+    }
+
+    .scanner-page-screen .scanner-camera-actions .scanner-gps-badge {
+        min-width: 0;
+        margin: 0;
+        text-align: left;
+    }
+
+    .scanner-page-screen :is(.scanner-alt-btn, .scanner-code-actions .btn, .permission-primary-btn, .permission-secondary-link, #resultDoneBtn, #resultRetryBtn) {
+        min-height: 44px;
+    }
+
+    .scanner-page-screen .scanner-alt-btn {
+        margin-inline-start: auto;
+        padding: 8px 12px;
+        border-radius: 11px;
+        font-size: 0.85rem;
+    }
+
+    @media (max-width: 575.98px) {
+        .scanner-page-screen .scanner-camera-actions .scanner-gps-badge {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+        .scanner-page-screen .scanner-camera-actions .scanner-alt-btn {
+            margin-inline-start: 0;
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    .scanner-page-screen .code-entry-container {
+        padding: 14px;
+        border: 1px solid rgba(250, 248, 245, 0.12);
+        background: #181111;
+        box-shadow: none;
+    }
+
+    .scanner-page-screen .scanner-code-label {
+        text-align: start;
+    }
+
+    .scanner-page-screen .code-entry-input {
+        min-height: 54px;
+    }
+
+    .scanner-page-screen :is(button, input):focus-visible {
+        outline: 2px solid #dfb784 !important;
+        outline-offset: 2px;
+    }
+
+    @media (min-width: 768px) and (min-height: 640px) {
+        #studentScannerModal.scanner-page-screen {
+            padding-top: max(clamp(28px, 7vh, 64px), env(safe-area-inset-top, 0px));
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .scanner-page-screen :is(.scanner-laser-line, .reticle-corner, .result-status-icon-wrap) {
+            animation: none;
+        }
+    }

@@ -43,10 +43,6 @@
     <link rel="stylesheet" href="{{ asset('css/desktop-layout.css') }}?v={{ filemtime(public_path('css/desktop-layout.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/portal-layout-refinements.css') }}?v={{ filemtime(public_path('css/portal-layout-refinements.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/system-ui-modern.css') }}?v={{ filemtime(public_path('css/system-ui-modern.css')) }}">
-    @if(Auth::check() && Auth::user()->isStudent() && !request()->routeIs('settings'))
-        <link rel="stylesheet" href="{{ asset('css/student-portal-redesign.css') }}?v={{ filemtime(public_path('css/student-portal-redesign.css')) }}">
-        <link rel="stylesheet" href="{{ asset('css/student-portal-simple.css') }}?v={{ filemtime(public_path('css/student-portal-simple.css')) }}">
-    @endif
     @auth
         <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @endauth
@@ -72,12 +68,9 @@
         <link rel="stylesheet" href="{{ asset('css/student-settings.css') }}?v={{ filemtime(public_path('css/student-settings.css')) }}">
     @endif
     @if(Auth::user()?->isStudent())
-        <link rel="stylesheet" href="{{ asset('css/student-desktop.css') }}?v={{ filemtime(public_path('css/student-desktop.css')) }}">
-        <link rel="stylesheet" href="{{ asset('css/student-desktop-pages.css') }}?v={{ filemtime(public_path('css/student-desktop-pages.css')) }}">
         @if(request()->routeIs('settings'))
             <link rel="stylesheet" href="{{ asset('css/student-desktop-settings.css') }}?v={{ filemtime(public_path('css/student-desktop-settings.css')) }}">
         @endif
-        <link rel="stylesheet" href="{{ asset('css/student-desktop-ux.css') }}?v={{ filemtime(public_path('css/student-desktop-ux.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/student-portal-navigation.css') }}?v={{ filemtime(public_path('css/student-portal-navigation.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/student-portal-master.css') }}?v={{ filemtime(public_path('css/student-portal-master.css')) }}">
         @if(request()->routeIs('home'))
@@ -93,7 +86,7 @@
     @endphp
 
     <!-- Skip to main content link for keyboard/screen readers -->
-    <a href="#mainContent" class="visually-hidden-focusable skip-to-main-link" style="position: absolute; top: 8px; left: 8px; background: #cfa46f; color: #141010; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
+    <a href="#mainContent" class="visually-hidden-focusable skip-to-main-link" style="position: absolute; top: 8px; left: 8px; background: #D4AF37; color: #141010; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
         Skip to main content
     </a>
 
@@ -804,18 +797,21 @@
                     const buildNotifNode = (n) => {
                         const row = document.createElement('div');
                         row.id = `notif-${n.id}`;
-                        const unreadDefaultBg = isStudentPortal ? 'rgba(122, 26, 26, 0.24)' : 'rgba(212, 175, 55, 0.08)';
-                        const bgRow = n.is_read ? 'transparent' : (n.type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : unreadDefaultBg);
-                        row.style.cssText = `padding:13px 18px;border-bottom:1px solid rgba(255, 255, 255,0.06);background:${bgRow};transition:all .2s;`;
+                        const unreadDefaultBg = isStudentPortal ? 'rgba(122, 26, 26, 0.16)' : 'rgba(212, 175, 55, 0.08)';
+                        const bgRow = n.is_read ? 'transparent' : (n.type === 'system_update' ? 'rgba(74, 222, 128, 0.08)' : unreadDefaultBg);
+                        row.style.cssText = `padding:12px 16px;border-bottom:1px solid rgba(255, 255, 255,0.06);background:${bgRow};transition:background-color .16s ease;`;
 
                         const inner = document.createElement('div');
                         inner.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
 
+                        const studentIconColor = n.type === 'system_update' ? '#4ADE80' : (n.type === 'excuse' ? '#FBBF24' : (n.type === 'attendance' ? '#F87171' : '#D4AF37'));
                         const defaultIconStyle = isStudentPortal
-                            ? 'background:rgba(122, 26, 26, 0.24);color:#D4AF37;'
+                            ? `background:transparent;color:${studentIconColor};`
                             : 'background:rgba(207, 164, 111, 0.15);color:#f3e7cd;';
                         const badgeWrap = document.createElement('div');
-                        badgeWrap.style.cssText = `width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;${colorMap[n.type] || defaultIconStyle}`;
+                        badgeWrap.style.cssText = isStudentPortal
+                            ? `width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;${defaultIconStyle}`
+                            : `width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;${colorMap[n.type] || defaultIconStyle}`;
                         const badgeIcon = document.createElement('i');
                         badgeIcon.className = `bi ${iconMap[n.type] || 'bi-bell-fill'}`;
                         badgeWrap.appendChild(badgeIcon);
@@ -823,19 +819,19 @@
                         const bodyCol = document.createElement('div');
                         bodyCol.style.cssText = 'flex:1;min-width:0;';
                         const msgEl = document.createElement('div');
-                        msgEl.style.cssText = `font-size:.82rem;color:${isStudentPortal ? '#FAF8F5' : '#f3e7cd'};line-height:1.4;`;
+                        msgEl.style.cssText = `font-size:.82rem;color:${isStudentPortal ? '#FAF8F5' : '#f3e7cd'};line-height:1.45;`;
                         msgEl.textContent = String(n.message ?? '');
                         const timeEl = document.createElement('div');
-                        timeEl.style.cssText = `font-size:.72rem;color:${isStudentPortal ? '#A49890' : 'rgba(255,255,255,0.5)'};margin-top:4px;`;
+                        timeEl.style.cssText = `font-size:.73rem;color:${isStudentPortal ? '#ACA099' : 'rgba(255,255,255,0.5)'};margin-top:4px;`;
                         timeEl.textContent = String(n.created_at_human ?? '');
                         bodyCol.append(msgEl, timeEl);
 
                         const rightCol = document.createElement('div');
-                        rightCol.style.cssText = 'display:flex;align-items:center;gap:4px;flex-shrink:0;';
+                        rightCol.style.cssText = 'display:flex;align-items:center;gap:6px;flex-shrink:0;';
                         if (!n.is_read) {
                             const dot = document.createElement('div');
-                            const dotColor = n.type === 'system_update' ? '#10b981' : (isStudentPortal ? '#D4AF37' : '#f59e0b');
-                            dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${dotColor};`;
+                            const dotColor = n.type === 'system_update' ? '#4ADE80' : (isStudentPortal ? '#D4AF37' : '#f59e0b');
+                            dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${dotColor};`;
                             rightCol.appendChild(dot);
                         }
                         if (!isParent) {

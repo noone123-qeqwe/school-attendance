@@ -122,6 +122,8 @@
         if (options.focus && heading) {
             heading.focus({ preventScroll: true });
             root.scrollIntoView({ block: 'start', behavior: 'instant' });
+        } else if ((!started || options.fromHistory) && location.hash) {
+            requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
         }
         started = true;
         return page;

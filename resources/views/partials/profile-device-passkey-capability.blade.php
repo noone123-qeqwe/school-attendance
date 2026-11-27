@@ -13,12 +13,12 @@ function ensureProfileConsentControl() {
     const wrapper = document.createElement('label');
     wrapper.id = 'profilePasskeyConsentWrap';
     wrapper.htmlFor = 'profilePasskeyConsent';
-    wrapper.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 12px;margin-bottom:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);font-size:0.78rem;line-height:1.45;color:#cbd5e1;cursor:pointer;';
+    wrapper.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:12px 14px;margin-bottom:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:#141010;font-size:0.78rem;line-height:1.45;color:#D6CCC6;cursor:pointer;';
 
     checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.id = 'profilePasskeyConsent';
-    checkbox.style.cssText = 'margin-top:3px;width:16px;height:16px;flex-shrink:0;cursor:pointer;';
+    checkbox.style.cssText = 'margin-top:2px;flex-shrink:0;cursor:pointer;';
 
     const text = document.createElement('span');
     text.textContent = 'I consent to linking this device’s built-in biometric or screen-lock passkey to my account. Only a cryptographic public key is stored — never raw fingerprint or biometric data.';

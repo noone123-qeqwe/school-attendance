@@ -35,12 +35,16 @@ class GlobalSearchCommandPaletteTest extends TestCase
 
         $html = $this->actingAs($student)->get(route('home'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('height: min(580px, calc(100dvh - clamp(48px, 12dvh, 104px)));', $html);
-        $this->assertStringContainsString('height: min(680px, calc(var(--cmd-vv-height, 100dvh) - max(14px, env(safe-area-inset-top, 0px))));', $html);
-        $this->assertStringContainsString('flex: 1 1 0%;', $html);
-        $this->assertStringContainsString('overflow-y: auto;', $html);
-        $this->assertStringContainsString('white-space: normal;', $html);
-        $this->assertStringContainsString('text-overflow: clip;', $html);
+        $this->assertStringContainsString('css/command-palette.css', $html);
+
+        $paletteCss = file_get_contents(public_path('css/command-palette.css'));
+        $this->assertIsString($paletteCss);
+        $this->assertStringContainsString('height: min(580px, calc(100dvh - clamp(48px, 12dvh, 104px)));', $paletteCss);
+        $this->assertStringContainsString('height: min(680px, calc(var(--cmd-vv-height, 100dvh) - max(14px, env(safe-area-inset-top, 0px))));', $paletteCss);
+        $this->assertStringContainsString('flex: 1 1 0%;', $paletteCss);
+        $this->assertStringContainsString('overflow-y: auto;', $paletteCss);
+        $this->assertStringContainsString('white-space: normal;', $paletteCss);
+        $this->assertStringContainsString('text-overflow: clip;', $paletteCss);
         $this->assertStringContainsString('id="cmdPaletteLiveStatus"', $html);
         $this->assertStringContainsString('id="cmdEmptyClearBtn"', $html);
         $this->assertStringContainsString('id="cmdEmptyAllCatBtn"', $html);

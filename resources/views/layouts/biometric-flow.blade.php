@@ -24,7 +24,7 @@
             </a>
             <span class="biometric-flow-brand-chip">
                 <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
-                <span>Encrypted Biometric Studio</span>
+                <span>Biometric Verification</span>
             </span>
         </div>
         <header class="biometric-flow-heading">

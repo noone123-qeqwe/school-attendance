@@ -42,7 +42,7 @@
     }
     .result-sub {
         font-size: 0.88rem;
-        color: #D6CCC6;
+        color: #D8CEC8;
         margin-bottom: 20px;
         line-height: 1.55;
     }
@@ -64,7 +64,7 @@
         padding: 14px 16px;
         margin-bottom: 22px;
         font-size: 0.85rem;
-        color: #D6CCC6;
+        color: #D8CEC8;
     }
     .subject-box strong {
         color: #FAF8F5;
@@ -81,7 +81,7 @@
         min-height: 46px;
         padding: 12px 20px;
         background: #FAF8F5;
-        color: #800000;
+        color: #7A1A1A;
         border-radius: 10px;
         text-decoration: none;
         font-weight: 700;
@@ -91,7 +91,7 @@
     }
     .action-btn:hover {
         background: #FFFFFF;
-        color: #800000;
+        color: #561313;
     }
     .secondary-btn {
         display: inline-flex;

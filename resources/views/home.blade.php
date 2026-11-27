@@ -59,7 +59,6 @@
         <div class="sd-identity-cluster">
             <div class="sd-avatar-ring">
                 <img src="{{ $studentUser->profile_photo_url_with_version }}" alt="{{ $studentUser->name }}">
-                <span class="sd-avatar-live-dot" title="Active Student" aria-hidden="true"></span>
             </div>
             <div class="sd-identity-copy">
                 <div class="sd-kicker-line">
@@ -67,8 +66,8 @@
                         <i class="bi {{ $greetIcon }}" aria-hidden="true"></i>
                         <span>{{ $greeting }}</span>
                     </span>
-                    <span class="sd-kicker-sep" aria-hidden="true">&middot;</span>
-                    <span>{{ now()->format('l, M j') }}</span>
+                    <span class="sd-kicker-sep d-md-none" aria-hidden="true">&middot;</span>
+                    <span class="d-md-none">{{ now()->format('l, M j') }}</span>
                     <span class="sd-kicker-sep" aria-hidden="true">&middot;</span>
                     <span id="studentClock" class="sd-kicker-clock sd-mono" title="Campus Local Time">{{ now()->format('g:i A') }}</span>
                 </div>
@@ -248,7 +247,7 @@
             </div>
         </section>
 
-        <section class="sd-telemetry d-none d-md-flex" aria-label="Attendance Standing and Weekly Pulse">
+        <section class="sd-telemetry" aria-label="Attendance Standing and Weekly Pulse">
             <div class="sd-standing-top">
                 <div class="sd-gauge-wrap">
                     <svg class="sd-gauge-svg" viewBox="0 0 88 88" aria-hidden="true">
@@ -365,9 +364,9 @@
                                 $instName = trim((string) ($item->subject?->instructorUser?->name ?? $item->subject?->instructor ?? ''));
                                 $filterBucket = in_array($item->status, ['ongoing', 'upcoming'], true) ? 'remaining' : ($item->status === 'completed' ? 'done' : 'missed');
                                 $statusColor = match ($item->status) {
-                                    'completed' => '#34d399',
+                                    'completed' => '#4ADE80',
                                     'ongoing' => '#fbbf24',
-                                    'missed' => '#fb7185',
+                                    'missed' => '#f87171',
                                     default => '#D4AF37',
                                 };
                             @endphp
@@ -431,11 +430,53 @@
                     </div>
                 @endif
             </section>
+
+            {{-- Campus & Class Announcements --}}
+            @if(isset($announcements) && $announcements->isNotEmpty())
+            <section class="sd-panel" id="studentAnnouncementsSection" aria-labelledby="studentAnnouncementsHeading" data-alert-group>
+                <header class="sd-panel-head">
+                    <div class="sd-panel-title-group">
+                        <h2 id="studentAnnouncementsHeading" class="sd-panel-title">Campus &amp; Class Announcements</h2>
+                        <span class="sd-panel-meta">Latest notices from administration &amp; instructors</span>
+                    </div>
+                </header>
+
+                <div class="sd-ann-stack">
+                    @foreach($announcements as $announcement)
+                        @php
+                            $annContent = trim((string) $announcement->content);
+                            $annNeedsClamp = \Illuminate\Support\Str::length($annContent) > 170 || substr_count($annContent, "\n") >= 3;
+                            $annUrgent = \Illuminate\Support\Str::contains(strtolower((string) $announcement->title . ' ' . ($announcement->target_audience ?? '')), ['urgent', 'important', 'alert']);
+                            $annCopyId = 'sdAnnouncementCopy' . $loop->index;
+                        @endphp
+                        <article class="sd-ann-card {{ $annUrgent ? 'is-urgent' : '' }}" data-alert-banner
+                                 data-alert-key="student-announcement-{{ $announcement->id }}"
+                                 data-alert-version="{{ $announcement->updated_at?->format('U.u') }}"
+                                 data-alert-label="Dismiss announcement">
+                            <div class="sd-ann-head">
+                                <h3 class="sd-ann-title">{{ $announcement->title }}</h3>
+                                <span class="sd-code-tag sd-mono">{{ $announcement->target_audience ?? 'All' }}</span>
+                            </div>
+                            <p id="{{ $annCopyId }}" class="sd-ann-copy {{ $annNeedsClamp ? 'is-clamped' : '' }}">{{ $annContent }}</p>
+                            @if($annNeedsClamp)
+                                <button type="button" class="sd-ann-toggle" data-announcement-toggle="{{ $annCopyId }}" aria-expanded="false">
+                                    Read more
+                                </button>
+                            @endif
+                            <div class="sd-ann-meta">
+                                <span><i class="bi bi-person" aria-hidden="true"></i> {{ $announcement->author->name ?? 'Administration' }}</span>
+                                <span><i class="bi bi-clock" aria-hidden="true"></i> {{ ($announcement->scheduled_for ?? $announcement->created_at)->diffForHumans() }}</span>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+            @endif
         </div>
 
         <div class="sd-col-aside">
             {{-- Subject Standing --}}
-            <section class="sd-panel d-none d-md-block" aria-labelledby="sdSubjectStandingHeading">
+            <section class="sd-panel" aria-labelledby="sdSubjectStandingHeading">
                 <header class="sd-panel-head">
                     <div class="sd-panel-title-group">
                         <h2 id="sdSubjectStandingHeading" class="sd-panel-title">Subject Standing</h2>
@@ -497,48 +538,6 @@
                     </div>
                 @endif
             </section>
-
-            {{-- Campus & Class Announcements --}}
-            @if(isset($announcements) && $announcements->isNotEmpty())
-            <section class="sd-panel" id="studentAnnouncementsSection" aria-labelledby="studentAnnouncementsHeading" data-alert-group>
-                <header class="sd-panel-head">
-                    <div class="sd-panel-title-group">
-                        <h2 id="studentAnnouncementsHeading" class="sd-panel-title">Campus &amp; Class Announcements</h2>
-                        <span class="sd-panel-meta">Latest notices from administration &amp; instructors</span>
-                    </div>
-                </header>
-
-                <div class="sd-ann-stack">
-                    @foreach($announcements as $announcement)
-                        @php
-                            $annContent = trim((string) $announcement->content);
-                            $annNeedsClamp = \Illuminate\Support\Str::length($annContent) > 170 || substr_count($annContent, "\n") >= 3;
-                            $annUrgent = \Illuminate\Support\Str::contains(strtolower((string) $announcement->title . ' ' . ($announcement->target_audience ?? '')), ['urgent', 'important', 'alert']);
-                            $annCopyId = 'sdAnnouncementCopy' . $loop->index;
-                        @endphp
-                        <article class="sd-ann-card {{ $annUrgent ? 'is-urgent' : '' }}" data-alert-banner
-                                 data-alert-key="student-announcement-{{ $announcement->id }}"
-                                 data-alert-version="{{ $announcement->updated_at?->format('U.u') }}"
-                                 data-alert-label="Dismiss announcement">
-                            <div class="sd-ann-head">
-                                <h3 class="sd-ann-title">{{ $announcement->title }}</h3>
-                                <span class="sd-code-tag sd-mono">{{ $announcement->target_audience ?? 'All' }}</span>
-                            </div>
-                            <p id="{{ $annCopyId }}" class="sd-ann-copy {{ $annNeedsClamp ? 'is-clamped' : '' }}">{{ $annContent }}</p>
-                            @if($annNeedsClamp)
-                                <button type="button" class="sd-ann-toggle" data-announcement-toggle="{{ $annCopyId }}" aria-expanded="false">
-                                    Read more
-                                </button>
-                            @endif
-                            <div class="sd-ann-meta">
-                                <span><i class="bi bi-person" aria-hidden="true"></i> {{ $announcement->author->name ?? 'Administration' }}</span>
-                                <span><i class="bi bi-clock" aria-hidden="true"></i> {{ ($announcement->scheduled_for ?? $announcement->created_at)->diffForHumans() }}</span>
-                            </div>
-                        </article>
-                    @endforeach
-                </div>
-            </section>
-            @endif
         </div>
     </div>
 </div>
@@ -719,13 +718,15 @@
                 const records = (payload.attendance && payload.attendance[dateKey]) ? payload.attendance[dateKey] : [];
                 const events = (payload.events && payload.events[dateKey]) ? payload.events[dateKey] : [];
 
-                const presentCount = records.filter(function(r) { return r.status_lower === 'present'; }).length;
-                const lateCount = records.filter(function(r) { return r.status_lower === 'late'; }).length;
-                const absentCount = records.filter(function(r) { return r.status_lower === 'absent'; }).length;
+                const presentCount = records.filter(function(r) { return !r.excused && r.status_lower === 'present'; }).length;
+                const lateCount = records.filter(function(r) { return !r.excused && r.status_lower === 'late'; }).length;
+                const excusedCount = records.filter(function(r) { return Boolean(r.excused) || r.status_lower === 'excused'; }).length;
+                const absentCount = records.filter(function(r) { return !r.excused && r.status_lower === 'absent'; }).length;
 
                 let chips = '<span class="day-summary-chip chip-count">' + records.length + (records.length === 1 ? ' Class' : ' Classes') + '</span>';
                 if (presentCount) chips += '<span class="day-summary-chip chip-present">' + presentCount + ' Present</span>';
                 if (lateCount) chips += '<span class="day-summary-chip chip-late">' + lateCount + ' Late</span>';
+                if (excusedCount) chips += '<span class="day-summary-chip chip-excused">' + excusedCount + ' Excused</span>';
                 if (absentCount) chips += '<span class="day-summary-chip chip-absent">' + absentCount + ' Absent</span>';
                 if (!records.length && !events.length) chips += '<span class="day-summary-chip chip-empty">No activity</span>';
                 summaryEl.innerHTML = chips;
@@ -752,7 +753,8 @@
                     html += '<div class="day-section-header"><span class="day-section-label">Attendance Records</span><span class="day-section-badge">' + records.length + '</span></div>';
                     html += '<div class="d-grid gap-2">';
                     records.forEach(function(rec) {
-                        const tone = rec.status_lower === 'present' ? 'present' : (rec.status_lower === 'late' ? 'late' : 'absent');
+                        const isExcused = Boolean(rec.excused) || rec.status_lower === 'excused';
+                        const tone = isExcused ? 'excused' : (rec.status_lower === 'present' ? 'present' : (rec.status_lower === 'late' ? 'late' : 'absent'));
                         const excuseHref = rec.id ? (excusesCreateBase + '/' + encodeURIComponent(rec.id)) : excusesGeneralUrl;
                         html += '<div class="att-detail-card status-border-' + tone + '">' +
                             '<div class="att-card-header">' +
@@ -763,7 +765,7 @@
                                         '<span class="att-instructor-pill">' + escapeHtml(rec.instructor) + '</span>' +
                                     '</div>' +
                                 '</div>' +
-                                '<span class="att-status-badge ' + tone + '">' + escapeHtml(rec.status) + '</span>' +
+                                '<span class="att-status-badge ' + tone + '">' + escapeHtml(isExcused ? 'Excused' : rec.status) + '</span>' +
                             '</div>' +
                             '<div class="att-info-grid">' +
                                 '<div><div class="att-grid-col-label">Schedule</div><div class="att-grid-col-val sd-tabular">' + escapeHtml(rec.schedule) + '</div></div>' +
@@ -888,7 +890,14 @@
     document.addEventListener('visibilitychange', function() {
         if (!document.hidden) tick();
     });
-    setInterval(tick, 1000);
+    const scheduleNextTick = () => {
+        const delay = 60000 - (Date.now() % 60000) + 120;
+        setTimeout(() => {
+            tick();
+            scheduleNextTick();
+        }, delay);
+    };
+    scheduleNextTick();
 })();
 </script>
 @endsection

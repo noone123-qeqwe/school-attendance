@@ -24,9 +24,7 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
         body {
-            background: radial-gradient(ellipse 65% 45% at 88% -6%, rgba(122, 26, 26, 0.24) 0%, transparent 66%),
-                        radial-gradient(ellipse 48% 42% at 10% 10%, rgba(122, 26, 26, 0.24) 0%, transparent 64%),
-                        var(--dark-bg);
+            background: var(--dark-bg);
             min-height: 100vh;
             color: #FAF8F5;
             display: flex;
@@ -35,41 +33,35 @@
             padding: 20px;
         }
         .login-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border-radius: 26px;
-            box-shadow: 0 26px 68px rgba(0, 0, 0, 0.6);
-            border: 1px solid var(--border);
+            background: #1E1515;
+            border-radius: 16px;
+            box-shadow: 0 20px 56px rgba(0, 0, 0, 0.52);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-top: 2px solid #7A1A1A;
             max-width: 440px;
             width: 100%;
-            padding: 36px 30px;
-            animation: cardFadeIn 0.35s ease;
-        }
-        @keyframes cardFadeIn {
-            from { opacity: 0; transform: translateY(12px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            padding: 34px 28px;
         }
         .qr-badge-icon {
-            width: 70px;
-            height: 70px;
-            border-radius: 20px;
-            background: linear-gradient(135deg, #800000, #381018);
-            border: 1px solid rgba(255, 255, 255, 0.28);
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: #261B1B;
+            border: 1px solid rgba(212, 175, 55, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 16px;
-            font-size: 2rem;
-            color: #ffffff;
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+            font-size: 1.6rem;
+            color: #D4AF37;
+            box-shadow: none;
         }
         .form-label {
             font-size: 0.78rem;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.06em;
-            color: #baa3ab;
+            color: #ACA099;
             margin-bottom: 8px;
         }
         .input-group-custom {
@@ -103,24 +95,23 @@
             color: #9e848d;
         }
         .submit-btn {
-            background: linear-gradient(135deg, #ffffff 0%, #eae0e3 55%, #d7c7cc 100%);
-            color: #800000;
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: 14px;
-            min-height: 50px;
-            padding: 14px;
+            background: #FAF8F5;
+            color: #7A1A1A;
+            border: 1px solid #FAF8F5;
+            border-radius: 10px;
+            min-height: 48px;
+            padding: 13px 16px;
             font-weight: 800;
             font-size: 0.95rem;
             width: 100%;
-            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-            transition: transform 0.16s ease, filter 0.16s ease;
+            box-shadow: none;
+            transition: background-color 0.15s ease, color 0.15s ease;
             cursor: pointer;
             margin-top: 8px;
         }
         .submit-btn:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.04);
-            color: #24050b;
+            background: #FFFFFF;
+            color: #561313;
         }
         .qr-banner-pill {
             background: rgba(217, 119, 6, 0.1);

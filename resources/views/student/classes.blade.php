@@ -1,7 +1,6 @@
 @extends('layouts.app')
 @section('portal-title', 'Classes & Schedule')
 @section('page-title', 'Classes & Schedule')
-@section('page-sub', 'Your subjects and weekly timetable')
 
 @section('content')
 @php
@@ -123,7 +122,7 @@
 @if(blank($user->section))
 <x-alert-banner role="status" class="mb-3" alert-key="missing-class-section" version="unassigned"
                 dismiss-label="Dismiss class section notice"
-                style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px;border-radius:10px;border:1px solid rgba(212, 175, 55,0.28);border-left:3px solid #D4AF37;background:#1E1515;color:#FAF8F5;">
+                style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px;border-radius:10px;border:1px solid rgba(212, 175, 55,0.34);background:#1E1515;color:#FAF8F5;">
     <i class="bi bi-info-circle-fill" style="color:#D4AF37;margin-top:2px;" aria-hidden="true"></i>
     <div><strong>Your section is not assigned yet.</strong><br><span style="color:#D6CCC6;">Section-based classes appear after the school assigns your section. Contact the registrar or school administrator to update your student profile.</span></div>
 </x-alert-banner>
@@ -131,971 +130,12 @@
 <span hidden data-alert-resolved="missing-class-section"></span>
 @endif
 
-<style>
-/* ── CERTIFICATE OF REGISTRATION (COR) & SCHEDULE UNIFIED THEME ── */
-:root {
-    --cor-gold: #cfa46f;
-    --cor-gold-bright: #dfb784;
-    --cor-gold-amber: #ffd166;
-    --cor-gold-soft: rgba(207, 164, 111, 0.12);
-    --cor-maroon: #800000;
-    --cor-maroon-dark: #4a0000;
-    --cor-paper-bg: #140b08;
-    --cor-card-bg: rgba(26, 16, 12, 0.94);
-    --cor-border-gold: rgba(207, 164, 111, 0.42);
-    --cor-border-subtle: rgba(207, 164, 111, 0.22);
-    --cor-text-main: #f8e7d3;
-    --cor-text-muted: #b39b82;
-}
-
-.cor-page-wrapper {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding-bottom: 90px;
-}
-
-/* Page action header banner */
-.cor-actions-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 22px;
-}
-
-.cor-page-title-group h1 {
-    font-size: 1.65rem;
-    font-weight: 800;
-    color: var(--cor-text-main);
-    letter-spacing: -0.3px;
-    margin: 0 0 4px 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.cor-page-title-group p {
-    font-size: 0.88rem;
-    color: var(--cor-text-muted);
-    margin: 0;
-}
-
-/* ── THE OFFICIAL DOCUMENT SHEET (Inspired by Reference Slip) ── */
-.cor-sheet {
-    background: var(--cor-card-bg);
-    border: 2px solid var(--cor-border-gold);
-    border-radius: 18px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    position: relative;
-    padding: 32px;
-    overflow: hidden;
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-}
-
-.cor-content-relative {
-    position: relative;
-    z-index: 2;
-}
-
-/* ── INSTITUTIONAL HEADER ── */
-.cor-header-block {
-    text-align: center;
-    padding-bottom: 20px;
-    margin-bottom: 22px;
-    border-bottom: 2px solid var(--cor-border-gold);
-}
-
-.cor-seal-wrapper {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 10px;
-    border-radius: 50%;
-    padding: 3px;
-    background: linear-gradient(135deg, var(--cor-gold), #800000);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cor-seal-img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #fff;
-}
-
-.cor-college-name {
-    font-size: 1.5rem;
-    font-weight: 900;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #fcecd7;
-    margin: 0 0 2px;
-    font-family: serif, 'Times New Roman', Georgia;
-}
-
-.cor-college-city {
-    font-size: 0.92rem;
-    font-weight: 600;
-    color: var(--cor-gold);
-    letter-spacing: 1px;
-    margin: 0 0 8px;
-}
-
-.cor-doc-title {
-    font-size: 1.15rem;
-    font-weight: 800;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--cor-gold-amber);
-    margin: 0 0 4px;
-}
-
-.cor-doc-sem {
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: var(--cor-text-main);
-    margin: 0;
-}
-
-.cor-status-badge-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #34d399;
-    font-size: 0.74rem;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    padding: 3px 12px;
-    border-radius: 99px;
-    margin-top: 10px;
-}
-
-/* ── STUDENT INFORMATION DEMOGRAPHIC GRID (Matches Visual Reference Document) ── */
-.cor-student-info-grid {
-    width: 100%;
-    border: 1.5px solid var(--cor-border-gold);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 22px;
-    background: rgba(0, 0, 0, 0.28);
-}
-
-.cor-info-row {
-    display: grid;
-    border-bottom: 1.5px solid var(--cor-border-gold);
-}
-
-.cor-info-row:last-child {
-    border-bottom: none;
-}
-
-/* Exact layout matching reference image:
-   Row 1: Student Number (col 1-2) | Year Level (col 3-4)
-   Row 2: Course (col 1) | Course Value (cols 2-4 spanning right)
-   Row 3: Name (col 1) | Name Value (cols 2-4 spanning right with Section tag)
-*/
-.cor-info-row.four-col {
-    grid-template-columns: 180px 1fr 150px 1fr;
-}
-
-.cor-info-row.two-col {
-    grid-template-columns: 180px 1fr;
-}
-
-.cor-info-label {
-    padding: 11px 16px;
-    background: rgba(207, 164, 111, 0.08);
-    font-size: 0.75rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--cor-gold);
-    border-right: 1.5px solid var(--cor-border-gold);
-    display: flex;
-    align-items: center;
-}
-
-.cor-info-value {
-    padding: 11px 18px;
-    font-size: 0.94rem;
-    font-weight: 700;
-    color: var(--cor-text-main);
-    display: flex;
-    align-items: center;
-    border-right: 1.5px solid var(--cor-border-gold);
-    word-break: break-word;
-}
-
-.cor-info-row .cor-info-value:last-child {
-    border-right: none;
-}
-
-.cor-student-num-val {
-    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-    color: var(--cor-gold-amber);
-    font-size: 1.05rem;
-    letter-spacing: 0.5px;
-}
-
-/* ── CONTROLS & FILTER TOOLBAR (Screen Only) ── */
-.cor-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 18px;
-}
-
-.cor-search-box {
-    position: relative;
-    flex: 1;
-    min-width: 240px;
-    max-width: 380px;
-}
-
-.cor-search-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--cor-gold);
-    font-size: 0.9rem;
-    pointer-events: none;
-}
-
-.cor-search-input {
-    width: 100%;
-    padding: 9px 14px 9px 38px;
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid var(--cor-border-gold);
-    border-radius: 10px;
-    color: var(--cor-text-main);
-    font-size: 0.85rem;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.cor-search-input:focus {
-    border-color: var(--cor-gold-bright);
-    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.2);
-}
-
-.cor-day-pills-rail {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    padding: 2px;
-}
-
-.cor-day-pills-rail::-webkit-scrollbar {
-    display: none;
-}
-
-.cor-day-btn {
-    padding: 6px 14px;
-    border-radius: 99px;
-    font-size: 0.78rem;
-    font-weight: 700;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--cor-text-muted);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s ease;
-}
-
-.cor-day-btn:hover {
-    background: rgba(207, 164, 111, 0.12);
-    color: var(--cor-text-main);
-    border-color: var(--cor-border-gold);
-}
-
-.cor-day-btn.active {
-    background: linear-gradient(135deg, rgba(207, 164, 111, 0.32), rgba(184, 134, 56, 0.18));
-    border-color: var(--cor-gold);
-    color: var(--cor-gold-amber);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    /* ── UNIFIED ACADEMIC SCHEDULE TABLE (Exact Columns Matching Visual Reference) ── */
-    .cor-table-scroll-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    border: 1.5px solid var(--cor-border-gold);
-    border-radius: 10px;
-    background: rgba(0, 0, 0, 0.25);
-    margin-bottom: 22px;
-    -webkit-overflow-scrolling: touch;
-}
-
-.cor-table {
-    width: 100%;
-    min-width: 880px;
-    border-collapse: collapse;
-    font-size: 0.88rem;
-    color: var(--cor-text-main);
-}
-
-.cor-table thead th {
-    background: rgba(207, 164, 111, 0.12);
-    color: var(--cor-gold-bright);
-    font-size: 0.74rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    padding: 13px 14px;
-    border-bottom: 2px solid var(--cor-border-gold);
-    border-right: 1.5px solid var(--cor-border-gold);
-    white-space: nowrap;
-    text-align: left;
-}
-
-.cor-table thead th:last-child {
-    border-right: none;
-}
-
-.cor-table thead th.center,
-.cor-table tbody td.center {
-    text-align: center;
-}
-
-.cor-table tbody tr {
-    border-bottom: 1.5px solid var(--cor-border-gold);
-    transition: background-color 0.15s ease;
-}
-
-.cor-table tbody tr:hover {
-    background-color: rgba(207, 164, 111, 0.08);
-}
-
-.cor-table tbody tr.is-today {
-    background-color: rgba(207, 164, 111, 0.09);
-}
-
-.cor-table tbody td {
-    padding: 12px 14px;
-    border-right: 1.5px solid var(--cor-border-gold);
-    vertical-align: middle;
-}
-
-.cor-table tbody td:last-child {
-    border-right: none;
-}
-
-/* Specific Table Column Styling */
-.cor-section-val {
-    font-weight: 800;
-    font-size: 0.88rem;
-    color: var(--cor-gold-amber);
-    white-space: nowrap;
-}
-
-.cor-code-badge {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 800;
-    font-size: 0.82rem;
-    color: var(--cor-gold-amber);
-    background: rgba(207, 164, 111, 0.12);
-    border: 1px solid rgba(207, 164, 111, 0.28);
-    padding: 3px 8px;
-    border-radius: 6px;
-    display: inline-block;
-}
-
-.cor-subject-name {
-    font-weight: 600;
-    color: var(--cor-text-main);
-    font-size: 0.85rem;
-    margin-top: 3px;
-    line-height: 1.3;
-}
-
-.cor-units-cell {
-    font-weight: 800;
-    color: var(--cor-text-main);
-    font-size: 0.92rem;
-}
-
-.cor-time-text {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: #f1f1f1;
-    white-space: nowrap;
-    font-family: 'JetBrains Mono', monospace;
-}
-
-.cor-day-badge {
-    display: inline-block;
-    padding: 3px 9px;
-    border-radius: 6px;
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    background: rgba(255, 209, 102, 0.14);
-    border: 1px solid rgba(255, 209, 102, 0.32);
-    color: var(--cor-gold-amber);
-    white-space: nowrap;
-}
-
-.cor-room-badge {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: #38bdf8;
-    background: rgba(14, 165, 233, 0.12);
-    border: 1px solid rgba(14, 165, 233, 0.28);
-    padding: 3px 9px;
-    border-radius: 6px;
-    display: inline-block;
-    white-space: nowrap;
-}
-
-.cor-teacher-name {
-    font-size: 0.86rem;
-    font-weight: 600;
-    color: var(--cor-text-main);
-}
-
-.cor-today-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.68rem;
-    font-weight: 800;
-    color: #10b981;
-    background: rgba(16, 185, 129, 0.14);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-left: 6px;
-    text-transform: uppercase;
-}
-
-/* ── MOBILE RESPONSIVE CARDS VIEW (Clean Touch Layout Without Excessive Horizontal Scrolling) ── */
-    .cor-mobile-cards-view {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin-bottom: 22px;
-    }
-
-    .cor-card-item {
-        background: rgba(22, 13, 9, 0.88);
-        border: 1.5px solid var(--cor-border-gold);
-        border-radius: 12px;
-        padding: 12px 14px;
-        position: relative;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-    }
-
-    .cor-card-item.is-today {
-        border-color: rgba(207, 164, 111, 0.65);
-        background: linear-gradient(135deg, rgba(207, 164, 111, 0.12), rgba(22, 13, 9, 0.95));
-    }
-
-    .cor-card-top-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        margin-bottom: 8px;
-    }
-
-    .cor-card-section-tag {
-        font-size: 0.72rem;
-        font-weight: 800;
-        color: var(--cor-gold-bright);
-        background: rgba(207, 164, 111, 0.14);
-        border: 1px solid rgba(207, 164, 111, 0.3);
-        padding: 2px 8px;
-        border-radius: 6px;
-    }
-
-    .cor-card-units-tag {
-        font-size: 0.72rem;
-        font-weight: 800;
-        color: var(--cor-gold-amber);
-        background: rgba(255, 209, 102, 0.14);
-        border: 1px solid rgba(255, 209, 102, 0.3);
-        padding: 2px 8px;
-        border-radius: 6px;
-    }
-
-    .cor-card-subj-block {
-        margin-bottom: 10px;
-        padding-bottom: 8px;
-        border-bottom: 1px dashed var(--cor-border-subtle);
-    }
-
-    .cor-card-subj-title {
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: var(--cor-text-main);
-        margin: 4px 0 0;
-        line-height: 1.3;
-    }
-
-    /* 2x2 Mini Schedule Matrix Grid with Borders matching the document feel */
-    .cor-card-sched-matrix {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        border: 1px solid var(--cor-border-subtle);
-        border-radius: 10px;
-        overflow: hidden;
-        background: rgba(0, 0, 0, 0.25);
-    }
-
-    .cor-card-matrix-cell {
-        padding: 9px 12px;
-        border-right: 1px solid var(--cor-border-subtle);
-        border-bottom: 1px solid var(--cor-border-subtle);
-    }
-
-    .cor-card-matrix-cell:nth-child(2n) {
-        border-right: none;
-    }
-
-    .cor-card-matrix-cell:nth-child(n+3) {
-        border-bottom: none;
-    }
-
-    .cor-card-matrix-label {
-        font-size: 0.72rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: var(--cor-gold);
-        letter-spacing: 0.5px;
-        margin-bottom: 3px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .cor-card-matrix-value {
-        font-size: 0.86rem;
-        font-weight: 600;
-        color: var(--cor-text-main);
-        word-break: break-word;
-    }
-
-/* ── REGISTRATION CERTIFICATION & FOOTER SECTION ── */
-.cor-footer-section {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 24px;
-    margin-top: 22px;
-    padding-top: 18px;
-    border-top: 2px solid var(--cor-border-gold);
-}
-
-.cor-assessment-box {
-    border: 1.5px solid var(--cor-border-gold);
-    border-radius: 10px;
-    overflow: hidden;
-    background: rgba(0, 0, 0, 0.25);
-}
-
-.cor-assessment-row {
-    display: grid;
-    grid-template-columns: 170px 1fr;
-    border-bottom: 1px solid var(--cor-border-subtle);
-    font-size: 0.85rem;
-}
-
-.cor-assessment-row:last-child {
-    border-bottom: none;
-}
-
-.cor-assessment-label {
-    padding: 10px 14px;
-    background: rgba(207, 164, 111, 0.08);
-    color: var(--cor-gold);
-    font-weight: 700;
-    border-right: 1px solid var(--cor-border-subtle);
-}
-
-.cor-assessment-val {
-    padding: 10px 14px;
-    color: var(--cor-text-main);
-    font-weight: 600;
-}
-
-.cor-signature-box {
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 10px;
-}
-
-.cor-signature-line {
-    width: 220px;
-    height: 1px;
-    background: var(--cor-border-gold);
-    margin: 0 auto 8px;
-}
-
-.cor-registrar-name {
-    font-size: 0.98rem;
-    font-weight: 800;
-    color: var(--cor-text-main);
-    letter-spacing: 0.5px;
-    margin: 0 0 2px;
-}
-
-.cor-registrar-title {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--cor-gold);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 0 0 4px;
-}
-
-.cor-registrar-dept {
-    font-size: 0.72rem;
-    color: var(--cor-text-muted);
-    margin: 0;
-}
-
-/* ── EMPTY STATE ── */
-.cor-empty-state {
-    text-align: center;
-    padding: 48px 20px;
-    color: var(--cor-text-muted);
-}
-
-.cor-empty-icon {
-    font-size: 2.8rem;
-    color: var(--cor-gold);
-    opacity: 0.4;
-    margin-bottom: 12px;
-}
-
-/* ── RESPONSIVE ADAPTATIONS ── */
-@media (max-width: 991px) {
-    .cor-sheet {
-        padding: 22px 18px;
-    }
-    .cor-student-info-grid .cor-info-row.four-col {
-        grid-template-columns: 140px 1fr 130px 1fr;
-    }
-    .cor-student-info-grid .cor-info-row.two-col {
-        grid-template-columns: 140px 1fr;
-    }
-    .cor-footer-section {
-        grid-template-columns: 1fr;
-        gap: 20px;
-    }
-}
-
-@media (max-width: 767px) {
-        .cor-page-wrapper {
-            padding-bottom: 110px;
-        }
-        .cor-sheet {
-            padding: 20px 16px;
-            border-radius: 20px;
-        }
-        .cor-college-name {
-            font-size: 1.15rem;
-        }
-        .cor-doc-title {
-            font-size: 0.95rem;
-        }
-        .cor-doc-sem {
-            font-size: 0.8rem;
-        }
-        .cor-actions-bar {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
-        }
-        /* Demographic table stacks cleanly on mobile phones */
-        .cor-student-info-grid .cor-info-row.four-col,
-        .cor-student-info-grid .cor-info-row.two-col {
-            grid-template-columns: 1fr;
-        }
-        .cor-info-label {
-            border-right: none;
-            border-bottom: 1px solid var(--cor-border-gold);
-            padding: 9px 12px;
-            font-size: 0.74rem;
-        }
-        .cor-info-value {
-            border-right: none;
-            border-bottom: 1px solid var(--cor-border-subtle);
-            padding: 10px 12px;
-            font-size: 0.9rem;
-        }
-        .cor-info-row .cor-info-value:last-child {
-            border-bottom: none;
-        }
-
-        /* Mobile: Cards view always shown, table hidden */
-        .cor-table-scroll-wrapper {
-            display: none;
-        }
-        .cor-mobile-cards-view {
-            display: flex;
-        }
-
-        .cor-assessment-row {
-            grid-template-columns: 1fr;
-        }
-        .cor-assessment-label {
-            border-right: none;
-            border-bottom: 1px solid var(--cor-border-subtle);
-            padding: 9px 12px;
-            font-size: 0.82rem;
-        }
-        .cor-assessment-val {
-            padding: 9px 12px;
-            font-size: 0.86rem;
-        }
-
-        /* Search bar and toolbar improvements */
-        .cor-search-box {
-            min-width: 100%;
-            max-width: none;
-            width: 100%;
-        }
-
-        .cor-search-input {
-            min-height: 46px;
-            border-radius: 12px;
-            padding: 11px 14px 11px 38px;
-            font-size: 0.9rem;
-        }
-
-        .cor-day-pills-rail {
-            width: 100%;
-            overflow-x: auto;
-            flex-wrap: nowrap;
-            gap: 5px;
-            padding: 4px 0;
-        }
-
-        .cor-day-btn {
-            padding: 7px 12px;
-            font-size: 0.74rem;
-        }
-
-        .cor-toolbar {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-
-        /* Card optimizations for mobile */
-        .cor-card-item {
-            padding: 10px 12px;
-        }
-
-        .cor-card-subj-title {
-            font-size: 0.86rem;
-        }
-
-        .cor-card-matrix-cell {
-            padding: 6px 8px;
-        }
-
-        .cor-card-matrix-label {
-            font-size: 0.6rem;
-        }
-
-        .cor-card-matrix-value {
-            font-size: 0.74rem;
-        }
-    }
-
-    /* Extra small mobile devices (320px - 360px) */
-    @media (max-width: 380px) {
-        .cor-page-wrapper {
-            padding-bottom: 110px;
-        }
-        .cor-sheet {
-            padding: 12px 8px;
-        }
-        .cor-college-name {
-            font-size: 1rem;
-        }
-        .cor-doc-title {
-            font-size: 0.88rem;
-        }
-        .cor-info-label,
-        .cor-info-value {
-            padding: 6px 8px;
-            font-size: 0.62rem;
-        }
-        .cor-info-value {
-            font-size: 0.78rem;
-        }
-        .cor-card-item {
-            padding: 8px 10px;
-        }
-        .cor-card-subj-title {
-            font-size: 0.82rem;
-        }
-        .cor-card-matrix-cell {
-            padding: 5px 6px;
-        }
-        .cor-card-matrix-label {
-            font-size: 0.56rem;
-        }
-        .cor-card-matrix-value {
-            font-size: 0.7rem;
-        }
-        .cor-day-btn {
-            padding: 6px 10px;
-            font-size: 0.7rem;
-        }
-    }
-
-/* ── PRINT MEDIA STYLES (Clean Paper-Authentic COR) ── */
-@media print {
-    @page {
-        size: A4 landscape;
-        margin: 8mm 8mm;
-    }
-    body {
-        background: #ffffff !important;
-        color: #000000 !important;
-        font-family: 'Times New Roman', serif !important;
-    }
-    .sidebar,
-    .top-header,
-    .mobile-bottom-nav,
-    .cor-actions-bar,
-    .cor-toolbar,
-    .mobile-back-btn,
-    .no-print {
-        display: none !important;
-    }
-    .cor-page-wrapper {
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    .cor-sheet {
-        background: #ffffff !important;
-        color: #000000 !important;
-        border: 2px solid #000000 !important;
-        box-shadow: none !important;
-        padding: 12px !important;
-        border-radius: 0 !important;
-    }
-    .cor-header-block {
-        border-bottom: 2px solid #000000 !important;
-    }
-    .cor-college-name,
-    .cor-doc-title,
-    .cor-college-city,
-    .cor-doc-sem {
-        color: #000000 !important;
-    }
-    .cor-status-badge-chip {
-        border-color: #000000 !important;
-        color: #000000 !important;
-        background: transparent !important;
-    }
-    .cor-student-info-grid {
-        border-color: #000000 !important;
-        background: transparent !important;
-    }
-    .cor-info-row {
-        border-bottom-color: #000000 !important;
-    }
-    .cor-info-label,
-    .cor-info-value {
-        color: #000000 !important;
-        border-right-color: #000000 !important;
-        background: transparent !important;
-    }
-    .cor-table-scroll-wrapper {
-        display: block !important;
-        border-color: #000000 !important;
-        background: transparent !important;
-    }
-    .cor-mobile-cards-view {
-        display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-    }
-    .cor-mobile-cards-view [hidden] { display: none !important; }
-    .cor-card-item { break-inside: avoid; background: white !important; border: 1px solid black !important; box-shadow: none !important; }
-    .cor-card-item :is(.cor-card-subj-title, .cor-card-matrix-label, .cor-card-matrix-value, .cor-code-badge, .cor-day-badge, .cor-room-badge) { color: black !important; }
-    .cor-table {
-        min-width: 100% !important;
-        color: #000000 !important;
-    }
-    .cor-table thead th {
-        background: #f4f4f4 !important;
-        color: #000000 !important;
-        border-bottom-color: #000000 !important;
-        border-right-color: #000000 !important;
-    }
-    .cor-table tbody tr {
-        border-bottom-color: #000000 !important;
-    }
-    .cor-table tbody td {
-        color: #000000 !important;
-        border-right-color: #000000 !important;
-    }
-    .cor-code-badge,
-    .cor-day-badge,
-    .cor-room-badge {
-        background: transparent !important;
-        border: 1px solid #000000 !important;
-        color: #000000 !important;
-    }
-    .cor-today-indicator {
-        display: none !important;
-    }
-    .cor-footer-section {
-        border-top-color: #000000 !important;
-    }
-    .cor-assessment-box {
-        border-color: #000000 !important;
-    }
-    .cor-assessment-label,
-    .cor-assessment-val {
-        color: #000000 !important;
-        border-right-color: #000000 !important;
-    }
-    .cor-registrar-name,
-    .cor-registrar-title,
-    .cor-registrar-dept {
-        color: #000000 !important;
-    }
-    .cor-signature-line {
-        background: #000000 !important;
-    }
-}
-</style>
-
 <div class="container-fluid p-3 p-md-4 cor-page-wrapper">
 
     <!-- Screen Action Header -->
     <div class="cor-actions-bar no-print">
         <div class="cor-page-title-group">
-            <h1>
-                <i class="bi bi-calendar3 text-gold"></i>
-                Classes & Schedule
-            </h1>
+            <h1>Classes &amp; Schedule</h1>
             <p>Your enrolled subjects and weekly class timetable</p>
         </div>
         @if(!empty($hasActiveAssistantAssignment))
@@ -1128,13 +168,13 @@
                     </select>
                 </label>
                 <div class="sd-view-toggle d-none d-lg-inline-flex" role="group" aria-label="Classes layout mode">
-                    <button type="button" class="sd-view-toggle-btn is-active" id="corViewCardsBtn" data-cor-view="cards">
+                    <button type="button" class="sd-view-toggle-btn is-active" id="corViewCardsBtn" data-cor-view="cards" aria-pressed="true">
                         <i class="bi bi-grid-fill" aria-hidden="true"></i> Cards
                     </button>
-                    <button type="button" class="sd-view-toggle-btn" id="corViewTableBtn" data-cor-view="table">
+                    <button type="button" class="sd-view-toggle-btn" id="corViewTableBtn" data-cor-view="table" aria-pressed="false">
                         <i class="bi bi-table" aria-hidden="true"></i> COR Table
                     </button>
-                    <button type="button" class="sd-view-toggle-btn" id="corViewWeeklyBtn" data-cor-view="weekly">
+                    <button type="button" class="sd-view-toggle-btn" id="corViewWeeklyBtn" data-cor-view="weekly" aria-pressed="false">
                         <i class="bi bi-calendar-week" aria-hidden="true"></i> Weekly
                     </button>
                 </div>
@@ -1150,23 +190,20 @@
                         
                         <!-- Top Meta Bar -->
                         <div class="cor-card-top-bar">
-                            <div class="d-flex align-items-center gap-1">
-                                <span class="cor-card-section-tag">Sec {{ $sched->section }}</span>
-                                <span class="badge" style="background:rgba(255,255,255,0.06); color:var(--cor-text-muted); font-size:0.72rem;">#{{ $sched->class_number }}</span>
-                            </div>
-                            <span class="cor-card-units-tag">
-                                {{ $sched->units !== '—' ? $sched->units . ' Units' : 'Lab/Lec' }}
-                            </span>
-                        </div>
-
-                        <!-- Subject Title Block -->
-                        <div class="cor-card-subj-block">
-                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <span class="cor-code-badge">{{ $sched->code }}</span>
                                 @if($sched->is_today)
                                     <span class="cor-today-indicator"><i class="bi bi-dot"></i> Today</span>
                                 @endif
                             </div>
+                            <span class="cor-card-units-tag">
+                                <span class="cor-card-section-tag">Sec {{ $sched->section }}</span>
+                                · {{ $sched->units !== '—' ? $sched->units . ' Units' : 'Lab/Lec' }}
+                            </span>
+                        </div>
+
+                        <!-- Subject Title Block -->
+                        <div class="cor-card-subj-block">
                             <h4 class="cor-card-subj-title">
                                 {{ $sched->name }}
                             </h4>
@@ -1175,7 +212,7 @@
                         <!-- 2x2 Mini Schedule Matrix Grid with Borders -->
                         <div class="cor-card-sched-matrix">
                             <div class="cor-card-matrix-cell">
-                                <div class="cor-card-matrix-label"><i class="bi bi-clock"></i> Time</div>
+                                <div class="cor-card-matrix-label">Time</div>
                                 <div class="cor-card-matrix-value cor-time-text">
                                     @if($sched->start_time && $sched->end_time)
                                         {{ \Carbon\Carbon::parse($sched->start_time)->format('h:i A') }} – {{ \Carbon\Carbon::parse($sched->end_time)->format('h:i A') }}
@@ -1186,25 +223,25 @@
                             </div>
 
                             <div class="cor-card-matrix-cell">
-                                <div class="cor-card-matrix-label"><i class="bi bi-calendar-event"></i> Day</div>
+                                <div class="cor-card-matrix-label">Day</div>
                                 <div class="cor-card-matrix-value">
                                     <span class="cor-day-badge">{{ $sched->days }}</span>
                                 </div>
                             </div>
 
                             <div class="cor-card-matrix-cell">
-                                <div class="cor-card-matrix-label"><i class="bi bi-geo-alt"></i> Room</div>
+                                <div class="cor-card-matrix-label">Room</div>
                                 <div class="cor-card-matrix-value">
                                     @if($sched->room && $sched->room !== 'TBA')
                                         <span class="cor-room-badge">{{ $sched->room }}</span>
                                     @else
-                                        <span class="text-muted">TBA</span>
+                                        <span class="cor-tba-label">TBA</span>
                                     @endif
                                 </div>
                             </div>
 
                             <div class="cor-card-matrix-cell">
-                                <div class="cor-card-matrix-label"><i class="bi bi-person"></i> Teacher</div>
+                                <div class="cor-card-matrix-label">Teacher</div>
                                 <div class="cor-card-matrix-value" title="{{ $sched->teacher }}">
                                     {{ $sched->teacher }}
                                 </div>
@@ -1242,7 +279,7 @@
                                 <td>
                                     <div class="d-flex flex-column gap-1">
                                         <span class="cor-code-badge">{{ $sched->code }}</span>
-                                        <span style="font-size:0.72rem; color:#A49890;">Sec {{ $sched->section }} &bull; #{{ $sched->class_number }}</span>
+                                        <span style="font-size:0.72rem; color:#ACA099;">Sec {{ $sched->section }}</span>
                                     </div>
                                 </td>
                                 <td>
@@ -1264,10 +301,10 @@
                                     @if($sched->room && $sched->room !== 'TBA')
                                         <span class="cor-room-badge">{{ $sched->room }}</span>
                                     @else
-                                        <span class="text-muted">TBA</span>
+                                        <span class="cor-tba-label">TBA</span>
                                     @endif
                                 </td>
-                                <td style="color:#D6CCC6;">{{ $sched->teacher }}</td>
+                                <td style="color:#D8CEC8;">{{ $sched->teacher }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -1293,7 +330,7 @@
                             @if($wDay === $todayNameCor)
                                 <span class="cor-today-indicator"><i class="bi bi-dot"></i> Today</span>
                             @else
-                                <span style="font-size:0.74rem; color:#A49890; font-weight:600;">{{ $dayClasses->count() }} {{ Str::plural('class', $dayClasses->count()) }}</span>
+                                <span style="font-size:0.74rem; color:#ACA099; font-weight:600;">{{ $dayClasses->count() }} {{ Str::plural('class', $dayClasses->count()) }}</span>
                             @endif
                         </div>
                         @forelse($dayClasses as $dc)
@@ -1311,13 +348,13 @@
                                     @endif
                                 </div>
                                 <div style="font-weight: 700; color: #FAF8F5; font-size: 0.9rem; line-height: 1.3;">{{ $dc->name }}</div>
-                                <div class="d-flex align-items-center justify-content-between gap-2 mt-1" style="font-size: 0.76rem; color: #A49890;">
+                                <div class="d-flex align-items-center justify-content-between gap-2 mt-1" style="font-size: 0.76rem; color: #ACA099;">
                                     <span style="color: #D4AF37; font-weight: 700;">{{ $dc->code }}</span>
                                     <span class="text-truncate" title="{{ $dc->teacher }}">{{ $dc->teacher }}</span>
                                 </div>
                             </div>
                         @empty
-                            <div style="color:#A49890; font-size:0.82rem; padding:14px 4px; text-align:center;">No scheduled classes</div>
+                            <div style="color:#ACA099; font-size:0.82rem; padding:14px 4px; text-align:center;">No scheduled classes</div>
                         @endforelse
                     </div>
                 @endforeach
@@ -1348,9 +385,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (cardsWrap) cardsWrap.classList.toggle('d-none', resolved !== 'cards');
         if (tableWrap) tableWrap.classList.toggle('d-none', resolved !== 'table');
         if (weeklyWrap) weeklyWrap.classList.toggle('d-none', resolved !== 'weekly');
-        if (cardsBtn) cardsBtn.classList.toggle('is-active', resolved === 'cards');
-        if (tableBtn) tableBtn.classList.toggle('is-active', resolved === 'table');
-        if (weeklyBtn) weeklyBtn.classList.toggle('is-active', resolved === 'weekly');
+        if (cardsBtn) {
+            cardsBtn.classList.toggle('is-active', resolved === 'cards');
+            cardsBtn.setAttribute('aria-pressed', resolved === 'cards' ? 'true' : 'false');
+        }
+        if (tableBtn) {
+            tableBtn.classList.toggle('is-active', resolved === 'table');
+            tableBtn.setAttribute('aria-pressed', resolved === 'table' ? 'true' : 'false');
+        }
+        if (weeklyBtn) {
+            weeklyBtn.classList.toggle('is-active', resolved === 'weekly');
+            weeklyBtn.setAttribute('aria-pressed', resolved === 'weekly' ? 'true' : 'false');
+        }
         try { if (isDesktop) localStorage.setItem('sdClassesView', resolved); } catch (e) {}
     }
 

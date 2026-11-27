@@ -1,0 +1,699 @@
+/* ── COMMAND PALETTE — SMOKED CHARCOAL & WARM GOLD THEME ── */
+#cmdPaletteOverlay.cmd-palette-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(14, 10, 10, 0.84);
+    align-items: flex-start;
+    justify-content: center;
+    padding: clamp(16px, 6vh, 56px) 16px clamp(16px, 4vh, 24px);
+    padding: clamp(16px, 6dvh, 56px) 16px clamp(16px, 4dvh, 24px);
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    overscroll-behavior: none;
+}
+
+#cmdPaletteOverlay .cmd-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+#cmdPaletteOverlay.cmd-palette-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+#cmdPaletteOverlay .cmd-palette {
+    width: min(640px, 100%);
+    max-width: 100%;
+    height: min(580px, calc(100vh - clamp(48px, 12vh, 104px)));
+    height: min(580px, calc(100dvh - clamp(48px, 12dvh, 104px)));
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    min-height: 0;
+    background: #1E1515;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.72);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(10px);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#cmdPaletteOverlay.cmd-palette-overlay.active .cmd-palette {
+    transform: translateY(0);
+}
+
+#cmdPaletteOverlay .cmd-palette-grabber {
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.24);
+    border-radius: 99px;
+    margin: 10px auto 2px;
+    flex-shrink: 0;
+}
+
+#cmdPaletteOverlay .cmd-palette-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: #181010;
+    flex-shrink: 0;
+}
+
+#cmdPaletteOverlay .cmd-palette-search-box {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #141010;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 7px 12px;
+    transition: border-color 0.16s ease;
+}
+
+#cmdPaletteOverlay .cmd-palette-search-box:focus-within {
+    border-color: #D4AF37;
+    background: #141010;
+    box-shadow: none;
+}
+
+#cmdPaletteOverlay .cmd-palette-search-icon {
+    font-size: 1rem;
+    color: #D4AF37;
+    flex-shrink: 0;
+}
+
+#cmdPaletteOverlay .cmd-palette-input,
+#cmdPaletteOverlay .cmd-palette-input:focus,
+#cmdPaletteOverlay .cmd-palette-input:focus-visible {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    min-height: 28px !important;
+    height: auto !important;
+    padding: 2px 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: #FAF8F5;
+    font-size: 0.94rem;
+    font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+#cmdPaletteOverlay .cmd-palette-input::placeholder {
+    color: #ACA099;
+}
+
+#cmdPaletteOverlay .cmd-palette-clear-btn {
+    background: transparent;
+    border: none;
+    color: #ACA099;
+    cursor: pointer;
+    font-size: 0.95rem;
+    width: 40px;
+    height: 40px;
+    min-height: 40px !important;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    flex-shrink: 0;
+    transition: color 0.15s ease;
+}
+
+@media (pointer: coarse) {
+    #cmdPaletteOverlay .cmd-palette-clear-btn,
+    #cmdPaletteOverlay .cmd-palette-close-btn {
+        width: 44px;
+        height: 44px;
+        min-height: 44px !important;
+    }
+}
+
+#cmdPaletteOverlay .cmd-palette-clear-btn:hover {
+    color: #FAF8F5;
+}
+
+#cmdPaletteOverlay .cmd-palette-kbd {
+    background: #1E1515;
+    color: #D8CEC8;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 4px 9px;
+    font-size: 0.7rem;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+}
+
+#cmdPaletteOverlay .cmd-palette-close-btn {
+    width: 40px;
+    height: 40px;
+    min-height: 40px !important;
+    padding: 0;
+    border-radius: 10px;
+    background: #261B1B;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #D8CEC8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.88rem;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+}
+
+#cmdPaletteOverlay .cmd-palette-close-btn:hover {
+    background: rgba(248, 113, 113, 0.14);
+    border-color: rgba(248, 113, 113, 0.35);
+    color: #F87171;
+}
+
+#cmdPaletteOverlay :is(.cmd-palette-close-btn, .cmd-palette-clear-btn, .cmd-cat-pill, .cmd-quick-chip, .cmd-palette-item):focus-visible {
+    outline: 2px solid #FAF8F5 !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
+}
+
+#cmdPaletteOverlay .cmd-palette-categories {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 10px 18px;
+    min-height: 54px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scroll-padding-inline: 18px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    background: #1A1212;
+    flex: 0 0 auto;
+}
+
+#cmdPaletteOverlay .cmd-palette-categories::-webkit-scrollbar {
+    display: none;
+}
+
+#cmdPaletteOverlay .cmd-cat-pill {
+    padding: 6px 12px !important;
+    min-height: 36px !important;
+    height: auto !important;
+    border-radius: 8px !important;
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.25;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #261B1B;
+    color: #D8CEC8;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+#cmdPaletteOverlay .cmd-cat-pill:hover {
+    background: #2F2222;
+    border-color: rgba(212, 175, 55, 0.4);
+    color: #FAF8F5;
+}
+
+#cmdPaletteOverlay .cmd-cat-pill.active {
+    background: #FAF8F5;
+    border-color: #FAF8F5;
+    color: #7A1A1A;
+    box-shadow: none;
+}
+
+.cmd-quick-chips-wrap {
+    padding: 4px 2px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    margin-bottom: 12px;
+}
+
+.cmd-quick-chips-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #D4AF37;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cmd-quick-chips-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cmd-quick-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 7px 12px;
+    border-radius: 9px;
+    background: #261B1B;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #FAF8F5;
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.cmd-quick-chip:hover {
+    background: #2F2222;
+    border-color: #D4AF37;
+    color: #FAF8F5;
+}
+
+#cmdPaletteOverlay .cmd-palette-body {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 18px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 175, 55, 0.25) transparent;
+}
+
+.cmd-palette-body::-webkit-scrollbar { width: 6px; }
+.cmd-palette-body::-webkit-scrollbar-track { background: transparent; }
+.cmd-palette-body::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.22); border-radius: 4px; }
+.cmd-palette-body::-webkit-scrollbar-thumb:hover { background: rgba(212, 175, 55, 0.36); }
+
+.cmd-palette-group { margin-bottom: 12px; }
+
+.cmd-palette-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    padding: 0 4px;
+}
+
+.cmd-palette-group-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #ACA099;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cmd-palette-count-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #D4AF37;
+    background: rgba(212, 175, 55, 0.12);
+    padding: 2px 6px;
+    border-radius: 5px;
+}
+
+.cmd-palette-clear-recent {
+    background: transparent;
+    border: none;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #ACA099;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.cmd-palette-clear-recent:hover {
+    color: #F87171;
+}
+
+.cmd-palette-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cmd-palette-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: #FAF8F5;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    position: relative;
+    border: 1px solid transparent;
+    user-select: none;
+    background: transparent;
+}
+
+#cmdPaletteOverlay .cmd-palette-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.cmd-palette-item.active {
+    background: rgba(122, 26, 26, 0.24);
+    border-color: rgba(212, 175, 55, 0.42);
+    box-shadow: none;
+}
+
+.cmd-palette-item-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+    border: none;
+    background: transparent;
+    color: #D4AF37;
+}
+
+.cmd-palette-item-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.cmd-palette-item-label-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    margin-bottom: 2px;
+}
+
+.cmd-palette-item-label {
+    font-weight: 700;
+    font-size: 0.91rem;
+    color: #FAF8F5;
+    line-height: 1.35;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+}
+
+.cmd-palette-item-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: #261B1B;
+    color: #D4AF37;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.cmd-palette-item-hint {
+    font-size: 0.78rem;
+    color: #ACA099;
+    line-height: 1.42;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+}
+
+.cmd-palette-item:hover .cmd-palette-item-hint,
+.cmd-palette-item.active .cmd-palette-item-hint {
+    color: #D8CEC8;
+}
+
+.cmd-palette-item-arrow {
+    color: #ACA099;
+    font-size: 1.05rem;
+    opacity: 0;
+    align-self: center;
+    transition: opacity 0.15s ease, color 0.15s ease;
+    flex-shrink: 0;
+}
+
+.cmd-palette-item:hover .cmd-palette-item-arrow,
+.cmd-palette-item.active .cmd-palette-item-arrow {
+    opacity: 1;
+    color: #D4AF37;
+}
+
+#cmdPaletteOverlay .cmd-palette-empty {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+    text-align: center;
+    padding: 32px 20px;
+    color: #ACA099;
+}
+
+.cmd-empty-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #D4AF37;
+    font-size: 1.5rem;
+    margin: 0 auto 10px;
+}
+
+.cmd-empty-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #FAF8F5;
+    margin-bottom: 4px;
+}
+
+.cmd-empty-desc {
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #ACA099;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.cmd-empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.cmd-empty-reset-btn {
+    min-height: 40px;
+    padding: 8px 14px;
+    border-radius: 9px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: #261B1B;
+    color: #FAF8F5;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.cmd-empty-reset-btn:hover {
+    background: #2F2222;
+    border-color: #D4AF37;
+}
+
+#cmdPaletteOverlay .cmd-palette-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: #181010;
+    font-size: 0.72rem;
+    color: #ACA099;
+    flex-shrink: 0;
+}
+
+#cmdPaletteOverlay .cmd-palette-footer-hints {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+#cmdPaletteOverlay .cmd-palette-footer kbd {
+    background: #261B1B;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    padding: 2px 6px;
+    font-size: 0.65rem;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: #FAF8F5;
+    margin-right: 4px;
+}
+
+#cmdPaletteOverlay .cmd-palette-footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ACA099;
+    font-weight: 600;
+}
+
+body.cmd-palette-open .mobile-bottom-nav {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+@media (max-height: 520px) {
+    #cmdPaletteOverlay .cmd-palette-footer {
+        display: none !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    #cmdPaletteOverlay.cmd-palette-overlay {
+        top: var(--cmd-vv-top, 0px);
+        left: 0;
+        right: 0;
+        bottom: auto;
+        height: 100vh;
+        height: var(--cmd-vv-height, 100dvh);
+        padding: max(12px, env(safe-area-inset-top, 0px)) 0 0;
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+    #cmdPaletteOverlay .cmd-palette {
+        width: 100%;
+        max-width: 100%;
+        height: min(680px, calc(var(--cmd-vv-height, 100dvh) - max(14px, env(safe-area-inset-top, 0px))));
+        max-height: calc(var(--cmd-vv-height, 100dvh) - max(8px, env(safe-area-inset-top, 0px)));
+        min-height: 0;
+        border-radius: 16px 16px 0 0;
+        border-bottom: none;
+        border-left: none;
+        border-right: none;
+        box-shadow: 0 -14px 40px rgba(0, 0, 0, 0.72);
+        padding-bottom: var(--cmd-bottom-inset, max(12px, env(safe-area-inset-bottom, 12px)));
+        transform: translateY(100%);
+    }
+
+    #cmdPaletteOverlay.cmd-palette-overlay.active .cmd-palette {
+        transform: translateY(0);
+    }
+
+    #cmdPaletteOverlay .cmd-palette-header {
+        padding: 12px 16px;
+        gap: 8px;
+    }
+
+    #cmdPaletteOverlay .cmd-palette-search-box {
+        min-height: 44px;
+        padding: 6px 12px;
+    }
+
+    #cmdPaletteOverlay .cmd-palette-input,
+    #cmdPaletteOverlay .cmd-palette-input:focus {
+        font-size: 16px !important;
+    }
+
+    #cmdPaletteOverlay .cmd-palette-close-btn {
+        width: 44px;
+        height: 44px;
+        min-height: 44px !important;
+    }
+
+    #cmdPaletteOverlay .cmd-palette-categories {
+        padding: 10px 16px;
+        min-height: 58px;
+        gap: 8px;
+        scroll-padding-inline: 16px;
+    }
+
+    #cmdPaletteOverlay .cmd-cat-pill {
+        min-height: 40px !important;
+        padding: 8px 14px !important;
+    }
+
+    #cmdPaletteOverlay .cmd-palette-body {
+        padding: 12px 14px;
+        scrollbar-gutter: auto;
+    }
+
+    #cmdPaletteOverlay .cmd-quick-chips-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    #cmdPaletteOverlay .cmd-quick-chip {
+        min-width: 0;
+        min-height: 44px;
+        justify-content: flex-start;
+        white-space: normal;
+        line-height: 1.25;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    #cmdPaletteOverlay .cmd-palette-item {
+        padding: 11px 12px;
+        gap: 10px;
+    }
+
+    #cmdPaletteOverlay .cmd-palette-item-arrow,
+    #cmdPaletteOverlay .cmd-palette-footer {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #cmdPaletteOverlay,
+    #cmdPaletteOverlay * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

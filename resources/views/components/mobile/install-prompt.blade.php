@@ -29,15 +29,13 @@
         right: 12px;
         max-width: 440px;
         margin-inline: auto;
-        background: rgba(24, 15, 13, 0.94);
-        border: 1px solid rgba(207, 164, 111, 0.3);
-        border-radius: 18px;
+        background: #1E1515;
+        border: 1px solid rgba(212, 175, 55, 0.28);
+        border-radius: 14px;
         padding: 12px 14px;
         z-index: 998;
         box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-        animation: slideUpPrompt 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        animation: slideUpPrompt 0.2s cubic-bezier(0.23, 1, 0.32, 1);
     }
 
     @keyframes slideUpPrompt {
@@ -58,17 +56,17 @@
     }
 
     .install-prompt-badge {
-        width: 40px;
-        height: 40px;
-        min-width: 40px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, rgba(212, 175, 55, 0.24), rgba(122, 26, 26, 0.35));
-        border: 1px solid rgba(212, 175, 55, 0.35);
-        color: var(--gold-primary, #D4AF37);
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        border-radius: 10px;
+        background: #261B1B;
+        border: 1px solid rgba(212, 175, 55, 0.28);
+        color: #D4AF37;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
 
     .install-prompt-copy {
@@ -100,32 +98,32 @@
     }
 
     .install-prompt-btn {
-        min-height: 36px;
-        padding: 0 13px;
-        background: linear-gradient(135deg, var(--gold-primary, #D4AF37), var(--gold-dark, #A68822));
-        color: #140907;
-        border: none;
+        min-height: 44px;
+        padding: 0 14px;
+        background: #FAF8F5;
+        color: #7A1A1A;
+        border: 1px solid #FAF8F5;
         border-radius: 10px;
-        font-size: 0.78rem;
-        font-weight: 700;
+        font-size: 0.8rem;
+        font-weight: 750;
         cursor: pointer;
     }
 
     .install-prompt-btn:active {
-        transform: scale(0.95);
+        transform: scale(0.97);
     }
 
     .install-prompt-close {
-        width: 36px;
-        height: 36px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(255, 255, 255, 0.05);
-        color: var(--text-secondary, #D1C5B4);
-        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: #261B1B;
+        color: #D8CEC8;
+        border-radius: 10px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         cursor: pointer;
     }
 
@@ -186,11 +184,12 @@
 
     window.addEventListener('load', function() {
         const isStandalone = isInstalledOrNativeApp();
+        const suppressedRoute = /^\/(settings|mobile\/scan|scan|peer-snap)/i.test(window.location.pathname);
 
         const dismissed = localStorage.getItem('installPromptDismissed');
         const dismissTime = localStorage.getItem('installPromptDismissTime');
 
-        if (!isStandalone && (!dismissed || (Date.now() - dismissTime) > 7 * 24 * 60 * 60 * 1000)) {
+        if (!isStandalone && !suppressedRoute && (!dismissed || (Date.now() - dismissTime) > 7 * 24 * 60 * 60 * 1000)) {
             setTimeout(() => {
                 if (isInstalledOrNativeApp()) return;
                 const promptEl = document.getElementById('installPrompt');

@@ -4,38 +4,31 @@
 
 @section('content')
 <div class="d-flex align-items-center justify-content-center" style="min-height: 65vh; padding: 20px;">
-    <div style="max-width: 480px; width: 100%; text-align: center; background: linear-gradient(145deg, rgba(32,20,15,0.85) 0%, rgba(20,10,5,0.95) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 20px; padding: 40px 30px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); backdrop-filter: blur(12px);">
-        <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(207,164,111,0.15); border: 1px solid rgba(207,164,111,0.3); color: #cfa46f; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 20px;">
-            <i class="bi bi-compass"></i>
+    <div style="max-width: 480px; width: 100%; text-align: center; background: #1E1515; border: 1px solid rgba(255,255,255,0.14); border-top: 2px solid #7A1A1A; border-radius: 16px; padding: 36px 28px;">
+        <div style="width: 56px; height: 56px; border-radius: 12px; background: #261B1B; border: 1px solid rgba(212,175,55,0.3); color: #D4AF37; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 18px;">
+            <i class="bi bi-compass" aria-hidden="true"></i>
         </div>
         
-        <h2 style="color: #f3e7cd; font-weight: 800; font-size: 1.6rem; margin-bottom: 10px;">Page Not Found</h2>
-        <p style="color: #b39b82; font-size: 0.92rem; line-height: 1.5; margin-bottom: 25px;">
+        <h2 style="color: #FAF8F5; font-weight: 800; font-size: 1.45rem; letter-spacing: -0.02em; margin-bottom: 10px;">Page Not Found</h2>
+        <p style="color: #ACA099; font-size: 0.9rem; line-height: 1.55; margin-bottom: 24px;">
             The page or record you are looking for does not exist, has been removed, or the link may be broken.
         </p>
 
         <div class="d-flex flex-column gap-2">
             @auth
-                @if(Auth::user()->isAdmin())
-                    <a href="{{ route('admin.dashboard') }}" class="btn" style="background: linear-gradient(135deg, #cfa46f 0%, #8f6e4a 100%); color: #ffffff; font-weight: 700; padding: 12px 24px; border-radius: 12px; border: none; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="bi bi-grid-fill"></i> Back to Dashboard
-                    </a>
-                @elseif(Auth::user()->isTeacher())
-                    <a href="{{ route('teacher.dashboard') }}" class="btn" style="background: linear-gradient(135deg, #cfa46f 0%, #8f6e4a 100%); color: #ffffff; font-weight: 700; padding: 12px 24px; border-radius: 12px; border: none; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="bi bi-grid-fill"></i> Back to Dashboard
-                    </a>
-                @elseif(Auth::user()->isParent())
-                    <a href="{{ route('parent.dashboard') }}" class="btn" style="background: linear-gradient(135deg, #cfa46f 0%, #8f6e4a 100%); color: #ffffff; font-weight: 700; padding: 12px 24px; border-radius: 12px; border: none; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="bi bi-grid-fill"></i> Back to Dashboard
-                    </a>
-                @else
-                    <a href="{{ route('home') }}" class="btn" style="background: linear-gradient(135deg, #cfa46f 0%, #8f6e4a 100%); color: #ffffff; font-weight: 700; padding: 12px 24px; border-radius: 12px; border: none; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="bi bi-house-door-fill"></i> Back to Home
-                    </a>
-                @endif
+                @php
+                    $fallbackHref = Auth::user()->isAdmin() ? route('admin.dashboard')
+                        : (Auth::user()->isTeacher() ? route('teacher.dashboard')
+                        : (Auth::user()->isParent() ? route('parent.dashboard') : route('home')));
+                    $fallbackLabel = Auth::user()->isStudent() ? 'Back to Home' : 'Back to Dashboard';
+                    $fallbackIcon = Auth::user()->isStudent() ? 'bi-house-door-fill' : 'bi-grid-fill';
+                @endphp
+                <a href="{{ $fallbackHref }}" class="btn" style="background: #FAF8F5; color: #7A1A1A; font-weight: 750; min-height: 44px; padding: 11px 22px; border-radius: 10px; border: 1px solid #FAF8F5; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="bi {{ $fallbackIcon }}" aria-hidden="true"></i> {{ $fallbackLabel }}
+                </a>
             @else
-                <a href="{{ route('login') }}" class="btn" style="background: linear-gradient(135deg, #cfa46f 0%, #8f6e4a 100%); color: #ffffff; font-weight: 700; padding: 12px 24px; border-radius: 12px; border: none; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="bi bi-box-arrow-in-right"></i> Sign In
+                <a href="{{ route('login') }}" class="btn" style="background: #FAF8F5; color: #7A1A1A; font-weight: 750; min-height: 44px; padding: 11px 22px; border-radius: 10px; border: 1px solid #FAF8F5; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i> Sign In
                 </a>
             @endauth
         </div>

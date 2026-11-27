@@ -9,7 +9,6 @@
     @if($faceEnrollmentAvailable) data-guidance-url="{{ Vite::asset('resources/js/attendance-face-guidance.js') }}" @endif
     aria-label="Camera registration">
     @if($faceEnrollmentAvailable)
-        <div class="bio-flow-kicker"><i class="bi bi-camera-video" aria-hidden="true"></i> Camera-based attendance profile</div>
         <div class="bio-flow-title-row">
             <span class="bio-flow-symbol" aria-hidden="true"><i class="bi bi-person-bounding-box"></i></span>
             <div>

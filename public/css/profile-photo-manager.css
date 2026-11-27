@@ -1,0 +1,468 @@
+/* ── PROFILE PHOTO MANAGER COMPONENT STYLES ── */
+.ppm-container {
+    position: relative;
+    display: inline-flex;
+}
+
+.ppm-avatar-dropzone {
+    cursor: pointer;
+    user-select: none;
+    display: inline-block;
+    position: relative;
+    margin-bottom: 0 !important;
+    line-height: 0;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+
+.ppm-avatar-ring {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    border: 3px solid rgba(207, 164, 111, 0.45);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    background: #150d0a;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.ppm-avatar-dropzone:hover .ppm-avatar-ring,
+.ppm-avatar-dropzone.ppm-dragover .ppm-avatar-ring {
+    transform: scale(1.02);
+    border-color: #cfa46f;
+    box-shadow: 0 10px 28px rgba(207, 164, 111, 0.35);
+}
+
+.ppm-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+/* Hover overlay on desktop */
+.ppm-avatar-hover-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(18, 10, 8, 0.65);
+    backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #f3e7cd;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.ppm-hover-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+.ppm-avatar-dropzone:hover .ppm-avatar-hover-overlay,
+.ppm-avatar-dropzone.ppm-dragover .ppm-avatar-hover-overlay {
+    opacity: 1;
+}
+
+/* Status Overlay (Loading, Success, Error) */
+.ppm-status-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(18, 10, 8, 0.82);
+    backdrop-filter: blur(3px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #f3e7cd;
+    border-radius: 50%;
+    z-index: 5;
+    transition: opacity 0.2s ease;
+    animation: ppmFadeIn 0.2s ease;
+}
+
+@keyframes ppmFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.ppm-status-text {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #f3e7cd;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+}
+
+.ppm-status-spinner {
+    width: 1.6rem;
+    height: 1.6rem;
+    border-width: 2.5px;
+}
+
+/* Quick Camera Action Badge (The designated camera icon button) */
+.ppm-badge-btn {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #dfb582 0%, #cfa46f 50%, #a87d46 100%);
+    color: #120a0a;
+    border: 2.5px solid #1a1010;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    transition: transform 0.2s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.2s ease, filter 0.2s ease;
+    z-index: 10;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    pointer-events: auto !important;
+}
+
+.ppm-badge-btn::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: transparent;
+    z-index: 1;
+}
+
+.ppm-badge-btn:hover {
+    transform: scale(1.15);
+    filter: brightness(1.1);
+    box-shadow: 0 6px 18px rgba(207, 164, 111, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.7);
+}
+
+.ppm-badge-btn:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+.ppm-badge-btn:focus-visible {
+    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.65);
+}
+
+/* Action Buttons below avatar */
+.ppm-action-buttons {
+    margin-bottom: 0;
+}
+
+.ppm-btn-remove {
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.28);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 99px;
+    transition: all 0.2s ease;
+    line-height: 1.2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.ppm-btn-remove:hover {
+    background: rgba(239, 68, 68, 0.22);
+    color: #ffffff;
+    border-color: #ef4444;
+    transform: translateY(-1px);
+}
+
+/* Modal Styling - Standalone centering & dark theme */
+.ppm-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 105000;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.ppm-modal.show {
+    display: flex !important;
+}
+
+.ppm-modal .modal-dialog {
+    margin: auto;
+    max-width: 440px;
+    width: 100%;
+    position: relative;
+    pointer-events: auto;
+}
+
+.ppm-modal .modal-content.ppm-modal-card {
+    background: #1a1010;
+    border: 1.5px solid rgba(207, 164, 111, 0.35);
+    border-radius: 20px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.85);
+    color: #f3e7cd;
+}
+
+/* Interactive Profile Photo Crop & Positioning */
+.ppm-crop-container {
+    width: 220px;
+    height: 220px;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+.ppm-crop-viewport {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+    border: 3.5px solid #cfa46f;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65), 0 0 24px rgba(207, 164, 111, 0.25);
+    background: #0f0a0a;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
+}
+
+.ppm-crop-viewport:focus-visible {
+    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.6), 0 10px 32px rgba(0, 0, 0, 0.65);
+}
+
+.ppm-crop-viewport:active,
+.ppm-crop-viewport.is-dragging {
+    cursor: grabbing;
+}
+
+.ppm-crop-img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    display: block;
+    max-width: none !important;
+    max-height: none !important;
+    will-change: transform, width, height;
+}
+
+.ppm-crop-overlay-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    pointer-events: none;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.45);
+}
+
+.ppm-crop-guideline {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.22;
+    transition: opacity 0.2s ease;
+}
+
+.ppm-crop-viewport:hover .ppm-crop-guideline,
+.ppm-crop-viewport.is-dragging .ppm-crop-guideline,
+.ppm-crop-viewport:focus .ppm-crop-guideline {
+    opacity: 0.45;
+}
+
+.ppm-crop-guide-h {
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.4);
+    border-top: 1px dashed rgba(207, 164, 111, 0.65);
+}
+
+.ppm-crop-guide-v {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.4);
+    border-left: 1px dashed rgba(207, 164, 111, 0.65);
+}
+
+.ppm-crop-hint {
+    font-size: 0.76rem;
+    color: #a89a8c;
+    letter-spacing: 0.2px;
+}
+
+.ppm-zoom-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(207, 164, 111, 0.3);
+    color: #f3e7cd;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+    line-height: 1;
+}
+
+@media (pointer: coarse) {
+    .ppm-zoom-btn {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+.ppm-zoom-btn:hover {
+    background: rgba(207, 164, 111, 0.2);
+    border-color: #cfa46f;
+    color: #ffffff;
+    transform: scale(1.05);
+}
+
+.ppm-zoom-btn:active {
+    transform: scale(0.95);
+}
+
+.ppm-zoom-range {
+    accent-color: #cfa46f;
+    cursor: pointer;
+    height: 6px;
+}
+
+.ppm-zoom-range::-webkit-slider-runnable-track {
+    background: rgba(255, 255, 255, 0.15);
+    height: 6px;
+    border-radius: 3px;
+}
+
+.ppm-zoom-range::-webkit-slider-thumb {
+    background: #cfa46f;
+    border: 2px solid #1a1010;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+.ppm-btn-confirm-save {
+    background: linear-gradient(135deg, #dfb582 0%, #cfa46f 50%, #a87d46 100%);
+    color: #120a0a;
+    font-weight: 700;
+    font-size: 0.88rem;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 18px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 16px rgba(207, 164, 111, 0.35);
+}
+
+.ppm-btn-confirm-save:hover {
+    background: linear-gradient(135deg, #ebd0a8 0%, #dfb582 50%, #b88d56 100%);
+    color: #000;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(207, 164, 111, 0.45);
+}
+
+.ppm-btn-confirm-save:disabled {
+    opacity: 0.65;
+    pointer-events: none;
+}
+
+.ppm-btn-secondary {
+    background: rgba(255, 255, 255, 0.06);
+    color: #b39b82;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-weight: 600;
+    font-size: 0.88rem;
+    border-radius: 10px;
+    padding: 9px 18px;
+    transition: all 0.2s ease;
+}
+
+.ppm-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f3e7cd;
+}
+
+.ppm-delete-icon-circle {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Toast */
+.ppm-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: rgba(26, 16, 16, 0.96);
+    border: 1px solid rgba(207, 164, 111, 0.35);
+    backdrop-filter: blur(8px);
+    color: #f3e7cd;
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    font-size: 0.88rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    z-index: 106000;
+    animation: ppmToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ppmToastIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 576px) {
+    .ppm-toast {
+        bottom: 16px;
+        left: 16px;
+        right: 16px;
+        justify-content: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ppm-container *,
+    .ppm-modal * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

@@ -1,763 +1,17 @@
 @extends('layouts.app')
 
 @section('page-title', 'Notifications')
-@section('page-sub', 'Class alerts, attendance warnings and announcements')
 
 @section('content')
-<style>
-    /* ══════════════════════════════════════════════════════════════
-       LUXURY NOTIFICATION CENTER — DARK & GOLD HIGH-FIDELITY
-       ══════════════════════════════════════════════════════════════ */
-    :root {
-        --notif-bg-card: rgba(22, 14, 12, 0.72);
-        --notif-bg-card-unread: rgba(36, 22, 18, 0.88);
-        --notif-border: rgba(255, 209, 102, 0.12);
-        --notif-border-hover: rgba(255, 209, 102, 0.32);
-        --notif-gold: #ffd166;
-        --notif-gold-soft: #cfa46f;
-        --notif-glow: rgba(255, 209, 102, 0.18);
-    }
-
-    .notif-wrapper {
-        max-width: 1080px;
-        margin: 0 auto;
-        padding: 12px 16px 60px;
-    }
-
-    /* ── Hero Header ── */
-    .notif-hero {
-        position: relative;
-        background: linear-gradient(135deg, rgba(32, 18, 14, 0.85) 0%, rgba(18, 11, 9, 0.95) 100%);
-        border: 1px solid var(--notif-border);
-        border-radius: 24px;
-        padding: 26px 30px;
-        margin-bottom: 22px;
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-        overflow: hidden;
-    }
-    .notif-hero::before {
-        content: '';
-        position: absolute;
-        top: -60px;
-        right: -60px;
-        width: 220px;
-        height: 220px;
-        background: radial-gradient(circle, rgba(255, 209, 102, 0.12) 0%, transparent 70%);
-        border-radius: 50%;
-        pointer-events: none;
-    }
-    .notif-hero-content {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        flex-wrap: wrap;
-        position: relative;
-        z-index: 2;
-    }
-    .notif-hero-left {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-    }
-    .notif-hero-icon {
-        width: 54px;
-        height: 54px;
-        border-radius: 16px;
-        background: linear-gradient(135deg, rgba(255, 209, 102, 0.22) 0%, rgba(207, 164, 111, 0.08) 100%);
-        border: 1px solid rgba(255, 209, 102, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--notif-gold);
-        font-size: 1.6rem;
-        box-shadow: 0 8px 24px rgba(255, 209, 102, 0.15);
-        flex-shrink: 0;
-    }
-    .notif-hero-text h1 {
-        font-size: 1.45rem;
-        font-weight: 800;
-        color: #fff6e5;
-        margin: 0 0 4px;
-        letter-spacing: -0.3px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .notif-hero-text p {
-        font-size: 0.85rem;
-        color: rgba(243, 231, 205, 0.7);
-        margin: 0;
-    }
-    .notif-hero-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .notif-btn-mark-all {
-        background: linear-gradient(135deg, rgba(255, 209, 102, 0.2) 0%, rgba(207, 164, 111, 0.1) 100%);
-        border: 1px solid rgba(255, 209, 102, 0.35);
-        color: var(--notif-gold);
-        padding: 9px 18px;
-        border-radius: 12px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        backdrop-filter: blur(10px);
-        text-decoration: none;
-    }
-    .notif-btn-mark-all:hover {
-        background: linear-gradient(135deg, rgba(255, 209, 102, 0.3) 0%, rgba(207, 164, 111, 0.18) 100%);
-        border-color: var(--notif-gold);
-        color: #ffffff;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(255, 209, 102, 0.2);
-    }
-    .notif-btn-mark-all:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-        transform: none !important;
-        box-shadow: none !important;
-    }
-
-    /* ── Quick Stats Row ── */
-    .notif-stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        margin-bottom: 22px;
-    }
-    .notif-stat-card {
-        background: rgba(24, 15, 13, 0.65);
-        border: 1px solid var(--notif-border);
-        border-radius: 16px;
-        padding: 14px 18px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        text-decoration: none;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        backdrop-filter: blur(14px);
-    }
-    .notif-stat-card:hover {
-        background: rgba(34, 20, 16, 0.85);
-        border-color: var(--notif-border-hover);
-        transform: translateY(-2px);
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-    }
-    .notif-stat-card.active {
-        border-color: var(--notif-gold);
-        background: rgba(40, 24, 18, 0.9);
-        box-shadow: 0 0 0 1px rgba(255, 209, 102, 0.4), 0 8px 24px rgba(255, 209, 102, 0.12);
-    }
-    .notif-stat-info {
-        display: flex;
-        flex-direction: column;
-    }
-    .notif-stat-num {
-        font-size: 1.45rem;
-        font-weight: 800;
-        color: #ffffff;
-        line-height: 1.1;
-    }
-    .notif-stat-label {
-        font-size: 0.74rem;
-        font-weight: 600;
-        color: rgba(243, 231, 205, 0.65);
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-        margin-top: 3px;
-    }
-    .notif-stat-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 11px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.15rem;
-        flex-shrink: 0;
-    }
-
-    /* ── Controls Bar: Tabs, Filter Pills & Search ── */
-    .notif-controls-card {
-        background: rgba(22, 14, 12, 0.6);
-        border: 1px solid var(--notif-border);
-        border-radius: 18px;
-        padding: 14px 18px;
-        margin-bottom: 20px;
-        backdrop-filter: blur(16px);
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-    }
-    .notif-tabs-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-    .notif-status-tabs {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        background: rgba(0, 0, 0, 0.25);
-        padding: 4px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .notif-tab {
-        padding: 7px 14px;
-        border-radius: 9px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: rgba(243, 231, 205, 0.7);
-        text-decoration: none;
-        transition: all 0.2s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .notif-tab:hover {
-        color: #ffffff;
-        background: rgba(255, 255, 255, 0.05);
-    }
-    .notif-tab.active {
-        background: linear-gradient(135deg, rgba(255, 209, 102, 0.25) 0%, rgba(207, 164, 111, 0.15) 100%);
-        color: var(--notif-gold);
-        border: 1px solid rgba(255, 209, 102, 0.35);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    }
-    .notif-tab-badge {
-        font-size: 0.65rem;
-        font-weight: 800;
-        padding: 2px 6px;
-        border-radius: 99px;
-        background: rgba(0, 0, 0, 0.35);
-    }
-    .notif-tab.active .notif-tab-badge {
-        background: rgba(255, 209, 102, 0.25);
-        color: #fff6e5;
-    }
-
-    .notif-search-box {
-        position: relative;
-        flex: 1;
-        min-width: 200px;
-        max-width: 320px;
-    }
-    .notif-search-input {
-        width: 100%;
-        height: 38px;
-        padding: 0 34px 0 34px;
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 209, 102, 0.14);
-        border-radius: 10px;
-        color: #ffffff;
-        font-size: 0.82rem;
-        outline: none;
-        transition: all 0.2s;
-    }
-    .notif-search-input:focus {
-        border-color: var(--notif-gold);
-        background: rgba(0, 0, 0, 0.45);
-        box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.2);
-    }
-    .notif-search-icon {
-        position: absolute;
-        left: 11px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: rgba(255, 209, 102, 0.5);
-        font-size: 0.85rem;
-        pointer-events: none;
-    }
-    .notif-search-clear {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: none;
-        color: rgba(255, 255, 255, 0.4);
-        font-size: 0.85rem;
-        cursor: pointer;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .notif-search-clear:hover { color: #ffffff; }
-
-    /* Category Filter Pills */
-    .notif-cat-pills {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 2px;
-    }
-    .notif-cat-pills::-webkit-scrollbar { display: none; }
-    .notif-pill {
-        padding: 5px 12px;
-        border-radius: 99px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-decoration: none;
-        color: rgba(243, 231, 205, 0.65);
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        white-space: nowrap;
-        transition: all 0.2s ease;
-    }
-    .notif-pill:hover {
-        color: #ffffff;
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 209, 102, 0.25);
-    }
-    .notif-pill.active {
-        background: rgba(255, 209, 102, 0.16);
-        color: var(--notif-gold);
-        border-color: rgba(255, 209, 102, 0.4);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    /* ── Notifications List & Cards ── */
-    .notif-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .notif-item-card {
-        position: relative;
-        background: var(--notif-bg-card);
-        border: 1px solid var(--notif-border);
-        border-radius: 18px;
-        padding: 20px 22px;
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-    }
-    .notif-item-card:hover {
-        background: rgba(30, 18, 15, 0.85);
-        border-color: var(--notif-border-hover);
-        transform: translateY(-2px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
-    }
-    .notif-item-card.unread {
-        background: var(--notif-bg-card-unread);
-        border-color: rgba(255, 209, 102, 0.24);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 209, 102, 0.1);
-    }
-    .notif-item-card.unread::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 4px;
-        background: linear-gradient(180deg, var(--notif-gold) 0%, #cfa46f 100%);
-        border-top-left-radius: 18px;
-        border-bottom-left-radius: 18px;
-        box-shadow: 0 0 12px rgba(255, 209, 102, 0.6);
-    }
-    .notif-item-card.archived-card {
-        opacity: 0.85;
-        border-style: dashed;
-        background: rgba(18, 12, 10, 0.6);
-    }
-
-    .notif-card-inner {
-        display: flex;
-        gap: 18px;
-        align-items: flex-start;
-    }
-
-    /* Icon Squircle per Notification Type */
-    .notif-type-avatar {
-        width: 46px;
-        height: 46px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.3rem;
-        flex-shrink: 0;
-        border: 1px solid;
-    }
-    .type-avatar-absence {
-        background: rgba(239, 68, 68, 0.14);
-        color: #f87171;
-        border-color: rgba(239, 68, 68, 0.28);
-    }
-    .type-avatar-warning_3,
-    .type-avatar-warning_consecutive_3 {
-        background: rgba(225, 29, 72, 0.18);
-        color: #fb7185;
-        border-color: rgba(225, 29, 72, 0.36);
-        animation: pulseWarning 2.5s infinite ease-in-out;
-    }
-    .type-avatar-warning_2,
-    .type-avatar-warning {
-        background: rgba(245, 158, 11, 0.14);
-        color: #fbbf24;
-        border-color: rgba(245, 158, 11, 0.28);
-    }
-    .type-avatar-system_update {
-        background: rgba(16, 185, 129, 0.14);
-        color: #34d399;
-        border-color: rgba(16, 185, 129, 0.3);
-    }
-    .type-avatar-excuse {
-        background: rgba(20, 184, 166, 0.14);
-        color: #2dd4bf;
-        border-color: rgba(20, 184, 166, 0.3);
-    }
-    .type-avatar-custom,
-    .type-avatar-announcement {
-        background: rgba(59, 130, 246, 0.14);
-        color: #60a5fa;
-        border-color: rgba(59, 130, 246, 0.3);
-    }
-
-    @keyframes pulseWarning {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
-        50% { box-shadow: 0 0 0 6px rgba(225, 29, 72, 0); }
-    }
-
-    .notif-card-main {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .notif-top-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 8px;
-        flex-wrap: wrap;
-    }
-    .notif-badges-left {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .notif-kind-badge {
-        font-size: 0.7rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 3px 9px;
-        border-radius: 6px;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .kind-badge-absence { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.32); }
-    .kind-badge-critical { background: rgba(225, 29, 72, 0.22); color: #fda4af; border: 1px solid rgba(225, 29, 72, 0.38); }
-    .kind-badge-warning { background: rgba(245, 158, 11, 0.18); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.32); }
-    .kind-badge-system { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.32); }
-    .kind-badge-notice { background: rgba(59, 130, 246, 0.18); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.32); }
-
-    .notif-unread-pill {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        color: #ffffff;
-        font-size: 0.65rem;
-        font-weight: 800;
-        letter-spacing: 0.5px;
-        padding: 2px 7px;
-        border-radius: 99px;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
-    }
-    .notif-unread-pill::before {
-        content: '';
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: #ffffff;
-        display: inline-block;
-    }
-
-    .notif-timestamp {
-        font-size: 0.74rem;
-        color: rgba(243, 231, 205, 0.55);
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .notif-message-text {
-        font-size: 0.92rem;
-        line-height: 1.55;
-        color: #f1ede4;
-        margin-bottom: 12px;
-        word-break: break-word;
-    }
-
-    .notif-meta-tags {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        font-size: 0.78rem;
-        color: rgba(243, 231, 205, 0.65);
-        flex-wrap: wrap;
-        margin-bottom: 14px;
-    }
-    .notif-meta-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        background: rgba(255, 255, 255, 0.03);
-        padding: 2px 8px;
-        border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    /* Action Buttons Row */
-    .notif-actions-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        padding-top: 10px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    .btn-notif-action {
-        padding: 6px 13px;
-        border-radius: 9px;
-        font-size: 0.77rem;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        text-decoration: none;
-        border: 1px solid;
-    }
-    .btn-notif-excuse {
-        background: rgba(245, 158, 11, 0.16);
-        color: #fbbf24;
-        border-color: rgba(245, 158, 11, 0.32);
-    }
-    .btn-notif-excuse:hover {
-        background: rgba(245, 158, 11, 0.28);
-        color: #ffffff;
-        border-color: #fbbf24;
-        transform: translateY(-1px);
-    }
-    .btn-notif-records {
-        background: rgba(255, 209, 102, 0.12);
-        color: var(--notif-gold);
-        border-color: rgba(255, 209, 102, 0.28);
-    }
-    .btn-notif-records:hover {
-        background: rgba(255, 209, 102, 0.24);
-        color: #ffffff;
-        border-color: var(--notif-gold);
-        transform: translateY(-1px);
-    }
-    .btn-notif-read {
-        background: rgba(255, 255, 255, 0.06);
-        color: #e2e8f0;
-        border-color: rgba(255, 255, 255, 0.12);
-    }
-    .btn-notif-read:hover {
-        background: rgba(255, 255, 255, 0.12);
-        color: #ffffff;
-        border-color: rgba(255, 255, 255, 0.24);
-    }
-    .btn-notif-archive {
-        background: rgba(255, 255, 255, 0.04);
-        color: rgba(243, 231, 205, 0.65);
-        border-color: rgba(255, 255, 255, 0.08);
-    }
-    .btn-notif-archive:hover {
-        background: rgba(255, 255, 255, 0.09);
-        color: #ffffff;
-    }
-    .btn-notif-unarchive {
-        background: rgba(16, 185, 129, 0.14);
-        color: #34d399;
-        border-color: rgba(16, 185, 129, 0.3);
-    }
-    .btn-notif-unarchive:hover {
-        background: rgba(16, 185, 129, 0.26);
-        color: #ffffff;
-    }
-    .btn-notif-delete {
-        background: transparent;
-        color: rgba(239, 68, 68, 0.7);
-        border-color: transparent;
-        padding: 6px 10px;
-        margin-left: auto;
-    }
-    .btn-notif-delete:hover {
-        background: rgba(239, 68, 68, 0.12);
-        color: #ef4444;
-        border-color: rgba(239, 68, 68, 0.25);
-    }
-
-    /* ── Empty State ── */
-    .notif-empty-state {
-        text-align: center;
-        padding: 64px 20px;
-        background: rgba(22, 14, 12, 0.5);
-        border: 1px dashed rgba(255, 209, 102, 0.15);
-        border-radius: 20px;
-    }
-    .notif-empty-icon {
-        width: 72px;
-        height: 72px;
-        border-radius: 20px;
-        background: rgba(255, 209, 102, 0.08);
-        border: 1px solid rgba(255, 209, 102, 0.18);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--notif-gold);
-        font-size: 2rem;
-        margin-bottom: 16px;
-    }
-    .notif-empty-title {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #fff6e5;
-        margin-bottom: 6px;
-    }
-    .notif-empty-desc {
-        font-size: 0.85rem;
-        color: rgba(243, 231, 205, 0.6);
-        max-width: 360px;
-        margin: 0 auto 20px;
-    }
-
-    /* ── Mobile Responsive Overrides ── */
-    @media (max-width: 768px) {
-        .notif-wrapper {
-            padding: 8px 4px calc(100px + env(safe-area-inset-bottom, 0px));
-        }
-        .notif-hero {
-            padding: 20px 18px;
-            border-radius: 20px;
-            margin-bottom: 16px;
-        }
-        .notif-hero-content {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 14px;
-        }
-        .notif-hero-actions {
-            width: 100%;
-        }
-        .notif-btn-mark-all {
-            width: 100%;
-            justify-content: center;
-            min-height: 44px;
-        }
-        .notif-stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .notif-stat-card {
-            padding: 12px 14px;
-            border-radius: 14px;
-        }
-        .notif-stat-num { font-size: 1.25rem; }
-        .notif-controls-card {
-            padding: 12px 14px;
-            border-radius: 16px;
-            margin-bottom: 16px;
-        }
-        .notif-tabs-row {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 10px;
-        }
-        .notif-status-tabs {
-            width: 100%;
-            justify-content: space-between;
-        }
-        .notif-tab {
-            flex: 1;
-            justify-content: center;
-            min-height: 42px;
-            padding: 8px 6px;
-        }
-        .notif-search-box {
-            max-width: 100%;
-            width: 100%;
-        }
-        .notif-item-card {
-            padding: 16px;
-            border-radius: 16px;
-        }
-        .notif-card-inner {
-            gap: 12px;
-        }
-        .notif-type-avatar {
-            width: 40px;
-            height: 40px;
-            font-size: 1.15rem;
-            border-radius: 12px;
-        }
-        .notif-top-row {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 6px;
-        }
-        .notif-actions-row {
-            gap: 8px;
-        }
-        .btn-notif-action {
-            flex: 1;
-            justify-content: center;
-            min-height: 44px;
-        }
-        .btn-notif-delete {
-            flex: 0 0 auto;
-            min-height: 44px;
-            width: 44px;
-            justify-content: center;
-            padding: 0;
-        }
-    }
-</style>
-
 <div class="notif-wrapper">
     {{-- Hero Banner --}}
+    {{-- Open Header --}}
     <div class="notif-hero">
         <div class="notif-hero-content">
             <div class="notif-hero-left">
-                <div class="notif-hero-icon">
-                    <i class="bi bi-bell-fill"></i>
-                </div>
                 <div class="notif-hero-text">
-                    <h1>
-                        Notifications & Alerts
-                        @if(($counts['unread'] ?? 0) > 0)
-                            <span class="notif-unread-pill" id="heroUnreadPill">{{ $counts['unread'] }} NEW</span>
-                        @endif
-                    </h1>
-                    <p>Official class attendance records, warning alerts, and academic updates</p>
+                    <h1>Notifications</h1>
+                    <p>Class attendance records, warnings, and announcements</p>
                 </div>
             </div>
             <div class="notif-hero-actions">
@@ -766,57 +20,10 @@
                         id="btnMarkAllRead" 
                         onclick="markAllNotificationsRead()"
                         {{ ($counts['unread'] ?? 0) === 0 ? 'disabled' : '' }}>
-                    <i class="bi bi-check2-all"></i> Mark All as Read
+                    <i class="bi bi-check2-all"></i> Mark all read
                 </button>
             </div>
         </div>
-    </div>
-
-    {{-- Quick Stats Cards --}}
-    <div class="notif-stats-grid">
-        <a href="{{ route('notifications') }}" 
-           class="notif-stat-card {{ !request('status') || request('status') === 'active' ? 'active' : '' }}">
-            <div class="notif-stat-info">
-                <span class="notif-stat-num" id="statActiveCount">{{ $counts['active'] ?? 0 }}</span>
-                <span class="notif-stat-label">Active Notices</span>
-            </div>
-            <div class="notif-stat-icon" style="background:rgba(122, 26, 26, 0.24); color:#D4AF37;">
-                <i class="bi bi-bell" aria-hidden="true"></i>
-            </div>
-        </a>
-
-        <a href="{{ route('notifications') }}?status=unread" 
-           class="notif-stat-card {{ request('status') === 'unread' ? 'active' : '' }}">
-            <div class="notif-stat-info">
-                <span class="notif-stat-num" id="statUnreadCount" style="color:{{ ($counts['unread'] ?? 0) > 0 ? '#f87171' : '#ffffff' }};">{{ $counts['unread'] ?? 0 }}</span>
-                <span class="notif-stat-label">Unread</span>
-            </div>
-            <div class="notif-stat-icon" style="background:rgba(239,68,68,0.14); color:#ef4444;">
-                <i class="bi bi-envelope-exclamation-fill"></i>
-            </div>
-        </a>
-
-        <a href="{{ route('notifications') }}?type=absence" 
-           class="notif-stat-card {{ request('type') === 'absence' ? 'active' : '' }}">
-            <div class="notif-stat-info">
-                <span class="notif-stat-num" id="statAbsencesCount">{{ $counts['absences'] ?? 0 }}</span>
-                <span class="notif-stat-label">Absences</span>
-            </div>
-            <div class="notif-stat-icon" style="background:rgba(245,158,11,0.14); color:#fbbf24;">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-            </div>
-        </a>
-
-        <a href="{{ route('notifications') }}?status=archived" 
-           class="notif-stat-card {{ request('status') === 'archived' ? 'active' : '' }}">
-            <div class="notif-stat-info">
-                <span class="notif-stat-num" id="statArchivedCount">{{ $counts['archived'] ?? 0 }}</span>
-                <span class="notif-stat-label">Archived</span>
-            </div>
-            <div class="notif-stat-icon" style="background:rgba(148,163,184,0.12); color:#94a3b8;">
-                <i class="bi bi-archive-fill"></i>
-            </div>
-        </a>
     </div>
 
     {{-- Filter & Search Controls Card --}}
@@ -827,17 +34,17 @@
                 <a href="{{ route('notifications') }}" 
                    class="notif-tab {{ !request('status') || request('status') === 'active' ? 'active' : '' }}">
                     <i class="bi bi-inbox-fill"></i> Active
-                    <span class="notif-tab-badge">{{ $counts['active'] ?? 0 }}</span>
+                    <span class="notif-tab-badge" id="tabCountActive">{{ $counts['active'] ?? 0 }}</span>
                 </a>
                 <a href="{{ route('notifications') }}?status=unread" 
                    class="notif-tab {{ request('status') === 'unread' ? 'active' : '' }}">
                     <i class="bi bi-envelope-fill"></i> Unread
-                    <span class="notif-tab-badge">{{ $counts['unread'] ?? 0 }}</span>
+                    <span class="notif-tab-badge" id="tabCountUnread">{{ $counts['unread'] ?? 0 }}</span>
                 </a>
                 <a href="{{ route('notifications') }}?status=archived" 
                    class="notif-tab {{ request('status') === 'archived' ? 'active' : '' }}">
                     <i class="bi bi-archive-fill"></i> Archived
-                    <span class="notif-tab-badge">{{ $counts['archived'] ?? 0 }}</span>
+                    <span class="notif-tab-badge" id="tabCountArchived">{{ $counts['archived'] ?? 0 }}</span>
                 </a>
             </div>
 
@@ -854,7 +61,7 @@
                        name="search" 
                        id="notifSearchInput" 
                        class="notif-search-input" 
-                       placeholder="Search alerts or subjects..." 
+                       placeholder="Search alerts..." 
                        aria-label="Search notifications or subjects"
                        value="{{ request('search') }}"
                        autocomplete="off">
@@ -869,21 +76,13 @@
         {{-- Category Pills --}}
         <div class="notif-cat-pills">
             <a href="{{ route('notifications', array_filter(['status' => request('status')])) }}" 
-               class="notif-pill {{ !request('type') ? 'active' : '' }}">
-                <i class="bi bi-stars"></i> All Types
-            </a>
+               class="notif-pill {{ !request('type') ? 'active' : '' }}">All Types</a>
             <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'absence'])) }}" 
-               class="notif-pill {{ request('type') === 'absence' ? 'active' : '' }}">
-                <i class="bi bi-clipboard-x-fill" style="color:#f87171;"></i> Absences ({{ $counts['absences'] ?? 0 }})
-            </a>
+               class="notif-pill {{ request('type') === 'absence' ? 'active' : '' }}">Absences ({{ $counts['absences'] ?? 0 }})</a>
             <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'warning'])) }}" 
-               class="notif-pill {{ request('type') === 'warning' ? 'active' : '' }}">
-                <i class="bi bi-exclamation-octagon-fill" style="color:#fbbf24;"></i> Warnings ({{ $counts['warnings'] ?? 0 }})
-            </a>
+               class="notif-pill {{ request('type') === 'warning' ? 'active' : '' }}">Warnings ({{ $counts['warnings'] ?? 0 }})</a>
             <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'system'])) }}" 
-               class="notif-pill {{ request('type') === 'system' ? 'active' : '' }}">
-                <i class="bi bi-rocket-takeoff-fill" style="color:#34d399;"></i> System Updates
-            </a>
+               class="notif-pill {{ request('type') === 'system' ? 'active' : '' }}">System Updates</a>
         </div>
     </div>
 
@@ -949,20 +148,17 @@
                  data-is-unread="{{ $isUnread ? 'true' : 'false' }}">
                 <div class="notif-card-inner">
                     {{-- Avatar Icon --}}
-                    <div class="notif-type-avatar {{ $vis['avatar_class'] }}">
-                        <i class="bi {{ $vis['icon'] }}"></i>
+                    <div class="notif-type-avatar {{ $vis['avatar_class'] }}" aria-hidden="true">
+                        <i class="bi {{ $vis['icon'] }}" aria-hidden="true"></i>
                     </div>
 
                     {{-- Main Content --}}
                     <div class="notif-card-main">
                         <div class="notif-top-row">
                             <div class="notif-badges-left">
-                                <span class="notif-kind-badge {{ $vis['badge_class'] }}">
-                                    <i class="bi {{ $vis['icon'] }}"></i>
-                                    {{ $vis['badge_label'] }}
-                                </span>
+                                <span class="notif-kind-badge {{ $vis['badge_class'] }}">{{ $vis['badge_label'] }}</span>
                                 @if($isUnread)
-                                    <span class="notif-unread-pill" id="itemUnreadBadge_{{ $notification->id }}">NEW</span>
+                                    <span class="notif-unread-dot" id="itemUnreadBadge_{{ $notification->id }}"><span aria-hidden="true">●</span> Unread</span>
                                 @endif
                                 @if($notification->subject_code)
                                     <span class="notif-meta-item">
@@ -972,7 +168,7 @@
                                 @endif
                             </div>
                             <span class="notif-timestamp" title="{{ $notification->created_at->format('M d, Y h:i A') }}">
-                                <i class="bi bi-clock"></i> {{ $notification->created_at->diffForHumans() }}
+                                {{ $notification->created_at->diffForHumans() }} · {{ $notification->created_at->format('M j, g:i A') }}
                             </span>
                         </div>
 
@@ -980,34 +176,32 @@
                             {{ $notification->message }}
                         </div>
 
+                        @if($notification->subject || $notification->sender)
                         <div class="notif-meta-tags">
                             @if($notification->subject)
                                 <span class="notif-meta-item">
-                                    <i class="bi bi-mortarboard"></i>
+                                    <i class="bi bi-mortarboard" aria-hidden="true"></i>
                                     {{ $notification->subject->name }}
                                 </span>
                             @endif
                             @if($notification->sender)
                                 <span class="notif-meta-item">
-                                    <i class="bi bi-person-badge"></i>
+                                    <i class="bi bi-person" aria-hidden="true"></i>
                                     From {{ $notification->sender->name }}
                                 </span>
                             @endif
-                            <span class="notif-meta-item">
-                                <i class="bi bi-calendar-event"></i>
-                                {{ $notification->created_at->format('M j, Y • g:i A') }}
-                            </span>
                         </div>
+                        @endif
 
                         {{-- Action Buttons --}}
                         <div class="notif-actions-row">
                             {{-- For Absences or Warnings: Provide Direct Excuse / Record links --}}
                             @if($notification->type === 'absence' || str_contains($notification->type, 'warning'))
                                 <a href="{{ route('excuses') }}" class="btn-notif-action btn-notif-excuse">
-                                    <i class="bi bi-file-earmark-medical"></i> Submit Excuse
+                                    <i class="bi bi-file-earmark-medical" aria-hidden="true"></i> Submit Excuse
                                 </a>
                                 <a href="{{ route('attendance.records') }}" class="btn-notif-action btn-notif-records">
-                                    <i class="bi bi-clock-history"></i> View Records
+                                    <i class="bi bi-clock-history" aria-hidden="true"></i> View Records
                                 </a>
                             @endif
 
@@ -1017,7 +211,7 @@
                                         class="btn-notif-action btn-notif-read" 
                                         id="btnMarkRead_{{ $notification->id }}"
                                         onclick="markSingleNotificationRead({{ $notification->id }})">
-                                    <i class="bi bi-check2"></i> Mark as Read
+                                    <i class="bi bi-check2" aria-hidden="true"></i> Mark as Read
                                 </button>
                             @endif
 
@@ -1026,13 +220,13 @@
                                 <button type="button" 
                                         class="btn-notif-action btn-notif-unarchive" 
                                         onclick="unarchiveNotification({{ $notification->id }})">
-                                    <i class="bi bi-arrow-up-circle"></i> Restore
+                                    <i class="bi bi-arrow-up-circle" aria-hidden="true"></i> Restore
                                 </button>
                             @else
                                 <button type="button" 
                                         class="btn-notif-action btn-notif-archive" 
                                         onclick="archiveNotification({{ $notification->id }})">
-                                    <i class="bi bi-archive"></i> Archive
+                                    <i class="bi bi-archive" aria-hidden="true"></i> Archive
                                 </button>
                             @endif
 
@@ -1042,7 +236,7 @@
                                     title="Delete notification"
                                     aria-label="Delete notification"
                                     onclick="deleteNotification({{ $notification->id }})">
-                                <i class="bi bi-trash3-fill"></i>
+                                <i class="bi bi-trash3-fill" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
@@ -1107,13 +301,46 @@
         }
     }
 
+    function parseJsonResponse(res) {
+        return res.json().catch(() => null).then(data => {
+            if (!res.ok || !data || !data.success) {
+                throw new Error((data && data.message) || ('Request failed (' + res.status + ')'));
+            }
+            return data;
+        });
+    }
+
+    function notifyActionError(message) {
+        if (typeof showPremiumToast === 'function') {
+            showPremiumToast(message || 'Unable to update notification. Please try again.', 'error');
+        }
+    }
+
+    function adjustTabCount(elementId, delta) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        const cur = parseInt(el.textContent, 10) || 0;
+        el.textContent = String(Math.max(0, cur + delta));
+    }
+
+    function removeAfterTransition(card, callback) {
+        const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 250;
+        setTimeout(() => {
+            card.remove();
+            if (typeof callback === 'function') callback();
+        }, delay);
+    }
+
     function updateBadgeElements(unreadCount) {
-        // Update hero pill
+        const count = Math.max(0, Number(unreadCount) || 0);
         const heroPill = document.getElementById('heroUnreadPill');
         const markAllBtn = document.getElementById('btnMarkAllRead');
         const statUnread = document.getElementById('statUnreadCount');
+        const tabUnread = document.getElementById('tabCountUnread');
 
-        if (unreadCount <= 0) {
+        if (tabUnread) tabUnread.textContent = String(count);
+
+        if (count <= 0) {
             if (heroPill) heroPill.style.display = 'none';
             if (markAllBtn) markAllBtn.disabled = true;
             if (statUnread) {
@@ -1123,11 +350,11 @@
         } else {
             if (heroPill) {
                 heroPill.style.display = 'inline-flex';
-                heroPill.textContent = unreadCount + ' NEW';
+                heroPill.textContent = count + ' NEW';
             }
             if (markAllBtn) markAllBtn.disabled = false;
             if (statUnread) {
-                statUnread.textContent = unreadCount;
+                statUnread.textContent = String(count);
                 statUnread.style.color = '#f87171';
             }
         }
@@ -1138,8 +365,8 @@
         } else {
             const topNavBadge = document.getElementById('topNavNotifBadge');
             if (topNavBadge) {
-                if (unreadCount <= 0) topNavBadge.remove();
-                else topNavBadge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                if (count <= 0) topNavBadge.remove();
+                else topNavBadge.textContent = count > 9 ? '9+' : String(count);
             }
         }
     }
@@ -1159,25 +386,26 @@
                 'Accept': 'application/json'
             }
         })
-        .then(res => res.json())
+        .then(parseJsonResponse)
         .then(data => {
-            if (data.success) {
-                if (card) {
-                    card.classList.remove('unread');
-                    card.setAttribute('data-is-unread', 'false');
-                }
-                if (readBtn) readBtn.remove();
-                if (itemBadge) itemBadge.remove();
-                if (typeof data.unread_count !== 'undefined') {
-                    updateBadgeElements(data.unread_count);
-                }
-                if (typeof showPremiumToast === 'function') {
-                    showPremiumToast('Marked as read', 'success');
-                }
+            if (card) {
+                card.classList.remove('unread');
+                card.setAttribute('data-is-unread', 'false');
+            }
+            if (readBtn) readBtn.remove();
+            if (itemBadge) itemBadge.remove();
+            if (typeof data.unread_count !== 'undefined') {
+                updateBadgeElements(data.unread_count);
+            } else {
+                adjustTabCount('tabCountUnread', -1);
+            }
+            if (typeof showPremiumToast === 'function') {
+                showPremiumToast('Marked as read', 'success');
             }
         })
         .catch(err => {
             console.error('Error marking read:', err);
+            notifyActionError(err.message);
         });
     };
 
@@ -1185,6 +413,7 @@
     window.markAllNotificationsRead = function() {
         triggerHapticFeedback('medium');
         const markAllBtn = document.getElementById('btnMarkAllRead');
+        const origBtnHtml = markAllBtn ? markAllBtn.innerHTML : '<i class="bi bi-check2-all"></i> Mark all read';
         if (markAllBtn) {
             markAllBtn.disabled = true;
             markAllBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Marking...';
@@ -1198,33 +427,31 @@
                 'Accept': 'application/json'
             }
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                // Update all unread cards in view
-                document.querySelectorAll('.notif-item-card.unread').forEach(card => {
-                    card.classList.remove('unread');
-                    card.setAttribute('data-is-unread', 'false');
-                });
-                document.querySelectorAll('[id^="btnMarkRead_"]').forEach(btn => btn.remove());
-                document.querySelectorAll('[id^="itemUnreadBadge_"]').forEach(badge => badge.remove());
+        .then(parseJsonResponse)
+        .then(() => {
+            document.querySelectorAll('.notif-item-card.unread').forEach(card => {
+                card.classList.remove('unread');
+                card.setAttribute('data-is-unread', 'false');
+            });
+            document.querySelectorAll('[id^="btnMarkRead_"]').forEach(btn => btn.remove());
+            document.querySelectorAll('[id^="itemUnreadBadge_"]').forEach(badge => badge.remove());
 
-                updateBadgeElements(0);
+            updateBadgeElements(0);
 
-                if (markAllBtn) {
-                    markAllBtn.innerHTML = '<i class="bi bi-check2-all"></i> All Read';
-                }
-                if (typeof showPremiumToast === 'function') {
-                    showPremiumToast('All notifications marked as read', 'success');
-                }
+            if (markAllBtn) {
+                markAllBtn.innerHTML = '<i class="bi bi-check2-all"></i> All Read';
+            }
+            if (typeof showPremiumToast === 'function') {
+                showPremiumToast('All notifications marked as read', 'success');
             }
         })
         .catch(err => {
             console.error('Error marking all read:', err);
             if (markAllBtn) {
                 markAllBtn.disabled = false;
-                markAllBtn.innerHTML = '<i class="bi bi-check2-all"></i> Mark All as Read';
+                markAllBtn.innerHTML = origBtnHtml;
             }
+            notifyActionError(err.message);
         });
     };
 
@@ -1246,37 +473,26 @@
                 'Accept': 'application/json'
             }
         })
-        .then(res => res.json())
+        .then(parseJsonResponse)
         .then(data => {
-            if (data.success) {
-                setTimeout(() => {
-                    card.remove();
-                    if (typeof data.unread_count !== 'undefined') {
-                        updateBadgeElements(data.unread_count);
-                    }
-                    const activeCountEl = document.getElementById('statActiveCount');
-                    if (activeCountEl) {
-                        const cur = parseInt(activeCountEl.textContent) || 0;
-                        if (cur > 0) activeCountEl.textContent = cur - 1;
-                    }
-                    const archivedCountEl = document.getElementById('statArchivedCount');
-                    if (archivedCountEl) {
-                        const cur = parseInt(archivedCountEl.textContent) || 0;
-                        archivedCountEl.textContent = cur + 1;
-                    }
-                }, 250);
-                if (typeof showPremiumToast === 'function') {
-                    showPremiumToast('Notification archived', 'success');
+            removeAfterTransition(card, () => {
+                if (typeof data.unread_count !== 'undefined') {
+                    updateBadgeElements(data.unread_count);
                 }
-            } else {
-                card.style.opacity = '1';
-                card.style.transform = 'none';
+                adjustTabCount('tabCountActive', -1);
+                adjustTabCount('tabCountArchived', 1);
+                adjustTabCount('statActiveCount', -1);
+                adjustTabCount('statArchivedCount', 1);
+            });
+            if (typeof showPremiumToast === 'function') {
+                showPremiumToast('Notification archived', 'success');
             }
         })
         .catch(err => {
             console.error('Error archiving:', err);
             card.style.opacity = '1';
             card.style.transform = 'none';
+            notifyActionError(err.message);
         });
     };
 
@@ -1298,34 +514,26 @@
                 'Accept': 'application/json'
             }
         })
-        .then(res => res.json())
+        .then(parseJsonResponse)
         .then(data => {
-            if (data.success) {
-                setTimeout(() => {
-                    card.remove();
-                    const activeCountEl = document.getElementById('statActiveCount');
-                    if (activeCountEl) {
-                        const cur = parseInt(activeCountEl.textContent) || 0;
-                        activeCountEl.textContent = cur + 1;
-                    }
-                    const archivedCountEl = document.getElementById('statArchivedCount');
-                    if (archivedCountEl) {
-                        const cur = parseInt(archivedCountEl.textContent) || 0;
-                        if (cur > 0) archivedCountEl.textContent = cur - 1;
-                    }
-                }, 250);
-                if (typeof showPremiumToast === 'function') {
-                    showPremiumToast('Notification restored to active', 'success');
+            removeAfterTransition(card, () => {
+                if (typeof data.unread_count !== 'undefined') {
+                    updateBadgeElements(data.unread_count);
                 }
-            } else {
-                card.style.opacity = '1';
-                card.style.transform = 'none';
+                adjustTabCount('tabCountActive', 1);
+                adjustTabCount('tabCountArchived', -1);
+                adjustTabCount('statActiveCount', 1);
+                adjustTabCount('statArchivedCount', -1);
+            });
+            if (typeof showPremiumToast === 'function') {
+                showPremiumToast('Notification restored to active', 'success');
             }
         })
         .catch(err => {
             console.error('Error unarchiving:', err);
             card.style.opacity = '1';
             card.style.transform = 'none';
+            notifyActionError(err.message);
         });
     };
 
@@ -1334,9 +542,21 @@
         const card = document.getElementById('notifCard_' + id);
         if (!card) return;
         const delBtn = card.querySelector('.btn-notif-delete');
+        const resetDeleteBtn = () => {
+            if (!delBtn) return;
+            delete delBtn.dataset.confirmPending;
+            if (delBtn.dataset.origHtml) {
+                delBtn.innerHTML = delBtn.dataset.origHtml;
+            }
+            delBtn.style.width = '';
+            delBtn.style.padding = '';
+            delBtn.style.background = '';
+            delBtn.style.color = '';
+            delBtn.style.borderColor = '';
+        };
         if (delBtn && delBtn.dataset.confirmPending !== '1') {
             delBtn.dataset.confirmPending = '1';
-            const origHtml = delBtn.innerHTML;
+            delBtn.dataset.origHtml = delBtn.innerHTML;
             delBtn.innerHTML = '<i class="bi bi-check2" aria-hidden="true"></i><span style="font-size:0.74rem;font-weight:700;margin-left:4px;">Confirm</span>';
             delBtn.style.width = 'auto';
             delBtn.style.padding = '0 10px';
@@ -1344,15 +564,7 @@
             delBtn.style.color = '#fca5a5';
             delBtn.style.borderColor = 'rgba(239, 68, 68, 0.5)';
             clearTimeout(delBtn._confirmTimer);
-            delBtn._confirmTimer = setTimeout(() => {
-                delete delBtn.dataset.confirmPending;
-                delBtn.innerHTML = origHtml;
-                delBtn.style.width = '';
-                delBtn.style.padding = '';
-                delBtn.style.background = '';
-                delBtn.style.color = '';
-                delBtn.style.borderColor = '';
-            }, 3500);
+            delBtn._confirmTimer = setTimeout(resetDeleteBtn, 3500);
             return;
         }
         if (delBtn) {
@@ -1361,6 +573,7 @@
         }
         triggerHapticFeedback('heavy');
 
+        const isArchivedView = new URLSearchParams(window.location.search).get('status') === 'archived';
         card.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
         card.style.opacity = '0';
         card.style.transform = 'scale(0.95)';
@@ -1373,27 +586,30 @@
                 'Accept': 'application/json'
             }
         })
-        .then(res => res.json())
+        .then(parseJsonResponse)
         .then(data => {
-            if (data.success) {
-                setTimeout(() => {
-                    card.remove();
-                    if (typeof data.unread_count !== 'undefined') {
-                        updateBadgeElements(data.unread_count);
-                    }
-                }, 250);
-                if (typeof showPremiumToast === 'function') {
-                    showPremiumToast('Notification deleted', 'success');
+            removeAfterTransition(card, () => {
+                if (typeof data.unread_count !== 'undefined') {
+                    updateBadgeElements(data.unread_count);
                 }
-            } else {
-                card.style.opacity = '1';
-                card.style.transform = 'none';
+                if (isArchivedView) {
+                    adjustTabCount('tabCountArchived', -1);
+                    adjustTabCount('statArchivedCount', -1);
+                } else {
+                    adjustTabCount('tabCountActive', -1);
+                    adjustTabCount('statActiveCount', -1);
+                }
+            });
+            if (typeof showPremiumToast === 'function') {
+                showPremiumToast('Notification deleted', 'success');
             }
         })
         .catch(err => {
             console.error('Error deleting:', err);
             card.style.opacity = '1';
             card.style.transform = 'none';
+            resetDeleteBtn();
+            notifyActionError(err.message);
         });
     };
 
