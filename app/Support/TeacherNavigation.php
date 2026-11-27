@@ -9,11 +9,10 @@ class TeacherNavigation
         return [
             ['label' => 'Daily teaching', 'items' => [
                 ['home', 'Dashboard', 'teacher.dashboard', 'bi-grid-fill', ['teacher.dashboard'], 'Today’s classes and latest attendance', []],
-                ['classes', 'My Classes', 'teacher.classroom.index', 'bi-journal-bookmark-fill', ['teacher.classroom*', 'teacher.subjects*'], 'Students, schedules, and class materials', []],
+                ['classes', 'My Classes', 'teacher.classroom.index', 'bi-journal-bookmark-fill', ['teacher.classroom*', 'teacher.subjects*', 'teacher.attendance*'], 'Classes, rosters, attendance records, and sessions', []],
                 ['take-attendance', 'Take Attendance', 'teacher.classroom.index', 'bi-qr-code-scan', ['teacher.qr*'], 'Choose a class and open its attendance QR', ['task' => 'attendance']],
             ]],
             ['label' => 'Attendance & requests', 'items' => [
-                ['attendance', 'Attendance Records', 'teacher.attendance', 'bi-clipboard-check-fill', ['teacher.attendance*'], 'Search and check recorded attendance', []],
                 ['absent', 'Absent Report', 'teacher.absent', 'bi-person-x-fill', ['teacher.absent*'], 'Review missed classes and follow up', []],
                 ['excuses', 'Excuse Reviews', 'teacher.excuse.reviews', 'bi-file-earmark-text-fill', ['teacher.excuse.*'], 'Review student excuse letters', []],
                 ['corrections', 'Correction Requests', 'teacher.corrections', 'bi-pencil-square', ['teacher.corrections*'], 'Review requests to fix attendance', []],
@@ -40,8 +39,7 @@ class TeacherNavigation
         return [
             [
                 ['home', 'Dashboard', 'teacher.dashboard', 'bi-grid-fill', ['teacher.dashboard'], []],
-                ['classes', 'My Classes', 'teacher.classroom.index', 'bi-journal-bookmark-fill', ['teacher.classroom.index', 'teacher.classroom.show', 'teacher.classroom.assistant-attendance*', 'teacher.subjects*'], []],
-                ['attendance', 'Attendance Records', 'teacher.attendance', 'bi-clipboard-check-fill', ['teacher.attendance*'], []],
+                ['classes', 'My Classes', 'teacher.classroom.index', 'bi-journal-bookmark-fill', ['teacher.classroom.index', 'teacher.classroom.show', 'teacher.classroom.assistant-attendance*', 'teacher.subjects*', 'teacher.attendance*'], []],
                 ['calendar', 'School Calendar', 'teacher.calendar', 'bi-calendar-event-fill', ['teacher.calendar*'], []],
             ],
             [
@@ -63,6 +61,9 @@ class TeacherNavigation
         if ($key === 'classes' && $attendancePicker) {
             return false;
         }
+        if ($key === 'classes' && request()->routeIs('teacher.classroom*', 'teacher.subjects*', 'teacher.attendance*')) {
+            return true;
+        }
 
         return request()->routeIs(...$patterns);
     }
@@ -78,9 +79,14 @@ class TeacherNavigation
         }
 
         if ($routeName === 'teacher.classroom.index') {
-            $isAttendance = request('task') === 'attendance';
+            $task = request('task');
+            $title = match ($task) {
+                'attendance' => 'Take Attendance',
+                'records' => 'Class Attendance Records',
+                default => 'My Classes',
+            };
             return [
-                'title' => $isAttendance ? 'Take Attendance' : 'My Classes',
+                'title' => $title,
                 'group' => 'Daily teaching',
             ];
         }

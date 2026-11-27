@@ -2,7 +2,13 @@
 @section('page-title', 'Attendance PDF Preview')
 
 @section('content')
-<x-back-link :href="route('teacher.attendance', request()->query())" label="Back to Attendance" variant="teacher-ghost" style="margin-bottom:20px;" />
+@php
+    $backHref = !empty($scopedSubject)
+        ? route('teacher.classroom.show', array_merge(['subjectCode' => $scopedSubject->code, 'tab' => 'records'], request()->only(['date', 'date_from', 'date_to', 'status', 'student_id', 'student_name', 'session_id'])))
+        : route('teacher.classroom.index', ['task' => 'records']);
+    $backLabel = !empty($scopedSubject) ? 'Back to ' . $scopedSubject->code . ' Records' : 'Back to Class Records';
+@endphp
+<x-back-link :href="$backHref" :label="$backLabel" variant="teacher-ghost" style="margin-bottom:20px;" />
 
 <div class="tch-card">
     <div class="tch-card-head">
@@ -45,6 +51,11 @@
             @if($filters['student_name'] ?? false)
             <span style="background:#fffbeb;color:#d97706;padding:4px 10px;border-radius:99px;font-size:.72rem;font-weight:600;border:1px solid #fed7aa;">
                 Student: {{ $filters['student_name'] }}
+            </span>
+            @endif
+            @if(!empty($filters['session_id']))
+            <span style="background:#f5f3ff;color:#7c3aed;padding:4px 10px;border-radius:99px;font-size:.72rem;font-weight:600;border:1px solid #ddd6fe;">
+                Session: {{ $filters['session_id'] === 'manual' ? 'Manual / Unlinked' : '#' . $filters['session_id'] }}
             </span>
             @endif
         </div>

@@ -1,9 +1,9 @@
 @php
     $attendancePicker = request()->routeIs('teacher.classroom.index') && request('task') === 'attendance';
     $qrActive = $attendancePicker || request()->routeIs('teacher.qr*');
-    $classesActive = request()->routeIs('teacher.classroom*', 'teacher.subjects*') && !$attendancePicker;
-    $recordsActive = request()->routeIs('teacher.attendance*');
-    $moreActive = request()->routeIs('teacher.absent*', 'teacher.students*', 'teacher.student', 'teacher.excuse*', 'teacher.corrections*', 'teacher.reports*', 'teacher.calendar*', 'teacher.notifications*', 'teacher.profile*', 'teacher.excuses*');
+    $classesActive = request()->routeIs('teacher.classroom*', 'teacher.subjects*', 'teacher.attendance*') && !$attendancePicker;
+    $calendarActive = request()->routeIs('teacher.calendar*');
+    $moreActive = request()->routeIs('teacher.absent*', 'teacher.students*', 'teacher.student', 'teacher.excuse*', 'teacher.corrections*', 'teacher.reports*', 'teacher.notifications*', 'teacher.profile*', 'teacher.excuses*');
 @endphp
 <nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav" aria-label="Teacher navigation">
     <a href="{{ route('teacher.dashboard') }}" class="mbn-item {{ request()->routeIs('teacher.dashboard') ? 'active' : '' }}" @if(request()->routeIs('teacher.dashboard')) aria-current="page" @endif>
@@ -29,9 +29,9 @@
         </div>
         <span>QR</span>
     </a>
-    <a href="{{ route('teacher.attendance') }}" class="mbn-item {{ $recordsActive ? 'active' : '' }}" @if($recordsActive) aria-current="page" @endif>
-        <i class="bi bi-clipboard-check-fill" aria-hidden="true"></i>
-        <span>Records</span>
+    <a href="{{ route('teacher.calendar') }}" class="mbn-item {{ $calendarActive ? 'active' : '' }}" @if($calendarActive) aria-current="page" @endif>
+        <i class="bi bi-calendar-event-fill" aria-hidden="true"></i>
+        <span>Calendar</span>
     </a>
     <button type="button" class="mbn-item mbn-item-more {{ $moreActive ? 'active' : '' }}" onclick="openMoreSheet()" aria-label="Open all teacher pages" aria-haspopup="dialog" aria-controls="moreSheet" aria-expanded="false">
         <i class="bi bi-grid-3x3-gap-fill" aria-hidden="true"></i>

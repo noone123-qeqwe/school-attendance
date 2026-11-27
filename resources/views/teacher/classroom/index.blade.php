@@ -1,6 +1,11 @@
 @extends('layouts.app')
-@section('portal-title', request('task') === 'attendance' ? 'Take Attendance' : 'My Classes')
-@section('page-title', request('task') === 'attendance' ? 'Take Attendance' : 'My Classes')
+@php
+    $attendanceMode = request('task') === 'attendance';
+    $recordsMode = request('task') === 'records';
+    $pageHeading = $attendanceMode ? 'Take Attendance' : ($recordsMode ? 'Class Attendance Records' : 'My Classes');
+@endphp
+@section('portal-title', $pageHeading)
+@section('page-title', $pageHeading)
 
 @push('styles')
 <style>
@@ -140,12 +145,15 @@
 @endpush
 
 @section('content')
-@php $attendanceMode = request('task') === 'attendance'; @endphp
+@php
+    $attendanceMode = request('task') === 'attendance';
+    $recordsMode = request('task') === 'records';
+@endphp
 <div class="teacher-classes-wrapper">
 <div class="d-flex justify-content-between align-items-center mb-4 teacher-page-heading">
     <div>
-        <h1 style="color: var(--portal-text); font-weight: 800; font-size: clamp(1.35rem, 2.4vw, 1.75rem); letter-spacing: -0.025em; margin: 0;">{{ $attendanceMode ? 'Take attendance' : 'My Classes' }}</h1>
-        <p style="color: var(--portal-muted); font-size: 0.9rem; margin-top: 4px;">{{ $attendanceMode ? 'Choose a class, then open its QR attendance screen.' : 'Open a class to manage its students, schedule, and materials.' }}</p>
+        <h1 style="color: var(--portal-text); font-weight: 800; font-size: clamp(1.35rem, 2.4vw, 1.75rem); letter-spacing: -0.025em; margin: 0;">{{ $attendanceMode ? 'Take attendance' : ($recordsMode ? 'Class attendance records' : 'My Classes') }}</h1>
+        <p style="color: var(--portal-muted); font-size: 0.9rem; margin-top: 4px;">{{ $attendanceMode ? 'Choose a class, then open its QR attendance screen.' : ($recordsMode ? 'Choose a class to view, filter, correct, and export its attendance records.' : 'Open a class to manage its roster, attendance records, sessions, and materials.') }}</p>
     </div>
     <div>
         <a href="{{ route('teacher.subjects.create') }}" class="ent-btn ent-btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px;">
@@ -155,13 +163,13 @@
 </div>
 
 <form method="GET" action="{{ route('teacher.classroom.index') }}" class="teacher-class-search" role="search" aria-label="Find one of my classes">
-    @if($attendanceMode)<input type="hidden" name="task" value="attendance">@endif
+    @if($attendanceMode || $recordsMode)<input type="hidden" name="task" value="{{ request('task') }}">@endif
     <div>
         <label for="teacherClassSearch">Find a class</label>
         <input type="search" id="teacherClassSearch" name="search" value="{{ request('search') }}" placeholder="Class name or subject code" class="tch-input" autocomplete="off">
     </div>
     <button type="submit" class="ent-btn ent-btn-primary"><i class="bi bi-search" aria-hidden="true"></i>Search</button>
-    @if(request()->filled('search'))<a href="{{ route('teacher.classroom.index', $attendanceMode ? ['task' => 'attendance'] : []) }}" class="ent-btn ent-btn-secondary">Clear search</a>@endif
+    @if(request()->filled('search'))<a href="{{ route('teacher.classroom.index', ($attendanceMode || $recordsMode) ? ['task' => request('task')] : []) }}" class="ent-btn ent-btn-secondary">Clear search</a>@endif
 </form>
 
 @if($subjects->isEmpty())
@@ -225,10 +233,22 @@
                 </div>
                 
                 <div class="class-card-footer">
-                    <a href="{{ $attendanceMode ? route('teacher.qr', $subject->code) : route('teacher.classroom.show', $subject->code) }}" class="btn-manage-class" aria-label="{{ $attendanceMode ? 'Take attendance for ' : 'Open class ' }}{{ $subject->name }}">
-                        {{ $attendanceMode ? 'Open QR attendance' : 'Open class' }} <i class="bi bi-arrow-right-short fs-5" aria-hidden="true"></i>
-                    </a>
-                    <a href="{{ $attendanceMode ? route('teacher.classroom.show', $subject->code) : route('teacher.qr', $subject->code) }}" class="teacher-class-secondary" aria-label="{{ $attendanceMode ? 'Open class ' : 'Take attendance for ' }}{{ $subject->name }}">{{ $attendanceMode ? 'View class details' : 'Take attendance' }}</a>
+                    @if($attendanceMode)
+                        <a href="{{ route('teacher.qr', $subject->code) }}" class="btn-manage-class" aria-label="Take attendance for {{ $subject->name }}">
+                            Open QR attendance <i class="bi bi-arrow-right-short fs-5" aria-hidden="true"></i>
+                        </a>
+                        <a href="{{ route('teacher.classroom.show', $subject->code) }}" class="teacher-class-secondary" aria-label="Open class {{ $subject->name }}">View class details</a>
+                    @elseif($recordsMode)
+                        <a href="{{ route('teacher.classroom.show', ['subjectCode' => $subject->code, 'tab' => 'records']) }}" class="btn-manage-class" aria-label="Open attendance records for {{ $subject->name }}">
+                            Open attendance records <i class="bi bi-arrow-right-short fs-5" aria-hidden="true"></i>
+                        </a>
+                        <a href="{{ route('teacher.qr', $subject->code) }}" class="teacher-class-secondary" aria-label="Take attendance for {{ $subject->name }}">Take attendance</a>
+                    @else
+                        <a href="{{ route('teacher.classroom.show', $subject->code) }}" class="btn-manage-class" aria-label="Open class {{ $subject->name }}">
+                            Open class <i class="bi bi-arrow-right-short fs-5" aria-hidden="true"></i>
+                        </a>
+                        <a href="{{ route('teacher.qr', $subject->code) }}" class="teacher-class-secondary" aria-label="Take attendance for {{ $subject->name }}">Take attendance</a>
+                    @endif
                 </div>
             </div>
         @endforeach

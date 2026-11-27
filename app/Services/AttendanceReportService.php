@@ -26,15 +26,35 @@ class AttendanceReportService
      */
     public function recordsQuery(array $filters, ?array $subjectCodes = null): Builder
     {
-        $query = Attendance::with(['user', 'subject', 'academicYear'])
+        $query = Attendance::with(['user', 'subject', 'academicYear', 'session'])
             ->orderByDesc('date')->orderByDesc('time_in')->orderByDesc('id');
 
         if ($subjectCodes !== null) {
             $query->whereIn('subject_code', $subjectCodes);
         }
-        $subject = $filters['subject'] ?? $filters['subject_code'] ?? null;
-        if (filled($subject)) {
-            $query->where('subject_code', $subject);
+
+        $fallbackCode = $filters['subject'] ?? $filters['subject_code'] ?? null;
+        if (filled($filters['subject_id'] ?? null)) {
+            $subjectId = (int) $filters['subject_id'];
+            $query->where(function (Builder $q) use ($subjectId, $fallbackCode) {
+                $q->where('subject_id', $subjectId);
+                if (filled($fallbackCode)) {
+                    $q->orWhere(fn (Builder $legacy) => $legacy->whereNull('subject_id')->where('subject_code', $fallbackCode));
+                }
+            });
+        } elseif (filled($fallbackCode)) {
+            $query->where('subject_code', $fallbackCode);
+        }
+
+        if (filled($filters['student_id'] ?? null)) {
+            $query->where('user_id', (int) $filters['student_id']);
+        }
+
+        $sessionFilter = $filters['session_id'] ?? null;
+        if ($sessionFilter === 'manual') {
+            $query->whereNull('session_id');
+        } elseif (filled($sessionFilter) && is_numeric($sessionFilter)) {
+            $query->where('session_id', (int) $sessionFilter);
         }
 
         foreach (['date' => '=', 'date_from' => '>=', 'date_to' => '<='] as $filter => $operator) {
@@ -45,7 +65,10 @@ class AttendanceReportService
 
         $status = strtolower((string) ($filters['status'] ?? ''));
         if ($status === 'excused') {
-            $query->where('excused', true);
+            $query->where(function (Builder $attendance) {
+                $attendance->where('excused', true)
+                    ->orWhereRaw("LOWER(COALESCE(status, '')) = ?", ['excused']);
+            });
         } elseif ($status !== '') {
             $query->whereRaw('LOWER(status) = ?', [$status])
                 ->where(fn (Builder $attendance) => $attendance->where('excused', false)->orWhereNull('excused'));
@@ -58,11 +81,51 @@ class AttendanceReportService
         }
         $search = $filters['search'] ?? $filters['student_name'] ?? null;
         if (filled($search)) {
-            $query->whereHas('user', fn (Builder $student) => $student->where('name', 'like', "%{$search}%")
-                ->orWhere('student_number', 'like', "%{$search}%"));
+            $query->whereHas('user', function (Builder $student) use ($search) {
+                $student->where('name', 'like', "%{$search}%")
+                    ->orWhere('student_number', 'like', "%{$search}%");
+            });
         }
 
         return $query;
+    }
+
+    /**
+     * Compute complete mutually-exclusive attendance counts and turnout rate for a scoped query.
+     *
+     * @param Builder<Attendance> $query
+     * @return array{total: int, present: int, late: int, absent: int, excused: int, rate: int}
+     */
+    public function summarizeQuery(Builder $query): array
+    {
+        $baseQuery = (clone $query)->toBase();
+        $baseQuery->orders = null;
+        $baseQuery->limit = null;
+        $baseQuery->offset = null;
+
+        $summary = $baseQuery->selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN COALESCE(excused, 0) = 1 OR LOWER(COALESCE(status, '')) = 'excused' THEN 1 ELSE 0 END) as excused_count,
+            SUM(CASE WHEN COALESCE(excused, 0) = 0 AND LOWER(COALESCE(status, '')) = 'present' THEN 1 ELSE 0 END) as present_count,
+            SUM(CASE WHEN COALESCE(excused, 0) = 0 AND LOWER(COALESCE(status, '')) = 'late' THEN 1 ELSE 0 END) as late_count,
+            SUM(CASE WHEN COALESCE(excused, 0) = 0 AND LOWER(COALESCE(status, '')) NOT IN ('present', 'late', 'excused') THEN 1 ELSE 0 END) as absent_count
+        ")->first();
+
+        $total = (int) ($summary->total ?? 0);
+        $present = (int) ($summary->present_count ?? 0);
+        $late = (int) ($summary->late_count ?? 0);
+        $absent = (int) ($summary->absent_count ?? 0);
+        $excused = (int) ($summary->excused_count ?? 0);
+        $rate = $total > 0 ? (int) round((($present + $late) / $total) * 100) : 0;
+
+        return [
+            'total' => $total,
+            'present' => $present,
+            'late' => $late,
+            'absent' => $absent,
+            'excused' => $excused,
+            'rate' => $rate,
+        ];
     }
 
     /**

@@ -141,7 +141,9 @@
                             };
                         } elseif (Auth::user()->isTeacher()) {
                             $fallbackBackUrl = match (true) {
-                                request()->routeIs('teacher.attendance.preview') => route('teacher.attendance'),
+                                request()->routeIs('teacher.attendance.preview') => request('subject')
+                                    ? route('teacher.classroom.show', ['subjectCode' => request('subject'), 'tab' => 'records'])
+                                    : route('teacher.classroom.index', ['task' => 'records']),
                                 request()->routeIs('teacher.students.preview', 'teacher.student') => route('teacher.students'),
                                 request()->routeIs('teacher.classroom.assistant-attendance.*', 'teacher.classroom.show') => route('teacher.classroom.index'),
                                 request()->routeIs('teacher.subjects.*') => route('teacher.classroom.index'),

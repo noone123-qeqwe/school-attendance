@@ -216,7 +216,7 @@
                                 <a href="{{ route('teacher.qr', $cls->code) }}" class="td-btn-qr {{ ($isFocus || $item->isLive) ? 'is-primary' : 'is-secondary' }}">
                                     <i class="bi bi-qr-code-scan" aria-hidden="true"></i> Launch QR
                                 </a>
-                                <a href="{{ route('teacher.attendance', ['subject' => $cls->code, 'date' => $targetCarbon->toDateString()]) }}" class="td-btn-records">
+                                <a href="{{ route('teacher.classroom.show', ['subjectCode' => $cls->code, 'tab' => 'records', 'date' => $targetCarbon->toDateString()]) }}" class="td-btn-records">
                                     Records
                                 </a>
                             </div>
@@ -238,8 +238,8 @@
 
             <div class="portal-stage-foot">
                 <div class="portal-stage-links">
-                    <a href="{{ route('teacher.attendance') }}" class="portal-stage-link">
-                        <i class="bi bi-clipboard-check" aria-hidden="true"></i> Attendance Logs
+                    <a href="{{ route('teacher.classroom.index', ['task' => 'records']) }}" class="portal-stage-link">
+                        <i class="bi bi-clipboard-check" aria-hidden="true"></i> Class Records
                     </a>
                     <a href="{{ route('teacher.students') }}" class="portal-stage-link">
                         <i class="bi bi-people" aria-hidden="true"></i> Student Roster

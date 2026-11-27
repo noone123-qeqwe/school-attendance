@@ -87,8 +87,11 @@ class TeacherPortalRedesignTest extends TestCase
         $this->assertStringNotContainsString('My Profile', $sidebarHtml);
         $this->assertStringNotContainsString('Take Attendance', $sidebarHtml);
         $this->assertStringNotContainsString('Student Roster', $sidebarHtml);
+        $this->assertStringNotContainsString('Attendance Records', $sidebarHtml);
+        $this->assertStringNotContainsString(route('teacher.attendance'), $sidebarHtml);
         $this->assertStringNotContainsString(route('teacher.notifications'), $sidebarHtml);
         $this->assertStringContainsString(route('teacher.corrections'), $sidebarHtml);
+        $this->assertStringContainsString(route('teacher.classroom.index'), $sidebarHtml);
 
         // 5-slot Mobile Bottom Nav with center featured QR button
         $this->assertStringContainsString('mbn-item-featured', $html);
@@ -158,9 +161,10 @@ class TeacherPortalRedesignTest extends TestCase
         $routes = [
             route('teacher.classroom.index'),
             route('teacher.classroom.index', ['task' => 'attendance']),
+            route('teacher.classroom.index', ['task' => 'records']),
             route('teacher.classroom.show', $subject->code),
+            route('teacher.classroom.show', ['subjectCode' => $subject->code, 'tab' => 'records']),
             route('teacher.qr', $subject->code),
-            route('teacher.attendance'),
             route('teacher.absent'),
             route('teacher.excuse.reviews'),
             route('teacher.corrections'),
@@ -186,6 +190,9 @@ class TeacherPortalRedesignTest extends TestCase
             $this->assertStringNotContainsString('â€¢', $html, "Mojibake bullet detected on {$url}");
             $this->assertStringNotContainsString('â‰¥', $html, "Mojibake >= detected on {$url}");
         }
+
+        $this->actingAs($teacher)->get(route('teacher.attendance'))
+            ->assertRedirect(route('teacher.classroom.index', ['task' => 'records']));
     }
 
     public function test_student_portal_remains_unaffected_by_teacher_redesign(): void

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Attendance;
+use App\Models\AttendanceSession;
 use App\Models\Subject;
 use App\Models\ClassSchedule;
 use App\Models\Notification;
@@ -20,6 +21,7 @@ use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Warning;
 use App\Services\AnalyticsService;
+use App\Services\AttendanceReportService;
 use App\Services\ClassScheduleLock;
 use App\Services\SubjectRosterService;
 use Maatwebsite\Excel\Facades\Excel;
@@ -322,25 +324,72 @@ class TeacherController extends Controller
     // ─────────────────────────────────────────
     // ATTENDANCE MANAGEMENT
     // ─────────────────────────────────────────
-    public function attendance(Request $request, \App\Services\AttendanceReportService $reportService)
+
+    /**
+     * Validate any class filter parameters against subjects assigned to the authenticated teacher.
+     *
+     * @return array{0: \Illuminate\Database\Eloquent\Collection<int, Subject>, 1: list<string>, 2: ?Subject}
+     */
+    private function authorizeAttendanceFilters(Request $request, User $teacher): array
     {
-        $teacher = $request->user();
         $teacherSubjects = $teacher->subjects()->get();
-        $query = $reportService->recordsQuery($request->query(), $teacherSubjects->pluck('code')->all());
+        $subjectCodes = $teacherSubjects->pluck('code')->all();
 
-        $attendanceRecords = $query->paginate(20)->withQueryString();
+        $ownedById = null;
+        if ($request->filled('subject_id')) {
+            $ownedById = $teacherSubjects->firstWhere('id', $request->integer('subject_id'));
+            abort_unless($ownedById, 403, 'Unauthorized access to this class.');
+        }
 
-        return view('teacher.attendance', compact('attendanceRecords', 'teacherSubjects'));
+        $requestedCode = $request->filled('subject')
+            ? (string) $request->input('subject')
+            : ($request->filled('subject_code') ? (string) $request->input('subject_code') : null);
+
+        $ownedByCode = null;
+        if ($requestedCode !== null && $requestedCode !== '') {
+            abort_unless(in_array($requestedCode, $subjectCodes, true), 403, 'Unauthorized access to this class.');
+            $ownedByCode = $teacherSubjects->firstWhere('code', $requestedCode);
+        }
+
+        if ($ownedById && $ownedByCode && $ownedById->id !== $ownedByCode->id) {
+            abort(403, 'Unauthorized access to this class.');
+        }
+
+        return [$teacherSubjects, $subjectCodes, $ownedById ?? $ownedByCode];
+    }
+
+    private function teacherOwnsAttendance(Attendance $attendance, User $teacher): bool
+    {
+        if ($attendance->subject_id) {
+            return Subject::whereKey($attendance->subject_id)
+                ->where('instructor_id', $teacher->id)
+                ->exists();
+        }
+
+        return Subject::where('code', $attendance->subject_code)
+            ->where('instructor_id', $teacher->id)
+            ->exists();
+    }
+
+    public function attendance(Request $request)
+    {
+        [, , $scopedSubject] = $this->authorizeAttendanceFilters($request, $request->user());
+
+        if ($scopedSubject) {
+            return redirect()->route('teacher.classroom.show', array_merge(
+                ['subjectCode' => $scopedSubject->code, 'tab' => 'records'],
+                $request->only(['date', 'date_from', 'date_to', 'status', 'student_id', 'student_name', 'session_id'])
+            ));
+        }
+
+        return redirect()->route('teacher.classroom.index', ['task' => 'records']);
     }
 
     public function excuseAttendance(Request $request, Attendance $attendance)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-            ->pluck('code');
 
-        // Verify teacher has access to this attendance record
-        if (!$teacherSubjects->contains($attendance->subject_code)) {
+        if (!$this->teacherOwnsAttendance($attendance, $teacher)) {
             abort(403, 'Unauthorized access to this attendance record.');
         }
 
@@ -352,15 +401,15 @@ class TeacherController extends Controller
         return back()->with('success', 'Attendance marked as excused.');
     }
 
-    public function exportAttendancePdf(Request $request, \App\Services\AttendanceReportService $reportService)
+    public function exportAttendancePdf(Request $request, AttendanceReportService $reportService)
     {
         $teacher = $request->user();
-        $teacherSubjects = $teacher->subjects()->get();
-        $query = $reportService->recordsQuery($request->query(), $teacherSubjects->pluck('code')->all());
+        [$teacherSubjects, $subjectCodes, $scopedSubject] = $this->authorizeAttendanceFilters($request, $teacher);
+        $query = $reportService->recordsQuery($request->query(), $subjectCodes);
 
         $attendanceRecords = $query->get();
-        $filters = $request->only(['date', 'status', 'subject', 'student_name']);
-        
+        $filters = $request->only(['date', 'date_from', 'date_to', 'status', 'subject', 'subject_id', 'student_id', 'student_name', 'session_id']);
+
         $options = [
             'isRemoteEnabled' => true,
             'dpi' => 150,
@@ -369,41 +418,38 @@ class TeacherController extends Controller
 
         $pdf = Pdf::setOptions($options)
             ->setPaper('a4', 'portrait')
-            ->loadView('teacher.attendance.pdf', compact('attendanceRecords', 'filters', 'teacher', 'teacherSubjects'));
+            ->loadView('teacher.attendance.pdf', compact('attendanceRecords', 'filters', 'teacher', 'teacherSubjects', 'scopedSubject'));
 
-        $filename = 'teacher-attendance-logs-' . now()->format('Y-m-d-H-i-s') . '.pdf';
+        $prefix = $scopedSubject ? strtolower($scopedSubject->code) . '-' : 'teacher-';
+        $filename = $prefix . 'attendance-records-' . now()->format('Y-m-d-H-i-s') . '.pdf';
         return $pdf->download($filename);
     }
 
-    public function previewAttendancePdf(Request $request, \App\Services\AttendanceReportService $reportService)
+    public function previewAttendancePdf(Request $request, AttendanceReportService $reportService)
     {
         $teacher = $request->user();
-        $teacherSubjects = $teacher->subjects()->get();
-        $query = $reportService->recordsQuery($request->query(), $teacherSubjects->pluck('code')->all());
+        [$teacherSubjects, $subjectCodes, $scopedSubject] = $this->authorizeAttendanceFilters($request, $teacher);
+        $query = $reportService->recordsQuery($request->query(), $subjectCodes);
 
         $attendanceRecords = $query->get();
-        $filters = $request->only(['date', 'status', 'subject', 'student_name']);
-        
-        return view('teacher.attendance.preview', compact('attendanceRecords', 'filters', 'teacher', 'teacherSubjects'));
+        $filters = $request->only(['date', 'date_from', 'date_to', 'status', 'subject', 'subject_id', 'student_id', 'student_name', 'session_id']);
+
+        return view('teacher.attendance.preview', compact('attendanceRecords', 'filters', 'teacher', 'teacherSubjects', 'scopedSubject'));
     }
 
     public function overrideAttendance(Request $request, Attendance $attendance)
     {
         $teacher = Auth::user();
-        
+
         $request->validate([
             'status' => 'required|in:Present,Late,Absent,Excused',
             'reason' => 'nullable|string|max:255',
+            'excuse_note' => 'nullable|string|max:255',
         ]);
 
         $reason = $request->reason ?: 'Manual override by instructor';
 
-        // Verify the teacher owns the subject for this attendance record
-        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-            ->pluck('code')
-            ->toArray();
-
-        if (!in_array($attendance->subject_code, $teacherSubjects)) {
+        if (!$this->teacherOwnsAttendance($attendance, $teacher)) {
             return response()->json(['success' => false, 'message' => 'Unauthorized access.'], 403);
         }
 
@@ -413,8 +459,12 @@ class TeacherController extends Controller
         $attendance->status = $newStatus;
         if ($newStatus === 'Excused') {
             $attendance->excused = true;
+            $attendance->excuse_note = $request->filled('excuse_note')
+                ? $request->input('excuse_note')
+                : ($attendance->excuse_note ?: $reason);
         } else {
             $attendance->excused = false;
+            $attendance->excuse_note = null;
         }
         $attendance->save();
 
@@ -428,7 +478,8 @@ class TeacherController extends Controller
             'success' => true,
             'message' => 'Attendance status updated successfully.',
             'status' => $newStatus,
-            'excused' => $attendance->excused
+            'excused' => $attendance->excused,
+            'excuse_note' => $attendance->excuse_note,
         ]);
     }
 
@@ -1711,40 +1762,67 @@ class TeacherController extends Controller
         return view('teacher.classroom.index', compact('subjects'));
     }
 
-    public function classroomShow(Request $request, $subjectCode)
+    public function classroomShow(Request $request, $subjectCode, AttendanceReportService $reportService)
     {
-        \Log::info('classroomShow called', [
-            'subject_code' => $subjectCode,
-            'auth_check' => auth()->check(),
-            'user_id' => auth()->id(),
-            'user_role' => auth()->user()?->role
-        ]);
-
         $teacher = Auth::user();
-        
+
         if (!$teacher) {
-            \Log::error('classroomShow: No authenticated user');
             abort(401, 'Unauthorized');
         }
-        
+
         $subject = Subject::where('code', $subjectCode)
             ->where('instructor_id', $teacher->id)
-            ->with('schedules')
+            ->with(['schedules', 'materials'])
             ->firstOrFail();
 
-        // 1. Get Enrolled Students
-        $students = $subject->getAllStudents();
-        $students->load(['attendances' => function($q) use ($subjectCode) {
-            $q->where('subject_code', $subjectCode);
-        }]);
-        $students = $students->sortBy('name');
+        $filterKeys = ['date', 'date_from', 'date_to', 'status', 'student_id', 'student_name', 'session_id'];
+        $requestedTab = $request->query('tab');
+        $hasRecordFilters = $request->hasAny(array_merge($filterKeys, ['page']));
+        $activeTab = in_array($requestedTab, ['overview', 'roster', 'records', 'sessions'], true)
+            ? $requestedTab
+            : ($hasRecordFilters ? 'records' : 'overview');
 
-        // 2. Get Attendance History for this subject
-        $attendanceRecords = Attendance::with('user')
-            ->where('subject_code', $subjectCode)
-            ->orderBy('date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->limit(100) // Show recent
+        // 1. Enrolled Students (scoped strictly to this class)
+        $students = $subject->getAllStudents();
+        $students->load(['attendances' => function ($q) use ($subject) {
+            $q->where(function ($sub) use ($subject) {
+                $sub->where('subject_id', $subject->id)
+                    ->orWhere(fn ($legacy) => $legacy->whereNull('subject_id')->where('subject_code', $subject->code));
+            });
+        }]);
+        $students = $students->sortBy('name')->values();
+
+        // 2. Complete Class Attendance Stats & Recent Snapshot (strictly scoped by subject_id / code)
+        $baseClassQuery = $reportService->recordsQuery(
+            ['subject_id' => $subject->id, 'subject' => $subject->code],
+            [$subject->code]
+        );
+        $classStats = $reportService->summarizeQuery($baseClassQuery);
+        $recentClassRecords = (clone $baseClassQuery)->limit(5)->get();
+
+        // 3. Filtered Paginated Attendance Records for this class
+        $recordFilters = $request->only($filterKeys);
+        $scopedRecordFilters = array_merge($recordFilters, [
+            'subject_id' => $subject->id,
+            'subject' => $subject->code,
+        ]);
+        $filteredRecordsQuery = $reportService->recordsQuery($scopedRecordFilters, [$subject->code]);
+        $filteredStats = $reportService->summarizeQuery($filteredRecordsQuery);
+        $attendanceRecords = $filteredRecordsQuery
+            ->paginate(20)
+            ->appends(array_merge($recordFilters, ['tab' => 'records']));
+
+        // 4. Class Attendance Sessions (QR + assistant-hosted sessions for this subject)
+        $attendanceSessions = AttendanceSession::where('subject_code', $subject->code)
+            ->with('creator')
+            ->withCount([
+                'attendances' => fn ($q) => $q->where(function ($sub) use ($subject) {
+                    $sub->where('subject_id', $subject->id)
+                        ->orWhere(fn ($legacy) => $legacy->whereNull('subject_id')->where('subject_code', $subject->code));
+                }),
+            ])
+            ->orderByDesc('created_at')
+            ->limit(50)
             ->get();
 
         $studentAssistants = $subject->studentAssistantAssignments()
@@ -1759,8 +1837,18 @@ class TeacherController extends Controller
         $availableAssistantSlots = max(0, 2 - $occupiedStudentIds->count());
 
         return view('teacher.classroom.show', compact(
-            'subject', 'students', 'attendanceRecords', 'studentAssistants',
-            'eligibleAssistantStudents', 'availableAssistantSlots'
+            'subject',
+            'students',
+            'activeTab',
+            'classStats',
+            'filteredStats',
+            'recentClassRecords',
+            'attendanceRecords',
+            'recordFilters',
+            'attendanceSessions',
+            'studentAssistants',
+            'eligibleAssistantStudents',
+            'availableAssistantSlots'
         ));
     }
 
@@ -1788,24 +1876,30 @@ class TeacherController extends Controller
         }
 
         $count = 0;
-        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $subjectCode, &$count) {
+        DB::transaction(function () use ($request, $subject, &$count) {
             foreach ($request->attendance as $userId => $status) {
                 $statusNormalized = ucfirst(strtolower($status));
 
-            // When teacher marks a student as Present/Late, the record should not remain excused.
-            $updateData = [
-                'status' => $statusNormalized,
-            ];
+                $updateData = [
+                    'subject_id' => $subject->id,
+                    'subject_code' => $subject->code,
+                    'subject_name' => $subject->name,
+                    'status' => $statusNormalized,
+                    'method' => 'manual',
+                ];
 
-            if ($statusNormalized !== 'Absent') {
-                $updateData['excused'] = false;
-                $updateData['excuse_note'] = null;
-            }
+                if ($statusNormalized === 'Excused') {
+                    $updateData['excused'] = true;
+                } elseif ($statusNormalized !== 'Absent') {
+                    $updateData['excused'] = false;
+                    $updateData['excuse_note'] = null;
+                }
 
-                Attendance::updateOrCreate(
+                Attendance::updateOrCreateRecord(
                     [
                         'user_id' => (int) $userId,
-                        'subject_code' => $subjectCode,
+                        'subject_id' => $subject->id,
+                        'subject_code' => $subject->code,
                         'date' => $request->date,
                     ],
                     $updateData
@@ -1814,7 +1908,9 @@ class TeacherController extends Controller
             }
         });
 
-        return redirect()->route('teacher.classroom.show', $subjectCode)->with('success', "Attendance saved for {$count} student(s) on " . \Carbon\Carbon::parse($request->date)->format('M d, Y') . ".");
+        return redirect()
+            ->route('teacher.classroom.show', ['subjectCode' => $subject->code, 'tab' => 'records', 'date' => $request->date])
+            ->with('success', "Attendance saved for {$count} student(s) on " . Carbon::parse($request->date)->format('M d, Y') . ".");
     }
 
     public function markAllPresent(Request $request, $subjectCode)
@@ -1832,14 +1928,19 @@ class TeacherController extends Controller
 
         $count = 0;
         foreach ($students as $student) {
-            Attendance::updateOrCreate(
+            Attendance::updateOrCreateRecord(
                 [
                     'user_id' => $student->id,
-                    'subject_code' => $subjectCode,
+                    'subject_id' => $subject->id,
+                    'subject_code' => $subject->code,
                     'date' => $request->date,
                 ],
                 [
+                    'subject_id' => $subject->id,
+                    'subject_code' => $subject->code,
+                    'subject_name' => $subject->name,
                     'status' => 'Present',
+                    'method' => 'manual',
                     'excused' => false,
                     'excuse_note' => null,
                 ]
@@ -1847,7 +1948,9 @@ class TeacherController extends Controller
             $count++;
         }
 
-        return redirect()->route('teacher.classroom.show', $subjectCode)->with('success', "Marked all {$count} student(s) present for " . \Carbon\Carbon::parse($request->date)->format('M d, Y') . ".");
+        return redirect()
+            ->route('teacher.classroom.show', ['subjectCode' => $subject->code, 'tab' => 'records', 'date' => $request->date])
+            ->with('success', "Marked all {$count} student(s) present for " . Carbon::parse($request->date)->format('M d, Y') . ".");
     }
 
     public function exportStudentsCsv(Request $request)
@@ -1869,19 +1972,18 @@ class TeacherController extends Controller
         return Excel::download(new StudentsExport($students), 'students.csv', \Maatwebsite\Excel\Excel::CSV);
     }
 
-    public function exportAttendanceCsv(Request $request, \App\Services\AttendanceReportService $reportService)
+    public function exportAttendanceCsv(Request $request, AttendanceReportService $reportService)
     {
-        $subjectCodes = $request->user()->subjects()->pluck('code')->all();
-        abort_if($request->filled('subject_code') && !in_array($request->query('subject_code'), $subjectCodes, true), 403);
+        [, $subjectCodes] = $this->authorizeAttendanceFilters($request, $request->user());
 
         $logs = $reportService->recordsQuery($request->query(), $subjectCodes)->get();
 
         return Excel::download(new AttendanceExport($logs), 'attendance.csv', \Maatwebsite\Excel\Excel::CSV);
     }
 
-    public function exportAttendanceExcel(Request $request, \App\Services\AttendanceReportService $reportService)
+    public function exportAttendanceExcel(Request $request, AttendanceReportService $reportService)
     {
-        $subjectCodes = $request->user()->subjects()->pluck('code')->all();
+        [, $subjectCodes] = $this->authorizeAttendanceFilters($request, $request->user());
         $records = $reportService->recordsQuery($request->query(), $subjectCodes)->lazy();
 
         return $reportService->downloadRecordsExcel($records);

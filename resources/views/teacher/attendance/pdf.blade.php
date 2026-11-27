@@ -46,6 +46,9 @@
             @if(!empty($filters['subject']))
                 <div class="filter-tag"><strong>Subject:</strong> {{ $filters['subject'] }}</div>
             @endif
+            @if(!empty($filters['session_id']))
+                <div class="filter-tag"><strong>Session:</strong> {{ $filters['session_id'] === 'manual' ? 'Manual / Unlinked' : '#' . $filters['session_id'] }}</div>
+            @endif
         </div>
     </div>
     @endif
