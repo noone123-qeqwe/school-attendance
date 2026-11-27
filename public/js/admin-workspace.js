@@ -3,30 +3,8 @@
     'use strict';
     if (!document.body.classList.contains('admin-portal')) return;
 
-    document.querySelectorAll('[data-admin-navigation]').forEach(nav => {
-        const search = nav.querySelector('[data-admin-nav-search]');
-        const groups = [...nav.querySelectorAll('[data-admin-nav-group]')];
-        search?.addEventListener('input', () => {
-            const query = search.value.trim().toLocaleLowerCase();
-            let total = 0;
-            groups.forEach(group => {
-                let count = 0;
-                group.querySelectorAll('[data-admin-nav-link]').forEach(link => {
-                    const terms = `${link.textContent} ${link.dataset.adminNavKeywords || ''}`.toLocaleLowerCase();
-                    const matches = !query || terms.includes(query);
-                    link.closest('[data-admin-nav-entry]').hidden = !matches;
-                    if (matches) count++;
-                });
-                group.hidden = count === 0;
-                total += count;
-            });
-            nav.querySelector('[data-admin-nav-empty]').hidden = total > 0;
-        });
-        if (nav.closest('#moreSheet')) {
-            nav.addEventListener('click', event => {
-                if (event.target.closest('a[href]')) window.closeMoreSheet?.();
-            });
-        }
+    document.getElementById('adminMobileLinks')?.addEventListener('click', event => {
+        if (event.target.closest('a[href]')) window.closeMoreSheet?.();
     });
 
     document.querySelectorAll('.academic-tools').forEach(nav => {

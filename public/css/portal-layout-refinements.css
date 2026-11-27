@@ -270,11 +270,6 @@
         padding-inline: 10px !important;
     }
 
-    body.admin-portal .sidebar.collapsed .admin-nav-group > summary {
-        padding-inline: 0 !important;
-        justify-content: center !important;
-    }
-
     body.admin-portal .sidebar.collapsed .admin-workspace-nav .nav-link {
         width: 44px;
         margin-inline: auto !important;

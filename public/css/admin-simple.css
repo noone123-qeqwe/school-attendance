@@ -5,12 +5,7 @@
         max-width: var(--admin-content-width);
         padding: 24px clamp(20px, 3vw, 40px) 48px !important;
     }
-    body.admin-portal .admin-nav-search { margin: 0 0 16px; position: relative; }
-    body.admin-portal .admin-nav-search input { padding: 10px 0; }
-    body.admin-portal .admin-nav-group { padding: 2px 0; border-bottom: 0; }
-    body.admin-portal .admin-nav-links { margin: 6px 0 8px 18px; border-left: 1px solid var(--surface-border); padding: 0 0 0 6px; }
     body.admin-portal .admin-workspace-nav .nav-link { font-size: .82rem; margin: 2px 0; min-height: 42px; }
-    body.admin-portal .sidebar.collapsed .admin-nav-links { margin-left: 0; border-left: 0; padding-left: 0; }
     body.admin-portal .admin-breadcrumb { display: flex; align-items: center; gap: 10px; color: var(--text-secondary); font-size: .78rem; }
     body.admin-portal .admin-breadcrumb a { color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
     body.admin-portal .admin-breadcrumb a:hover { color: var(--gold); }
@@ -145,16 +140,6 @@
     body.admin-portal .top-header { background: var(--admin-canvas); border-bottom-color: var(--admin-rule); }
     body.admin-portal .sidebar { background: #181311; border-right-color: var(--admin-rule); }
     body.admin-portal .sidebar-divider { visibility: hidden; margin-block: 0; }
-    body.admin-portal .admin-nav-search { background: var(--admin-field); border-color: var(--admin-rule); }
-    body.admin-portal .admin-nav-group + .admin-nav-group { margin-block-start: 16px; }
-    body.admin-portal .admin-nav-label {
-        color: var(--admin-muted);
-        margin: 0 10px 6px;
-        font-size: .68rem;
-        font-weight: 650;
-        text-transform: uppercase;
-        letter-spacing: .09em;
-    }
     body.admin-portal .admin-nav-links { margin: 0; padding: 0; border: 0; list-style: none; }
     body.admin-portal .admin-workspace-nav .nav-link {
         color: var(--admin-muted);
@@ -168,8 +153,6 @@
         border-inline-start: 2px solid var(--admin-accent);
     }
     body.admin-portal .admin-workspace-nav .nav-link::before { display: none; }
-    body.admin-portal .sidebar.collapsed .admin-nav-label { display: none; }
-    body.admin-portal .sidebar.collapsed .admin-nav-group + .admin-nav-group { margin-block-start: 12px; }
     body.admin-portal .sidebar.collapsed .admin-workspace-nav .nav-link { justify-content: center; padding-inline: 0; }
     body.admin-portal .sidebar.collapsed .admin-workspace-nav .nav-link-text { display: none; }
     body.admin-portal .admin-breadcrumb { margin-block: -4px 12px; }
