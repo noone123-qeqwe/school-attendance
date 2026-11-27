@@ -148,17 +148,6 @@
     gap: 4px;
     font-weight: 600;
 }
-.empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: #94a3b8;
-}
-.empty-state i {
-    display: block;
-    font-size: 2rem;
-    margin-bottom: 12px;
-    color: #cbd5e1;
-}
 .alert-success {
     background: rgba(16,185,129,0.12);
     border: 1px solid rgba(16,185,129,0.2);
@@ -335,9 +324,9 @@
     <!-- Filters -->
     <div style="padding: 16px 22px; border-bottom: 1px solid rgba(255,255,255,0.08);">
         <form method="GET" action="{{ route('teacher.excuse.reviews') }}" class="filter-form">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label for="excuseFilterStatus" style="font-size: 0.8rem; font-weight: 600; color: #f8fafc; margin-bottom: 4px; display: block;">Status</label>
+            <div class="tch-filter-grid">
+                <div class="tch-filter-field">
+                    <label for="excuseFilterStatus" class="tch-filter-label">Status</label>
                     <select id="excuseFilterStatus" name="status" class="tch-input" style="width: 100%;">
                         <option value="">All Status</option>
                         <option value="pending" {{ $excuseStatus === 'pending' ? 'selected' : '' }}>Pending</option>
@@ -345,8 +334,8 @@
                         <option value="rejected" {{ $excuseStatus === 'rejected' ? 'selected' : '' }}>Rejected</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label for="excuseFilterSubject" style="font-size: 0.8rem; font-weight: 600; color: #f8fafc; margin-bottom: 4px; display: block;">Subject</label>
+                <div class="tch-filter-field">
+                    <label for="excuseFilterSubject" class="tch-filter-label">Subject</label>
                     <select id="excuseFilterSubject" name="subject" class="tch-input" style="width: 100%;">
                         <option value="">All Subjects</option>
                         @foreach($teacherSubjects as $subject)
@@ -356,8 +345,8 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label for="excuseFilterStudent" style="font-size: 0.8rem; font-weight: 600; color: #f8fafc; margin-bottom: 4px; display: block;">Student</label>
+                <div class="tch-filter-field">
+                    <label for="excuseFilterStudent" class="tch-filter-label">Student</label>
                     <select id="excuseFilterStudent" name="student_id" class="tch-input" style="width: 100%;">
                         <option value="">All Students</option>
                         @foreach($students as $student)
@@ -367,12 +356,12 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-2" style="display: flex; align-items: end; gap: 8px; flex-wrap: wrap;">
-                    <button type="submit" class="tch-btn tch-btn-primary" style="white-space: nowrap;">
-                        <i class="bi bi-search"></i> Filter
+                <div class="tch-filter-actions">
+                    <button type="submit" class="tch-btn tch-btn-primary">
+                        <i class="bi bi-search" aria-hidden="true"></i> Filter
                     </button>
-                    <a href="{{ route('teacher.excuse.reviews') }}" class="tch-btn tch-btn-ghost" style="white-space: nowrap;">
-                        <i class="bi bi-arrow-clockwise"></i> Clear
+                    <a href="{{ route('teacher.excuse.reviews') }}" class="tch-btn tch-btn-ghost">
+                        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Clear
                     </a>
                 </div>
             </div>
@@ -380,7 +369,7 @@
     </div>
 
     <!-- Excuse Submissions Table -->
-    <div style="overflow-x: auto; padding: 22px;">
+    <div style="overflow-x: auto;">
         <table class="adm-table">
             <thead>
                 <tr>

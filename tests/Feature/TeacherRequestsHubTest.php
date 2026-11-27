@@ -352,5 +352,16 @@ class TeacherRequestsHubTest extends TestCase
         $redirectedHtml = $this->actingAs($teacher)->get(route('teacher.excuses'))->assertOk()->getContent();
         $this->assertStringContainsString('Faculty Workshop Leave', $redirectedHtml);
         $this->assertMatchesRegularExpression('/id="tab-btn-my-excuses".*?aria-selected="true"/s', $redirectedHtml);
+
+        // Regression checks for filter grid layout and button styling
+        $this->assertStringContainsString('class="tch-filter-grid"', $redirectedHtml);
+        $this->assertStringContainsString('class="tch-filter-actions"', $redirectedHtml);
+        $this->assertStringNotContainsString('<div class="col-md-2" style="display: flex; align-items: end;', $redirectedHtml);
+
+        $masterCss = file_get_contents(public_path('css/teacher-portal-master.css'));
+        $this->assertIsString($masterCss);
+        $this->assertStringContainsString('body.teacher-portal .tch-btn', $masterCss);
+        $this->assertStringContainsString('display: inline-flex !important;', $masterCss);
+        $this->assertStringContainsString('text-decoration: none !important;', $masterCss);
     }
 }

@@ -25,7 +25,7 @@
         </form>
     </div>
 
-    <div style="overflow-x: auto; padding: 22px;">
+    <div style="overflow-x: auto;">
         <table class="adm-table">
             <thead>
                 <tr>
