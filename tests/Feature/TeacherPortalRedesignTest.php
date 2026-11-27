@@ -83,6 +83,7 @@ class TeacherPortalRedesignTest extends TestCase
         preg_match('/<nav class="sidebar-nav teacher-sidebar-nav".*?<\/nav>/s', $html, $sidebarMatches);
         $sidebarHtml = $sidebarMatches[0] ?? '';
         $this->assertNotEmpty($sidebarHtml);
+        $this->assertStringNotContainsString('teacher-nav-divider', $sidebarHtml);
         $this->assertStringNotContainsString('teacher-nav-description', $sidebarHtml);
         $this->assertStringNotContainsString('My Profile', $sidebarHtml);
         $this->assertStringNotContainsString('Take Attendance', $sidebarHtml);

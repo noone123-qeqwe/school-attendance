@@ -22,9 +22,6 @@
     @endforeach
 @else
     @foreach(\App\Support\TeacherNavigation::sidebarSections() as $sectionIndex => $items)
-        @if($sectionIndex > 0)
-            <div class="teacher-nav-divider" role="separator"></div>
-        @endif
         @foreach($items as [$key, $label, $destination, $icon, $patterns, $query])
             @php
                 $active = \App\Support\TeacherNavigation::isActive($key, $patterns);
