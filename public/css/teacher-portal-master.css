@@ -236,6 +236,37 @@
         display: none !important;
     }
 
+    @media (min-width: 768px) {
+        body.teacher-portal .sidebar {
+            overflow: visible !important;
+        }
+
+        body.teacher-portal .sidebar .sidebar-edge-toggle {
+            position: absolute;
+            top: 18px;
+            right: -14px;
+            z-index: 1250;
+            width: 28px;
+            height: 28px;
+            min-height: 28px;
+            padding: 0;
+            border-radius: 999px !important;
+            background: #1e1515 !important;
+            border: 1px solid rgba(212, 175, 55, 0.28) !important;
+            color: #d6ccc6 !important;
+            font-size: 0.78rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+            transition: transform 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+        }
+
+        body.teacher-portal .sidebar .sidebar-edge-toggle:hover {
+            background: #261b1b !important;
+            border-color: rgba(212, 175, 55, 0.55) !important;
+            color: #faf8f5 !important;
+            transform: scale(1.06);
+        }
+    }
+
     /* ── 3. Top Header, Search Bar, Account Avatar & Dropdowns ───────────── */
     body.teacher-portal .top-header {
         background: rgba(20, 14, 14, 0.9) !important;

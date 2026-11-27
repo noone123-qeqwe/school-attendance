@@ -117,6 +117,11 @@
             @endif
         @endauth
         @show
+        @if(Auth::user()->isTeacher())
+            <button type="button" class="burger-btn sidebar-edge-toggle d-none d-md-flex" id="burgerBtn" onclick="toggleSidebar()" aria-controls="sidebar" aria-expanded="true" aria-label="Collapse sidebar" title="Toggle sidebar">
+                <i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i>
+            </button>
+        @endif
     </aside>
     @endauth
 
@@ -124,10 +129,12 @@
         <header class="top-header {{ Auth::check() ? '' : 'guest' }}" id="topHeader">
             @auth
                 <div class="header-left">
+                    @unless(Auth::user()->isTeacher())
                     <!-- Burger -->
                     <button type="button" class="burger-btn d-none d-md-flex" id="burgerBtn" onclick="toggleSidebar()" aria-controls="sidebar" aria-expanded="true" aria-label="Collapse sidebar">
                         <i class="bi bi-layout-sidebar-inset"></i>
                     </button>
+                    @endunless
                     @php
                         $isRootPage = request()->routeIs('home') || request()->routeIs('admin.dashboard') || request()->routeIs('teacher.dashboard') || request()->routeIs('parent.dashboard');
                         $fallbackBackUrl = route('home');

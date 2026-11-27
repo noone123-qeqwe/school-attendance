@@ -145,6 +145,13 @@ class TeacherPortalRedesignTest extends TestCase
         $this->assertStringNotContainsString('header-page-title', $html);
         $this->assertStringNotContainsString('header-page-sub', $html);
 
+        // Sidebar collapse toggle sits on the sidebar seam rather than inside topHeader
+        preg_match('/<aside\b[^>]*\bid="sidebar"[^>]*>(.*?)<\/aside>/s', $html, $asideMatch);
+        $this->assertStringContainsString('id="burgerBtn"', $asideMatch[1] ?? '');
+        $this->assertStringContainsString('sidebar-edge-toggle', $asideMatch[1] ?? '');
+        preg_match('/<header\b[^>]*\bid="topHeader"[^>]*>(.*?)<\/header>/s', $html, $headerMatch);
+        $this->assertStringNotContainsString('id="burgerBtn"', $headerMatch[1] ?? '');
+
         // Zero mojibake
         $this->assertStringNotContainsString('â€”', $html);
         $this->assertStringNotContainsString('â€¢', $html);
@@ -223,6 +230,9 @@ class TeacherPortalRedesignTest extends TestCase
         $this->assertStringContainsString('student-portal-master.css', $html);
         $this->assertStringContainsString('student-dashboard.css', $html);
         $this->assertStringContainsString('header-title-container', $html);
+        preg_match('/<header\b[^>]*\bid="topHeader"[^>]*>(.*?)<\/header>/s', $html, $headerMatch);
+        $this->assertStringContainsString('id="burgerBtn"', $headerMatch[1] ?? '');
+        $this->assertStringNotContainsString('sidebar-edge-toggle', $html);
         $this->assertStringNotContainsString('teacher-portal-master.css', $html);
     }
 }
