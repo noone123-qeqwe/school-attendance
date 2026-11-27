@@ -49,7 +49,6 @@
     <header class="tc-header">
         <div class="tc-header-top">
             <div class="tc-header-copy">
-                <x-back-link :href="route('teacher.classroom.index')" label="Back to My Classes" variant="teacher-ghost" class="mb-2" />
                 <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
                     <span class="tc-code-pill portal-mono">{{ $subject->code }}</span>
                     @if($subject->course)
