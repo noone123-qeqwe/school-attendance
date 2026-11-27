@@ -68,7 +68,6 @@
     }
 
     body.student-portal #mobileBottomNav.mobile-bottom-nav > .mbn-item-scan > .mbn-scan-icon {
-        grid-row: 1 / -1;
         align-self: center;
         opacity: 1 !important;
     }

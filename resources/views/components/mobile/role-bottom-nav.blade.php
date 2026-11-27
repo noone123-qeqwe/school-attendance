@@ -47,9 +47,7 @@
                 @if($isParentAlerts)
                     <span class="mbn-badge" data-parent-unread-count @if($parentUnreadCount === 0) hidden @endif aria-label="{{ $parentUnreadCount }} unread alerts">{{ $parentUnreadCount > 9 ? '9+' : $parentUnreadCount }}</span>
                 @endif
-                @unless($isStudentScan)
-                    <span>{{ $item['shortLabel'] }}</span>
-                @endunless
+                <span>{{ $item['shortLabel'] }}</span>
             </a>
         @endif
     @endforeach
