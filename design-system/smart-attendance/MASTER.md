@@ -60,6 +60,11 @@
 - Fixed chrome offset: `scroll-padding-top` and `scroll-padding-bottom` compensate for sticky header and mobile bottom navigation (`focus-not-obscured`, WCAG 2.2 AA).
 - Zero horizontal viewport overflow across all breakpoints.
 
+### Component Conventions
+- Give each screen a clear focal point. Use one visible primary action per task and use secondary styling for alternatives.
+- Use readable column headings and subtle row dividers for data tables. Pair form inputs with visible labels and put field errors beside their inputs.
+- Give empty states a short explanation and a next action when the user can resolve the state.
+
 ### Motion Tokens (Purposeful, Interruptible, GPU-Only)
 - `--ds-dur-fast: 120ms` (press / micro-feedback)
 - `--ds-dur-base: 180ms` (hover / border / color transitions)
@@ -76,7 +81,6 @@
 - **Progressive Loading:** Layout-reserved skeleton shimmer cards inside async modals (`CLS < 0.1`).
 
 ### Student Portal Implementation Architecture
-- **Master Stylesheet (`public/css/student-portal-master.css`):** Loaded on student routes across `layouts/app.blade.php`, `layouts/mobile-app.blade.php`, and `layouts/biometric-flow.blade.php`, wrapped in `@media screen` (preserving clean black-on-white `@media print` / PDF output) and strictly scoped to `body.student-portal`, `body.student-mobile-portal`, and `body.biometric-flow-page` so Admin, Teacher, and Parent portals remain untouched.
-- **Covered Student Surfaces (Desktop & Mobile):**
-  - Shell: Desktop sidebar, settings sidebar, top header, notification & account dropdowns, Command Palette (`Ctrl+K`), mobile header, slide-over drawer, docked mobile bottom navigation bar, More bottom sheet, modals, toasts.
-  - Pages: Dashboard (`/home`, `/mobile/home`), Classes & COR (`/my-classes`), Weekly Schedule (`/schedule`), Attendance & School Calendar + Records (`/student/calendar`, `/student/attendance-calendar`, `/attendance/records`, `/mobile/history`), QR Check-In & Results (`/mobile/scan`, `/qr/result`, `/qr/login`, `/peer-snap`), Excuse Submissions & Forms (`/excuses*`), Notifications (`/notifications`), Profile (`/profile`, `/mobile/profile`), Settings (`/settings`), Face Registration Studio (`/settings/biometrics/face`), Student Assistant (`/student-assistant*`), and student status/auth pages (`/student/pending-approval`, `/password/change`, `/offline`).
+- `resources/views/layouts/app.blade.php` serves the shared student pages. `resources/views/layouts/biometric-flow.blade.php` serves focused biometric flows. Both load `public/css/student-portal-master.css` for their student surfaces. Keep screen styling scoped to the relevant portal so print and other roles retain their own styles.
+- `app/Support/StudentNavigation.php` defines student destinations for the desktop sidebar and mobile bottom navigation. `app/Support/MobileNavigation.php` provides compact labels and the dedicated Scan tab. Legacy mobile home, history, and profile routes redirect to the shared pages.
+- See the [student dashboard page overrides](pages/student-dashboard.md) for the dashboard's layout and visibility rules.

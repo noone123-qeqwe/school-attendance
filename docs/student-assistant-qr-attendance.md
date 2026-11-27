@@ -58,7 +58,7 @@ An assignment defaults to QR duties. Enable **Submit attendance for teacher
 review** on the assignment to let the assistant submit Present or Late for an
 eligible classmate during an active session. The assistant can follow their
 own submissions in **Student Assistant**. Mobile students with an active
-assignment can open it from **More**.
+assignment can open it from the **Assist** tab.
 
 Teachers open **Assistant submissions** from the class or QR screen. Each
 submission stays pending until the assigned teacher approves or dismisses it.

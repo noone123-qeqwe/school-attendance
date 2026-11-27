@@ -8,7 +8,7 @@ UI/UX design intelligence for web, mobile, and desktop. This skill should be use
 
 ## Smart Attendance
 
-Apply the [attendance design guide](references/attendance-design.md) when using this skill on this project. Use its established palette and interface conventions to interpret the design recommendations.
+Use the [attendance design system](../../../design-system/smart-attendance/MASTER.md) for this project's palette, component conventions, and responsive behavior. Check its `pages/` directory for page overrides.
 
 Upstream release [v2.15.0](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/releases/tag/v2.15.0).
 

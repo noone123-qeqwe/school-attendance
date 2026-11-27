@@ -1,6 +1,6 @@
 # Third-party notices
 
-The skills are distributed by Agentic Awesome Skills and its contributors. Original written content is offered under CC BY 4.0. Imported material retains its upstream notices. The project copies the reviewed skill files without modification. The privacy-by-design README credits Abdeltoto. [Content license](https://creativecommons.org/licenses/by/4.0/) · [Collection attribution](https://github.com/sickn33/agentic-awesome-skills/blob/85d3a54b73ebf23683955bda67bf906aca527e57/docs/sources/sources.md)
+The skills are distributed by Agentic Awesome Skills and its contributors. Original written content is offered under CC BY 4.0. Imported material retains its upstream notices. Privacy by Design was contributed by [Abdeltoto](https://github.com/Abdeltoto). [Content license](https://creativecommons.org/licenses/by/4.0/) · [Collection attribution](https://github.com/sickn33/agentic-awesome-skills/blob/85d3a54b73ebf23683955bda67bf906aca527e57/docs/sources/sources.md)
 
 ## Collection content notice
 
