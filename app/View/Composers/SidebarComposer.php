@@ -61,6 +61,7 @@ class SidebarComposer
                 return [
                     'pendingExcusesCount' => ExcuseSubmission::query()
                         ->where('status', 'pending')
+                        ->where('user_id', '!=', $teacher->id)
                         ->whereHas('attendance', fn ($q) => $q->whereIn('subject_code', $subjectCodes))
                         ->count(),
                     'pendingCorrectionsCount' => AttendanceCorrection::query()

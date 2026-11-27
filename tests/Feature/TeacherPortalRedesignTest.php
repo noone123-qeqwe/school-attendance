@@ -90,7 +90,12 @@ class TeacherPortalRedesignTest extends TestCase
         $this->assertStringNotContainsString('Attendance Records', $sidebarHtml);
         $this->assertStringNotContainsString(route('teacher.attendance'), $sidebarHtml);
         $this->assertStringNotContainsString(route('teacher.notifications'), $sidebarHtml);
-        $this->assertStringContainsString(route('teacher.corrections'), $sidebarHtml);
+        $this->assertStringContainsString(route('teacher.excuse.reviews'), $sidebarHtml);
+        $this->assertStringContainsString('Excuses &amp; Corrections', $sidebarHtml);
+        $this->assertStringNotContainsString(route('teacher.corrections'), $sidebarHtml);
+        $this->assertStringNotContainsString(route('teacher.excuses'), $sidebarHtml);
+        $this->assertStringNotContainsString('Correction Requests', $sidebarHtml);
+        $this->assertStringNotContainsString('My Excuses', $sidebarHtml);
         $this->assertStringContainsString(route('teacher.classroom.index'), $sidebarHtml);
 
         // 5-slot Mobile Bottom Nav with center featured QR button

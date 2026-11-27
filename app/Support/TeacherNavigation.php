@@ -14,8 +14,7 @@ class TeacherNavigation
             ]],
             ['label' => 'Attendance & requests', 'items' => [
                 ['absent', 'Absent Report', 'teacher.absent', 'bi-person-x-fill', ['teacher.absent*'], 'Review missed classes and follow up', []],
-                ['excuses', 'Excuse Reviews', 'teacher.excuse.reviews', 'bi-file-earmark-text-fill', ['teacher.excuse.*'], 'Review student excuse letters', []],
-                ['corrections', 'Correction Requests', 'teacher.corrections', 'bi-pencil-square', ['teacher.corrections*'], 'Review requests to fix attendance', []],
+                ['requests', 'Excuses & Corrections', 'teacher.excuse.reviews', 'bi-file-earmark-text-fill', ['teacher.excuse.*', 'teacher.corrections*', 'teacher.excuses*'], 'Review student excuses, attendance corrections, and your own requests', []],
             ]],
             ['label' => 'Students & school', 'items' => [
                 ['students', 'Student Roster', 'teacher.students', 'bi-people-fill', ['teacher.students*', 'teacher.student'], 'Find students and view their progress', []],
@@ -25,7 +24,6 @@ class TeacherNavigation
             ['label' => 'My account', 'items' => [
                 ['notifications', 'Notifications', 'teacher.notifications', 'bi-bell-fill', ['teacher.notifications*'], 'Read school messages and updates', []],
                 ['profile', 'My Profile', 'teacher.profile', 'bi-person-circle', ['teacher.profile*'], 'Personal details, security, and preferences', []],
-                ['my-excuses', 'My Excuse Requests', 'teacher.excuses', 'bi-file-earmark-person-fill', ['teacher.excuses*'], 'Submit or track your own excuse requests', []],
             ]],
         ];
     }
@@ -43,11 +41,9 @@ class TeacherNavigation
                 ['calendar', 'School Calendar', 'teacher.calendar', 'bi-calendar-event-fill', ['teacher.calendar*'], []],
             ],
             [
-                ['excuses', 'Excuse Reviews', 'teacher.excuse.reviews', 'bi-file-earmark-text-fill', ['teacher.excuse.*'], []],
-                ['corrections', 'Correction Requests', 'teacher.corrections', 'bi-pencil-square', ['teacher.corrections*'], []],
+                ['requests', 'Excuses & Corrections', 'teacher.excuse.reviews', 'bi-file-earmark-text-fill', ['teacher.excuse.*', 'teacher.corrections*', 'teacher.excuses*'], []],
                 ['absent', 'Absent Report', 'teacher.absent', 'bi-person-x-fill', ['teacher.absent*'], []],
                 ['reports', 'Attendance Reports', 'teacher.reports', 'bi-graph-up-arrow', ['teacher.reports*'], []],
-                ['my-excuses', 'My Excuses', 'teacher.excuses', 'bi-file-earmark-person-fill', ['teacher.excuses*'], []],
             ],
         ];
     }
@@ -99,8 +95,9 @@ class TeacherNavigation
             'teacher.attendance.preview' => ['title' => 'Attendance Preview', 'group' => 'Attendance & records'],
             'teacher.attendance*' => ['title' => 'Attendance Records', 'group' => 'Attendance & records'],
             'teacher.absent*' => ['title' => 'Absent Report', 'group' => 'Attendance & records'],
-            'teacher.excuse.*' => ['title' => 'Excuse Reviews', 'group' => 'Attendance & requests'],
-            'teacher.corrections*' => ['title' => 'Correction Requests', 'group' => 'Attendance & requests'],
+            'teacher.excuses.create' => ['title' => 'Submit New Excuse', 'group' => 'Excuses & Corrections'],
+            'teacher.excuse.*' => ['title' => 'Excuses & Corrections', 'group' => 'Attendance & requests'],
+            'teacher.corrections*' => ['title' => 'Excuses & Corrections', 'group' => 'Attendance & requests'],
             'teacher.students.preview' => ['title' => 'Students Preview', 'group' => 'Students & roster'],
             'teacher.students*' => ['title' => 'Student Roster', 'group' => 'Students & roster'],
             'teacher.student' => ['title' => 'Student Details', 'group' => 'Students & roster'],
@@ -108,7 +105,7 @@ class TeacherNavigation
             'teacher.calendar*' => ['title' => 'School Calendar', 'group' => 'Academic calendar'],
             'teacher.notifications*' => ['title' => 'Notifications', 'group' => 'My account'],
             'teacher.profile*' => ['title' => 'My Profile', 'group' => 'My account'],
-            'teacher.excuses*' => ['title' => 'My Excuses', 'group' => 'My account'],
+            'teacher.excuses*' => ['title' => 'Excuses & Corrections', 'group' => 'Attendance & requests'],
         ];
 
         foreach ($map as $pattern => $meta) {

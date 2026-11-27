@@ -6,7 +6,7 @@
             @foreach($group['items'] as [$key, $label, $destination, $icon, $patterns, $description, $query])
                 @php
                     $active = \App\Support\TeacherNavigation::isActive($key, $patterns);
-                    $pendingCount = $key === 'excuses' ? ($pendingExcusesCount ?? 0) : ($key === 'corrections' ? ($pendingCorrectionsCount ?? 0) : 0);
+                    $pendingCount = $key === 'requests' ? (($pendingExcusesCount ?? 0) + ($pendingCorrectionsCount ?? 0)) : 0;
                 @endphp
                 <a href="{{ route($destination, $query) }}" class="more-sheet-item {{ $active ? 'active' : '' }}"
                    data-title="{{ $label }}" @if($active) aria-current="page" @endif data-color="gold" onclick="closeMoreSheet()">
@@ -28,7 +28,7 @@
         @foreach($items as [$key, $label, $destination, $icon, $patterns, $query])
             @php
                 $active = \App\Support\TeacherNavigation::isActive($key, $patterns);
-                $pendingCount = $key === 'excuses' ? ($pendingExcusesCount ?? 0) : ($key === 'corrections' ? ($pendingCorrectionsCount ?? 0) : 0);
+                $pendingCount = $key === 'requests' ? (($pendingExcusesCount ?? 0) + ($pendingCorrectionsCount ?? 0)) : 0;
             @endphp
             <a href="{{ route($destination, $query) }}"
                class="nav-link {{ $active ? 'active' : '' }}"

@@ -1028,78 +1028,116 @@ class TeacherController extends Controller
     }
 
     // ─────────────────────────────────────────
-    // EXCUSE REVIEWS (Teacher-scoped)
+    // EXCUSES & CORRECTIONS HUB (Teacher-scoped)
     // ─────────────────────────────────────────
     public function excuseReviews(Request $request)
     {
+        return $this->renderRequestsHub($request, 'excuses');
+    }
+
+    private function renderRequestsHub(Request $request, string $defaultTab)
+    {
+        $requestedTab = $request->query('tab');
+        $activeTab = in_array($requestedTab, ['excuses', 'corrections', 'my-excuses'], true)
+            ? $requestedTab
+            : $defaultTab;
+
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-            ->get();
-        
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)->get();
         $subjectCodes = $teacherSubjects->pluck('code');
-        
-        // Get excuse submissions for teacher's subjects only
-        $query = ExcuseSubmission::with(['user', 'attendance.subject', 'reviewer'])
-            ->whereHas('attendance', function($q) use ($subjectCodes) {
+
+        // 1. Excuse Reviews (student excuse letters for teacher's subjects)
+        $excuseStatus = $request->filled('excuse_status')
+            ? $request->input('excuse_status')
+            : ($activeTab === 'excuses' ? $request->input('status') : null);
+
+        $excuseBaseQuery = ExcuseSubmission::with(['user', 'attendance.subject', 'reviewer'])
+            ->where('user_id', '!=', $teacher->id)
+            ->whereHas('attendance', function ($q) use ($subjectCodes) {
                 $q->whereIn('subject_code', $subjectCodes);
-            })
-            ->orderBy('created_at', 'desc');
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by student
-        if ($request->filled('student_id')) {
-            $query->where('user_id', $request->student_id);
-        }
-
-        // Filter by subject
-        if ($request->filled('subject')) {
-            $query->whereHas('attendance', function($q) use ($request) {
-                $q->where('subject_code', $request->subject);
             });
+
+        $excuseQuery = (clone $excuseBaseQuery)->orderBy('created_at', 'desc');
+
+        if ($excuseStatus && in_array($excuseStatus, ['pending', 'approved', 'rejected'], true)) {
+            $excuseQuery->where('status', $excuseStatus);
         }
 
-        $excuseSubmissions = $query->paginate(20)->withQueryString();
-        
-        // Get students who have submitted excuses in teacher's subjects
+        if ($request->filled('student_id')) {
+            $excuseQuery->where('user_id', $request->student_id);
+        }
+
+        if ($request->filled('subject')) {
+            $requestedSubject = $request->input('subject');
+            if ($subjectCodes->contains($requestedSubject)) {
+                $excuseQuery->whereHas('attendance', function ($q) use ($requestedSubject) {
+                    $q->where('subject_code', $requestedSubject);
+                });
+            }
+        }
+
+        $excuseSubmissions = $excuseQuery
+            ->paginate(20, ['*'], 'excuse_page')
+            ->withQueryString();
+
         $students = User::where('role', 'student')
-            ->whereHas('excuseSubmissions.attendance', function($q) use ($subjectCodes) {
-                $q->whereIn('subject_code', $subjectCodes);
+            ->whereHas('excuseSubmissions', function ($q) use ($subjectCodes, $teacher) {
+                $q->where('user_id', '!=', $teacher->id)
+                    ->whereHas('attendance', fn ($attQ) => $attQ->whereIn('subject_code', $subjectCodes));
             })
             ->orderBy('name')
             ->get();
 
-        // Stats
-        $totalSubmissions = ExcuseSubmission::whereHas('attendance', function($q) use ($subjectCodes) {
-            $q->whereIn('subject_code', $subjectCodes);
-        })->count();
-        
-        $pendingCount = ExcuseSubmission::where('status', 'pending')
-            ->whereHas('attendance', function($q) use ($subjectCodes) {
-                $q->whereIn('subject_code', $subjectCodes);
-            })->count();
-            
-        $approvedCount = ExcuseSubmission::where('status', 'approved')
-            ->whereHas('attendance', function($q) use ($subjectCodes) {
-                $q->whereIn('subject_code', $subjectCodes);
-            })->count();
-            
-        $rejectedCount = ExcuseSubmission::where('status', 'rejected')
-            ->whereHas('attendance', function($q) use ($subjectCodes) {
-                $q->whereIn('subject_code', $subjectCodes);
-            })->count();
+        $totalSubmissions = (clone $excuseBaseQuery)->count();
+        $pendingCount = (clone $excuseBaseQuery)->where('status', 'pending')->count();
+        $approvedCount = (clone $excuseBaseQuery)->where('status', 'approved')->count();
+        $rejectedCount = (clone $excuseBaseQuery)->where('status', 'rejected')->count();
 
-        return view('teacher.excuse-reviews', compact(
-            'excuseSubmissions', 
-            'teacherSubjects', 
-            'students', 
-            'totalSubmissions', 
-            'pendingCount', 
-            'approvedCount', 
-            'rejectedCount'
+        // 2. Correction Requests (student attendance adjustment requests for teacher's subjects)
+        $correctionStatus = $request->filled('correction_status')
+            ? $request->input('correction_status')
+            : ($activeTab === 'corrections' ? $request->input('status') : null);
+
+        $correctionBaseQuery = \App\Models\AttendanceCorrection::with(['student', 'attendance.subject'])
+            ->whereHas('attendance', function ($q) use ($subjectCodes) {
+                $q->whereIn('subject_code', $subjectCodes);
+            });
+
+        $totalCorrectionsCount = (clone $correctionBaseQuery)->count();
+        $pendingCorrectionsTotal = (clone $correctionBaseQuery)->where('status', 'pending')->count();
+
+        $correctionQuery = (clone $correctionBaseQuery)->latest();
+        if ($correctionStatus && in_array($correctionStatus, ['pending', 'approved', 'rejected'], true)) {
+            $correctionQuery->where('status', $correctionStatus);
+        }
+
+        $corrections = $correctionQuery
+            ->paginate(20, ['*'], 'correction_page')
+            ->withQueryString();
+
+        // 3. My Excuses (teacher's own faculty excuse submissions)
+        $myExcuseSubmissions = ExcuseSubmission::with(['attendance.subject'])
+            ->where('user_id', $teacher->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        $myExcusesCount = $myExcuseSubmissions->count();
+
+        return view('teacher.requests-hub', compact(
+            'activeTab',
+            'excuseStatus',
+            'correctionStatus',
+            'excuseSubmissions',
+            'teacherSubjects',
+            'students',
+            'totalSubmissions',
+            'pendingCount',
+            'approvedCount',
+            'rejectedCount',
+            'corrections',
+            'totalCorrectionsCount',
+            'pendingCorrectionsTotal',
+            'myExcuseSubmissions',
+            'myExcusesCount'
         ));
     }
 
@@ -1667,16 +1705,9 @@ class TeacherController extends Controller
     // ─────────────────────────────────────────
     // TEACHER EXCUSES
     // ─────────────────────────────────────────
-    public function myExcuses()
+    public function myExcuses(Request $request)
     {
-        $teacher = Auth::user();
-        
-        $excuseSubmissions = \App\Models\ExcuseSubmission::with(['attendance.subject'])
-            ->where('user_id', $teacher->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return view('teacher.my_excuses.index', compact('excuseSubmissions'));
+        return $this->renderRequestsHub($request, 'my-excuses');
     }
 
     public function createExcuse()
@@ -1711,8 +1742,6 @@ class TeacherController extends Controller
         ], [
             'status' => 'Absent',
             'time_in' => null,
-            'time_out' => null,
-            'device_id' => null,
             'excused' => false
         ]);
 
@@ -1991,21 +2020,6 @@ class TeacherController extends Controller
 
     public function corrections(Request $request)
     {
-        $teacher = Auth::user();
-        $subjectCodes = $teacher->subjects()->pluck('code');
-
-        $query = \App\Models\AttendanceCorrection::with(['student', 'attendance.subject'])
-            ->whereHas('attendance', function ($q) use ($subjectCodes) {
-                $q->whereIn('subject_code', $subjectCodes);
-            })
-            ->latest();
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $corrections = $query->paginate(20)->withQueryString();
-
-        return view('teacher.corrections', compact('corrections'));
+        return $this->renderRequestsHub($request, 'corrections');
     }
 }
