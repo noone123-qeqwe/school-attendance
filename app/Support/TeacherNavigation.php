@@ -42,7 +42,6 @@ class TeacherNavigation
                 ['home', 'Dashboard', 'teacher.dashboard', 'bi-grid-fill', ['teacher.dashboard'], []],
                 ['classes', 'My Classes', 'teacher.classroom.index', 'bi-journal-bookmark-fill', ['teacher.classroom.index', 'teacher.classroom.show', 'teacher.classroom.assistant-attendance*', 'teacher.subjects*'], []],
                 ['attendance', 'Attendance Records', 'teacher.attendance', 'bi-clipboard-check-fill', ['teacher.attendance*'], []],
-                ['students', 'Student Roster', 'teacher.students', 'bi-people-fill', ['teacher.students*', 'teacher.student'], []],
                 ['calendar', 'School Calendar', 'teacher.calendar', 'bi-calendar-event-fill', ['teacher.calendar*'], []],
             ],
             [
