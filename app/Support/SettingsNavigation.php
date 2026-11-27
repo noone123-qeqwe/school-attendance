@@ -32,7 +32,7 @@ class SettingsNavigation
             [
                 'destination' => 'profile',
                 'icon' => 'bi-person-circle',
-                'label' => 'Profile & school details',
+                'label' => 'Profile',
                 'description' => 'Photo, contact number, and school information',
             ],
         ];

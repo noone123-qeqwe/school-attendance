@@ -764,7 +764,7 @@
         @if($user->isStudent())
         <header class="student-settings-detail-heading">
             <button type="button" class="student-settings-back" data-account-back hidden><i class="bi bi-arrow-left" aria-hidden="true"></i><span data-account-back-label>Back</span></button>
-            <h2 id="studentSettingsPageTitle" tabindex="-1">Profile &amp; school details</h2>
+            <h2 id="studentSettingsPageTitle" tabindex="-1">Profile</h2>
             <p id="studentSettingsPageDescription">Manage your photo, contact number, and student information.</p>
         </header>
         @endif

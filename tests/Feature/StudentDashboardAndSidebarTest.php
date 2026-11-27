@@ -273,7 +273,7 @@ class StudentDashboardAndSidebarTest extends TestCase
         // Exact Settings sidebar groups and items
         foreach ([
             'Account',
-            'Profile & school details',
+            'Profile',
             'Guardians',
             'Security & attendance',
             'Password & email',
@@ -290,6 +290,7 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertStringNotContainsString('Classes & Schedule', $sidebarText);
         $this->assertStringNotContainsString('Excuse Submissions', $sidebarText);
         $this->assertStringContainsString('data-settings-page="profile"', $sidebarHtml);
+        $this->assertSame('Profile', trim($xpath->evaluate('string(//h2[@id="studentSettingsPageTitle"])')));
         $this->assertStringContainsString('data-settings-page="recovery"', $sidebarHtml);
 
         // The settings identify attendance face enrollment and fingerprint registration.
