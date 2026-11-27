@@ -2121,11 +2121,14 @@
 
     /* ── Teacher Settings Sidebar (1:1 Student Settings Sidebar Chrome) ─────── */
     body.teacher-portal .settings-sidebar-back-wrap {
-        padding: 10px 12px 6px;
+        margin-top: auto;
+        padding: 12px 10px max(16px, env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
         flex-shrink: 0;
     }
 
     body.teacher-portal .settings-sidebar-back-btn {
+        width: 100%;
         display: flex !important;
         align-items: center !important;
         gap: 10px !important;
@@ -2243,7 +2246,7 @@
     }
 
     body.teacher-portal .sidebar.collapsed .settings-sidebar-back-wrap {
-        padding: 10px 0 6px;
+        padding: 12px 0 max(16px, env(safe-area-inset-bottom, 0px));
         display: flex;
         justify-content: center;
     }

@@ -64,11 +64,16 @@ class TeacherSettingsRedesignTest extends TestCase
         $this->assertStringContainsString('settings-sidebar-brand', $sidebarHtml);
         $this->assertStringContainsString('settings-sidebar-nav', $sidebarHtml);
 
-        // Back to Dashboard returns to teacher dashboard
+        // Back to Dashboard sits in the bottom footer after </nav> and returns to teacher dashboard
         $backLinks = $xpath->query('.//a[contains(@class, "settings-sidebar-back-btn")]', $sidebarNode);
         $this->assertSame(1, $backLinks->length);
         $this->assertSame(route('teacher.dashboard'), $backLinks->item(0)->getAttribute('href'));
         $this->assertStringContainsString('Back to Dashboard', $backLinks->item(0)->textContent ?? '');
+        $navEndPos = strpos($sidebarHtml, '</nav>');
+        $backWrapPos = strpos($sidebarHtml, 'settings-sidebar-back-wrap');
+        $this->assertNotFalse($navEndPos);
+        $this->assertNotFalse($backWrapPos);
+        $this->assertGreaterThan($navEndPos, $backWrapPos);
 
         // Teacher-specific Settings items present
         foreach ([

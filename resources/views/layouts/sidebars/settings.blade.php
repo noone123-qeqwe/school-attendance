@@ -15,20 +15,6 @@
 
 <div class="sidebar-divider"></div>
 
-<div class="settings-sidebar-back-wrap">
-    <a href="{{ $dashboardUrl }}"
-       class="nav-link settings-sidebar-back-btn"
-       id="settingsBackToDashboardLink"
-       title="Back to Dashboard"
-       data-title="Back to Dashboard"
-       aria-label="Back to Dashboard">
-        <i class="bi bi-arrow-left" aria-hidden="true"></i>
-        <span class="nav-link-text">Back to Dashboard</span>
-    </a>
-</div>
-
-<div class="sidebar-divider"></div>
-
 <nav class="sidebar-nav {{ $isStudentUser ? 'student-sidebar-nav ' : '' }}settings-sidebar-nav" aria-label="Settings navigation">
     @foreach($settingsGroups as $groupLabel => $items)
         <div class="{{ $isStudentUser ? 'student-nav-label ' : '' }}nav-section-label">{{ $groupLabel }}</div>
@@ -50,3 +36,15 @@
         @endforeach
     @endforeach
 </nav>
+
+<div class="settings-sidebar-back-wrap">
+    <a href="{{ $dashboardUrl }}"
+       class="nav-link settings-sidebar-back-btn"
+       id="settingsBackToDashboardLink"
+       title="Back to Dashboard"
+       data-title="Back to Dashboard"
+       aria-label="Back to Dashboard">
+        <i class="bi bi-arrow-left" aria-hidden="true"></i>
+        <span class="nav-link-text">Back to Dashboard</span>
+    </a>
+</div>

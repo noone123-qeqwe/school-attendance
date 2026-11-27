@@ -506,10 +506,13 @@
     border-color: transparent;
 }
 .settings-sidebar-back-wrap {
-    padding: 10px 12px 6px;
+    margin-top: auto;
+    padding: 12px 10px max(16px, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
 }
 .settings-sidebar-back-btn {
+    width: 100%;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -537,7 +540,7 @@
     color: #cfa46f;
 }
 .sidebar.collapsed .settings-sidebar-back-wrap {
-    padding: 10px 0 6px;
+    padding: 12px 0 max(16px, env(safe-area-inset-bottom, 0px));
     display: flex;
     justify-content: center;
 }
