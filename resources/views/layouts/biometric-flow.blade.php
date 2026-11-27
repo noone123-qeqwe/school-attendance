@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{{ asset('css/design-tokens.css') }}?v={{ filemtime(public_path('css/design-tokens.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/biometric-flow.css') }}?v={{ filemtime(public_path('css/biometric-flow.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/student-portal-master.css') }}?v={{ filemtime(public_path('css/student-portal-master.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/student-motion-craft.css') }}?v={{ filemtime(public_path('css/student-motion-craft.css')) }}">
 </head>
 <body class="biometric-flow-page @yield('pageClass')">
     <main class="biometric-flow">

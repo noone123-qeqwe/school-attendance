@@ -106,18 +106,21 @@
     --ds-silver:        #FAF8F5;
     --ds-rose-accent:   #D4AF37;
 
-    /* ── TRANSITIONS & MOTION (UI UX Pro Max v2.15.0) ── */
+    /* ── TRANSITIONS & MOTION (Emil Kowalski + UI UX Pro Max) ── */
+    --ease-out:             cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out:          cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer:          cubic-bezier(0.32, 0.72, 0, 1);
     --ds-dur-fast:          120ms;
     --ds-dur-base:          180ms;
     --ds-dur-enter:         240ms;
     --ds-dur-exit:          145ms;
-    --ds-ease:              cubic-bezier(0.4, 0, 0.2, 1);
-    --ds-ease-enter:        cubic-bezier(0.16, 1, 0.3, 1);
-    --ds-ease-exit:         cubic-bezier(0.4, 0, 1, 1);
+    --ds-ease:              cubic-bezier(0.23, 1, 0.32, 1);
+    --ds-ease-enter:        cubic-bezier(0.23, 1, 0.32, 1);
+    --ds-ease-exit:         cubic-bezier(0.23, 1, 0.32, 1);
     --ds-ease-spring:       cubic-bezier(0.23, 1, 0.32, 1);
-    --ds-transition-fast:   120ms cubic-bezier(0.4, 0, 0.2, 1);
-    --ds-transition:        180ms cubic-bezier(0.16, 1, 0.3, 1);
-    --ds-transition-slow:   320ms cubic-bezier(0.16, 1, 0.3, 1);
+    --ds-transition-fast:   120ms cubic-bezier(0.23, 1, 0.32, 1);
+    --ds-transition:        180ms cubic-bezier(0.23, 1, 0.32, 1);
+    --ds-transition-slow:   320ms cubic-bezier(0.32, 0.72, 0, 1);
 
     /* ── GLASS EFFECTS ── */
     --ds-glass-blur:    blur(16px);

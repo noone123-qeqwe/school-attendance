@@ -225,6 +225,9 @@
                     <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-stage-link">
                         View timetable <i class="bi bi-arrow-right" aria-hidden="true"></i>
                     </a>
+                    <a href="{{ route('mobile.scan', ['open_code' => 1]) }}" class="sd-stage-link is-subtle d-inline-flex d-md-none">
+                        <i class="bi bi-123" aria-hidden="true"></i> Enter PIN
+                    </a>
                     @if($peerAvailable)
                         <a href="{{ route('peer-snap.index') }}" class="sd-stage-link is-subtle">
                             <i class="bi bi-person-check" aria-hidden="true"></i> Check in for a classmate

@@ -593,8 +593,14 @@
         }
     }
 
-    // Open / Close actions
-    function openPalette() {
+    // Open / Close actions (0ms instant for keyboard shortcuts; smooth for touch/pointer)
+    function openPalette(triggerSource) {
+        var isKeyboard = triggerSource === 'keyboard';
+        if (isKeyboard) {
+            overlay.setAttribute('data-instant', 'true');
+        } else {
+            overlay.removeAttribute('data-instant');
+        }
         overlay.classList.add('active');
         document.body.classList.add('cmd-palette-open');
         document.documentElement.style.overflow = 'hidden';
@@ -607,11 +613,20 @@
         filterItems('');
         activeIndex = -1;
         attachViewportListeners();
-        if (window.triggerHaptic) window.triggerHaptic('medium');
-        setTimeout(function() { input.focus({ preventScroll: true }); }, 60);
+        if (!isKeyboard && window.triggerHaptic) window.triggerHaptic('medium');
+        if (isKeyboard) {
+            input.focus({ preventScroll: true });
+        } else {
+            setTimeout(function() { input.focus({ preventScroll: true }); }, 40);
+        }
     }
 
-    function closePalette() {
+    function closePalette(triggerSource) {
+        if (triggerSource === 'keyboard') {
+            overlay.setAttribute('data-instant', 'true');
+        } else {
+            overlay.removeAttribute('data-instant');
+        }
         overlay.classList.remove('active');
         document.body.classList.remove('cmd-palette-open');
         document.documentElement.style.overflow = '';
@@ -652,13 +667,13 @@
     });
 
     document.addEventListener('keydown', function(e) {
-        // Cmd+K or Ctrl+K shortcut
+        // Cmd+K or Ctrl+K shortcut (Raycast 0ms instant toggle)
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
             e.preventDefault();
             if (overlay.classList.contains('active')) {
-                closePalette();
+                closePalette('keyboard');
             } else {
-                openPalette();
+                openPalette('keyboard');
             }
             return;
         }
@@ -667,7 +682,7 @@
 
         if (e.key === 'Escape') {
             e.preventDefault();
-            closePalette();
+            closePalette('keyboard');
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
             var items = getAllItems();

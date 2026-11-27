@@ -1074,11 +1074,45 @@
         });
     }
 
+    function initModalKeyboardTrap() {
+        document.addEventListener('keydown', function(e) {
+            const openModal = document.querySelector('#ppmPreviewModal.show, #ppmRemoveConfirmModal.show');
+            if (!openModal) return;
+
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                if (openModal.id === 'ppmPreviewModal' && typeof window.ppmCancelPreview === 'function') {
+                    window.ppmCancelPreview();
+                } else if (openModal.id === 'ppmRemoveConfirmModal' && typeof window.ppmCloseRemoveModal === 'function') {
+                    window.ppmCloseRemoveModal();
+                }
+                return;
+            }
+
+            if (e.key === 'Tab') {
+                const focusables = Array.from(
+                    openModal.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+                ).filter(el => el.offsetParent !== null);
+                if (!focusables.length) return;
+                const first = focusables[0];
+                const last = focusables[focusables.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        });
+    }
+
     function init() {
         teleportModals();
         bindEventListeners();
         attachCropperEventListeners();
         initDragAndDrop();
+        initModalKeyboardTrap();
     }
 
     // Initialize on DOM ready

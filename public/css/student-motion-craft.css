@@ -1,0 +1,938 @@
+/* ==========================================================================
+   Student Portal Craft, Lighting & Motion Architecture v5.0
+   Emil Kowalski Design Engineering + Impeccable + Modern Web Guidance
+   Strictly scoped to student routes (body.student-portal, body.biometric-flow-page,
+   body.scanner-page-layout) so Teacher/Admin/Parent portals remain untouched.
+   ========================================================================== */
+
+/* ── 1. Cross-Document Native MPA View Transitions ───────────────────────── */
+@view-transition {
+    navigation: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    body.student-portal .sidebar {
+        view-transition-name: student-sidebar;
+    }
+
+    body.student-portal #topHeader {
+        view-transition-name: student-top-header;
+    }
+
+    body.student-portal nav#mobileBottomNav {
+        view-transition-name: student-mobile-dock;
+    }
+
+    ::view-transition-old(student-sidebar),
+    ::view-transition-new(student-sidebar),
+    ::view-transition-old(student-top-header),
+    ::view-transition-new(student-top-header),
+    ::view-transition-old(student-mobile-dock),
+    ::view-transition-new(student-mobile-dock) {
+        animation: none;
+    }
+
+    ::view-transition-old(root) {
+        animation: sm-vt-out 160ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    }
+
+    ::view-transition-new(root) {
+        animation: sm-vt-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    }
+}
+
+@keyframes sm-vt-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes sm-vt-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── 2. Canonical Motion & Physical Lighting Tokens ──────────────────────── */
+body.student-portal,
+body.biometric-flow-page,
+body.scanner-page-layout {
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+    --sm-rim-light: inset 0 1px 0 rgba(255, 255, 255, 0.068);
+    --sm-rim-strong: inset 0 1px 0 rgba(255, 255, 255, 0.11);
+    --sm-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.065), 0 1px 2px rgba(0, 0, 0, 0.24), 0 8px 24px -16px rgba(0, 0, 0, 0.52);
+    --sm-card-shadow-hover: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 14px -4px rgba(0, 0, 0, 0.36), 0 14px 32px -16px rgba(0, 0, 0, 0.6);
+    --sm-popover-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 20px 48px -12px rgba(0, 0, 0, 0.74), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    --sm-cta-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 8px rgba(0, 0, 0, 0.28);
+
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: none;
+}
+
+html:has(body.student-portal),
+html:has(body.biometric-flow-page),
+html:has(body.scanner-page-layout) {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: none;
+    color-scheme: dark;
+}
+
+/* Mobile-native control ergonomics (never disable selection on body content) */
+body.student-portal :is(button, a, [role="button"], .nav-link, .mbn-item, .scal-tile, .sd-pulse-day, .sd-seg-btn, .sd-view-toggle-btn, .notif-tab, .notif-pill, .student-view-switcher button, .settings-mobile-pill, .student-photo-change-btn, .scanner-mode-tab),
+body.biometric-flow-page :is(button, a, [role="button"]),
+body.scanner-page-layout :is(button, a, [role="button"]) {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* Prevent iOS Safari input auto-zoom on touch pointers */
+@media (pointer: coarse) {
+    body.student-portal :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, select),
+    body.biometric-flow-page :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select),
+    body.scanner-page-layout :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+        font-size: max(16px, 1rem) !important;
+    }
+}
+
+/* Contain scroll chaining inside scrollable sub-regions */
+body.student-portal :is(.modal-body, .top-notif-list, .cmd-palette-body, .settings-mobile-nav, .scal-tips-card, .cor-table-wrap) {
+    overscroll-behavior: contain;
+}
+
+/* ── 3. Universal Tactile Press Physics (Emil Kowalski 100-160ms ease-out) ─ */
+body.student-portal :is(
+    .sd-cta-primary,
+    .sd-cta-secondary,
+    .sd-stage-btn-primary,
+    .sd-stage-link,
+    .sd-panel-link,
+    .sd-seg-btn,
+    .sd-view-toggle-btn,
+    .sd-pending-pill,
+    .sd-warning-btn-primary,
+    .sd-warning-btn-ghost,
+    .notif-btn-mark-all,
+    .notif-tab,
+    .notif-pill,
+    .notif-action-btn,
+    .excuse-cta-primary,
+    .excuse-view-tab,
+    .student-photo-change-btn,
+    .student-page-link,
+    .copy-student-id-btn,
+    .scal-nav-today-btn,
+    .settings-sidebar-back-btn,
+    .settings-mobile-pill,
+    .sbtn,
+    .sec-action-btn,
+    .cancel-btn,
+    .scanner-primary-action-btn,
+    .scanner-paste-action-btn,
+    .scanner-secondary-action-btn,
+    .scanner-alt-btn,
+    .scanner-mode-tab,
+    .permission-primary-btn,
+    .sidebar .nav-link
+),
+body.biometric-flow-page :is(.biometric-flow-back, .bio-primary-btn, .bio-secondary-btn, button.btn) {
+    transition:
+        transform 140ms var(--ease-out),
+        background-color 160ms ease,
+        border-color 160ms ease,
+        color 160ms ease,
+        box-shadow 180ms var(--ease-out);
+}
+
+body.student-portal :is(
+    .sd-cta-primary,
+    .sd-cta-secondary,
+    .sd-stage-btn-primary,
+    .sd-warning-btn-primary,
+    .sd-warning-btn-ghost,
+    .notif-btn-mark-all,
+    .notif-action-btn,
+    .excuse-cta-primary,
+    .student-photo-change-btn,
+    .student-page-link,
+    .copy-student-id-btn,
+    .scal-nav-today-btn,
+    .settings-sidebar-back-btn,
+    .settings-mobile-pill,
+    .sbtn,
+    .sec-action-btn,
+    .cancel-btn,
+    .scanner-primary-action-btn,
+    .scanner-paste-action-btn,
+    .scanner-secondary-action-btn,
+    .scanner-alt-btn,
+    .permission-primary-btn,
+    .sidebar .nav-link,
+    .notif-pill,
+    .sd-pending-pill
+):active,
+body.biometric-flow-page :is(.biometric-flow-back, .bio-primary-btn, .bio-secondary-btn, button.btn):active {
+    transform: scale(0.97) !important;
+}
+
+body.student-portal :is(
+    .top-header .burger-btn,
+    .top-header .notif-btn,
+    .top-header .mobile-back-btn,
+    .top-header #headerSearchBar,
+    .scal-nav-btn,
+    .scanner-icon-btn,
+    .btn-notif-delete,
+    .ppm-zoom-btn
+) {
+    transition:
+        transform 120ms var(--ease-out),
+        background-color 150ms ease,
+        border-color 150ms ease,
+        color 150ms ease;
+}
+
+body.student-portal :is(
+    .top-header .burger-btn,
+    .top-header .notif-btn,
+    .top-header .mobile-back-btn,
+    .scal-nav-btn,
+    .scanner-icon-btn,
+    .btn-notif-delete,
+    .ppm-zoom-btn
+):active {
+    transform: scale(0.93) !important;
+}
+
+body.student-portal :is(.scal-tile, .sd-pulse-day):not(.empty) {
+    transition:
+        transform 130ms var(--ease-out),
+        background-color 150ms ease,
+        border-color 150ms ease,
+        box-shadow 160ms var(--ease-out);
+}
+
+body.student-portal :is(.scal-tile, .sd-pulse-day):not(.empty):active {
+    transform: scale(0.93) !important;
+}
+
+body.student-portal :is(.ent-btn-secondary, .student-view-switcher button):active {
+    transform: scale(0.97) !important;
+}
+
+/* Primary alabaster CTAs: machined physical feel */
+body.student-portal :is(
+    .sd-cta-primary,
+    .sd-stage-btn-primary,
+    .notif-btn-mark-all,
+    .excuse-cta-primary,
+    .scanner-primary-action-btn,
+    .permission-primary-btn
+) {
+    box-shadow: var(--sm-cta-shadow) !important;
+}
+
+/* Fine-pointer gated hover elevation (never triggers sticky hover on touch) */
+@media (hover: hover) and (pointer: fine) {
+    body.student-portal :is(
+        .sd-cta-primary,
+        .sd-stage-btn-primary,
+        .notif-btn-mark-all,
+        .excuse-cta-primary,
+        .scanner-primary-action-btn,
+        .permission-primary-btn
+    ):not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: inset 0 1px 0 #ffffff, 0 6px 18px -4px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    body.student-portal :is(
+        .sd-cta-secondary,
+        .student-photo-change-btn,
+        .student-page-link,
+        .copy-student-id-btn,
+        .scal-nav-today-btn,
+        .ent-btn-secondary
+    ):hover {
+        transform: translateY(-1px);
+    }
+
+    body.student-portal :is(.cor-card-item, .notif-item-card, .sd-excuse-row, .sd-subj-row, .sd-timeline-item):hover {
+        border-color: rgba(212, 175, 55, 0.28) !important;
+    }
+
+    body.student-portal .scal-tile:not(.empty):hover {
+        transform: translateY(-1px);
+        border-color: rgba(212, 175, 55, 0.36) !important;
+        background: rgba(38, 27, 27, 0.96) !important;
+    }
+
+    body.student-portal .sd-pulse-day:hover {
+        transform: translateY(-2px);
+        border-color: rgba(212, 175, 55, 0.38) !important;
+        background: rgba(38, 27, 27, 0.95) !important;
+    }
+
+    body.student-portal :is(.sd-stage-link, .sd-panel-link, .student-page-link):hover i.bi-arrow-right {
+        transform: translateX(3px);
+    }
+}
+
+body.student-portal :is(.sd-stage-link, .sd-panel-link, .student-page-link) i.bi-arrow-right {
+    transition: transform 160ms var(--ease-out);
+}
+
+/* ── 4. Machined Dark-Mode Surface Lighting & Depth Scale ────────────────── */
+body.student-portal :is(
+    .sd-stage,
+    .sd-telemetry,
+    .sd-panel,
+    .cor-toolbar,
+    .cor-card-item,
+    .scal-card,
+    .sd-day-inspector,
+    .scal-legend-card,
+    .scal-tips-card,
+    .notif-controls-card,
+    .notif-item-card,
+    .sd-excuse-kpi-strip,
+    .sd-excuse-panel,
+    .student-profile-summary,
+    .info-card,
+    .sp.student-settings .sc,
+    .sp.student-settings .sec-card,
+    .scanner-modal-card
+),
+body.biometric-flow-page .bio-card {
+    box-shadow: var(--sm-card-shadow) !important;
+}
+
+body.student-portal .sd-stage.is-next {
+    background: linear-gradient(180deg, rgba(212, 175, 55, 0.045) 0%, #1E1515 44%) !important;
+}
+
+body.student-portal .sd-stage.is-live {
+    background: linear-gradient(180deg, rgba(74, 222, 128, 0.055) 0%, #1E1515 44%) !important;
+}
+
+body.student-portal :is(.cor-card-item, .notif-item-card, .sd-excuse-panel) {
+    transition: border-color 180ms ease, background-color 180ms ease, transform 180ms var(--ease-out);
+}
+
+/* ── 5. Sidebar & Top Header Craft (Fix White Curve Artifact + Glass Scroll) */
+body.student-portal .sidebar {
+    transition: width 240ms var(--ease-drawer), transform 260ms var(--ease-drawer) !important;
+}
+
+body.student-portal .top-header {
+    transition:
+        left 240ms var(--ease-drawer),
+        background-color 200ms ease,
+        border-color 200ms ease,
+        box-shadow 200ms ease !important;
+}
+
+body.student-portal .main-content {
+    transition: padding-left 240ms var(--ease-drawer) !important;
+}
+
+body.student-portal .top-header[data-scrolled="true"] {
+    background: rgba(20, 14, 14, 0.88) !important;
+    backdrop-filter: blur(18px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.11) !important;
+    box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.65) !important;
+}
+
+/* Clean desktop sidebar active pill without bent left inset border artifact */
+body.student-portal .sidebar .student-sidebar-nav .nav-link,
+body.student-portal .sidebar .settings-sidebar-nav .nav-link {
+    position: relative;
+}
+
+body.student-portal .sidebar .student-sidebar-nav .nav-link.active,
+body.student-portal .sidebar .settings-sidebar-nav .nav-link:is(.active, [aria-current="page"]) {
+    background: rgba(122, 26, 26, 0.28) !important;
+    border: 1px solid rgba(212, 175, 55, 0.3) !important;
+    color: #FAF8F5 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+body.student-portal .sidebar:not(.collapsed) .student-sidebar-nav .nav-link.active::before,
+body.student-portal .sidebar:not(.collapsed) .settings-sidebar-nav .nav-link:is(.active, [aria-current="page"])::before {
+    content: "";
+    display: block !important;
+    position: absolute;
+    left: 3px;
+    top: 50%;
+    width: 3px;
+    height: 18px;
+    border-radius: 999px;
+    background: #D4AF37;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+/* Collapsed sidebar icon tooltips with crisp origin scale */
+body.student-portal .sidebar.collapsed .nav-link::after {
+    transform-origin: left center;
+    transform: translateY(-50%) translateX(-4px) scale(0.96);
+    transition: opacity 130ms var(--ease-out), transform 130ms var(--ease-out) !important;
+    box-shadow: var(--sm-popover-shadow);
+}
+
+body.student-portal .sidebar.collapsed .nav-link:is(:hover, :focus-visible)::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0) scale(1);
+}
+
+/* Mobile Header Overflow & Truncation Guard */
+@media screen and (max-width: 767.98px) {
+    body.student-portal .top-header {
+        background: rgba(20, 14, 14, 0.88) !important;
+        backdrop-filter: blur(18px) saturate(140%) !important;
+        -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    body.student-portal .top-header .header-left {
+        min-width: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
+    }
+
+    body.student-portal .top-header .header-title-container {
+        min-width: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
+    }
+
+    body.student-portal .top-header .header-page-title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: clamp(0.84rem, 3.8vw, 0.96rem) !important;
+        letter-spacing: -0.02em;
+    }
+
+    body.student-portal .top-header .header-right {
+        flex-shrink: 0;
+    }
+}
+
+/* ── 6. Native Obsidian Glass Mobile Bottom Dock ─────────────────────────── */
+@media screen and (max-width: 768px) {
+    body.student-portal nav#mobileBottomNav.mobile-bottom-nav {
+        --student-dock-icon-row: 30px;
+        background: rgba(20, 14, 14, 0.9) !important;
+        backdrop-filter: blur(22px) saturate(150%) !important;
+        -webkit-backdrop-filter: blur(22px) saturate(150%) !important;
+        border: 0 !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 18px 18px 0 0 !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 -10px 28px rgba(0, 0, 0, 0.45) !important;
+        padding: 6px max(8px, env(safe-area-inset-right, 0px))
+            calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)) !important;
+    }
+
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item {
+        position: relative;
+        min-height: 58px !important;
+        gap: 3px !important;
+        padding: 4px 2px !important;
+        font-size: 0.72rem !important;
+        font-weight: 600 !important;
+        color: #ACA099 !important;
+        border-radius: 12px;
+        transition: transform 130ms var(--ease-out), color 160ms ease !important;
+    }
+
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item:active {
+        transform: scale(0.91) !important;
+    }
+
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item > i {
+        width: 44px !important;
+        height: 30px !important;
+        border-radius: 999px;
+        font-size: 21px !important;
+        transition: background-color 180ms var(--ease-out), color 160ms ease, transform 160ms var(--ease-out);
+    }
+
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item[aria-current]::before {
+        display: none !important;
+    }
+
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item[aria-current] > i {
+        background: rgba(212, 175, 55, 0.16) !important;
+        color: #F5DFA8 !important;
+    }
+
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item[aria-current] > span:last-child {
+        color: #FAF8F5 !important;
+        font-weight: 700 !important;
+    }
+
+    /* Elevated machined center Scan focal button */
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item:is(.mbn-item-featured, [href*="/scan"]) > i,
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item.mbn-item-featured .mbn-featured-btn {
+        display: grid;
+        place-items: center;
+        width: 46px !important;
+        height: 30px !important;
+        border-radius: 999px;
+        background: rgba(122, 26, 26, 0.85) !important;
+        border: 1px solid rgba(212, 175, 55, 0.42);
+        color: #FAF8F5 !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 4px 12px rgba(122, 26, 26, 0.42);
+        transition: transform 140ms var(--ease-out), background-color 160ms ease;
+    }
+
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item:is(.mbn-item-featured, [href*="/scan"]) > i {
+        font-size: 18px !important;
+    }
+
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item.mbn-item-featured .mbn-featured-btn svg {
+        width: 19px;
+        height: 19px;
+    }
+
+    body.student-portal #mobileBottomNav.mobile-bottom-nav > a.mbn-item:is(.mbn-item-featured, [href*="/scan"]) > span:last-child {
+        color: #F5DFA8 !important;
+        font-weight: 700 !important;
+    }
+}
+
+/* ── 7. Origin-Aware Dropdown Popovers (Bell + Account Menu) ─────────────── */
+body.student-portal .top-header .dropdown-menu.top-notif-dropdown-menu,
+body.student-portal .top-header .dropdown-menu.fb-dropdown {
+    transform-origin: top right;
+    background: #1E1515 !important;
+    border: 1px solid rgba(255, 255, 255, 0.11) !important;
+    box-shadow: var(--sm-popover-shadow) !important;
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+    transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
+}
+
+body.student-portal .top-header .dropdown-menu.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+@starting-style {
+    body.student-portal .top-header .dropdown-menu.show {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.96);
+    }
+}
+
+body.student-portal .header-account-trigger .bi-chevron-down {
+    transition: transform 180ms var(--ease-out);
+}
+
+body.student-portal .header-account-trigger[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+}
+
+/* ── 8. Sonner-Grade Student Toast Transitions (No Left Side-Tab) ────────── */
+body.student-portal .modern-toast.is-student-sonner {
+    border-left-width: 1px !important;
+    background: rgba(30, 21, 21, 0.96) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 12px !important;
+    box-shadow: var(--sm-popover-shadow) !important;
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition:
+        transform 300ms var(--ease-out),
+        opacity 240ms var(--ease-out);
+    touch-action: pan-y;
+    cursor: grab;
+    animation: none !important;
+}
+
+body.student-portal .modern-toast.is-student-sonner.is-entering {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.96);
+}
+
+body.student-portal .modern-toast.is-student-sonner.is-exiting {
+    opacity: 0;
+    transform: translate3d(20px, 0, 0) scale(0.96);
+    transition: transform 200ms var(--ease-out), opacity 180ms ease;
+    pointer-events: none;
+}
+
+@media (max-width: 767.98px) {
+    body.student-portal .modern-toast.is-student-sonner.is-entering {
+        transform: translate3d(0, -14px, 0) scale(0.96);
+    }
+    body.student-portal .modern-toast.is-student-sonner.is-exiting {
+        transform: translate3d(0, -14px, 0) scale(0.96);
+    }
+}
+
+/* ── 9. GPU Gliding Segmented Indicator ──────────────────────────────────── */
+body.student-portal [data-glide-group] {
+    position: relative;
+    isolation: isolate;
+}
+
+body.student-portal [data-glide-group] > .sm-glide-indicator {
+    position: absolute;
+    left: 0;
+    top: 3px;
+    bottom: 3px;
+    border-radius: 8px;
+    background: rgba(122, 26, 26, 0.34);
+    border: 1px solid rgba(212, 175, 55, 0.34);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    z-index: 0;
+    transform: translate3d(var(--glide-x, 0px), 0, 0);
+    width: var(--glide-w, 0px);
+    opacity: 0;
+    transition:
+        transform 230ms var(--ease-out),
+        width 230ms var(--ease-out),
+        opacity 140ms ease;
+}
+
+body.student-portal [data-glide-group][data-glide-ready="true"] > .sm-glide-indicator {
+    opacity: 1;
+}
+
+body.student-portal [data-glide-group][data-glide-instant="true"] > .sm-glide-indicator {
+    transition: none !important;
+}
+
+body.student-portal [data-glide-group] > :not(.sm-glide-indicator) {
+    position: relative;
+    z-index: 1;
+}
+
+body.student-portal [data-glide-group][data-glide-ready="true"] > :is(.active, .is-active, [aria-pressed="true"]) {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Scanner switcher keeps high-contrast alabaster sliding thumb */
+body.student-portal .scanner-mode-switcher[data-glide-group] > .sm-glide-indicator,
+body.scanner-page-layout .scanner-mode-switcher[data-glide-group] > .sm-glide-indicator {
+    background: #FAF8F5;
+    border-color: #FAF8F5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+}
+
+/* ── 10. Cohesive Non-Uniform Page Entrance Choreography ─────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+    body.student-portal .sd-cockpit > .sd-masthead,
+    body.student-portal .sd-cockpit > .sd-hero-grid > .sd-stage,
+    body.student-portal .sd-cockpit > .sd-hero-grid > .sd-telemetry,
+    body.student-portal .sd-cockpit > .sd-workspace .sd-panel,
+    body.student-portal .cor-page-wrapper > .cor-actions-bar,
+    body.student-portal .cor-page-wrapper > .cor-sheet,
+    body.student-portal .scal-outer > .scal-card,
+    body.student-portal .scal-outer > .scal-side,
+    body.student-portal .notif-wrapper > .notif-hero,
+    body.student-portal .notif-wrapper > .notif-controls-card,
+    body.student-portal .notif-wrapper > .notif-list,
+    body.student-portal .profile-page > .student-profile-summary,
+    body.student-portal .profile-page > .row {
+        animation: sm-enter-up 260ms var(--ease-out) both;
+    }
+
+    body.student-portal .sd-cockpit > .sd-masthead { animation-delay: 0ms; }
+    body.student-portal .sd-cockpit > .sd-hero-grid > .sd-stage { animation-delay: 25ms; }
+    body.student-portal .sd-cockpit > .sd-hero-grid > .sd-telemetry { animation-delay: 65ms; }
+    body.student-portal .sd-cockpit > .sd-workspace > .sd-col-main .sd-panel { animation-delay: 95ms; }
+    body.student-portal .sd-cockpit > .sd-workspace > .sd-col-side .sd-panel { animation-delay: 120ms; }
+
+    body.student-portal .cor-page-wrapper > .cor-sheet,
+    body.student-portal .scal-outer > .scal-side,
+    body.student-portal .notif-wrapper > .notif-controls-card,
+    body.student-portal .profile-page > .row { animation-delay: 45ms; }
+
+    body.student-portal .notif-wrapper > .notif-list { animation-delay: 80ms; }
+}
+
+@keyframes sm-enter-up {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 8px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+/* Dashboard SVG Attendance Ring & Segmented Meter smooth reveal */
+body.student-portal .sd-gauge-fill {
+    transition: stroke-dashoffset 680ms var(--ease-out);
+}
+
+body.student-portal .sd-breakdown-bar > .sd-seg {
+    transform-origin: left center;
+    transition: transform 520ms var(--ease-out);
+}
+
+body.student-portal .sd-breakdown-bar.is-pre-reveal > .sd-seg {
+    transform: scaleX(0);
+}
+
+/* ── 11. Page-Specific Craft Fixes (Classes, Profile, Settings, Calendar) ── */
+
+/* Profile mobile zero-gap fix on Change Photo button */
+body.student-portal .student-profile-summary label.student-photo-change-btn,
+body.student-portal .student-profile-summary .student-photo-change-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+}
+
+body.student-portal .student-profile-summary label.student-photo-change-btn > i {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 2px !important;
+    flex-shrink: 0;
+}
+
+/* Blur-masked state crossfade (Copy -> Copied, Confirm morph) */
+body.student-portal .sm-morph-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: filter 160ms ease, opacity 160ms ease;
+}
+
+body.student-portal .sm-morph-content.is-morphing {
+    filter: blur(2px);
+    opacity: 0.55;
+}
+
+body.student-portal .copy-student-id-btn.is-copied {
+    border-color: rgba(74, 222, 128, 0.5) !important;
+    color: #4ADE80 !important;
+    background: rgba(74, 222, 128, 0.1) !important;
+}
+
+/* Classes toolbar balanced geometry on desktop + clean stack on mobile */
+body.student-portal .cor-toolbar {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: space-between;
+    gap: 12px 16px !important;
+}
+
+body.student-portal .cor-toolbar .student-filter-field[for="scheduleSearchInput"] {
+    flex: 1 1 280px !important;
+    max-width: 460px;
+}
+
+body.student-portal .cor-toolbar .student-filter-field .cor-search-input {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+body.student-portal .cor-toolbar .student-filter-field[for="scheduleDayFilter"] {
+    flex: 0 0 164px !important;
+}
+
+@media (max-width: 991.98px) {
+    body.student-portal .cor-toolbar .student-filter-field[for="scheduleSearchInput"],
+    body.student-portal .cor-toolbar .student-filter-field[for="scheduleDayFilter"] {
+        flex: 1 1 100% !important;
+        max-width: none !important;
+        width: 100% !important;
+    }
+}
+
+/* Refine Today class card accent: restrained gold/emerald badge instead of loud green frame */
+body.student-portal .cor-card-item.is-today {
+    border-color: rgba(74, 222, 128, 0.28) !important;
+    background: linear-gradient(180deg, rgba(74, 222, 128, 0.045) 0%, #1E1515 48%) !important;
+}
+
+body.student-portal .cor-tba-label {
+    color: #9A8D85 !important;
+    font-weight: 500 !important;
+}
+
+/* Mobile Settings Horizontal Pill Strip edge-fade hint + scroll snap */
+@media (max-width: 991.98px) {
+    body.student-portal .settings-mobile-nav {
+        scroll-snap-type: x proximity;
+        -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 88%, transparent 100%);
+        mask-image: linear-gradient(90deg, #000 0%, #000 88%, transparent 100%);
+        padding-right: 28px !important;
+    }
+
+    body.student-portal .settings-mobile-pill {
+        scroll-snap-align: center;
+    }
+}
+
+/* Smooth Settings panel reveal on tab switch */
+@media (prefers-reduced-motion: no-preference) {
+    body.student-portal .sp.student-settings[data-student-settings] .spanel.active {
+        animation: sm-panel-fade 190ms var(--ease-out) both !important;
+    }
+}
+
+@keyframes sm-panel-fade {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 6px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+/* Smooth Calendar Day Inspector content swap */
+body.student-portal .sd-day-inspector-list.is-swapping {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+}
+
+body.student-portal .sd-day-inspector-list {
+    transition: opacity 170ms var(--ease-out), transform 170ms var(--ease-out);
+}
+
+/* Calendar Today button touch-safe 44px height on mobile */
+@media (max-width: 767.98px) {
+    body.student-portal .scal-nav-today-btn {
+        min-height: 44px !important;
+        padding: 6px 12px !important;
+        font-size: 0.78rem;
+    }
+}
+
+/* Excuse dropzone drag-over tactile feedback & subject card press */
+body.student-portal #dropZone {
+    transition: border-color 180ms ease, background-color 180ms ease, transform 180ms var(--ease-out);
+}
+
+body.student-portal #dropZone.is-dragover {
+    border-color: #D4AF37 !important;
+    background: rgba(212, 175, 55, 0.09) !important;
+    transform: scale(1.008);
+}
+
+body.student-portal .excuse-subject-card {
+    transition: border-color 160ms ease, background-color 160ms ease, transform 140ms var(--ease-out);
+}
+
+body.student-portal .excuse-subject-card:active {
+    transform: scale(0.985);
+}
+
+/* ── 12. Command Palette: Raycast 0ms on Keyboard, Vaul Sheet on Mobile ──── */
+#cmdPaletteOverlay[data-instant="true"],
+#cmdPaletteOverlay[data-instant="true"] .cmd-palette {
+    transition: none !important;
+}
+
+@media (max-width: 767.98px) {
+    #cmdPaletteOverlay.cmd-palette-overlay .cmd-palette {
+        transform: translate3d(0, 100%, 0);
+        transition: transform 360ms cubic-bezier(0.32, 0.72, 0, 1);
+    }
+
+    #cmdPaletteOverlay.cmd-palette-overlay.active .cmd-palette {
+        transform: translate3d(0, 0, 0);
+    }
+
+    #cmdPaletteOverlay .cmd-palette-grabber {
+        touch-action: pan-x;
+        cursor: grab;
+    }
+}
+
+/* Vaul-grade Mobile Bottom Sheet Modals (#daySummaryModal, #studentScannerModal) */
+@media (max-width: 575.98px) {
+    body.student-portal .modal.fade .modal-dialog.modal-dialog-bottom {
+        transform: translate3d(0, 100%, 0);
+        transition: transform 360ms var(--ease-drawer);
+    }
+
+    body.student-portal .modal.show .modal-dialog.modal-dialog-bottom {
+        transform: translate3d(0, 0, 0);
+    }
+
+    body.student-portal .bottom-sheet-handle {
+        touch-action: pan-x;
+        cursor: grab;
+    }
+}
+
+/* Desktop centered modals: subtle scale(0.96) + 8px rise, never scale(0) */
+@media (min-width: 576px) {
+    body.student-portal .modal.fade .modal-dialog {
+        transform: translate3d(0, 8px, 0) scale(0.96);
+        transition: transform 210ms var(--ease-out), opacity 180ms ease;
+    }
+
+    body.student-portal .modal.show .modal-dialog {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+/* ── 13. Reduced Motion Collapse (Gentler opacity, zero movement) ────────── */
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: sm-vt-out 140ms ease both;
+    }
+
+    body.student-portal *,
+    body.biometric-flow-page *,
+    body.scanner-page-layout * {
+        scroll-behavior: auto !important;
+    }
+
+    body.student-portal .sd-cockpit > *,
+    body.student-portal .sd-cockpit > .sd-hero-grid > *,
+    body.student-portal .sd-cockpit > .sd-workspace .sd-panel,
+    body.student-portal .cor-page-wrapper > *,
+    body.student-portal .scal-outer > *,
+    body.student-portal .notif-wrapper > *,
+    body.student-portal .profile-page > *,
+    body.student-portal .sp.student-settings .spanel.active {
+        animation: none !important;
+    }
+
+    body.student-portal :is(
+        button, a, .nav-link, .mbn-item, .scal-tile, .sd-pulse-day, .cor-card-item, .notif-item-card
+    ):is(:hover, :active),
+    body.student-portal .modal.fade .modal-dialog,
+    body.student-portal .top-header .dropdown-menu {
+        transform: none !important;
+    }
+
+    body.student-portal [data-glide-group] > .sm-glide-indicator {
+        transition: opacity 120ms ease !important;
+    }
+
+    body.student-portal .sd-gauge-fill,
+    body.student-portal .sd-breakdown-bar > .sd-seg {
+        transition: none !important;
+    }
+}

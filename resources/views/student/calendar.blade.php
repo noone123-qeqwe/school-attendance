@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('page-title', 'Attendance & School Calendar')
+@section('page-title', 'Attendance & Calendar')
 
 @section('content')
 {{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
@@ -16,7 +16,7 @@
             </button>
             <div class="d-flex align-items-center gap-2 flex-wrap justify-content-center">
                 <span class="scal-nav-title" id="scalMonthLabel" aria-live="polite">{{ \Carbon\Carbon::create($year, $month, 1)->format('F Y') }}</span>
-                <button type="button" class="scal-nav-today-btn d-none d-md-inline-flex" id="scalTodayBtn" onclick="scalJumpToday()" title="Jump to current month">
+                <button type="button" class="scal-nav-today-btn d-inline-flex" id="scalTodayBtn" onclick="scalJumpToday()" title="Jump to current month">
                     <i class="bi bi-calendar2-check" aria-hidden="true"></i> Today
                 </button>
             </div>
@@ -242,11 +242,13 @@ function scalPrevMonth() {
     scalMonth--;
     if (scalMonth < 1) { scalMonth = 12; scalYear--; }
     scalLoadAndRender();
+    window.StudentMotion?.animateCalendarShift(calendarGrid, 'prev');
 }
 function scalNextMonth() {
     scalMonth++;
     if (scalMonth > 12) { scalMonth = 1; scalYear++; }
     scalLoadAndRender();
+    window.StudentMotion?.animateCalendarShift(calendarGrid, 'next');
 }
 function scalJumpToday() {
     const now = new Date();
@@ -308,6 +310,7 @@ function scalRenderDesktopInspector(dateStr, evts, summaryText, summaryBg, summa
     }
 
     listEl.replaceChildren();
+    window.StudentMotion?.animateInspectorSwap(listEl);
     if (scalDataState === 'loading') {
         listEl.innerHTML = '<p style="color:#ACA099;font-size:0.83rem;margin:0;">Loading day activity…</p>';
         return;

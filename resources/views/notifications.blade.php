@@ -324,11 +324,25 @@
     }
 
     function removeAfterTransition(card, callback) {
-        const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 250;
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduced) {
+            card.remove();
+            if (typeof callback === 'function') callback();
+            return;
+        }
+        const rect = card.getBoundingClientRect();
+        card.style.overflow = 'hidden';
+        card.style.maxHeight = rect.height + 'px';
+        card.getBoundingClientRect();
+        card.style.transition = 'opacity 180ms cubic-bezier(0.23, 1, 0.32, 1), transform 200ms cubic-bezier(0.23, 1, 0.32, 1), max-height 240ms cubic-bezier(0.23, 1, 0.32, 1), margin-bottom 240ms cubic-bezier(0.23, 1, 0.32, 1), padding-top 240ms cubic-bezier(0.23, 1, 0.32, 1), padding-bottom 240ms cubic-bezier(0.23, 1, 0.32, 1)';
+        card.style.maxHeight = '0px';
+        card.style.marginBottom = '0px';
+        card.style.paddingTop = '0px';
+        card.style.paddingBottom = '0px';
         setTimeout(() => {
             card.remove();
             if (typeof callback === 'function') callback();
-        }, delay);
+        }, 250);
     }
 
     function updateBadgeElements(unreadCount) {

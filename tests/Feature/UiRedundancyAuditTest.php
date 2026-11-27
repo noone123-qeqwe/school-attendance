@@ -284,4 +284,45 @@ class UiRedundancyAuditTest extends TestCase
             ->assertSee('id="tabCountUnread"', false)
             ->assertSee('id="tabCountArchived"', false);
     }
+
+    public function test_student_motion_craft_layer_is_isolated_to_students_and_free_of_transition_all(): void
+    {
+        $student = $this->createUser('student', [
+            'email' => 'student.motion@example.test',
+            'student_number' => '2026-MOT-1',
+        ]);
+        $teacher = $this->createUser('teacher', [
+            'email' => 'teacher.motion@example.test',
+            'employee_id' => 'T-MOT-1',
+        ]);
+
+        $studentHome = $this->actingAs($student)->get(route('home'))->assertOk()->getContent();
+        $this->assertStringContainsString('css/student-motion-craft.css', $studentHome);
+        $this->assertStringContainsString('js/student-motion-craft.js', $studentHome);
+
+        $this->flushSession();
+
+        $teacherDash = $this->actingAs($teacher)->get(route('teacher.dashboard'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('css/student-motion-craft.css', $teacherDash);
+        $this->assertStringNotContainsString('js/student-motion-craft.js', $teacherDash);
+
+        foreach ([
+            'css/student-motion-craft.css',
+            'css/profile-photo-manager.css',
+            'css/pwa-ui.css',
+            'css/student-scanner.css',
+        ] as $sheet) {
+            $css = file_get_contents(public_path($sheet));
+            $this->assertNotFalse($css, "Missing stylesheet {$sheet}");
+            $this->assertDoesNotMatchRegularExpression('/transition\s*:\s*all\b/i', $css, "Avoid transition: all in {$sheet}");
+            $this->assertSame(substr_count($css, '{'), substr_count($css, '}'), "Unbalanced braces in {$sheet}");
+        }
+
+        $cmdBlade = file_get_contents(resource_path('views/components/command-palette.blade.php'));
+        $ppmBlade = file_get_contents(resource_path('views/components/profile-photo-manager.blade.php'));
+        $this->assertNotFalse($cmdBlade);
+        $this->assertNotFalse($ppmBlade);
+        $this->assertStringContainsString("setAttribute('data-instant', 'true')", $cmdBlade);
+        $this->assertStringContainsString('initModalKeyboardTrap', $ppmBlade);
+    }
 }

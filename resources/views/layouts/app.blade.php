@@ -76,6 +76,7 @@
         @if(request()->routeIs('home'))
             <link rel="stylesheet" href="{{ asset('css/student-dashboard.css') }}?v={{ filemtime(public_path('css/student-dashboard.css')) }}">
         @endif
+        <link rel="stylesheet" href="{{ asset('css/student-motion-craft.css') }}?v={{ filemtime(public_path('css/student-motion-craft.css')) }}">
     @endif
 </head>
 
@@ -284,7 +285,7 @@
                                     <div class="notif-group-label">Today</div>
                                     @foreach($todayNotifs as $notif)
                                     @php $v = $getNotifVisual($notif->type); @endphp
-                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:{{ $notif->is_read ? 'transparent' : ($notif->type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(212, 175, 55, 0.08)') }};transition:all .2s;">
+                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:{{ $notif->is_read ? 'transparent' : ($notif->type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(212, 175, 55, 0.08)') }};transition:background-color 160ms ease;">
                                         <div style="display:flex;gap:10px;align-items:flex-start;">
                                             <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;{{ $v['style'] }}">
                                                 <i class="bi {{ $v['icon'] }}"></i>
@@ -312,7 +313,7 @@
                                     <div class="notif-group-label">Earlier</div>
                                     @foreach($olderNotifs as $notif)
                                     @php $v = $getNotifVisual($notif->type); @endphp
-                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:{{ $notif->is_read ? 'transparent' : ($notif->type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(212, 175, 55, 0.08)') }};transition:all .2s;">
+                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:{{ $notif->is_read ? 'transparent' : ($notif->type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(212, 175, 55, 0.08)') }};transition:background-color 160ms ease;">
                                         <div style="display:flex;gap:10px;align-items:flex-start;">
                                             <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;{{ $v['style'] }}">
                                                 <i class="bi {{ $v['icon'] }}"></i>
@@ -461,8 +462,10 @@
 
             const style = colors[type] || colors.success;
             const toast = document.createElement('div');
-            toast.className = 'modern-toast';
-            toast.style.borderLeft = `4px solid ${style.border}`;
+            toast.className = isStudentToast ? 'modern-toast is-student-sonner is-entering' : 'modern-toast';
+            if (!isStudentToast) {
+                toast.style.borderLeft = `4px solid ${style.border}`;
+            }
 
             const iconWrap = document.createElement('div');
             iconWrap.style.cssText = `width:32px;height:32px;border-radius:8px;background:${style.bg};display:flex;align-items:center;justify-content:center;color:${style.border};flex-shrink:0;`;
@@ -481,14 +484,27 @@
             const closeIcon = document.createElement('i');
             closeIcon.className = 'bi bi-x';
             closeBtn.appendChild(closeIcon);
-            closeBtn.addEventListener('click', () => toast.remove());
 
             toast.append(iconWrap, contentEl, closeBtn);
             container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'toastSlideOut 0.3s ease forwards';
-                setTimeout(() => toast.remove(), 300);
-            }, duration);
+
+            if (isStudentToast && window.StudentMotion && typeof window.StudentMotion.enhanceToast === 'function') {
+                window.StudentMotion.enhanceToast(toast, duration);
+            } else {
+                closeBtn.addEventListener('click', () => toast.remove());
+                if (isStudentToast) {
+                    requestAnimationFrame(() => toast.classList.remove('is-entering'));
+                }
+                setTimeout(() => {
+                    if (isStudentToast) {
+                        toast.classList.add('is-exiting');
+                        setTimeout(() => toast.remove(), 220);
+                    } else {
+                        toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+                        setTimeout(() => toast.remove(), 300);
+                    }
+                }, duration);
+            }
         }
 
         window.showToast = showToast;
@@ -1359,6 +1375,9 @@
     @endif
     @if(Auth::user()?->isAdmin() && !request()->routeIs('admin.*.pdf'))
         <script src="{{ asset('js/admin-workspace.js') }}?v={{ filemtime(public_path('js/admin-workspace.js')) }}" defer></script>
+    @endif
+    @if(Auth::user()?->isStudent())
+        <script @cspNonce src="{{ asset('js/student-motion-craft.js') }}?v={{ filemtime(public_path('js/student-motion-craft.js')) }}" defer></script>
     @endif
     @include('partials.pwa-body')
 </body>

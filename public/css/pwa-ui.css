@@ -93,7 +93,7 @@
         font-size: 0.85rem;
         font-weight: 700;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: background-color 160ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
         white-space: nowrap;
         box-shadow: 0 4px 14px rgba(207, 164, 111, 0.35);
     }
@@ -211,7 +211,7 @@
         cursor: pointer;
         font-size: 1.15rem;
         line-height: 1;
-        transition: all 0.2s;
+        transition: background-color 160ms ease, color 160ms ease, transform 130ms cubic-bezier(0.23, 1, 0.32, 1);
         -webkit-tap-highlight-color: transparent;
     }
     @media (pointer: coarse) {
@@ -336,7 +336,7 @@
         position: relative;
         overflow: hidden;
         box-shadow: 0 6px 20px rgba(232, 192, 100, 0.35);
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: transform 150ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms ease, box-shadow 180ms cubic-bezier(0.23, 1, 0.32, 1);
         -webkit-tap-highlight-color: transparent;
     }
 
@@ -446,7 +446,7 @@
         border-radius: 12px;
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(255, 255, 255, 0.02);
-        transition: all 0.2s ease;
+        transition: border-color 160ms ease, background-color 160ms ease;
     }
 
     .pwa-help-details[open] {
@@ -526,7 +526,7 @@
         font-size: 0.84rem;
         font-weight: 700;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: background-color 160ms ease, border-color 160ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
         -webkit-tap-highlight-color: transparent;
     }
 
@@ -547,7 +547,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s;
+        transition: background-color 160ms ease, border-color 160ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
         -webkit-tap-highlight-color: transparent;
     }
 
@@ -689,10 +689,8 @@
         display: none;
     }
     .pwa-update-accent-bar {
-        height: 3px; width: 100%;
-        background: linear-gradient(90deg, transparent 0%, rgba(232,192,100,0.4) 20%, #e8c064 40%, #fff8e1 50%, #e8c064 60%, rgba(232,192,100,0.4) 80%, transparent 100%);
-        background-size: 200% auto;
-        animation: pwaShimmer 2.5s linear infinite;
+        height: 2px; width: 100%;
+        background: rgba(212, 175, 55, 0.45);
         flex-shrink: 0;
     }
     .pwa-update-inner {
@@ -700,10 +698,7 @@
         display: flex; flex-direction: column; gap: 18px;
     }
     .pwa-update-glow {
-        position: absolute; top: -80px; right: -80px;
-        width: 200px; height: 200px;
-        background: radial-gradient(circle, rgba(232,192,100,0.14) 0%, transparent 70%);
-        pointer-events: none; z-index: 0; border-radius: 50%;
+        display: none;
     }
     .pwa-update-banner-header {
         position: relative; z-index: 1;
@@ -714,28 +709,20 @@
         position: relative; flex-shrink: 0; width: 58px; height: 58px;
     }
     .pwa-update-icon-glow-ring {
-        position: absolute; inset: -5px; border-radius: 18px;
-        background: conic-gradient(rgba(232,192,100,0.6) 0deg, rgba(232,192,100,0) 120deg, rgba(207,164,111,0.5) 240deg, rgba(232,192,100,0.6) 360deg);
-        animation: pwaGlowRotate 3s linear infinite; opacity: 0.6; z-index: 0;
-    }
-    .pwa-update-icon-glow-ring::before {
-        content: ''; position: absolute; inset: 2px;
-        background: rgba(14,6,9,0.99); border-radius: 15px;
+        display: none;
     }
     .pwa-update-app-icon {
         position: relative; z-index: 1;
         width: 58px; height: 58px; border-radius: 14px;
-        border: 1.5px solid rgba(232,192,100,0.4);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+        border: 1px solid rgba(212, 175, 55, 0.35);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.45);
         background: #18080c; display: block; object-fit: cover;
-        animation: pwaIconFloat 3.5s ease-in-out infinite;
     }
     .pwa-update-pulse-indicator {
         position: absolute; top: -2px; right: -2px;
-        width: 13px; height: 13px; background: #22C55E;
-        border: 2.5px solid #0e0609; border-radius: 50%;
-        box-shadow: 0 0 10px #22C55E;
-        animation: pwaPulseDot 2s infinite ease-in-out; z-index: 2;
+        width: 12px; height: 12px; background: #4ADE80;
+        border: 2.5px solid #141010; border-radius: 50%;
+        z-index: 2;
     }
     .pwa-update-text-area { flex: 1; min-width: 0; }
     .pwa-update-banner:not([data-update-mode="critical"]) .pwa-update-text-area { padding-inline-end: 3.5rem; }
@@ -766,7 +753,7 @@
         color: rgba(255,255,255,0.7) !important; font-weight: 600 !important;
         font-size: 0.85rem !important; font-family: inherit !important;
         border-radius: 12px !important; padding: 12px 16px !important;
-        cursor: pointer !important; transition: all 0.2s ease !important;
+        cursor: pointer !important; transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1) !important;
         touch-action: manipulation !important; white-space: nowrap !important;
         outline: none !important; flex-shrink: 0 !important;
     }
@@ -776,36 +763,36 @@
     }
     .pwa-btn-update-apply {
         flex: 1 !important;
-        background: linear-gradient(135deg, #f0cc6e 0%, #d4a84b 100%) !important;
-        color: #1a0a0a !important; font-weight: 800 !important;
+        background: #FAF8F5 !important;
+        color: #7A1A1A !important; font-weight: 800 !important;
         font-size: 0.9rem !important; font-family: inherit !important;
-        border: none !important; border-radius: 12px !important;
+        border: 1px solid #FAF8F5 !important; border-radius: 12px !important;
         padding: 13px 20px !important; cursor: pointer !important;
         display: flex !important; align-items: center !important;
         justify-content: center !important; gap: 8px !important;
-        box-shadow: 0 4px 20px rgba(232,192,100,0.4), inset 0 1px 0 rgba(255,255,255,0.3) !important;
-        transition: all 0.25s cubic-bezier(0.16,1,0.3,1) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+        transition: background-color 160ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 180ms cubic-bezier(0.23, 1, 0.32, 1) !important;
         touch-action: manipulation !important; outline: none !important;
         letter-spacing: 0.2px !important;
     }
     .pwa-btn-update-apply:hover {
-        filter: brightness(1.1) !important; transform: translateY(-2px) !important;
-        box-shadow: 0 8px 28px rgba(232,192,100,0.55) !important;
+        background: #ffffff !important; transform: translateY(-1px) !important;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.42) !important;
     }
     .pwa-btn-update-apply:active { transform: scale(0.97) !important; }
-    .pwa-btn-arrow-icon { transition: transform 0.2s ease; }
+    .pwa-btn-arrow-icon { transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1); }
     .pwa-btn-update-apply:hover .pwa-btn-arrow-icon { transform: translateX(3px); }
     .pwa-update-pill {
         position: fixed !important; top: max(16px, env(safe-area-inset-top, 16px)) !important;
         left: 50% !important; transform: translateX(-50%) translateY(-70px) !important;
-        background: rgba(18,10,12,0.97) !important; border: 1px solid rgba(232,192,100,0.45) !important;
+        background: rgba(20,14,14,0.96) !important; border: 1px solid rgba(212,175,55,0.38) !important;
         border-radius: 99px !important; padding: 8px 16px !important; display: none;
         align-items: center !important; gap: 10px !important;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(232,192,100,0.25) !important;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.65) !important;
         backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important;
-        z-index: 99999 !important; color: #F3E7CD !important;
+        z-index: 99999 !important; color: #FAF8F5 !important;
         font-size: 0.82rem !important; font-weight: 700 !important; cursor: pointer !important;
-        transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.25s ease !important;
+        transition: transform 280ms cubic-bezier(0.23,1,0.32,1), opacity 220ms ease !important;
         opacity: 0; pointer-events: none; user-select: none; white-space: nowrap;
     }
     .pwa-update-pill.show {
@@ -813,8 +800,7 @@
         opacity: 1 !important; pointer-events: auto !important;
     }
     .pwa-pill-dot {
-        width: 8px; height: 8px; background: #22C55E; border-radius: 50%;
-        box-shadow: 0 0 10px #22C55E; animation: pwaPulseDot 2s infinite ease-in-out; flex-shrink: 0;
+        width: 8px; height: 8px; background: #4ADE80; border-radius: 50%; flex-shrink: 0;
     }
     .pwa-pill-text strong { color: #E8C064; }
     .pwa-pill-btn {

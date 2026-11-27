@@ -349,10 +349,10 @@
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link.active,
     body.student-portal .sidebar .settings-sidebar-nav .nav-link.active {
-        background: rgba(122, 26, 26, 0.24) !important;
-        border-color: rgba(255, 255, 255, 0.18) !important;
+        background: rgba(122, 26, 26, 0.26) !important;
+        border-color: rgba(212, 175, 55, 0.3) !important;
         color: #ffffff !important;
-        box-shadow: inset 2.5px 0 0 #FAF8F5 !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
     }
 
     body.student-portal .sidebar .student-sidebar-nav .nav-link.active i,
