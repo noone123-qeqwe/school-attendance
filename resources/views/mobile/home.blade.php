@@ -78,16 +78,6 @@
             </div>
         </div>
 
-        <div class="sd-masthead-actions">
-            <button type="button" id="quickActionScanBtn" data-action="open-scanner" class="sd-cta-primary" aria-label="Scan QR Code">
-                <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
-                <span>Scan QR</span>
-            </button>
-            <a href="{{ route('mobile.scan', ['open_code' => 1]) }}" class="sd-cta-secondary">
-                <i class="bi bi-123" aria-hidden="true"></i>
-                <span>Enter PIN</span>
-            </a>
-        </div>
     </header>
 
     @include('partials.missing-section-notice', [
