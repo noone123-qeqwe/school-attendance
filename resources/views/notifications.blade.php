@@ -27,6 +27,9 @@
     </div>
 
     {{-- Filter & Search Controls Card --}}
+    @php
+        $notifFilterCount = (filled(request('search')) ? 1 : 0) + (filled(request('type')) ? 1 : 0);
+    @endphp
     <div class="notif-controls-card">
         <div class="notif-tabs-row">
             {{-- Status Tabs --}}
@@ -47,43 +50,55 @@
                     <span class="notif-tab-badge" id="tabCountArchived">{{ $counts['archived'] ?? 0 }}</span>
                 </a>
             </div>
-
-            {{-- Quick Client & Server Search --}}
-            <form method="GET" action="{{ route('notifications') }}" class="notif-search-box" id="notifSearchForm">
-                @if(request('status'))
-                    <input type="hidden" name="status" value="{{ request('status') }}">
-                @endif
-                @if(request('type'))
-                    <input type="hidden" name="type" value="{{ request('type') }}">
-                @endif
-                <i class="bi bi-search notif-search-icon" aria-hidden="true"></i>
-                <input type="text" 
-                       name="search" 
-                       id="notifSearchInput" 
-                       class="notif-search-input" 
-                       placeholder="Search alerts..." 
-                       aria-label="Search notifications or subjects"
-                       value="{{ request('search') }}"
-                       autocomplete="off">
-                @if(request('search'))
-                    <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => request('type')])) }}" class="notif-search-clear" title="Clear search">
-                        <i class="bi bi-x-circle-fill"></i>
-                    </a>
-                @endif
-            </form>
         </div>
 
-        {{-- Category Pills --}}
-        <div class="notif-cat-pills">
-            <a href="{{ route('notifications', array_filter(['status' => request('status')])) }}" 
-               class="notif-pill {{ !request('type') ? 'active' : '' }}">All Types</a>
-            <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'absence'])) }}" 
-               class="notif-pill {{ request('type') === 'absence' ? 'active' : '' }}">Absences ({{ $counts['absences'] ?? 0 }})</a>
-            <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'warning'])) }}" 
-               class="notif-pill {{ request('type') === 'warning' ? 'active' : '' }}">Warnings ({{ $counts['warnings'] ?? 0 }})</a>
-            <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'system'])) }}" 
-               class="notif-pill {{ request('type') === 'system' ? 'active' : '' }}">System Updates</a>
-        </div>
+        {{-- Progressive Search & Category Filter Drawer --}}
+        <details class="sd-filter-disclosure notif-filter-disclosure" @if($notifFilterCount > 0) open @endif>
+            <summary>
+                <i class="bi bi-sliders" aria-hidden="true"></i>
+                <span>Search &amp; Filter</span>
+                @if($notifFilterCount > 0)
+                    <span class="sd-disclosure-pill is-accent">{{ $notifFilterCount }} active</span>
+                @endif
+                <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
+            </summary>
+            <div class="sd-filter-disclosure-body">
+                <form method="GET" action="{{ route('notifications') }}" class="notif-search-box mb-3" id="notifSearchForm">
+                    @if(request('status'))
+                        <input type="hidden" name="status" value="{{ request('status') }}">
+                    @endif
+                    @if(request('type'))
+                        <input type="hidden" name="type" value="{{ request('type') }}">
+                    @endif
+                    <i class="bi bi-search notif-search-icon" aria-hidden="true"></i>
+                    <input type="text" 
+                           name="search" 
+                           id="notifSearchInput" 
+                           class="notif-search-input" 
+                           placeholder="Search alerts..." 
+                           aria-label="Search notifications or subjects"
+                           value="{{ request('search') }}"
+                           autocomplete="off">
+                    @if(request('search'))
+                        <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => request('type')])) }}" class="notif-search-clear" title="Clear search">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </a>
+                    @endif
+                </form>
+
+                {{-- Category Pills --}}
+                <div class="notif-cat-pills">
+                    <a href="{{ route('notifications', array_filter(['status' => request('status')])) }}" 
+                       class="notif-pill {{ !request('type') ? 'active' : '' }}">All Types</a>
+                    <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'absence'])) }}" 
+                       class="notif-pill {{ request('type') === 'absence' ? 'active' : '' }}">Absences ({{ $counts['absences'] ?? 0 }})</a>
+                    <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'warning'])) }}" 
+                       class="notif-pill {{ request('type') === 'warning' ? 'active' : '' }}">Warnings ({{ $counts['warnings'] ?? 0 }})</a>
+                    <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'system'])) }}" 
+                       class="notif-pill {{ request('type') === 'system' ? 'active' : '' }}">System Updates</a>
+                </div>
+            </div>
+        </details>
     </div>
 
     {{-- Notifications List --}}
@@ -193,19 +208,16 @@
                         </div>
                         @endif
 
-                        {{-- Action Buttons --}}
+                        {{-- Action Buttons (Primary upfront + overflow menu for secondary) --}}
                         <div class="notif-actions-row">
-                            {{-- For Absences or Warnings: Provide Direct Excuse / Record links --}}
+                            {{-- Primary contextual CTA for Absences or Warnings --}}
                             @if($notification->type === 'absence' || str_contains($notification->type, 'warning'))
                                 <a href="{{ route('excuses') }}" class="btn-notif-action btn-notif-excuse">
                                     <i class="bi bi-file-earmark-medical" aria-hidden="true"></i> Submit Excuse
                                 </a>
-                                <a href="{{ route('attendance.records') }}" class="btn-notif-action btn-notif-records">
-                                    <i class="bi bi-clock-history" aria-hidden="true"></i> View Records
-                                </a>
                             @endif
 
-                            {{-- Mark as Read Button (if unread) --}}
+                            {{-- Primary Mark as Read Button (if unread) --}}
                             @if($isUnread)
                                 <button type="button" 
                                         class="btn-notif-action btn-notif-read" 
@@ -215,29 +227,40 @@
                                 </button>
                             @endif
 
-                            {{-- Archive / Unarchive Button --}}
-                            @if($isArchived)
-                                <button type="button" 
-                                        class="btn-notif-action btn-notif-unarchive" 
-                                        onclick="unarchiveNotification({{ $notification->id }})">
-                                    <i class="bi bi-arrow-up-circle" aria-hidden="true"></i> Restore
-                                </button>
-                            @else
-                                <button type="button" 
-                                        class="btn-notif-action btn-notif-archive" 
-                                        onclick="archiveNotification({{ $notification->id }})">
-                                    <i class="bi bi-archive" aria-hidden="true"></i> Archive
-                                </button>
-                            @endif
+                            {{-- Secondary Actions Popover --}}
+                            <details class="sd-action-menu">
+                                <summary aria-label="More notification actions" title="More actions">
+                                    <i class="bi bi-three-dots" aria-hidden="true"></i>
+                                </summary>
+                                <div class="sd-action-menu-popover">
+                                    @if($notification->type === 'absence' || str_contains($notification->type, 'warning'))
+                                        <a href="{{ route('attendance.records') }}" class="sd-action-menu-item">
+                                            <i class="bi bi-clock-history" aria-hidden="true"></i> View Records
+                                        </a>
+                                    @endif
 
-                            {{-- Delete Button --}}
-                            <button type="button" 
-                                    class="btn-notif-action btn-notif-delete" 
-                                    title="Delete notification"
-                                    aria-label="Delete notification"
-                                    onclick="deleteNotification({{ $notification->id }})">
-                                <i class="bi bi-trash3-fill" aria-hidden="true"></i>
-                            </button>
+                                    @if($isArchived)
+                                        <button type="button" 
+                                                class="sd-action-menu-item" 
+                                                onclick="unarchiveNotification({{ $notification->id }})">
+                                            <i class="bi bi-arrow-up-circle" aria-hidden="true"></i> Restore
+                                        </button>
+                                    @else
+                                        <button type="button" 
+                                                class="sd-action-menu-item" 
+                                                onclick="archiveNotification({{ $notification->id }})">
+                                            <i class="bi bi-archive" aria-hidden="true"></i> Archive
+                                        </button>
+                                    @endif
+
+                                    <button type="button" 
+                                            class="sd-action-menu-item is-danger btn-notif-delete" 
+                                            aria-label="Delete notification"
+                                            onclick="deleteNotification({{ $notification->id }})">
+                                        <i class="bi bi-trash3-fill" aria-hidden="true"></i> Delete
+                                    </button>
+                                </div>
+                            </details>
                         </div>
                     </div>
                 </div>
@@ -571,12 +594,9 @@
         if (delBtn && delBtn.dataset.confirmPending !== '1') {
             delBtn.dataset.confirmPending = '1';
             delBtn.dataset.origHtml = delBtn.innerHTML;
-            delBtn.innerHTML = '<i class="bi bi-check2" aria-hidden="true"></i><span style="font-size:0.74rem;font-weight:700;margin-left:4px;">Confirm</span>';
-            delBtn.style.width = 'auto';
-            delBtn.style.padding = '0 10px';
-            delBtn.style.background = 'rgba(239, 68, 68, 0.25)';
-            delBtn.style.color = '#fca5a5';
-            delBtn.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+            delBtn.innerHTML = '<i class="bi bi-check2" aria-hidden="true"></i><span>Confirm delete</span>';
+            delBtn.style.background = 'rgba(239, 68, 68, 0.24)';
+            delBtn.style.color = '#fee2e2';
             clearTimeout(delBtn._confirmTimer);
             delBtn._confirmTimer = setTimeout(resetDeleteBtn, 3500);
             return;

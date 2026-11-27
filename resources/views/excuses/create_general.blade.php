@@ -18,45 +18,7 @@
             @csrf
 
             <div class="sd-excuse-form-body">
-                {{-- STEP 1: CHOOSE SUBJECT(S) --}}
-                <div class="mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                        <div>
-                            <label class="sd-form-label mb-1">
-                                <i class="bi bi-journal-check" style="color: #D4AF37;" aria-hidden="true"></i>
-                                Choose Subjects <span class="text-danger">*</span>
-                            </label>
-                            <span style="font-size: 0.8rem; color: #ACA099;">You can select one or multiple subjects</span>
-                        </div>
-                        <div class="student-excuse-selection-actions d-flex align-items-center gap-2 flex-wrap">
-                            <span id="subjectCountBadge" class="sub-code-badge" aria-live="polite" style="border-radius: 999px; padding: 4px 11px;">
-                                0 of {{ count($subjects) }} Selected
-                            </span>
-                            <button type="button" class="quick-sub-btn" onclick="selectAllSubjects(true)">Select All</button>
-                            <button type="button" class="quick-sub-btn" onclick="selectAllSubjects(false)">Clear</button>
-                        </div>
-                    </div>
-
-                    @if($subjects->isEmpty())
-                        <div class="sd-excuse-empty" style="background: rgba(28, 18, 18,0.45); border-radius: 14px; border: 1px dashed rgba(255, 255, 255,0.2);">
-                            <i class="bi bi-journal-x" style="font-size: 2rem; color: #ACA099;" aria-hidden="true"></i>
-                            <h4>No enrolled subjects found</h4>
-                            <p>Enrolled subjects for this semester will appear here once assigned.</p>
-                        </div>
-                    @else
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;" id="subjectsGrid">
-                            @foreach($subjects as $subject)
-                                @include('partials.student-excuse-subject', ['subject' => $subject, 'isPrimary' => false, 'hasOtherAbsence' => false])
-                            @endforeach
-                        </div>
-                    @endif
-
-                    <div id="subjectError" role="alert" style="display: none; color: #F87171; font-size: 0.8rem; margin-top: 10px; font-weight: 600;">
-                        <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i> Please select at least one subject to submit your excuse letter.
-                    </div>
-                </div>
-
-                {{-- STEP 2: DATE & REASON --}}
+                {{-- STEP 1: DATE & REASON FIRST (Immediately actionable above the fold) --}}
                 <div class="student-excuse-fields mb-4">
                     <div>
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
@@ -95,6 +57,65 @@
                     </div>
                 </div>
 
+                {{-- STEP 2: PROGRESSIVE SUBJECT SELECTOR (Shows first 4 + instant expand/search) --}}
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div>
+                            <label class="sd-form-label mb-1">
+                                <i class="bi bi-journal-check" style="color: #D4AF37;" aria-hidden="true"></i>
+                                Choose Subjects <span class="text-danger">*</span>
+                            </label>
+                            <span style="font-size: 0.8rem; color: #ACA099;">Select one or more classes missed on this date</span>
+                        </div>
+                        <div class="student-excuse-selection-actions d-flex align-items-center gap-2 flex-wrap">
+                            <span id="subjectCountBadge" class="sub-code-badge" aria-live="polite" style="border-radius: 999px; padding: 4px 11px;">
+                                0 of {{ count($subjects) }} Selected
+                            </span>
+                            <button type="button" class="quick-sub-btn" onclick="selectAllSubjects(true)">Select All</button>
+                            <button type="button" class="quick-sub-btn" onclick="selectAllSubjects(false)">Clear</button>
+                        </div>
+                    </div>
+
+                    @if($subjects->isEmpty())
+                        <div class="sd-excuse-empty" style="background: rgba(28, 18, 18,0.45); border-radius: 14px; border: 1px dashed rgba(255, 255, 255,0.2);">
+                            <i class="bi bi-journal-x" style="font-size: 2rem; color: #ACA099;" aria-hidden="true"></i>
+                            <h4>No enrolled subjects found</h4>
+                            <p>Enrolled subjects for this semester will appear here once assigned.</p>
+                        </div>
+                    @else
+                        @if(count($subjects) > 3)
+                            <div class="mb-3 position-relative">
+                                <i class="bi bi-search" style="position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#ACA099; pointer-events:none; font-size:0.86rem;" aria-hidden="true"></i>
+                                <input type="search" id="excuseSubjectFilterInput" class="sd-form-input" style="padding-left:38px; min-height:44px;" placeholder="Filter {{ count($subjects) }} subjects by code or name..." aria-label="Filter subjects">
+                            </div>
+                        @endif
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;" id="subjectsGrid">
+                            @foreach($subjects as $subject)
+                                <div class="excuse-subject-slot" @if($loop->index >= 3 && !in_array($subject->id, (array) old('subject_ids', []))) data-extra-subject="1" hidden @endif>
+                                    @include('partials.student-excuse-subject', ['subject' => $subject, 'isPrimary' => false, 'hasOtherAbsence' => false])
+                                </div>
+                            @endforeach
+                        </div>
+                        @if(count($subjects) > 3)
+                            <div class="mt-3">
+                                <button type="button"
+                                        id="toggleExtraSubjectsBtn"
+                                        class="quick-sub-btn"
+                                        style="min-height: 44px; padding: 8px 14px;"
+                                        aria-expanded="false"
+                                        data-total-subjects="{{ count($subjects) }}"
+                                        onclick="toggleExtraSubjects()">
+                                    <i class="bi bi-chevron-down me-1" aria-hidden="true"></i>Show all {{ count($subjects) }} subjects
+                                </button>
+                            </div>
+                        @endif
+                    @endif
+
+                    <div id="subjectError" role="alert" style="display: none; color: #F87171; font-size: 0.8rem; margin-top: 10px; font-weight: 600;">
+                        <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i> Please select at least one subject to submit your excuse letter.
+                    </div>
+                </div>
+
                 {{-- STEP 3: DETAILED DESCRIPTION --}}
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-baseline mb-2">
@@ -109,35 +130,43 @@
                     @enderror
                 </div>
 
-                {{-- STEP 4: SUPPORTING DOCUMENTS --}}
-                <div>
-                    <span id="attachmentsLabel" class="sd-form-label">
-                        Supporting Documents / Attachments (Optional)
-                    </span>
+                {{-- STEP 4: OPTIONAL SUPPORTING DOCUMENTS (Progressively Disclosed) --}}
+                <details class="sd-disclosure-card" id="excuseAttachmentsDisclosure" @if($errors->has('attachments.*')) open @endif>
+                    <summary>
+                        <span class="sd-disclosure-title-wrap">
+                            <i class="bi bi-paperclip" style="color:#D4AF37;" aria-hidden="true"></i>
+                            <span id="attachmentsLabel">Supporting Documents (Optional)</span>
+                        </span>
+                        <span class="sd-disclosure-meta-wrap">
+                            <span class="sd-disclosure-pill" id="excuseAttachmentCountPill">Optional</span>
+                            <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
+                        </span>
+                    </summary>
+                    <div class="sd-disclosure-body">
+                        <div class="position-relative w-100">
+                            <input type="file" name="attachments[]" id="attachments" multiple
+                                   accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onchange="handleFileSelect(this)"
+                                   aria-labelledby="attachmentsLabel"
+                                   class="visually-hidden">
 
-                    <div class="position-relative w-100">
-                        <input type="file" name="attachments[]" id="attachments" multiple
-                               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onchange="handleFileSelect(this)"
-                               aria-labelledby="attachmentsLabel"
-                               class="visually-hidden">
+                            <label for="attachments" id="dropZone" class="sd-dropzone">
+                                <i class="bi bi-cloud-arrow-up" style="font-size: 2.2rem; color: #D4AF37; margin-bottom: 8px;" aria-hidden="true"></i>
+                                <span style="font-size: 0.95rem; font-weight: 700; color: #FAF8F5;">Click or drag &amp; drop files here</span>
+                                <span style="font-size: 0.8rem; color: #ACA099; margin-top: 4px;">Medical certificates, letters, or official receipts</span>
+                            </label>
+                        </div>
 
-                        <label for="attachments" id="dropZone" class="sd-dropzone">
-                            <i class="bi bi-cloud-arrow-up" style="font-size: 2.2rem; color: #D4AF37; margin-bottom: 8px;" aria-hidden="true"></i>
-                            <span style="font-size: 0.95rem; font-weight: 700; color: #FAF8F5;">Click or drag &amp; drop files here</span>
-                            <span style="font-size: 0.8rem; color: #ACA099; margin-top: 4px;">Medical certificates, letters, or official receipts</span>
-                        </label>
+                        <div style="font-size: 0.76rem; color: #ACA099; margin-top: 8px;">
+                            Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max 5MB each)
+                        </div>
+
+                        <div id="fileList" class="mt-3 d-flex flex-column gap-2"></div>
+
+                        @error('attachments.*')
+                            <div class="mt-2 small fw-semibold" style="color: #F87171;">{{ $message }}</div>
+                        @enderror
                     </div>
-
-                    <div style="font-size: 0.76rem; color: #ACA099; margin-top: 8px;">
-                        Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max 5MB each)
-                    </div>
-
-                    <div id="fileList" class="mt-3 d-flex flex-column gap-2"></div>
-
-                    @error('attachments.*')
-                        <div class="mt-2 small fw-semibold" style="color: #F87171;">{{ $message }}</div>
-                    @enderror
-                </div>
+                </details>
             </div>
 
             <div class="sd-excuse-form-footer">
@@ -152,7 +181,31 @@
 
 @push('scripts')
 <script @cspNonce>
+let extraSubjectsExpanded = false;
+
+function toggleExtraSubjects(forceExpand) {
+    const slots = document.querySelectorAll('.excuse-subject-slot[data-extra-subject="1"]');
+    const btn = document.getElementById('toggleExtraSubjectsBtn');
+    const nextState = typeof forceExpand === 'boolean' ? forceExpand : !extraSubjectsExpanded;
+    extraSubjectsExpanded = nextState;
+    slots.forEach(slot => {
+        if (!slot.dataset.filterHidden) {
+            slot.hidden = !nextState;
+        }
+    });
+    if (btn) {
+        const total = btn.dataset.totalSubjects || document.querySelectorAll('.excuse-subject-slot').length;
+        btn.setAttribute('aria-expanded', nextState ? 'true' : 'false');
+        btn.innerHTML = nextState
+            ? '<i class="bi bi-chevron-up me-1" aria-hidden="true"></i>Show fewer subjects'
+            : `<i class="bi bi-chevron-down me-1" aria-hidden="true"></i>Show all ${total} subjects`;
+    }
+}
+
 function selectAllSubjects(select) {
+    if (select) {
+        toggleExtraSubjects(true);
+    }
     document.querySelectorAll('.subject-checkbox').forEach(cb => { cb.checked = select; });
     updateSubjectSelectionState();
 }
@@ -175,6 +228,35 @@ function updateSubjectSelectionState() {
 
     const err = document.getElementById('subjectError');
     if (err && selectedCount > 0) err.style.display = 'none';
+}
+
+const subjectFilterInput = document.getElementById('excuseSubjectFilterInput');
+if (subjectFilterInput) {
+    subjectFilterInput.addEventListener('input', () => {
+        const q = subjectFilterInput.value.trim().toLowerCase();
+        const slots = document.querySelectorAll('.excuse-subject-slot');
+        const toggleBtn = document.getElementById('toggleExtraSubjectsBtn');
+        slots.forEach(slot => {
+            const isExtra = slot.dataset.extraSubject === '1';
+            const cb = slot.querySelector('.subject-checkbox');
+            if (!q) {
+                delete slot.dataset.filterHidden;
+                slot.hidden = isExtra && !extraSubjectsExpanded && !(cb && cb.checked);
+            } else {
+                const match = slot.textContent.toLowerCase().includes(q);
+                if (match) {
+                    delete slot.dataset.filterHidden;
+                    slot.hidden = false;
+                } else {
+                    slot.dataset.filterHidden = '1';
+                    slot.hidden = true;
+                }
+            }
+        });
+        if (toggleBtn) {
+            toggleBtn.hidden = q.length > 0;
+        }
+    });
 }
 
 function setDatePreset(offsetDays) {
@@ -229,7 +311,22 @@ function getFileIcon(filename) {
 
 function handleFileSelect(input) {
     const fileList = document.getElementById('fileList');
+    const pill = document.getElementById('excuseAttachmentCountPill');
+    const disclosure = document.getElementById('excuseAttachmentsDisclosure');
     fileList.innerHTML = '';
+
+    if (pill) {
+        if (input.files.length > 0) {
+            pill.textContent = `${input.files.length} ${input.files.length === 1 ? 'file' : 'files'}`;
+            pill.classList.add('is-accent');
+        } else {
+            pill.textContent = 'Optional';
+            pill.classList.remove('is-accent');
+        }
+    }
+    if (disclosure && input.files.length > 0) {
+        disclosure.open = true;
+    }
 
     if (input.files.length > 0) {
         Array.from(input.files).forEach((file, index) => {

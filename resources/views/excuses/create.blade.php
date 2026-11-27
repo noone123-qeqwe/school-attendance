@@ -107,35 +107,43 @@
                     @enderror
                 </div>
 
-                {{-- STEP 4: SUPPORTING DOCUMENTS --}}
-                <div>
-                    <span id="attachmentsLabel" class="sd-form-label">
-                        Supporting Documents / Attachments (Optional)
-                    </span>
+                {{-- STEP 4: SUPPORTING DOCUMENTS (Progressively Disclosed) --}}
+                <details class="sd-disclosure-card" id="excuseAttachmentsDisclosure" @if($errors->has('attachments.*')) open @endif>
+                    <summary>
+                        <span class="sd-disclosure-title-wrap">
+                            <i class="bi bi-paperclip" style="color:#D4AF37;" aria-hidden="true"></i>
+                            <span id="attachmentsLabel">Supporting Documents / Attachments (Optional)</span>
+                        </span>
+                        <span class="sd-disclosure-meta-wrap">
+                            <span class="sd-disclosure-pill" id="excuseAttachmentCountPill">Optional</span>
+                            <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
+                        </span>
+                    </summary>
+                    <div class="sd-disclosure-body">
+                        <div class="position-relative w-100">
+                            <input type="file" name="attachments[]" id="attachments" multiple
+                                   accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onchange="handleFileSelect(this)"
+                                   aria-labelledby="attachmentsLabel"
+                                   class="visually-hidden">
 
-                    <div class="position-relative w-100">
-                        <input type="file" name="attachments[]" id="attachments" multiple
-                               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onchange="handleFileSelect(this)"
-                               aria-labelledby="attachmentsLabel"
-                               class="visually-hidden">
+                            <label for="attachments" id="dropZone" class="sd-dropzone">
+                                <i class="bi bi-cloud-arrow-up" style="font-size: 2.2rem; color: #D4AF37; margin-bottom: 8px;" aria-hidden="true"></i>
+                                <span style="font-size: 0.95rem; font-weight: 700; color: #FAF8F5;">Click or drag &amp; drop files here</span>
+                                <span style="font-size: 0.8rem; color: #ACA099; margin-top: 4px;">Medical certificates, letters, or receipts</span>
+                            </label>
+                        </div>
 
-                        <label for="attachments" id="dropZone" class="sd-dropzone">
-                            <i class="bi bi-cloud-arrow-up" style="font-size: 2.2rem; color: #D4AF37; margin-bottom: 8px;" aria-hidden="true"></i>
-                            <span style="font-size: 0.95rem; font-weight: 700; color: #FAF8F5;">Click or drag &amp; drop files here</span>
-                            <span style="font-size: 0.8rem; color: #ACA099; margin-top: 4px;">Medical certificates, letters, or receipts</span>
-                        </label>
+                        <div style="font-size: 0.76rem; color: #ACA099; margin-top: 8px;">
+                            Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max 5MB each)
+                        </div>
+
+                        <div id="fileList" class="mt-3 d-flex flex-column gap-2"></div>
+
+                        @error('attachments.*')
+                            <div class="mt-2 small fw-semibold" style="color: #F87171;">{{ $message }}</div>
+                        @enderror
                     </div>
-
-                    <div style="font-size: 0.76rem; color: #ACA099; margin-top: 8px;">
-                        Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max 5MB each)
-                    </div>
-
-                    <div id="fileList" class="mt-3 d-flex flex-column gap-2"></div>
-
-                    @error('attachments.*')
-                        <div class="mt-2 small fw-semibold" style="color: #F87171;">{{ $message }}</div>
-                    @enderror
-                </div>
+                </details>
             </div>
 
             <div class="sd-excuse-form-footer">
@@ -224,7 +232,22 @@ function getFileIcon(filename) {
 
 function handleFileSelect(input) {
     const fileList = document.getElementById('fileList');
+    const pill = document.getElementById('excuseAttachmentCountPill');
+    const disclosure = document.getElementById('excuseAttachmentsDisclosure');
     fileList.innerHTML = '';
+
+    if (pill) {
+        if (input.files.length > 0) {
+            pill.textContent = `${input.files.length} ${input.files.length === 1 ? 'file' : 'files'}`;
+            pill.classList.add('is-accent');
+        } else {
+            pill.textContent = 'Optional';
+            pill.classList.remove('is-accent');
+        }
+    }
+    if (disclosure && input.files.length > 0) {
+        disclosure.open = true;
+    }
 
     if (input.files.length > 0) {
         Array.from(input.files).forEach((file, index) => {

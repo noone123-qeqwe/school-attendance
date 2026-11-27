@@ -5,6 +5,33 @@
 @section('content')
 {{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
 @include('partials.student-page-header', ['title' => 'Attendance & School Calendar', 'description' => 'Check school dates and review your attendance history.'])
+
+{{-- Progressive Disclosure Workspace Switcher (Calendar vs Detailed Records) --}}
+<div class="sd-workspace-tabs no-print" role="tablist" aria-label="Attendance workspace view">
+    <button type="button"
+            class="sd-workspace-tab is-active"
+            role="tab"
+            id="scalTabCalendar"
+            aria-controls="scalWorkspaceCalendar"
+            aria-selected="true"
+            data-cal-workspace-tab="calendar">
+        <i class="bi bi-calendar3" aria-hidden="true"></i>
+        <span>Calendar</span>
+    </button>
+    <button type="button"
+            class="sd-workspace-tab"
+            role="tab"
+            id="scalTabRecords"
+            aria-controls="scalWorkspaceRecords"
+            aria-selected="false"
+            data-cal-workspace-tab="records">
+        <i class="bi bi-journal-check" aria-hidden="true"></i>
+        <span><span class="d-none d-sm-inline">Attendance </span>Records</span>
+        <span class="sd-workspace-tab-count">{{ $totals['all'] ?? 0 }}</span>
+    </button>
+</div>
+
+<div id="scalWorkspaceCalendar" role="tabpanel" aria-labelledby="scalTabCalendar">
 <div class="scal-outer">
 
     {{-- MAIN CALENDAR CARD --}}
@@ -59,36 +86,45 @@
             </div>
         </section>
 
-        {{-- Legend --}}
-        <div class="scal-legend-card">
-            <div class="scal-legend-title">Legend</div>
-            <div class="scal-legend-grid">
-                <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#4ADE80;"></span>
-                    Present
-                </div>
-                <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#FBBF24;"></span>
-                    Late
-                </div>
-                <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#F87171;"></span>
-                    Absent
-                </div>
-                <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#D4AF37;"></span>
-                    Exam
-                </div>
-                <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#7DD3FC;"></span>
-                    Event
-                </div>
-                <div class="scal-legend-item">
-                    <span class="scal-legend-dot" style="background:#2DD4BF;"></span>
-                    Holiday
+        {{-- Legend (Open on desktop, collapsed by default on mobile) --}}
+        <details class="sd-disclosure-card scal-legend-card" data-open-desktop="true">
+            <summary>
+                <span class="sd-disclosure-title-wrap">
+                    <span class="scal-legend-title" style="margin:0;">Legend</span>
+                </span>
+                <span class="sd-disclosure-meta-wrap">
+                    <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
+                </span>
+            </summary>
+            <div class="sd-disclosure-body" style="padding-top:12px;">
+                <div class="scal-legend-grid">
+                    <div class="scal-legend-item">
+                        <span class="scal-legend-dot" style="background:#4ADE80;"></span>
+                        Present
+                    </div>
+                    <div class="scal-legend-item">
+                        <span class="scal-legend-dot" style="background:#FBBF24;"></span>
+                        Late
+                    </div>
+                    <div class="scal-legend-item">
+                        <span class="scal-legend-dot" style="background:#F87171;"></span>
+                        Absent
+                    </div>
+                    <div class="scal-legend-item">
+                        <span class="scal-legend-dot" style="background:#D4AF37;"></span>
+                        Exam
+                    </div>
+                    <div class="scal-legend-item">
+                        <span class="scal-legend-dot" style="background:#7DD3FC;"></span>
+                        Event
+                    </div>
+                    <div class="scal-legend-item">
+                        <span class="scal-legend-dot" style="background:#2DD4BF;"></span>
+                        Holiday
+                    </div>
                 </div>
             </div>
-        </div>
+        </details>
 
         {{-- Tips --}}
         <details class="scal-tips-card student-calendar-help">
@@ -101,9 +137,12 @@
         </details>
     </div>
 </div>
+</div>
 
 @include('partials.calendar-records')
-@include('attendance.records')
+<div id="scalWorkspaceRecords" role="tabpanel" aria-labelledby="scalTabRecords" hidden>
+    @include('attendance.records')
+</div>
 
 {{-- ── Event Detail Modal ──────────────────────────────────────────────── --}}
 <div class="modal fade" id="eventDetailModal" tabindex="-1">

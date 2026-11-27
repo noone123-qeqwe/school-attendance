@@ -155,18 +155,28 @@
                 </div>
             </div>
 
-            <!-- Bound Attendance Device & Security Card -->
-            <div class="info-card">
-                <div class="info-card-header">
-                    <div class="info-card-header-icon" style="color:#7DD3FC;">
-                        <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
-                    </div>
-                    <div class="info-card-title">Bound Attendance Device</div>
-                </div>
-                <div class="info-card-body">
-                    @php
-                        $binding = $user->deviceBinding;
-                    @endphp
+            <!-- Bound Attendance Device & Security (Progressively Disclosed) -->
+            @php
+                $binding = $user->deviceBinding;
+            @endphp
+            <details class="sd-disclosure-card profile-disclosure-card">
+                <summary>
+                    <span class="sd-disclosure-title-wrap">
+                        <span class="info-card-header-icon" style="color:#7DD3FC;">
+                            <i class="bi bi-shield-lock-fill" aria-hidden="true"></i>
+                        </span>
+                        <span>Bound Attendance Device</span>
+                    </span>
+                    <span class="sd-disclosure-meta-wrap">
+                        @if($binding)
+                            <span class="sd-disclosure-pill is-success">Verified</span>
+                        @else
+                            <span class="sd-disclosure-pill">Not bound</span>
+                        @endif
+                        <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
+                    </span>
+                </summary>
+                <div class="sd-disclosure-body">
                     @if($binding)
                     <div style="background:#141010;border:1px solid rgba(255, 255, 255,0.09);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap;">
@@ -206,17 +216,23 @@
                     </div>
                     @endif
                 </div>
-            </div>
+            </details>
 
-            <!-- Device passkeys -->
-            <div class="info-card">
-                <div class="info-card-header">
-                    <div class="info-card-header-icon" style="color:#4ADE80;">
-                        <i class="bi bi-shield-lock" aria-hidden="true"></i>
-                    </div>
-                    <div class="info-card-title">Device passkeys</div>
-                </div>
-                <div class="info-card-body">
+            <!-- Device passkeys (Progressively Disclosed) -->
+            <details class="sd-disclosure-card profile-disclosure-card">
+                <summary>
+                    <span class="sd-disclosure-title-wrap">
+                        <span class="info-card-header-icon" style="color:#4ADE80;">
+                            <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                        </span>
+                        <span>Device passkeys</span>
+                    </span>
+                    <span class="sd-disclosure-meta-wrap">
+                        <span class="sd-disclosure-pill">Manage</span>
+                        <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
+                    </span>
+                </summary>
+                <div class="sd-disclosure-body">
                     <div id="webauthnUnsupported" role="status" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:12px;padding:14px 18px;font-size:.85rem;margin-bottom:14px;">
                         <div style="display:flex;align-items:flex-start;gap:10px;">
                             <i class="bi bi-exclamation-triangle" style="font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
@@ -249,7 +265,7 @@
                         </a>
                     </div>
                 </div>
-            </div>
+            </details>
 
             <!-- APK Download Card removed - users can install via PWA prompt -->
 

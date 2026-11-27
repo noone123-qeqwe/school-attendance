@@ -50,33 +50,54 @@
             </div>
         </div>
 
-        <form method="GET" action="{{ route('student.calendar') }}#attendance-records" class="calendar-record-filters">
-            <input type="hidden" name="year" value="{{ $year }}" data-calendar-month="year">
-            <input type="hidden" name="month" value="{{ $month }}" data-calendar-month="month">
-            <div>
-                <label class="ent-label" for="attendanceRecordsSearch">Class or teacher</label>
-                <input type="search" class="ent-input" id="attendanceRecordsSearch" name="q" maxlength="120" placeholder="Subject, code, or teacher" value="{{ $filters['q'] ?? '' }}">
-            </div>
-            <div>
-                <label class="ent-label" for="studentRecordStatus">Status</label>
-                <select id="studentRecordStatus" name="status" class="ent-input">
-                    <option value="">All statuses</option>
-                    @foreach(['Present', 'Late', 'Absent', 'Escaped', 'Excused'] as $status)
-                        <option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ $status }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label class="ent-label" for="studentRecordDate">Date</label>
-                <input type="date" class="ent-input" id="studentRecordDate" name="record_date" value="{{ $filters['record_date'] ?? '' }}">
-            </div>
-            <div class="calendar-record-filter-actions">
-                <button type="submit" class="ent-btn ent-btn-primary">Filter</button>
-                @if(array_filter($filters))
-                    <a class="ent-btn ent-btn-ghost" href="{{ route('student.calendar', compact('year', 'month')) }}#attendance-records" data-calendar-month-link>Clear</a>
-                @endif
-            </div>
-        </form>
+        @php
+            $activeFilterCount = count(array_filter([
+                $filters['q'] ?? null,
+                $filters['status'] ?? null,
+                $filters['record_date'] ?? null,
+            ]));
+        @endphp
+        <div class="px-3 pt-3">
+            <details class="sd-filter-disclosure" @if($activeFilterCount > 0) open @endif>
+                <summary>
+                    <i class="bi bi-sliders" aria-hidden="true"></i>
+                    <span>Search &amp; Filters</span>
+                    @if($activeFilterCount > 0)
+                        <span class="sd-disclosure-pill is-accent">{{ $activeFilterCount }} active</span>
+                    @endif
+                    <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
+                </summary>
+                <div class="sd-filter-disclosure-body">
+                    <form method="GET" action="{{ route('student.calendar') }}#attendance-records" class="calendar-record-filters" style="padding:0; border:0;">
+                        <input type="hidden" name="year" value="{{ $year }}" data-calendar-month="year">
+                        <input type="hidden" name="month" value="{{ $month }}" data-calendar-month="month">
+                        <div>
+                            <label class="ent-label" for="attendanceRecordsSearch">Class or teacher</label>
+                            <input type="search" class="ent-input" id="attendanceRecordsSearch" name="q" maxlength="120" placeholder="Subject, code, or teacher" value="{{ $filters['q'] ?? '' }}">
+                        </div>
+                        <div>
+                            <label class="ent-label" for="studentRecordStatus">Status</label>
+                            <select id="studentRecordStatus" name="status" class="ent-input">
+                                <option value="">All statuses</option>
+                                @foreach(['Present', 'Late', 'Absent', 'Escaped', 'Excused'] as $status)
+                                    <option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ $status }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="ent-label" for="studentRecordDate">Date</label>
+                            <input type="date" class="ent-input" id="studentRecordDate" name="record_date" value="{{ $filters['record_date'] ?? '' }}">
+                        </div>
+                        <div class="calendar-record-filter-actions">
+                            <button type="submit" class="ent-btn ent-btn-primary">Filter</button>
+                            @if(array_filter($filters))
+                                <a class="ent-btn ent-btn-ghost" href="{{ route('student.calendar', compact('year', 'month')) }}#attendance-records" data-calendar-month-link>Clear</a>
+                            @endif
+                        </div>
+                    </form>
+                </div>
+            </details>
+        </div>
         <p class="student-results-count px-3">{{ $records->total() }} matching {{ Str::plural('record', $records->total()) }}</p>
         <div class="sd-records-thead d-none d-lg-grid" aria-hidden="true">
             <span>Course &amp; Date</span>
@@ -132,51 +153,62 @@
                 </div>
                 
                 <div class="record-body">
-                    <div class="record-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Schedule</span>
-                            <span class="detail-value">{{ $schedStr }}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Actual Clock-in</span>
-                            <span class="detail-value" style="{{ $record->status === 'Absent' ? 'color:#f87171;' : ($record->status === 'Present' ? 'color:#4ade80;' : ($record->status === 'Late' ? 'color:#fbbf24;' : '')) }}">
+                    <div class="record-primary-strip">
+                        <div class="record-primary-clockin">
+                            <i class="bi bi-clock" style="color:#D4AF37;" aria-hidden="true"></i>
+                            <span>Clock-in:</span>
+                            <strong style="{{ $record->status === 'Absent' ? 'color:#f87171;' : ($record->status === 'Present' ? 'color:#4ade80;' : ($record->status === 'Late' ? 'color:#fbbf24;' : 'color:#FAF8F5;')) }}">
                                 {{ $clockInText }}
-                            </span>
+                            </strong>
+                            @if($methodLabel)
+                                <span style="color:#ACA099; font-weight:500;">· {{ $methodLabel }}</span>
+                            @endif
                         </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Clock-out</span>
-                            <span class="detail-value">{{ $record->time_out ? \Carbon\Carbon::parse($record->time_out)->format('g:i A') : '—' }}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Remarks</span>
-                            <span class="detail-value">{{ $record->excuse_note ?? $record->excuseSubmission?->reason ?? ($record->excused ? 'Excused Absence' : '—') }}</span>
-                        </div>
-                        @if($methodLabel)
-                            <div class="detail-item">
-                                <span class="detail-label">Method</span>
-                                <span class="detail-value">{{ $methodLabel }}</span>
-                            </div>
-                        @endif
-                        @if($record->class)
-                            <div class="detail-item">
-                                <span class="detail-label">Section</span>
-                                <span class="detail-value">{{ $record->class }}</span>
-                            </div>
-                        @endif
-                    </div>
-                    
-                    <div class="record-actions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-                        @if($record->status === 'Absent' && !$record->excuseSubmission)
-                            <button class="excuse-btn" onclick="openExcuseModal({{ $record->id }}, {{ Illuminate\Support\Js::from($record->subject->name ?? $record->subject_code) }}, '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}')">
-                                <i class="bi bi-file-text"></i> Submit Excuse
-                            </button>
-                        @elseif($record->excuseSubmission)
-                            <span class="excuse-status excuse-{{ $record->excuseSubmission->status }}">
-                                <i class="bi bi-{{ $record->excuseSubmission->status === 'approved' ? 'check-circle' : ($record->excuseSubmission->status === 'rejected' ? 'x-circle' : 'clock') }}"></i>
-                                Excuse: {{ ucfirst($record->excuseSubmission->status) }}
-                            </span>
-                        @endif
 
+                        <div class="record-actions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                            @if($record->status === 'Absent' && !$record->excuseSubmission)
+                                <button class="excuse-btn" onclick="openExcuseModal({{ $record->id }}, {{ Illuminate\Support\Js::from($record->subject->name ?? $record->subject_code) }}, '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}')">
+                                    <i class="bi bi-file-text"></i> Submit Excuse
+                                </button>
+                            @elseif($record->excuseSubmission)
+                                <span class="excuse-status excuse-{{ $record->excuseSubmission->status }}">
+                                    <i class="bi bi-{{ $record->excuseSubmission->status === 'approved' ? 'check-circle' : ($record->excuseSubmission->status === 'rejected' ? 'x-circle' : 'clock') }}"></i>
+                                    Excuse: {{ ucfirst($record->excuseSubmission->status) }}
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <details class="sd-disclosure-inline">
+                        <summary>
+                            <span>Session details</span>
+                            <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
+                        </summary>
+                        <div class="sd-disclosure-inline-body">
+                            <div class="record-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Schedule</span>
+                                    <span class="detail-value">{{ $schedStr }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Clock-out</span>
+                                    <span class="detail-value">{{ $record->time_out ? \Carbon\Carbon::parse($record->time_out)->format('g:i A') : '—' }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Remarks</span>
+                                    <span class="detail-value">{{ $record->excuse_note ?? $record->excuseSubmission?->reason ?? ($record->excused ? 'Excused Absence' : '—') }}</span>
+                                </div>
+                                @if($record->class)
+                                    <div class="detail-item">
+                                        <span class="detail-label">Section</span>
+                                        <span class="detail-value">{{ $record->class }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="record-actions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                         @if($record->correction)
                             <span class="excuse-status excuse-{{ $record->correction->status }}" style="background:rgba(212, 175, 55,0.14); color:#F5DFA8; border:1px solid rgba(212, 175, 55,0.28);">
                                 <i class="bi bi-patch-question" aria-hidden="true"></i> Appeal: {{ ucfirst($record->correction->status) }}

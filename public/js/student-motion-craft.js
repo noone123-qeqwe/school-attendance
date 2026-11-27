@@ -101,6 +101,7 @@
 
     function initAllGlidingControls() {
         const selectors = [
+            '.sd-workspace-tabs',
             '.sd-segmented',
             '.sd-view-toggle',
             '.student-view-switcher',
@@ -479,12 +480,118 @@
         });
     }
 
+    // ── 9. Responsive <details> Disclosure & Overflow Action Menus ─────────
+    function initResponsiveDisclosures() {
+        const nodes = document.querySelectorAll('details[data-open-desktop="true"]');
+        if (!nodes.length) return;
+        const mq = window.matchMedia('(min-width: 768px)');
+        const apply = () => {
+            nodes.forEach((el) => {
+                if (el.dataset.userToggled === '1') return;
+                el.open = mq.matches;
+            });
+        };
+        nodes.forEach((el) => {
+            const summary = el.querySelector(':scope > summary');
+            if (summary) {
+                summary.addEventListener('click', () => {
+                    el.dataset.userToggled = '1';
+                });
+            }
+        });
+        apply();
+        if (typeof mq.addEventListener === 'function') {
+            mq.addEventListener('change', apply);
+        }
+    }
+
+    function initActionMenus() {
+        const getMenus = () => Array.from(document.querySelectorAll('details.sd-action-menu'));
+        document.addEventListener('click', (e) => {
+            const clickedMenu = e.target.closest('details.sd-action-menu');
+            getMenus().forEach((menu) => {
+                if (menu !== clickedMenu && menu.open) {
+                    menu.open = false;
+                }
+            });
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            getMenus().forEach((menu) => {
+                if (menu.open) {
+                    menu.open = false;
+                    menu.querySelector(':scope > summary')?.focus({ preventScroll: true });
+                }
+            });
+        });
+    }
+
+    function initCalendarWorkspaceTabs() {
+        const tabs = Array.from(document.querySelectorAll('[data-cal-workspace-tab]'));
+        if (!tabs.length) return;
+        const calPane = document.getElementById('scalWorkspaceCalendar');
+        const recPane = document.getElementById('scalWorkspaceRecords');
+
+        const activate = (target, shouldScroll) => {
+            const mode = target === 'records' ? 'records' : 'calendar';
+            tabs.forEach((btn) => {
+                const active = btn.dataset.calWorkspaceTab === mode;
+                btn.setAttribute('aria-selected', active ? 'true' : 'false');
+                btn.classList.toggle('is-active', active);
+            });
+            if (calPane) calPane.hidden = mode !== 'calendar';
+            if (recPane) recPane.hidden = mode !== 'records';
+            if (shouldScroll && mode === 'records' && recPane) {
+                requestAnimationFrame(() => recPane.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' }));
+            }
+        };
+
+        tabs.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.calWorkspaceTab;
+                activate(mode, false);
+                if (mode === 'calendar' && window.location.hash === '#attendance-records') {
+                    history.replaceState(null, '', window.location.pathname + window.location.search);
+                }
+            });
+        });
+
+        const params = new URLSearchParams(window.location.search);
+        const hasRecordFilter = Boolean(params.get('q') || params.get('status') || params.get('record_date') || params.get('page'));
+        const wantsRecords = window.location.hash === '#attendance-records' || hasRecordFilter;
+        activate(wantsRecords ? 'records' : 'calendar', false);
+
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash === '#attendance-records') {
+                activate('records', true);
+            }
+        });
+
+        // Any internal link targeting #attendance-records activates the Records tab seamlessly
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a[href*="#attendance-records"]');
+            if (!link) return;
+            try {
+                const dest = new URL(link.href, window.location.origin);
+                if (dest.pathname === window.location.pathname && dest.search === window.location.search) {
+                    activate('records', true);
+                }
+            } catch (_) {}
+        });
+
+        window.StudentMotion = window.StudentMotion || {};
+        window.StudentMotion.switchCalendarWorkspace = (mode) => activate(mode, false);
+    }
+
     function boot() {
         initScrollElevation();
         initAllGlidingControls();
         initDashboardMeterReveal();
         initMobileSheets();
         initDropzoneHighlight();
+        initResponsiveDisclosures();
+        initActionMenus();
+        initCalendarWorkspaceTabs();
     }
 
     window.StudentMotion = {

@@ -126,22 +126,54 @@
                                 @endif
                             </div>
 
+                            @php
+                                $descText = trim((string) ($excuse->description ?? ''));
+                                $hasLongDesc = \Illuminate\Support\Str::length($descText) > 110;
+                                $attachmentCount = is_array($excuse->attachments) ? count($excuse->attachments) : 0;
+                                $hasReviewerNote = $excuse->status === 'rejected' && !empty($excuse->admin_notes);
+                                $needsDetailDisclosure = $hasLongDesc || $attachmentCount > 0;
+                            @endphp
                             <div class="sd-excuse-reason-box">
                                 <div class="sd-excuse-reason-title">Reason: {{ $excuse->reason }}</div>
-                                <div class="sd-excuse-reason-body">{{ $excuse->description }}</div>
+                                @if(!$hasLongDesc && $descText !== '')
+                                    <div class="sd-excuse-reason-body">{{ $descText }}</div>
+                                @elseif($hasLongDesc)
+                                    <div class="sd-excuse-reason-body">{{ \Illuminate\Support\Str::limit($descText, 110) }}</div>
+                                @endif
                             </div>
 
-                            @if($excuse->attachments)
-                                <div class="mt-3 d-flex gap-2 flex-wrap">
-                                    @foreach($excuse->attachments ?? [] as $index => $attachment)
-                                        <a href="{{ route('excuse-attachments.show', [$excuse->id, $index]) }}" target="_blank" rel="noopener noreferrer" class="sd-excuse-attachment">
-                                            <i class="bi bi-paperclip" aria-hidden="true"></i> View Attachment
-                                        </a>
-                                    @endforeach
-                                </div>
+                            @if($needsDetailDisclosure)
+                                <details class="sd-disclosure-inline">
+                                    <summary>
+                                        <span>
+                                            @if($attachmentCount > 0 && $hasLongDesc)
+                                                Full letter &amp; {{ $attachmentCount }} {{ \Illuminate\Support\Str::plural('attachment', $attachmentCount) }}
+                                            @elseif($attachmentCount > 0)
+                                                {{ $attachmentCount }} {{ \Illuminate\Support\Str::plural('attachment', $attachmentCount) }}
+                                            @else
+                                                Read full explanation
+                                            @endif
+                                        </span>
+                                        <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
+                                    </summary>
+                                    <div class="sd-disclosure-inline-body">
+                                        @if($hasLongDesc)
+                                            <div class="sd-excuse-reason-body mb-2">{{ $descText }}</div>
+                                        @endif
+                                        @if($attachmentCount > 0)
+                                            <div class="d-flex gap-2 flex-wrap">
+                                                @foreach($excuse->attachments ?? [] as $index => $attachment)
+                                                    <a href="{{ route('excuse-attachments.show', [$excuse->id, $index]) }}" target="_blank" rel="noopener noreferrer" class="sd-excuse-attachment">
+                                                        <i class="bi bi-paperclip" aria-hidden="true"></i> View Attachment
+                                                    </a>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+                                </details>
                             @endif
 
-                            @if($excuse->status === 'rejected' && $excuse->admin_notes)
+                            @if($hasReviewerNote)
                                 <div class="sd-excuse-reviewer-note">
                                     <div style="font-size:0.74rem;font-weight:800;color:#ff8e9b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Reviewer Note</div>
                                     <p style="font-size:0.84rem;color:#FAF8F5;margin:0;">{{ $excuse->admin_notes }}</p>

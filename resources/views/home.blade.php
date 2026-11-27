@@ -312,25 +312,30 @@
             </div>
 
             @if($weeklyPulseCollection->isNotEmpty())
-            <div class="sd-pulse-band">
-                <div class="sd-pulse-head">
+            <details class="sd-pulse-disclosure" data-open-desktop="true">
+                <summary>
                     <span class="sd-pulse-title">7-Day Pulse</span>
-                    <span class="sd-pulse-hint">Tap a day</span>
+                    <span class="sd-disclosure-meta-wrap">
+                        <span class="sd-pulse-hint">Tap a day</span>
+                        <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
+                    </span>
+                </summary>
+                <div class="sd-pulse-band" style="margin-top: 10px; padding-top: 0; border-top: 0;">
+                    <div class="sd-pulse-grid" role="group" aria-label="7-Day Attendance Pulse">
+                        @foreach($weeklyPulseCollection as $pulse)
+                            <button type="button"
+                                    class="sd-pulse-day is-status-{{ $pulse->status }} {{ $pulse->is_today ? 'is-today' : '' }}"
+                                    data-date-key="{{ $pulse->date_key }}"
+                                    data-day-label="{{ $pulse->label }}"
+                                    aria-label="Inspect {{ $pulse->label }} ({{ $pulse->status }})">
+                                <span class="sd-pulse-day-short">{{ $pulse->day_short }}</span>
+                                <span class="sd-pulse-day-num sd-tabular">{{ $pulse->day_num }}</span>
+                                <span class="sd-pulse-pip" aria-hidden="true"></span>
+                            </button>
+                        @endforeach
+                    </div>
                 </div>
-                <div class="sd-pulse-grid" role="group" aria-label="7-Day Attendance Pulse">
-                    @foreach($weeklyPulseCollection as $pulse)
-                        <button type="button"
-                                class="sd-pulse-day is-status-{{ $pulse->status }} {{ $pulse->is_today ? 'is-today' : '' }}"
-                                data-date-key="{{ $pulse->date_key }}"
-                                data-day-label="{{ $pulse->label }}"
-                                aria-label="Inspect {{ $pulse->label }} ({{ $pulse->status }})">
-                            <span class="sd-pulse-day-short">{{ $pulse->day_short }}</span>
-                            <span class="sd-pulse-day-num sd-tabular">{{ $pulse->day_num }}</span>
-                            <span class="sd-pulse-pip" aria-hidden="true"></span>
-                        </button>
-                    @endforeach
-                </div>
-            </div>
+            </details>
             @endif
         </section>
     </div>
@@ -494,7 +499,7 @@
                             @php
                                 $hasRecords = $sub->total > 0;
                                 $subTone = !$hasRecords ? 'is-new' : ($sub->rate >= 85 ? 'is-good' : ($sub->rate >= 75 ? 'is-warn' : 'is-risk'));
-                                $isHiddenExtra = $loop->index >= 5;
+                                $isHiddenExtra = $loop->index >= 3;
                             @endphp
                             <a href="{{ route('student.classes') }}"
                                class="sd-subject-row {{ $isHiddenExtra ? 'is-collapsible' : '' }}"
@@ -524,7 +529,7 @@
                         @endforeach
                     </div>
 
-                    @if($subjectStatsCollection->count() > 5)
+                    @if($subjectStatsCollection->count() > 3)
                         <div class="sd-panel-foot">
                             <button type="button"
                                     class="sd-expand-btn"

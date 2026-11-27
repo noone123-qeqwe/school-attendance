@@ -325,4 +325,64 @@ class UiRedundancyAuditTest extends TestCase
         $this->assertStringContainsString("setAttribute('data-instant', 'true')", $cmdBlade);
         $this->assertStringContainsString('initModalKeyboardTrap', $ppmBlade);
     }
+
+    public function test_student_portal_applies_progressive_disclosure_across_dense_views(): void
+    {
+        $student = $this->createUser('student', [
+            'email' => 'student.disclosure@example.test',
+            'student_number' => '2026-DISC-1',
+        ]);
+
+        // 1. Calendar splits Calendar & Records into focused workspace tabs, collapses Legend, and folds Records filters
+        $calHtml = $this->actingAs($student)->get(route('student.calendar'))->assertOk()->getContent();
+        $this->assertStringContainsString('id="scalTabCalendar"', $calHtml);
+        $this->assertStringContainsString('id="scalTabRecords"', $calHtml);
+        $this->assertStringContainsString('id="scalWorkspaceCalendar"', $calHtml);
+        $this->assertStringContainsString('id="scalWorkspaceRecords"', $calHtml);
+        $this->assertStringContainsString('sd-disclosure-card scal-legend-card', $calHtml);
+        $this->assertStringContainsString('sd-filter-disclosure', $calHtml);
+
+        // 2. Records route redirects seamlessly into Calendar's Records workspace tab
+        $this->actingAs($student)->get(route('attendance.records'))->assertRedirect();
+
+        // 3. Excuse form prioritizes Date & Reason first and folds optional attachments behind a disclosure card
+        $excuseFormHtml = $this->actingAs($student)->get(route('excuses.create_general'))->assertOk()->getContent();
+        $this->assertStringContainsString('id="excuseAttachmentsDisclosure"', $excuseFormHtml);
+        $this->assertStringContainsString('id="excuseAttachmentCountPill"', $excuseFormHtml);
+        $this->assertStringContainsString('toggleExtraSubjects', $excuseFormHtml);
+        $this->assertLessThan(
+            strpos($excuseFormHtml, 'Choose Subjects'),
+            strpos($excuseFormHtml, 'Absence Date'),
+            'Date & Reason should precede the subject checklist on the general excuse form.'
+        );
+
+        // 4. Dashboard wraps 7-Day Pulse in responsive disclosure
+        $homeHtml = $this->actingAs($student)->get(route('home'))->assertOk()->getContent();
+        $this->assertStringContainsString('sd-pulse-disclosure', $homeHtml);
+
+        // 5. Notifications collapses Search & Category Filters and moves secondary card actions into overflow menus
+        $notifHtml = $this->actingAs($student)->get(route('notifications'))->assertOk()->getContent();
+        $this->assertStringContainsString('notif-filter-disclosure', $notifHtml);
+        $notifBlade = file_get_contents(resource_path('views/notifications.blade.php'));
+        $this->assertNotFalse($notifBlade);
+        $this->assertStringContainsString('class="sd-action-menu"', $notifBlade);
+
+        // 6. Classes uses responsive mobile filter disclosure
+        $classesHtml = $this->actingAs($student)->get(route('student.classes'))->assertOk()->getContent();
+        $this->assertStringContainsString('cor-mobile-filter-disclosure', $classesHtml);
+
+        // 7. Profile folds Bound Attendance Device and Device passkeys into collapsible cards
+        $profileHtml = $this->actingAs($student)->get(route('profile'))->assertOk()->getContent();
+        $this->assertSame(2, substr_count($profileHtml, 'profile-disclosure-card'));
+        $this->assertStringContainsString('id="registerFpBtn"', $profileHtml);
+        $this->assertStringContainsString('id="deviceList"', $profileHtml);
+
+        // 8. Records & Excuses history keep compact inline detail disclosures
+        $recordsBlade = file_get_contents(resource_path('views/attendance/records.blade.php'));
+        $excusesIndexBlade = file_get_contents(resource_path('views/excuses/index.blade.php'));
+        $this->assertNotFalse($recordsBlade);
+        $this->assertNotFalse($excusesIndexBlade);
+        $this->assertStringContainsString('sd-disclosure-inline', $recordsBlade);
+        $this->assertStringContainsString('sd-disclosure-inline', $excusesIndexBlade);
+    }
 }

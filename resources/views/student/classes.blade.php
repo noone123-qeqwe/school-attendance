@@ -150,35 +150,43 @@
     <div class="cor-sheet" id="corCertificateSheet">
         <div class="cor-content-relative">
 
-            <!-- 3. Screen Controls Toolbar (Search, Filter) -->
-            <div class="cor-toolbar no-print">
-                <label class="student-filter-field" for="scheduleSearchInput">Find a class
-                    <span class="position-relative d-block w-100">
-                        <i class="bi bi-search sd-search-icon" aria-hidden="true"></i>
-                        <input type="search" id="scheduleSearchInput" class="cor-search-input" placeholder="Subject, teacher, or room" aria-label="Filter schedule records">
-                    </span>
-                </label>
-                <label class="student-filter-field" for="scheduleDayFilter">Day
-                    <select id="scheduleDayFilter">
-                        <option value="all">All days</option>
-                        <option value="today">Today</option>
-                        @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day)
-                        <option value="{{ $day }}">{{ $day }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <div class="sd-view-toggle d-none d-lg-inline-flex" role="group" aria-label="Classes layout mode">
-                    <button type="button" class="sd-view-toggle-btn is-active" id="corViewCardsBtn" data-cor-view="cards" aria-pressed="true">
-                        <i class="bi bi-grid-fill" aria-hidden="true"></i> Cards
-                    </button>
-                    <button type="button" class="sd-view-toggle-btn" id="corViewTableBtn" data-cor-view="table" aria-pressed="false">
-                        <i class="bi bi-table" aria-hidden="true"></i> COR Table
-                    </button>
-                    <button type="button" class="sd-view-toggle-btn" id="corViewWeeklyBtn" data-cor-view="weekly" aria-pressed="false">
-                        <i class="bi bi-calendar-week" aria-hidden="true"></i> Weekly
-                    </button>
+            <!-- 3. Screen Controls Toolbar (Open on Desktop, Progressive Disclosure on Mobile) -->
+            <details class="sd-filter-disclosure cor-mobile-filter-disclosure no-print mb-2" data-open-desktop="true" id="corFilterDisclosure">
+                <summary>
+                    <i class="bi bi-sliders" aria-hidden="true"></i>
+                    <span>Search &amp; Filter</span>
+                    <span class="sd-disclosure-pill is-accent" id="corActiveFilterPill" hidden></span>
+                    <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
+                </summary>
+                <div class="cor-toolbar no-print mt-2 mt-md-0">
+                    <label class="student-filter-field" for="scheduleSearchInput">Find a class
+                        <span class="position-relative d-block w-100">
+                            <i class="bi bi-search sd-search-icon" aria-hidden="true"></i>
+                            <input type="search" id="scheduleSearchInput" class="cor-search-input" placeholder="Subject, teacher, or room" aria-label="Filter schedule records">
+                        </span>
+                    </label>
+                    <label class="student-filter-field" for="scheduleDayFilter">Day
+                        <select id="scheduleDayFilter">
+                            <option value="all">All days</option>
+                            <option value="today">Today</option>
+                            @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day)
+                            <option value="{{ $day }}">{{ $day }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <div class="sd-view-toggle d-none d-lg-inline-flex" role="group" aria-label="Classes layout mode">
+                        <button type="button" class="sd-view-toggle-btn is-active" id="corViewCardsBtn" data-cor-view="cards" aria-pressed="true">
+                            <i class="bi bi-grid-fill" aria-hidden="true"></i> Cards
+                        </button>
+                        <button type="button" class="sd-view-toggle-btn" id="corViewTableBtn" data-cor-view="table" aria-pressed="false">
+                            <i class="bi bi-table" aria-hidden="true"></i> COR Table
+                        </button>
+                        <button type="button" class="sd-view-toggle-btn" id="corViewWeeklyBtn" data-cor-view="weekly" aria-pressed="false">
+                            <i class="bi bi-calendar-week" aria-hidden="true"></i> Weekly
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </details>
             <p class="student-results-count no-print" id="scheduleResultsStatus" role="status">{{ count($groupedSchedules) }} classes</p>
 
             <!-- 4. Class Schedule Cards View (Primary Mobile Layout) -->
@@ -229,18 +237,19 @@
                                 </div>
                             </div>
 
-                            <div class="cor-card-matrix-cell">
-                                <div class="cor-card-matrix-label">Room</div>
-                                <div class="cor-card-matrix-value">
-                                    @if($sched->room && $sched->room !== 'TBA')
+                            @php
+                                $hasRoom = !empty($sched->room) && strtoupper(trim((string) $sched->room)) !== 'TBA';
+                            @endphp
+                            @if($hasRoom)
+                                <div class="cor-card-matrix-cell">
+                                    <div class="cor-card-matrix-label">Room</div>
+                                    <div class="cor-card-matrix-value">
                                         <span class="cor-room-badge">{{ $sched->room }}</span>
-                                    @else
-                                        <span class="cor-tba-label">TBA</span>
-                                    @endif
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
 
-                            <div class="cor-card-matrix-cell">
+                            <div class="cor-card-matrix-cell {{ !$hasRoom ? 'cor-card-matrix-cell--full' : '' }}">
                                 <div class="cor-card-matrix-label">Teacher</div>
                                 <div class="cor-card-matrix-value" title="{{ $sched->teacher }}">
                                     {{ $sched->teacher }}
@@ -434,6 +443,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         document.getElementById('scheduleResultsStatus').textContent = visible + (visible === 1 ? ' class' : ' classes');
         document.getElementById('scheduleFilterEmpty').hidden = cards.length === 0 || visible > 0;
+        const activeFilterPill = document.getElementById('corActiveFilterPill');
+        if (activeFilterPill) {
+            const activeCount = (query ? 1 : 0) + (day.value !== 'all' ? 1 : 0);
+            activeFilterPill.hidden = activeCount === 0;
+            activeFilterPill.textContent = activeCount > 0 ? (activeCount + ' active') : '';
+        }
     }
     search.addEventListener('input', applyScheduleFilter);
     day.addEventListener('change', applyScheduleFilter);
