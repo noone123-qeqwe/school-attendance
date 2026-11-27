@@ -887,6 +887,7 @@ function renderStatusAlert(variantClass, iconClass, iconColor, titleIconClass, t
     // A blocked start needs to show the reason until the teacher can take action.
     if (variantClass === 'qr-alert-success' || variantClass === 'qr-alert-info') {
         alertBox.setAttribute('data-alert-banner', '');
+        alertBox.setAttribute('data-alert-transient', '');
         alertBox.setAttribute('role', 'status');
     }
 

@@ -3,8 +3,10 @@
 
     const flashSelectors = '.flash-ok, .flash-err, .flash-error, .flash-success, .ts-flash, .hub-alert, .sd-error-banner, .sd-success-banner';
     const bannerSelectors = [
-        '[data-alert-banner]', 'div.alert', 'section.alert', 'p.alert', '.alert-info', '.alert-err', '.alert-modern', '.glass-alert',
-        '.portal-banner', '.ent-alert', '.ds-inline-alert', '.assistant-notice', flashSelectors,
+        '[data-alert-banner]', 'div.alert', 'section.alert', 'p.alert', '.alert-info', '.alert-err', '.alert-modern', '.alert-success',
+        '.alert-warning', '.alert-danger', '.glass-alert', '.portal-banner', '.ent-alert', '.ds-inline-alert',
+        '.assistant-notice', '#webauthnUnsupported', '#cameraFaceUnavailableNotice', '#scanUnavailable',
+        '[role="alert"]:not(.ds-invalid-feedback)', flashSelectors,
     ].join(', ');
     const resolvedSelector = '[data-alert-resolved]';
     const scope = document.currentScript?.dataset.alertScope || 'guest';
@@ -45,6 +47,15 @@
 
     function forget(key) {
         if (dismissals.delete(key)) save();
+        document.querySelectorAll(bannerSelectors).forEach(banner => {
+            const state = records.get(banner);
+            if (state?.key !== key) return;
+            state.dismissed = false;
+            state.animation?.cancel();
+            state.animation = undefined;
+            banner.removeAttribute('data-alert-dismissed');
+            banner.removeAttribute('data-alert-closing');
+        });
     }
 
     function enhance(banner) {
@@ -61,8 +72,8 @@
             .filter(node => node.nodeType !== Node.ELEMENT_NODE || !node.matches('[data-alert-close]'))
             .map(node => node.textContent).join(' ').replace(/\s+/g, ' ').trim();
         const key = hash(banner.dataset.alertKey || `${location.pathname}:${banner.id || text}`);
-        const revision = hash(banner.dataset.alertVersion ?? text);
-        const transient = banner.matches(`[data-alert-transient], ${flashSelectors}`);
+        const revision = hash(banner.dataset.alertVersion || text);
+        const transient = banner.matches(`[data-alert-transient], [role="alert"], .alert-success, .alert-danger, .ent-alert, ${flashSelectors}`);
 
         if (!eligible || !text) {
             if (eligible && previous && !transient) forget(previous.key);
@@ -205,7 +216,7 @@
         childList: true,
         characterData: true,
         attributes: true,
-        attributeFilter: ['data-alert-version', 'data-alert-required', 'data-alert-resolved'],
+        attributeFilter: ['data-alert-banner', 'data-alert-key', 'data-alert-version', 'data-alert-transient', 'data-alert-required', 'data-alert-resolved'],
     });
 
     window.addEventListener('pageshow', event => {

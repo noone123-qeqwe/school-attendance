@@ -588,10 +588,11 @@ class StudentDashboardAndSidebarTest extends TestCase
         $response->assertOk()
             ->assertSee('student-dashboard.css', false)
             ->assertSee('sd-mobile-cockpit', false)
-            ->assertSee('Scan QR')
-            ->assertSee('Enter PIN')
-            ->assertSee('Attendance Standing')
-            ->assertSee('7-Day Pulse')
+            ->assertDontSee('id="quickActionScanBtn"', false)
+            ->assertDontSee('Enter PIN')
+            ->assertDontSee('Attendance Standing')
+            ->assertDontSee('7-Day Pulse')
+            ->assertDontSee('Subject Standing')
             ->assertSee('Mobile Systems')
             ->assertSee('Mobile Campus Advisory');
     }

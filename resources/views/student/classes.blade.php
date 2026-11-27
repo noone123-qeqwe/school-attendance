@@ -164,10 +164,14 @@
 @endphp
 
 @if(blank($user->section))
-<div role="status" class="mb-3" style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px;border-radius:10px;border:1px solid rgba(212, 175, 55,0.28);border-left:3px solid #D4AF37;background:#1E1515;color:#FAF8F5;">
+<x-alert-banner role="status" class="mb-3" alert-key="missing-class-section" version="unassigned"
+                dismiss-label="Dismiss class section notice"
+                style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px;border-radius:10px;border:1px solid rgba(212, 175, 55,0.28);border-left:3px solid #D4AF37;background:#1E1515;color:#FAF8F5;">
     <i class="bi bi-info-circle-fill" style="color:#D4AF37;margin-top:2px;" aria-hidden="true"></i>
     <div><strong>Your section is not assigned yet.</strong><br><span style="color:#D6CCC6;">Section-based classes appear after the school assigns your section. Contact the registrar or school administrator to update your student profile.</span></div>
-</div>
+</x-alert-banner>
+@else
+<span hidden data-alert-resolved="missing-class-section"></span>
 @endif
 
 <style>

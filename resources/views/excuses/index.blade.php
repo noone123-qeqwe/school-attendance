@@ -20,17 +20,17 @@
     </header>
 
     @if(session('success'))
-    <div role="status" class="mb-4" style="background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.32); color: #6ee7b7; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+    <x-alert-banner role="status" class="mb-4" data-alert-transient style="background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.32); color: #6ee7b7; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
         <i class="bi bi-check-circle-fill fs-5" aria-hidden="true"></i>
         <span class="small fw-semibold">{{ session('success') }}</span>
-    </div>
+    </x-alert-banner>
     @endif
 
     @if(session('error'))
-    <div role="alert" class="mb-4" style="background: rgba(255,107,122,0.12); border: 1px solid rgba(255,107,122,0.34); color: #ffb3bc; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+    <x-alert-banner role="alert" class="mb-4" data-alert-transient style="background: rgba(255,107,122,0.12); border: 1px solid rgba(255,107,122,0.34); color: #ffb3bc; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
         <i class="bi bi-exclamation-triangle-fill fs-5" aria-hidden="true"></i>
         <span class="small fw-semibold">{{ session('error') }}</span>
-    </div>
+    </x-alert-banner>
     @endif
 
     <section class="sd-excuse-kpis" aria-label="Excuse summary">

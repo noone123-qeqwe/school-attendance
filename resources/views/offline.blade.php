@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    @include('partials.alert-banner-assets')
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#141010">
@@ -231,7 +232,8 @@
     </div>
 
     <!-- ISP tip -->
-    <div class="isp-tip" id="ispTipBox">
+    <x-alert-banner id="ispTipBox" class="isp-tip" role="note" alert-key="offline-isp-routing-tip" version="routing-tip-v1"
+                    dismiss-label="Dismiss network troubleshooting tip">
         <div style="font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px;">
             🌐 Internet Active &bull; Host Connection Blocked
         </div>
@@ -240,7 +242,7 @@
             &bull; Try <strong>Cloudflare WARP (1.1.1.1)</strong><br>
             &bull; Or switch between Wi-Fi and Mobile Data.
         </div>
-    </div>
+    </x-alert-banner>
 
     <!-- icon -->
     <div class="icon-wrap" id="offlineIcon">

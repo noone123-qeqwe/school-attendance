@@ -19,15 +19,19 @@
 @include('partials.parent-child-context', ['children' => $children, 'selectedChild' => $selectedChild, 'contextSection' => 'schedule'])
 
 @if(!$selectedChild)
-    <div class="alert alert-warning" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #fbbf24;">
+    <x-alert-banner class="alert alert-warning" role="alert" :required="true" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #fbbf24;">
         You currently do not have any students linked to your account.
-    </div>
+    </x-alert-banner>
 @else
     @if(blank($selectedChild->section))
-    <div role="status" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:16px;border-radius:12px;border:1px solid rgba(207,164,111,.35);background:rgba(207,164,111,.08);color:#f3e7cd;">
+    <x-alert-banner role="status" alert-key="parent-section-not-assigned-{{ $selectedChild->id }}" version="unassigned"
+                    dismiss-label="Dismiss section notice"
+                    style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:16px;border-radius:12px;border:1px solid rgba(207,164,111,.35);background:rgba(207,164,111,.08);color:#f3e7cd;">
         <i class="bi bi-info-circle-fill" style="color:#dfb784;margin-top:2px;"></i>
         <div><strong>Student section not assigned</strong><br><span style="color:#b39b82;">This student’s timetable will appear after the school assigns their section.</span></div>
-    </div>
+    </x-alert-banner>
+    @else
+        <span hidden data-alert-resolved="parent-section-not-assigned-{{ $selectedChild->id }}"></span>
     @endif
     <div class="row g-4">
         @php
