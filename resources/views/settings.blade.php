@@ -177,7 +177,6 @@
                     <div class="profile-details-col">
                         <div class="profile-user-name">{{ Auth::user()->name }}</div>
                         @if($user->isStudent())
-                        <div class="profile-user-hint" style="font-size:0.8rem;color:#ACA099;margin-top:4px;">JPG, PNG, or WebP · max 2 MB</div>
                         <div class="student-profile-photo-actions">
                             <label for="ppmFileInput" class="student-photo-change-btn" tabindex="0">
                                 <i class="bi bi-camera-fill" aria-hidden="true"></i>
