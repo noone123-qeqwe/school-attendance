@@ -11,6 +11,7 @@ use App\Services\FeatureFlagService;
 use App\Services\StudentScheduleService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
@@ -19,6 +20,10 @@ use Illuminate\View\View;
  */
 class SidebarComposer
 {
+    public static function forgetStudentCache(int $studentId): void
+    {
+        Cache::forget("sidebar:student_shell:{$studentId}");
+    }
     public function compose(View $view): void
     {
         $viewName = $view->name();
@@ -162,59 +167,91 @@ class SidebarComposer
             $shortName = (string) ($student->name ?: 'Student');
         }
 
-        $hasAssistant = false;
-        if (app(FeatureFlagService::class)->enabled('feature.student_assistant_qr')) {
-            try {
-                $hasAssistant = $student->studentAssistantAssignments()
-                    ->whereNotNull('active_slot')
-                    ->whereNull('revoked_at')
-                    ->where('starts_at', '<=', now())
-                    ->where('expires_at', '>=', now())
-                    ->exists();
-            } catch (\Throwable) {
-                $hasAssistant = false;
-            }
-        }
-
-        try {
-            $subjects = app(StudentScheduleService::class)->subjectsFor($student);
-            $subjectsQuickList = $subjects->map(function (Subject $subject): array {
-                $firstSlot = $subject->schedules->first();
-                $room = trim((string) ($firstSlot?->room ?? ''));
-                return [
-                    'code' => (string) $subject->code,
-                    'name' => (string) $subject->name,
-                    'room' => ($room !== '' && strtoupper($room) !== 'TBA') ? $room : 'Room TBA',
-                    'instructor' => (string) ($subject->instructorUser?->name ?? $subject->instructor ?? 'Instructor TBA'),
-                ];
-            })->values()->all();
-
-            $recordsCount = Attendance::where('user_id', $student->id)->count();
-            $excusesCount = ExcuseSubmission::where('user_id', $student->id)->count();
-            $pendingExcusesCount = ExcuseSubmission::where('user_id', $student->id)->where('status', 'pending')->count();
-            $unreadNotificationsCount = Notification::where('user_id', $student->id)
-                ->active()
-                ->where('is_read', false)
-                ->count();
-
-            $data = [
-                'hasActiveAssistantAssignment' => $hasAssistant,
-                'classesCount' => $subjects->count(),
-                'recordsCount' => $recordsCount,
-                'excusesCount' => $excusesCount,
-                'pendingExcusesCount' => $pendingExcusesCount,
-                'unreadNotificationsCount' => $unreadNotificationsCount,
-                'initials' => $initials,
-                'shortName' => $shortName,
-                'subjectsQuickList' => $subjectsQuickList,
-            ];
-        } catch (\Throwable) {
-            $data = array_merge($default, [
-                'hasActiveAssistantAssignment' => $hasAssistant,
+        // Standalone scanner does not render the sidebar, topbar, or command palette.
+        if ($request->routeIs('mobile.scan')) {
+            $minimal = array_merge($default, [
                 'initials' => $initials,
                 'shortName' => $shortName,
             ]);
+            $request->attributes->set($attrKey, $minimal);
+            return $minimal;
         }
+
+        $resolver = function () use ($student, $default, $initials, $shortName): array {
+            $assistantFeatureEnabled = app(FeatureFlagService::class)->enabled('feature.student_assistant_qr');
+            $hasAssistant = false;
+            $recordsCount = 0;
+            $excusesCount = 0;
+            $pendingExcusesCount = 0;
+            $unreadNotificationsCount = 0;
+
+            try {
+                // Collapse 5 separate scalar queries (records, excuses, pending excuses, unread notifications, assistant check)
+                // into a single DB round-trip so high-RTT remote databases stay snappy.
+                $nowStr = now()->toDateTimeString();
+                $row = DB::selectOne(
+                    'SELECT
+                        (SELECT COUNT(*) FROM attendances WHERE user_id = ? AND deleted_at IS NULL) AS records_count,
+                        (SELECT COUNT(*) FROM excuse_submissions WHERE user_id = ?) AS excuses_count,
+                        (SELECT COUNT(*) FROM excuse_submissions WHERE user_id = ? AND status = ?) AS pending_excuses_count,
+                        (SELECT COUNT(*) FROM notifications WHERE user_id = ? AND archived_at IS NULL AND is_read = 0) AS unread_notifications_count,
+                        ' . ($assistantFeatureEnabled
+                            ? '(SELECT EXISTS(SELECT 1 FROM class_student_assistants WHERE student_id = ? AND active_slot IS NOT NULL AND revoked_at IS NULL AND starts_at <= ? AND expires_at >= ?)) AS has_assistant'
+                            : '0 AS has_assistant'),
+                    $assistantFeatureEnabled
+                        ? [$student->id, $student->id, $student->id, 'pending', $student->id, $student->id, $nowStr, $nowStr]
+                        : [$student->id, $student->id, $student->id, 'pending', $student->id]
+                );
+
+                $recordsCount = (int) ($row->records_count ?? 0);
+                $excusesCount = (int) ($row->excuses_count ?? 0);
+                $pendingExcusesCount = (int) ($row->pending_excuses_count ?? 0);
+                $unreadNotificationsCount = (int) ($row->unread_notifications_count ?? 0);
+                $hasAssistant = (bool) ($row->has_assistant ?? false);
+            } catch (\Throwable) {
+                // Fall back gracefully if any table is unavailable during early bootstrap.
+            }
+
+            try {
+                $subjects = app(StudentScheduleService::class)->subjectsFor($student);
+                $subjectsQuickList = $subjects->map(function (Subject $subject): array {
+                    $firstSlot = $subject->schedules->first();
+                    $room = trim((string) ($firstSlot?->room ?? ''));
+                    return [
+                        'code' => (string) $subject->code,
+                        'name' => (string) $subject->name,
+                        'room' => ($room !== '' && strtoupper($room) !== 'TBA') ? $room : 'Room TBA',
+                        'instructor' => (string) ($subject->instructorUser?->name ?? $subject->instructor ?? 'Instructor TBA'),
+                    ];
+                })->values()->all();
+
+                return [
+                    'hasActiveAssistantAssignment' => $hasAssistant,
+                    'classesCount' => $subjects->count(),
+                    'recordsCount' => $recordsCount,
+                    'excusesCount' => $excusesCount,
+                    'pendingExcusesCount' => $pendingExcusesCount,
+                    'unreadNotificationsCount' => $unreadNotificationsCount,
+                    'initials' => $initials,
+                    'shortName' => $shortName,
+                    'subjectsQuickList' => $subjectsQuickList,
+                ];
+            } catch (\Throwable) {
+                return array_merge($default, [
+                    'hasActiveAssistantAssignment' => $hasAssistant,
+                    'recordsCount' => $recordsCount,
+                    'excusesCount' => $excusesCount,
+                    'pendingExcusesCount' => $pendingExcusesCount,
+                    'unreadNotificationsCount' => $unreadNotificationsCount,
+                    'initials' => $initials,
+                    'shortName' => $shortName,
+                ]);
+            }
+        };
+
+        $data = app()->runningUnitTests()
+            ? $resolver()
+            : Cache::remember("sidebar:student_shell:{$student->id}", now()->addSeconds(45), $resolver);
 
         $request->attributes->set($attrKey, $data);
 

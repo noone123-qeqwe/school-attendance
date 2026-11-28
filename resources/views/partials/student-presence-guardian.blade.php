@@ -88,13 +88,16 @@
             this.remainingGraceSeconds = 0;
             this.isChecking = false;
             this.isCollapsed = true;
+            this.noneCacheKey = 'sf_presence_none_until';
 
             this.init();
         }
 
-        async init() {
-            // Check for active presence monitoring session
-            await this.syncActiveSession();
+        init() {
+            // Defer initial presence check so page navigation & first paint never wait on a background poll.
+            setTimeout(() => {
+                this.syncActiveSession(false);
+            }, 1200);
 
             // Set up lifecycle listeners (app reopen, visibility change, online)
             document.addEventListener('visibilitychange', () => {
@@ -110,7 +113,18 @@
             });
         }
 
-        async syncActiveSession() {
+        async syncActiveSession(force = false) {
+            if (!force) {
+                try {
+                    const skipUntil = Number(sessionStorage.getItem(this.noneCacheKey) || 0);
+                    if (skipUntil > Date.now()) {
+                        return;
+                    }
+                } catch (e) {}
+            } else {
+                try { sessionStorage.removeItem(this.noneCacheKey); } catch (e) {}
+            }
+
             try {
                 const res = await fetch('{{ route("student.presence.active") }}', {
                     headers: { 'Accept': 'application/json' }
@@ -119,8 +133,10 @@
 
                 const data = await res.json();
                 if (data && data.has_active_session) {
+                    try { sessionStorage.removeItem(this.noneCacheKey); } catch (e) {}
                     this.startMonitoring(data);
                 } else {
+                    try { sessionStorage.setItem(this.noneCacheKey, String(Date.now() + 15000)); } catch (e) {}
                     this.stopMonitoring();
                 }
             } catch (err) {

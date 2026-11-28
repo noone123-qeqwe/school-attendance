@@ -277,8 +277,18 @@
             return (hash >>> 0).toString(16);
         }
 
-        // Extract GPU vendor & renderer via WebGL unmasked debug extension
+        // In-memory memoization so fetch/XHR interceptors never spin up WebGL, 2D Canvas,
+        // or IndexedDB transactions repeatedly during page loads and button clicks.
+        var _cachedWebGlInfo = null;
+        var _cachedDeviceTelemetry = null;
+        var _cachedDeviceFingerprint = null;
+        var _cachedDeviceModel = null;
+        var _cachedDeviceKey = null;
+        var _deviceKeySynced = false;
+
+        // Extract GPU vendor & renderer via WebGL unmasked debug extension (computed once per page)
         function getWebGlInfo() {
+            if (_cachedWebGlInfo !== null) return _cachedWebGlInfo;
             var out = { vendor: '', renderer: '' };
             try {
                 var c = document.createElement('canvas');
@@ -289,13 +299,16 @@
                         out.vendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) || '';
                         out.renderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '';
                     }
+                    try { gl.getExtension('WEBGL_lose_context')?.loseContext(); } catch(e) {}
                 }
             } catch(e) {}
+            _cachedWebGlInfo = out;
             return out;
         }
 
-        // Comprehensive Device Telemetry & Environmental Diagnostics
+        // Comprehensive Device Telemetry & Environmental Diagnostics (memoized per page)
         window.getDeviceTelemetry = function() {
+            if (_cachedDeviceTelemetry !== null) return _cachedDeviceTelemetry;
             try {
                 var gl = getWebGlInfo();
                 var s = window.screen || {};
@@ -310,7 +323,7 @@
                     }
                 } catch(e) {}
 
-                return {
+                _cachedDeviceTelemetry = {
                     screen_res: (s.width || 0) + 'x' + (s.height || 0),
                     pixel_ratio: window.devicePixelRatio || 1,
                     color_depth: s.colorDepth || 24,
@@ -324,13 +337,15 @@
                     webdriver: !!n.webdriver,
                     connection_type: connType,
                 };
+                return _cachedDeviceTelemetry;
             } catch(e) {
                 return {};
             }
         };
 
-        // Generate deterministic client hardware environment fingerprint
+        // Generate deterministic client hardware environment fingerprint (memoized per page)
         window.getDeviceFingerprint = function() {
+            if (_cachedDeviceFingerprint !== null) return _cachedDeviceFingerprint;
             try {
                 var gl = getWebGlInfo();
                 var components = [
@@ -364,29 +379,31 @@
                 } catch(ce) {}
 
                 var raw = components.join('###');
-                return fnv1a(raw) + fnv1a(raw.split('').reverse().join(''));
+                _cachedDeviceFingerprint = fnv1a(raw) + fnv1a(raw.split('').reverse().join(''));
+                return _cachedDeviceFingerprint;
             } catch(e) {
                 return 'fp_fallback';
             }
         };
 
-        // Determine user-friendly hardware device model
+        // Determine user-friendly hardware device model (memoized per page)
         window.getDeviceModel = function() {
+            if (_cachedDeviceModel !== null) return _cachedDeviceModel;
             try {
                 if (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.getNativeDeviceModel === 'function') {
-                    return window.AndroidDeviceBridge.getNativeDeviceModel();
+                    _cachedDeviceModel = window.AndroidDeviceBridge.getNativeDeviceModel();
+                    return _cachedDeviceModel;
                 }
                 var ua = navigator.userAgent || '';
-                if (/iPhone/i.test(ua)) return 'Apple iPhone';
-                if (/iPad/i.test(ua)) return 'Apple iPad';
-                if (/Android/i.test(ua)) {
+                if (/iPhone/i.test(ua)) _cachedDeviceModel = 'Apple iPhone';
+                else if (/iPad/i.test(ua)) _cachedDeviceModel = 'Apple iPad';
+                else if (/Android/i.test(ua)) {
                     var m = ua.match(/Android[^;]+; ([^)]+)\)/);
-                    if (m && m[1]) return m[1].replace(/Build\/.+/, '').trim();
-                    return 'Android Mobile';
-                }
-                if (/Macintosh/i.test(ua)) return 'Mac OS Computer';
-                if (/Windows/i.test(ua)) return 'Windows PC';
-                return 'Web Browser Device';
+                    _cachedDeviceModel = (m && m[1]) ? m[1].replace(/Build\/.+/, '').trim() : 'Android Mobile';
+                } else if (/Macintosh/i.test(ua)) _cachedDeviceModel = 'Mac OS Computer';
+                else if (/Windows/i.test(ua)) _cachedDeviceModel = 'Windows PC';
+                else _cachedDeviceModel = 'Web Browser Device';
+                return _cachedDeviceModel;
             } catch(e) {
                 return 'Personal Device';
             }
@@ -440,8 +457,11 @@
         }
         try { restoreFromIndexedDb(); } catch(e) {}
 
-        // Multi-tier device key accessor & healing engine
+        // Multi-tier device key accessor & healing engine (memoized per page)
         window.getOrCreateDeviceKey = function() {
+            if (_cachedDeviceKey && _deviceKeySynced) {
+                return _cachedDeviceKey;
+            }
             try {
                 var key = null;
 
@@ -473,17 +493,23 @@
                         : ('dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 14));
                 }
 
-                // Synchronize across all persistence layers
+                // Synchronize across all persistence layers once per page load
                 try {
-                    localStorage.setItem('student_device_key', key);
-                    localStorage.setItem('attendance_device_uuid', key);
-                    sessionStorage.setItem('student_device_key', key);
-                    sessionStorage.setItem('attendance_device_uuid', key);
+                    if (localStorage.getItem('student_device_key') !== key) {
+                        localStorage.setItem('student_device_key', key);
+                        localStorage.setItem('attendance_device_uuid', key);
+                    }
+                    if (sessionStorage.getItem('student_device_key') !== key) {
+                        sessionStorage.setItem('student_device_key', key);
+                        sessionStorage.setItem('attendance_device_uuid', key);
+                    }
                     var sec = location.protocol === 'https:' ? '; Secure' : '';
                     document.cookie = 'student_device_key=' + encodeURIComponent(key) + '; path=/; max-age=31536000; SameSite=Lax' + sec;
                     saveToIndexedDb(key);
                 } catch(syncErr) {}
 
+                _cachedDeviceKey = key;
+                _deviceKeySynced = true;
                 return key;
             } catch(e) {
                 return '';
@@ -1253,8 +1279,17 @@
 
     async function checkServerVersion(force = false, isManualCheck = false) {
         const now = Date.now();
-        if (!force && !isManualCheck && (now - lastVersionCheckTime < VERSION_CHECK_COOLDOWN_MS)) {
-            return { upToDate: true };
+        if (!force && !isManualCheck) {
+            if (now - lastVersionCheckTime < VERSION_CHECK_COOLDOWN_MS) {
+                return { upToDate: true };
+            }
+            try {
+                const lastTabCheck = Number(sessionStorage.getItem('pwa_last_version_check_at') || 0);
+                if (lastTabCheck > 0 && (now - lastTabCheck < 45000)) {
+                    lastVersionCheckTime = lastTabCheck;
+                    return { upToDate: true };
+                }
+            } catch(e) {}
         }
         if (isCheckingVersion && checkVersionPromise) {
             if (isManualCheck) {
@@ -1299,6 +1334,7 @@
                         serverData = await res.json();
                         if (serverData) {
                             serverChecked = true;
+                            try { sessionStorage.setItem('pwa_last_version_check_at', String(Date.now())); } catch(e) {}
                             // A published future version is not installable by a
                             // browser refresh. Compare only the deployed build.
                             latestVer = getLatestVersion(serverData);
@@ -1412,15 +1448,13 @@
         }
     } catch(e) {}
 
-    // Only a fresh server response or a waiting service worker can prompt.
-    checkServerVersion(false);
-
-    // 2. Initial check when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => checkServerVersion(false));
-    } else {
-        checkServerVersion(false);
-    }
+    // Defer background version check so page navigation & back buttons never contend with /pwa/version.
+    // Recent checks within 45s across navigations in the same tab are skipped automatically.
+    setTimeout(() => {
+        if (document.visibilityState === 'visible') {
+            checkServerVersion(false);
+        }
+    }, 2500);
 
     // Check active tabs often enough that a release is not delayed by a long polling interval.
     // Focus, reconnect, and service-worker signals also trigger an immediate check.
@@ -1428,7 +1462,7 @@
         if (document.visibilityState === 'visible') {
             checkServerVersion(false);
         }
-    }, 20 * 1000);
+    }, 45 * 1000);
 
     // Coalesce lifecycle signals into one immediate check when a user returns.
     // Force bypasses the normal polling cooldown, which may have just elapsed in
@@ -1449,8 +1483,12 @@
     // 5. Window focus
     window.addEventListener('focus', checkVersionOnResume);
 
-    // 6. Page show (e.g. navigation / mobile bfcache)
-    window.addEventListener('pageshow', checkVersionOnResume);
+    // 6. Page show — only re-check when restored from bfcache (persisted === true), not on every fresh navigation
+    window.addEventListener('pageshow', (event) => {
+        if (event && event.persisted) {
+            checkVersionOnResume();
+        }
+    });
 
     // 7. Network reconnect
     window.addEventListener('online', checkVersionOnResume);
@@ -1478,9 +1516,8 @@
                 });
                 swRegistration = reg;
 
-                // Check version on registration
+                // Check for waiting service worker updates in background without blocking initial navigation
                 try { reg.update().catch(() => {}); } catch(e) {}
-                checkServerVersion(false);
 
                 // If an update is waiting:
                 if (reg.waiting) {

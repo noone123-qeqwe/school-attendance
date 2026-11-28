@@ -505,7 +505,59 @@
             } catch (e) {}
         };
 
-        // Deferred notification bell refresh
-        setTimeout(() => window.refreshNotificationBell(), 600);
+        // Instant navigation feedback bar & pressed state for back buttons and portal links
+        let navProgressSafetyTimer = null;
+        window.sfStartNavProgress = function (triggerEl) {
+            const bar = document.getElementById('sfNavProgress');
+            if (bar) {
+                bar.classList.remove('is-active');
+                void bar.offsetWidth;
+                bar.classList.add('is-active');
+            }
+            if (triggerEl && triggerEl.classList) {
+                triggerEl.classList.add('is-navigating');
+            }
+            if (navProgressSafetyTimer) clearTimeout(navProgressSafetyTimer);
+            navProgressSafetyTimer = setTimeout(() => window.sfStopNavProgress?.(), 15000);
+        };
+
+        window.sfStopNavProgress = function () {
+            if (navProgressSafetyTimer) {
+                clearTimeout(navProgressSafetyTimer);
+                navProgressSafetyTimer = null;
+            }
+            document.getElementById('sfNavProgress')?.classList.remove('is-active');
+            document.querySelectorAll('.is-navigating').forEach((el) => el.classList.remove('is-navigating'));
+        };
+
+        document.addEventListener('click', (e) => {
+            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+            if (link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+            const rawHref = (link.getAttribute('href') || '').trim();
+            if (!rawHref || rawHref.startsWith('#') || rawHref.startsWith('javascript:') || rawHref.startsWith('mailto:') || rawHref.startsWith('tel:')) return;
+            try {
+                const dest = new URL(link.href, window.location.href);
+                if (dest.origin !== window.location.origin) return;
+                if (dest.pathname === window.location.pathname && dest.search === window.location.search && dest.hash) return;
+            } catch (err) {
+                return;
+            }
+            window.sfStartNavProgress(link);
+        });
+
+        window.addEventListener('pageshow', () => window.sfStopNavProgress());
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') window.sfStopNavProgress();
+        });
+
+        // Lazy notification bell refresh — unread dot is already server-rendered by SidebarComposer,
+        // and clicking the bell button fetches immediately, so avoid hitting remote DB right on load.
+        setTimeout(() => {
+            if (document.visibilityState === 'visible') {
+                window.refreshNotificationBell();
+            }
+        }, 8000);
     });
 })();

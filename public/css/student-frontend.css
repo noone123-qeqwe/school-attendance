@@ -3987,3 +3987,47 @@ a.sf-minical-day:hover {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ── Instant Navigation Progress Bar & Clicked-Link Feedback ───────────── */
+.sf-nav-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2.5px;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left center;
+    background: linear-gradient(90deg, var(--sf-brand, #9F1239) 0%, var(--sf-rose, #FDA4AF) 60%, var(--sf-brand, #9F1239) 100%);
+    box-shadow: 0 0 10px rgba(253, 164, 175, 0.45);
+    transition: opacity 150ms ease;
+}
+
+.sf-nav-progress.is-active {
+    opacity: 1;
+    animation: sfNavProgressIndeterminate 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes sfNavProgressIndeterminate {
+    0% {
+        transform: scaleX(0.08);
+    }
+    35% {
+        transform: scaleX(0.56);
+    }
+    70% {
+        transform: scaleX(0.82);
+    }
+    100% {
+        transform: scaleX(0.94);
+    }
+}
+
+a.is-navigating,
+button.is-navigating {
+    opacity: 0.68;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+}

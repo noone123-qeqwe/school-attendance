@@ -7,12 +7,15 @@ use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\ClassStudentAssistant;
 use App\Models\DeviceBinding;
+use App\Models\Event;
 use App\Models\ExcuseSubmission;
 use App\Models\Holiday;
+use App\Models\Subject;
 use App\Models\User;
 use App\Models\Warning;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class StudentHomeService
 {
@@ -36,13 +39,36 @@ class StudentHomeService
         $subjectsByCode = $subjects->keyBy('code');
         $subjectCodes = $subjectsByCode->keys()->filter()->values();
 
-        $schoolHolidays = Holiday::getUpcoming($todayDate, $now->copy()->addDays(7)->toDateString());
+        $holidayWindowStart = $now->copy()->startOfMonth()->toDateString();
+        $holidayWindowEnd = ($now->day >= $now->daysInMonth - 2
+            ? $now->copy()->addMonthNoOverflow()->endOfMonth()
+            : $now->copy()->endOfMonth()->max($now->copy()->addDays(7))
+        )->toDateString();
+        $holidayWindow = $this->loadHolidayWindow($holidayWindowStart, $holidayWindowEnd);
+        $schoolHolidays = $this->extractUpcomingHolidays($holidayWindow, $todayDate, $now->copy()->addDays(7)->toDateString());
         $todayHoliday = $schoolHolidays->first(fn ($holiday) => $holiday->date->isSameDay($now));
 
-        $todayAttendances = Attendance::where('user_id', $student->id)
-            ->whereDate('date', $todayDate)
-            ->get()
+        // Fetch all attendance rows and excuse submissions for this student ONCE
+        // instead of 10+ separate remote-DB round-trips across dashboard widgets.
+        $allAttendances = Attendance::where('user_id', $student->id)
+            ->orderByDesc('date')
+            ->orderByDesc('time_in')
+            ->orderByDesc('id')
+            ->get();
+
+        $attendanceDateStr = static fn (Attendance $record): string => $record->date instanceof \DateTimeInterface
+            ? $record->date->format('Y-m-d')
+            : substr((string) $record->date, 0, 10);
+
+        $todayAttendances = $allAttendances
+            ->filter(fn (Attendance $record) => $attendanceDateStr($record) === $todayDate)
             ->keyBy('subject_code');
+
+        $pastAndTodayAttendances = $allAttendances
+            ->filter(fn (Attendance $record) => $attendanceDateStr($record) <= $todayDate)
+            ->values();
+
+        $allAttendancesById = $allAttendances->keyBy('id');
 
         $todaySchedule = $this->buildTodaySchedule($subjects, $todayHoliday, $todayAttendances, $now, $todayDate);
         $activeSessions = $this->loadActiveSessions($subjectCodes, $subjectsByCode, $todayAttendances, $todaySchedule, $now);
@@ -66,55 +92,85 @@ class StudentHomeService
         $deviceLocked = (bool) ($deviceBinding && $deviceBinding->isLocked());
         $deviceLockReason = $deviceLocked ? ($deviceBinding->locked_reason ?: null) : null;
 
-        $recentAttendance = Attendance::with('subject')
-            ->where('user_id', $student->id)
-            ->whereDate('date', '<=', $todayDate)
-            ->orderByDesc('date')
-            ->orderByDesc('time_in')
-            ->orderByDesc('id')
-            ->limit(5)
-            ->get();
-
-        $unresolvedAbsencesQuery = Attendance::with('subject')
-            ->where('user_id', $student->id)
-            ->where('status', 'Absent')
-            ->where('excused', false)
-            ->whereDate('date', '<=', $todayDate)
-            ->whereDoesntHave('excuseSubmission', function ($query) use ($student) {
-                $query->where('user_id', $student->id)->whereIn('status', ['pending', 'approved']);
-            });
-
-        $unresolvedAbsencesCount = (clone $unresolvedAbsencesQuery)->count();
-        $unresolvedAbsences = $unresolvedAbsencesQuery
-            ->orderByDesc('date')
-            ->orderByDesc('id')
-            ->limit(3)
-            ->get();
-
-        $recentExcuseRequests = ExcuseSubmission::with('attendance.subject')
-            ->where('user_id', $student->id)
-            ->whereHas('attendance', function ($query) use ($student, $todayDate) {
-                $query->where('user_id', $student->id)
-                    ->whereDate('date', '<=', $todayDate);
-            })
+        $allExcuses = ExcuseSubmission::where('user_id', $student->id)
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
-            ->limit(3)
             ->get();
 
-        $activeWarnings = Warning::where('user_id', $student->id)
+        $pendingExcusesCount = $allExcuses->where('status', 'pending')->count();
+        $excusedAttendanceIds = $allExcuses
+            ->whereIn('status', ['pending', 'approved'])
+            ->pluck('attendance_id')
+            ->filter()
+            ->flip();
+
+        $recentAttendance = $pastAndTodayAttendances->take(5)->values();
+
+        $allUnresolvedAbsences = $pastAndTodayAttendances
+            ->filter(fn (Attendance $record) => $record->status === 'Absent'
+                && !$record->excused
+                && !$excusedAttendanceIds->has($record->id))
+            ->sort(fn (Attendance $a, Attendance $b) => strcmp($attendanceDateStr($b), $attendanceDateStr($a)) ?: ($b->id <=> $a->id))
+            ->values();
+
+        $unresolvedAbsencesCount = $allUnresolvedAbsences->count();
+        $unresolvedAbsences = $allUnresolvedAbsences->take(3)->values();
+
+        $recentExcuseRequests = $allExcuses
+            ->filter(function (ExcuseSubmission $excuse) use ($allAttendancesById, $attendanceDateStr, $todayDate): bool {
+                $att = $allAttendancesById->get($excuse->attendance_id);
+                return $att !== null && $attendanceDateStr($att) <= $todayDate;
+            })
+            ->take(3)
+            ->values();
+
+        // Hydrate subject relations from already-loaded enrolled subjects, falling back to 1 query only for non-enrolled historical codes.
+        $referencedAttendances = $recentAttendance
+            ->concat($unresolvedAbsences)
+            ->concat($recentExcuseRequests->map(fn (ExcuseSubmission $excuse) => $allAttendancesById->get($excuse->attendance_id))->filter());
+
+        $missingSubjectCodes = $referencedAttendances
+            ->pluck('subject_code')
+            ->filter(fn ($code) => filled($code) && !$subjectsByCode->has($code))
+            ->unique()
+            ->values();
+
+        $resolvedSubjectsByCode = $missingSubjectCodes->isEmpty()
+            ? $subjectsByCode
+            : $subjectsByCode->merge(Subject::whereIn('code', $missingSubjectCodes->all())->get()->keyBy('code'));
+
+        foreach ($referencedAttendances as $att) {
+            $att->setRelation('subject', $resolvedSubjectsByCode->get($att->subject_code));
+        }
+        foreach ($recentExcuseRequests as $excuse) {
+            $excuse->setRelation('attendance', $allAttendancesById->get($excuse->attendance_id));
+        }
+
+        $warningsResolver = fn () => Warning::where('user_id', $student->id)
             ->where('created_at', '>=', $now->copy()->subDays(14))
             ->orderByDesc('created_at')
             ->get();
+        $activeWarnings = app()->runningUnitTests()
+            ? $warningsResolver()
+            : Cache::remember("student:active_warnings:{$student->id}", now()->addSeconds(45), $warningsResolver);
 
-        $announcements = Announcement::with('author')
+        $announcementsResolver = fn () => Announcement::with('author')
             ->published()
             ->visibleTo($student)
             ->latest()
             ->take(5)
             ->get();
+        $announcementsCacheKey = 'student:announcements:' . md5(implode('|', [
+            (string) $student->id,
+            (string) ($student->course ?? ''),
+            (string) ($student->section ?? ''),
+            (string) ($student->department ?? ''),
+        ]));
+        $announcements = app()->runningUnitTests()
+            ? $announcementsResolver()
+            : Cache::remember($announcementsCacheKey, now()->addSeconds(45), $announcementsResolver);
 
-        $attendanceStanding = $this->computeAttendanceStanding($student, $subjectsByCode, $todayDate);
+        $attendanceStanding = $this->computeAttendanceStanding($pastAndTodayAttendances, $subjectsByCode);
         $peerAvailable = $this->peerAttendance->isAvailable();
 
         $focusState = $this->resolveFocusState(
@@ -129,27 +185,23 @@ class StudentHomeService
         );
 
         $totalUnits = (float) $subjects->sum(fn ($s) => (float) ($s->units ?: 3));
-        $pendingExcusesCount = ExcuseSubmission::where('user_id', $student->id)
-            ->where('status', 'pending')
-            ->count();
         $totalCheckins = (int) ($attendanceStanding['attended'] ?? 0);
         $lastCheckinCode = $recentAttendance->first()?->subject_code;
 
-        $subjectLoggedCounts = Attendance::query()
-            ->where('user_id', $student->id)
-            ->whereDate('date', '<=', $todayDate)
-            ->where(function ($q) {
-                $q->whereIn('status', ['Present', 'Late', 'Excused'])
-                    ->orWhere('excused', true);
-            })
-            ->selectRaw('subject_code, COUNT(*) as cnt')
-            ->groupBy('subject_code')
-            ->pluck('cnt', 'subject_code');
+        $loggedCountsMap = [];
+        foreach ($pastAndTodayAttendances as $record) {
+            $statusLower = strtolower((string) $record->status);
+            if ((bool) $record->excused || in_array($statusLower, ['present', 'late', 'excused'], true)) {
+                $code = (string) ($record->subject_code ?? '');
+                $loggedCountsMap[$code] = ($loggedCountsMap[$code] ?? 0) + 1;
+            }
+        }
+        $subjectLoggedCounts = collect($loggedCountsMap);
 
         $weeklyClassRows = $this->buildWeeklyClassRows($subjects, $subjectLoggedCounts, $now);
         $courseTracker = $this->buildCourseTracker($subjects, $subjectLoggedCounts);
         $courseTrackerOverallPct = $this->computeCourseTrackerOverallPct($courseTracker);
-        $miniCalendar = $this->buildMiniCalendar($student, $subjects, $upcomingClass, $now);
+        $miniCalendar = $this->buildMiniCalendar($subjects, $allAttendances, $holidayWindow['holidays'], $upcomingClass, $now);
         $heroSlot = $this->buildHeroSlot($focusState, $openUncheckedSessions, $currentSlot, $upcomingClass, $alreadyClockedIn, $now);
 
         return compact(
@@ -283,13 +335,82 @@ class StudentHomeService
     }
 
     /**
+     * Fetch active holidays and holiday events across the dashboard window once (cached 60s in production).
+     *
+     * @return array{holidays: Collection<int, Holiday>, events: Collection<int, Holiday>}
+     */
+    private function loadHolidayWindow(string $startDate, string $endDate): array
+    {
+        $resolver = static function () use ($startDate, $endDate): array {
+            $holidays = Holiday::active()
+                ->whereDate('date', '>=', $startDate)
+                ->whereDate('date', '<=', $endDate)
+                ->orderBy('date')
+                ->get();
+
+            $events = Event::where('type', 'holiday')
+                ->where('status', '!=', 'cancelled')
+                ->whereDate('date', '>=', $startDate)
+                ->whereDate('date', '<=', $endDate)
+                ->orderBy('date')
+                ->get()
+                ->map(function (Event $e): Holiday {
+                    $h = new Holiday([
+                        'name' => $e->name,
+                        'description' => $e->description,
+                        'type' => 'school',
+                    ]);
+                    $h->date = $e->date;
+                    $h->created_at = $e->created_at;
+                    return $h;
+                });
+
+            return [
+                'holidays' => $holidays,
+                'events' => $events,
+            ];
+        };
+
+        return app()->runningUnitTests()
+            ? $resolver()
+            : Cache::remember("student:holiday_window:{$startDate}:{$endDate}", now()->addSeconds(60), $resolver);
+    }
+
+    /**
+     * Extract deduplicated upcoming holidays in [$startDate, $endDate] matching Holiday::getUpcoming().
+     *
+     * @param array{holidays: Collection<int, Holiday>, events: Collection<int, Holiday>} $holidayWindow
+     * @return Collection<int, Holiday>
+     */
+    private function extractUpcomingHolidays(array $holidayWindow, string $startDate, string $endDate): Collection
+    {
+        $inRange = static function (Holiday $item) use ($startDate, $endDate): bool {
+            $d = $item->date->format('Y-m-d');
+            return $d >= $startDate && $d <= $endDate;
+        };
+
+        return $holidayWindow['holidays']->filter($inRange)
+            ->concat($holidayWindow['events']->filter($inRange))
+            ->unique(fn (Holiday $item): string => $item->date->format('Y-m-d') . '_' . strtolower(trim((string) $item->name)))
+            ->sortBy('date')
+            ->values();
+    }
+
+    /**
      * Build compact monthly mini-calendar data for the right rail of the desktop dashboard.
      *
      * @param Collection<int, \App\Models\Subject> $subjects
+     * @param Collection<int, Attendance> $allAttendances
+     * @param Collection<int, Holiday> $windowHolidays
      * @return array<string, mixed>
      */
-    private function buildMiniCalendar(User $student, Collection $subjects, ?object $upcomingClass, Carbon $now): array
-    {
+    private function buildMiniCalendar(
+        Collection $subjects,
+        Collection $allAttendances,
+        Collection $windowHolidays,
+        ?object $upcomingClass,
+        Carbon $now,
+    ): array {
         // Show the month of the next upcoming class if today is at month-end and next class is next month, otherwise current month.
         $ref = $now->copy()->startOfMonth();
         if ($upcomingClass && $upcomingClass->start_time instanceof Carbon && $upcomingClass->start_time->month !== $now->month && $now->day >= $now->daysInMonth - 2) {
@@ -299,14 +420,16 @@ class StudentHomeService
         $monthStart = $ref->copy()->startOfMonth()->toDateString();
         $monthEnd = $ref->copy()->endOfMonth()->toDateString();
 
-        $monthRecords = Attendance::where('user_id', $student->id)
-            ->whereBetween('date', [$monthStart, $monthEnd])
-            ->get(['date', 'status', 'excused']);
-
         $presentDays = [];
         $excusedDays = [];
-        foreach ($monthRecords as $rec) {
-            $dayNum = Carbon::parse($rec->date)->day;
+        foreach ($allAttendances as $rec) {
+            $dateStr = $rec->date instanceof \DateTimeInterface
+                ? $rec->date->format('Y-m-d')
+                : substr((string) $rec->date, 0, 10);
+            if ($dateStr < $monthStart || $dateStr > $monthEnd) {
+                continue;
+            }
+            $dayNum = (int) substr($dateStr, 8, 2);
             if ($rec->excused || strcasecmp((string) $rec->status, 'Excused') === 0) {
                 $excusedDays[$dayNum] = true;
             } elseif (in_array($rec->status, ['Present', 'Late'], true)) {
@@ -323,11 +446,13 @@ class StudentHomeService
             }
         }
 
-        $holidayDays = Holiday::active()
-            ->whereBetween('date', [$monthStart, $monthEnd])
-            ->pluck('date')
-            ->mapWithKeys(fn ($d) => [Carbon::parse($d)->day => true])
-            ->all();
+        $holidayDays = [];
+        foreach ($windowHolidays as $holiday) {
+            $dateStr = $holiday->date->format('Y-m-d');
+            if ($dateStr >= $monthStart && $dateStr <= $monthEnd) {
+                $holidayDays[(int) substr($dateStr, 8, 2)] = true;
+            }
+        }
 
         $classDays = [];
         for ($d = 1; $d <= $ref->daysInMonth; $d++) {
@@ -519,14 +644,24 @@ class StudentHomeService
             return collect();
         }
 
-        return AttendanceSession::with(['subject.instructorUser', 'creator'])
-            ->whereIn('subject_code', $subjectCodes->all())
+        $sessions = AttendanceSession::whereIn('subject_code', $subjectCodes->all())
             ->where('active', true)
             ->where('session_ends_at', '>', $now)
             ->orderBy('session_ends_at')
-            ->get()
+            ->get();
+
+        // Only eager-load creator if a live session lacks an instructor on its already-loaded subject.
+        $needsCreator = $sessions->contains(function (AttendanceSession $session) use ($subjectsByCode): bool {
+            $subject = $subjectsByCode->get($session->subject_code);
+            return empty($subject?->instructorUser?->name) && empty($subject?->instructor);
+        });
+        if ($needsCreator) {
+            $sessions->loadMissing('creator');
+        }
+
+        return $sessions
             ->map(function (AttendanceSession $session) use ($subjectsByCode, $todayAttendances, $todaySchedule) {
-                $subject = $subjectsByCode->get($session->subject_code) ?? $session->subject;
+                $subject = $subjectsByCode->get($session->subject_code);
                 $attendance = $todayAttendances->get($session->subject_code);
                 $matchingSlot = $todaySchedule->first(
                     fn (object $slot) => $slot->subject->code === $session->subject_code && $slot->schedule_status === 'ongoing'
@@ -540,7 +675,7 @@ class StudentHomeService
                     'subject' => $subject,
                     'subject_code' => $session->subject_code,
                     'subject_name' => $subject?->name ?? $session->subject_code,
-                    'instructor' => $subject?->instructorUser?->name ?? $subject?->instructor ?? $session->creator?->name,
+                    'instructor' => $subject?->instructorUser?->name ?? $subject?->instructor ?? ($session->relationLoaded('creator') ? $session->creator?->name : null),
                     'room' => ($room !== '' && strtoupper($room) !== 'TBA') ? $room : null,
                     'slot' => $matchingSlot,
                     'ends_at' => $session->session_ends_at,
@@ -612,22 +747,29 @@ class StudentHomeService
             return collect();
         }
 
-        $assignments = ClassStudentAssistant::with('subject')
-            ->where('student_id', $student->id)
-            ->whereNotNull('active_slot')
-            ->whereNull('revoked_at')
-            ->where('starts_at', '<=', $now)
-            ->where('expires_at', '>=', $now)
-            ->get()
-            ->filter(fn (ClassStudentAssistant $assignment) => $assignment->isActive());
+        $resolver = static function () use ($student, $now): array {
+            $assignments = ClassStudentAssistant::with('subject')
+                ->where('student_id', $student->id)
+                ->whereNotNull('active_slot')
+                ->whereNull('revoked_at')
+                ->where('starts_at', '<=', $now)
+                ->where('expires_at', '>=', $now)
+                ->get()
+                ->filter(fn (ClassStudentAssistant $assignment) => $assignment->isActive());
 
-        $assignedCodes = $assignments->pluck('subject.code')->filter()->unique()->values();
-        if ($assignedCodes->isEmpty()) {
+            return $assignments->pluck('subject.code')->filter()->unique()->values()->all();
+        };
+
+        $assignedCodes = app()->runningUnitTests()
+            ? $resolver()
+            : Cache::remember("student:assistant_codes:{$student->id}", now()->addSeconds(45), $resolver);
+
+        if (empty($assignedCodes)) {
             return collect();
         }
 
         return AttendanceSession::with('subject')
-            ->whereIn('subject_code', $assignedCodes->all())
+            ->whereIn('subject_code', $assignedCodes)
             ->where('active', true)
             ->where('session_ends_at', '>', $now)
             ->orderByDesc('id')
@@ -639,6 +781,7 @@ class StudentHomeService
     /**
      * Compute real attendance standing and highlight any subject below the 80% caution threshold.
      *
+     * @param Collection<int, Attendance> $rows
      * @param Collection<string, \App\Models\Subject> $subjectsByCode
      * @return array{
      *     total: int,
@@ -651,12 +794,8 @@ class StudentHomeService
      *     at_risk_subjects: array<int, array{code: string, name: string, rate: int, attended: int, total: int, unexcused_absences: int}>
      * }
      */
-    private function computeAttendanceStanding(User $student, Collection $subjectsByCode, string $todayDate): array
+    private function computeAttendanceStanding(Collection $rows, Collection $subjectsByCode): array
     {
-        $rows = Attendance::query()
-            ->where('user_id', $student->id)
-            ->whereDate('date', '<=', $todayDate)
-            ->get(['subject_code', 'subject_name', 'status', 'excused']);
 
         $total = 0;
         $present = 0;

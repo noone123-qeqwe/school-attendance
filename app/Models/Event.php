@@ -109,7 +109,7 @@ class Event extends Model
                   if ($user->isTeacher()) {
                       $subQ->whereIn('class_id', $user->subjects()->pluck('id'));
                   } elseif ($user->isStudent()) {
-                      $subQ->whereIn('class_id', $user->getAllSubjects()->pluck('id')->toArray());
+                      $subQ->whereIn('class_id', app(\App\Services\StudentScheduleService::class)->subjectsFor($user)->pluck('id')->all());
                   }
               });
         });

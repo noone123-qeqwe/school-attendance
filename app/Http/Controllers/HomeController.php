@@ -95,7 +95,8 @@ class HomeController extends Controller
         $month = (int) ($validated['month'] ?? $now->month);
 
         $calendarMonth = Carbon::create($year, $month, 1);
-        $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission'])
+        $subjectsByCode = app(\App\Services\StudentScheduleService::class)->subjectsFor($user)->keyBy('code');
+        $records = Attendance::with(['excuseSubmission'])
             ->where('user_id', $user->id)
             ->whereBetween('date', [
                 $calendarMonth->copy()->startOfMonth()->toDateString(),
@@ -104,6 +105,19 @@ class HomeController extends Controller
             ->orderBy('date', 'desc')
             ->orderBy('time_in', 'desc')
             ->get();
+
+        $missingCodes = $records->pluck('subject_code')
+            ->filter(fn ($code) => filled($code) && !$subjectsByCode->has($code))
+            ->unique()
+            ->values();
+        if ($missingCodes->isNotEmpty()) {
+            $subjectsByCode = $subjectsByCode->merge(
+                Subject::with(['schedules', 'instructorUser'])->whereIn('code', $missingCodes->all())->get()->keyBy('code')
+            );
+        }
+        foreach ($records as $record) {
+            $record->setRelation('subject', $subjectsByCode->get($record->subject_code));
+        }
 
         [, $eventsMap] = $this->getStudentCalendarEventsMap($user, $year, $month, true);
 
@@ -379,12 +393,22 @@ class HomeController extends Controller
             });
         }
 
+        $agg = Notification::where('user_id', $user->id)
+            ->selectRaw("
+                SUM(CASE WHEN archived_at IS NULL THEN 1 ELSE 0 END) AS active_count,
+                SUM(CASE WHEN archived_at IS NULL AND is_read = 0 THEN 1 ELSE 0 END) AS unread_count,
+                SUM(CASE WHEN archived_at IS NOT NULL THEN 1 ELSE 0 END) AS archived_count,
+                SUM(CASE WHEN archived_at IS NULL AND type LIKE '%warning%' THEN 1 ELSE 0 END) AS warnings_count,
+                SUM(CASE WHEN archived_at IS NULL AND type = 'absence' THEN 1 ELSE 0 END) AS absences_count
+            ")
+            ->first();
+
         $counts = [
-            'active' => Notification::where('user_id', $user->id)->active()->count(),
-            'unread' => Notification::where('user_id', $user->id)->active()->where('is_read', false)->count(),
-            'archived' => Notification::where('user_id', $user->id)->archived()->count(),
-            'warnings' => Notification::where('user_id', $user->id)->active()->where('type', 'like', '%warning%')->count(),
-            'absences' => Notification::where('user_id', $user->id)->active()->where('type', 'absence')->count(),
+            'active' => (int) ($agg->active_count ?? 0),
+            'unread' => (int) ($agg->unread_count ?? 0),
+            'archived' => (int) ($agg->archived_count ?? 0),
+            'warnings' => (int) ($agg->warnings_count ?? 0),
+            'absences' => (int) ($agg->absences_count ?? 0),
         ];
 
         $notifications = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
@@ -397,6 +421,7 @@ class HomeController extends Controller
         \App\Models\Notification::where('user_id', Auth::id())
             ->where('is_read', false)
             ->update(['is_read' => true]);
+        \App\View\Composers\SidebarComposer::forgetStudentCache((int) Auth::id());
 
         if (request()->wantsJson() || request()->ajax()) {
             return response()->json([
@@ -415,6 +440,7 @@ class HomeController extends Controller
         }
 
         $notification->update(['is_read' => true]);
+        \App\View\Composers\SidebarComposer::forgetStudentCache((int) Auth::id());
 
         if (request()->wantsJson() || request()->ajax()) {
             $unreadCount = \App\Models\Notification::where('user_id', Auth::id())
@@ -438,6 +464,7 @@ class HomeController extends Controller
         }
 
         $notification->delete();
+        \App\View\Composers\SidebarComposer::forgetStudentCache((int) Auth::id());
 
         if (request()->wantsJson() || request()->ajax()) {
             $unreadCount = \App\Models\Notification::where('user_id', Auth::id())
@@ -461,6 +488,7 @@ class HomeController extends Controller
         }
 
         $notification->archive();
+        \App\View\Composers\SidebarComposer::forgetStudentCache((int) Auth::id());
 
         if (request()->wantsJson() || request()->ajax()) {
             $unreadCount = \App\Models\Notification::where('user_id', Auth::id())
@@ -484,6 +512,7 @@ class HomeController extends Controller
         }
 
         $notification->unarchive();
+        \App\View\Composers\SidebarComposer::forgetStudentCache((int) Auth::id());
 
         if (request()->wantsJson() || request()->ajax()) {
             $unreadCount = \App\Models\Notification::where('user_id', Auth::id())
@@ -597,22 +626,43 @@ class HomeController extends Controller
     public function excuses()
     {
         $user = Auth::user();
-        
+        $subjects = app(\App\Services\StudentScheduleService::class)->subjectsFor($user);
+        $subjectsByCode = $subjects->keyBy('code');
+
         // Get absent attendance records that can be excused
-        $absentRecords = Attendance::with(['subject'])
-            ->where('user_id', $user->id)
+        $absentRecords = Attendance::where('user_id', $user->id)
             ->where('status', 'Absent')
             ->doesntHave('excuseSubmission')
             ->orderBy('date', 'desc')
             ->get();
 
         // Get all excuse submissions
-        $excuseSubmissions = ExcuseSubmission::with(['attendance.subject'])
+        $excuseSubmissions = ExcuseSubmission::with(['attendance'])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $subjects = app(\App\Services\StudentScheduleService::class)->subjectsFor($user);
+        // Hydrate subject relations from cached enrolled subjects (1 fallback query only if historical codes exist).
+        $missingCodes = $absentRecords->pluck('subject_code')
+            ->concat($excuseSubmissions->map(fn ($sub) => $sub->attendance?->subject_code))
+            ->filter(fn ($code) => filled($code) && !$subjectsByCode->has($code))
+            ->unique()
+            ->values();
+
+        if ($missingCodes->isNotEmpty()) {
+            $subjectsByCode = $subjectsByCode->merge(
+                Subject::whereIn('code', $missingCodes->all())->get()->keyBy('code')
+            );
+        }
+
+        foreach ($absentRecords as $record) {
+            $record->setRelation('subject', $subjectsByCode->get($record->subject_code));
+        }
+        foreach ($excuseSubmissions as $submission) {
+            if ($submission->attendance) {
+                $submission->attendance->setRelation('subject', $subjectsByCode->get($submission->attendance->subject_code));
+            }
+        }
 
         return view('excuses.index', compact('absentRecords', 'excuseSubmissions', 'subjects'));
     }
@@ -749,6 +799,8 @@ class HomeController extends Controller
             return redirect()->route('excuses')->with('error', 'No unexcused absence record was found for the selected subjects and date.');
         }
 
+        \App\View\Composers\SidebarComposer::forgetStudentCache((int) $user->id);
+
         $msg = $submittedCount > 1 
             ? "Excuse letters submitted successfully for {$submittedCount} subjects! They will be reviewed by your instructors."
             : "Excuse letter submitted successfully! It will be reviewed by your instructor.";
@@ -866,6 +918,8 @@ class HomeController extends Controller
             }
         }
 
+        \App\View\Composers\SidebarComposer::forgetStudentCache((int) $user->id);
+
         $msg = $count > 1 
             ? "Excuse letters submitted successfully for {$count} subjects! They will be reviewed by your instructors."
             : "Excuse letter submitted successfully! It will be reviewed by your instructor.";
@@ -915,9 +969,25 @@ class HomeController extends Controller
                     ->orWhereHas('instructorUser', fn ($teacher) => $teacher->whereLike('name', $search))));
         }
 
-        $records = $history->with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission', 'correction'])
+        $subjectsByCode = app(\App\Services\StudentScheduleService::class)->subjectsFor(Auth::user())->keyBy('code');
+
+        $records = $history->with(['excuseSubmission', 'correction'])
             ->orderByDesc('date')->orderByDesc('time_in')->orderByDesc('id')
             ->paginate(10)->withQueryString()->fragment('attendance-records');
+
+        $missingCodes = $records->getCollection()
+            ->pluck('subject_code')
+            ->filter(fn ($code) => filled($code) && !$subjectsByCode->has($code))
+            ->unique()
+            ->values();
+        if ($missingCodes->isNotEmpty()) {
+            $subjectsByCode = $subjectsByCode->merge(
+                Subject::with(['schedules', 'instructorUser'])->whereIn('code', $missingCodes->all())->get()->keyBy('code')
+            );
+        }
+        foreach ($records->getCollection() as $record) {
+            $record->setRelation('subject', $subjectsByCode->get($record->subject_code));
+        }
 
         $monthStart = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
         $monthEnd = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();

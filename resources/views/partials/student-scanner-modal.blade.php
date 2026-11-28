@@ -496,13 +496,9 @@ function openStudentScanner(initialMode = 'scan', autoPaste = false) {
     if (autoPaste) setTimeout(() => pasteCopiedCodeFromClipboard(), 120);
 }
 
-async function safeStopScanner() {
-    if (html5QrScanner) {
-        try {
-            const state = typeof html5QrScanner.getState === 'function' ? html5QrScanner.getState() : null;
-            if (state === 2 || state === 3 || isScannerRunning) await html5QrScanner.stop();
-        } catch (e) {}
-    }
+let isNavigatingAwayFromScanner = false;
+
+function stopCameraStreamsNow() {
     isScannerRunning = false;
     isScannerStarting = false;
     const reader = document.getElementById('reader');
@@ -514,6 +510,16 @@ async function safeStopScanner() {
             }
         });
     }
+}
+
+async function safeStopScanner() {
+    if (html5QrScanner) {
+        try {
+            const state = typeof html5QrScanner.getState === 'function' ? html5QrScanner.getState() : null;
+            if (state === 2 || state === 3 || isScannerRunning) await html5QrScanner.stop();
+        } catch (e) {}
+    }
+    stopCameraStreamsNow();
     const loadingOverlay = document.getElementById('scannerLoadingOverlay');
     if (loadingOverlay) loadingOverlay.style.display = 'none';
     const laser = document.getElementById('scannerLaser');
@@ -704,13 +710,17 @@ async function toggleTorch() {
 function closeStudentScanner(returnToDashboard = true) {
     clearAutoCloseTimer();
     stopContinuousLocationWatch();
+    isScanInFlight = false;
+    if (isDedicatedStudentScannerPage && returnToDashboard) {
+        isNavigatingAwayFromScanner = true;
+        stopCameraStreamsNow();
+        window.sfStartNavProgress?.();
+        window.location.replace(studentDashboardUrl);
+        return;
+    }
     const modal = document.getElementById('studentScannerModal');
     if (modal) modal.style.display = 'none';
     safeClearScanner();
-    isScanInFlight = false;
-    if (isDedicatedStudentScannerPage && returnToDashboard) {
-        window.location.replace(studentDashboardUrl);
-    }
 }
 
 function clearAutoCloseTimer() {
@@ -933,7 +943,7 @@ function renderScanSuccess(data) {
         }
     }
 
-    window.studentPresenceGuardian?.syncActiveSession();
+    window.studentPresenceGuardian?.syncActiveSession(true);
     document.getElementById('resultSubject').textContent = (data.subject || 'Subject') + (data.subject_code ? ' (' + data.subject_code + ')' : '');
     document.getElementById('resultInstructor').textContent = data.instructor || 'Instructor';
     document.getElementById('resultSection').textContent = data.section || 'Regular';
@@ -1086,7 +1096,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('studentScannerModal')?.addEventListener('click', handleModalAction, true);
     document.getElementById('outsideRangePopupModal')?.addEventListener('click', handleModalAction, true);
-    window.addEventListener('pagehide', () => safeStopScanner());
-    window.addEventListener('beforeunload', () => safeStopScanner());
+    window.addEventListener('pagehide', () => stopCameraStreamsNow());
+    window.addEventListener('beforeunload', () => {
+        if (!isNavigatingAwayFromScanner) stopCameraStreamsNow();
+    });
 });
 </script>

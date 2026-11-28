@@ -120,11 +120,15 @@ class Announcement extends Model
             return [];
         }
 
-        return Course::whereIn('code', $clean)
+        $resolver = static fn (): array => Course::whereIn('code', $clean)
             ->orWhereIn('name', $clean)
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();
+
+        return app()->runningUnitTests()
+            ? $resolver()
+            : \Illuminate\Support\Facades\Cache::remember('announce_course_ids:' . md5(implode('|', $clean)), now()->addMinutes(5), $resolver);
     }
 
     /** @param string[] $names @return int[] */
@@ -135,10 +139,14 @@ class Announcement extends Model
             return [];
         }
 
-        return Section::whereIn('name', $clean)
+        $resolver = static fn (): array => Section::whereIn('name', $clean)
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();
+
+        return app()->runningUnitTests()
+            ? $resolver()
+            : \Illuminate\Support\Facades\Cache::remember('announce_section_ids:' . md5(implode('|', $clean)), now()->addMinutes(5), $resolver);
     }
 
     /** @param string[] $names @return int[] */
@@ -149,10 +157,14 @@ class Announcement extends Model
             return [];
         }
 
-        return Department::whereIn('code', $clean)
+        $resolver = static fn (): array => Department::whereIn('code', $clean)
             ->orWhereIn('name', $clean)
             ->pluck('id')
             ->map(fn ($id) => (int) $id)
             ->all();
+
+        return app()->runningUnitTests()
+            ? $resolver()
+            : \Illuminate\Support\Facades\Cache::remember('announce_dept_ids:' . md5(implode('|', $clean)), now()->addMinutes(5), $resolver);
     }
 }

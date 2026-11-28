@@ -776,32 +776,57 @@ class User extends Authenticatable
         if (!$this->isStudent() || $this->student_registration_pending) {
             return new EloquentCollection();
         }
-        
-        $explicit = $this->enrolledSubjects()->get();
-        
-        $query = Subject::where('year_level', $this->year_level)
-            ->where('semester', $this->semester);
-            
-        // If subject specifies a course, it must match the student's course
-        $query->where(function ($q) {
-            $q->whereNull('course')
-              ->orWhere('course', '')
-              ->orWhere('course', $this->course);
-        });
-        
-        // Unassigned students can only inherit subjects that are not tied to a
-        // section. Otherwise a blank section would match every section.
-        $query->where(function ($q) {
-            $q->whereNull('section')->orWhere('section', '');
 
-            if (!empty($this->section)) {
-                $q->orWhereRaw('LOWER(TRIM(section)) = ?', [mb_strtolower(trim((string) $this->section))]);
-            }
-        });
-            
-        $implicit = $query->get();
+        $req = app()->bound('request') ? request() : null;
+        $memoKey = sprintf(
+            'user_all_subjects_%d_%s_%s_%s_%s',
+            (int) $this->id,
+            (string) $this->year_level,
+            (string) $this->semester,
+            (string) $this->course,
+            mb_strtolower(trim((string) $this->section))
+        );
+        if (!app()->runningUnitTests() && $req && $req->attributes->has($memoKey)) {
+            /** @var EloquentCollection<int, Subject> $cached */
+            $cached = $req->attributes->get($memoKey);
+            return $cached;
+        }
 
-        return new EloquentCollection($explicit->merge($implicit)->unique('id')->values()->all());
+        $sectionNormalized = mb_strtolower(trim((string) $this->section));
+
+        $subjects = Subject::query()
+            ->where(function ($outer) use ($sectionNormalized) {
+                $outer->whereExists(function ($sub) {
+                    $sub->selectRaw('1')
+                        ->from('enrollments')
+                        ->whereColumn('enrollments.subject_id', 'subjects.id')
+                        ->where('enrollments.user_id', $this->id);
+                })->orWhere(function ($query) use ($sectionNormalized) {
+                    $query->where('year_level', $this->year_level)
+                        ->where('semester', $this->semester)
+                        ->where(function ($q) {
+                            $q->whereNull('course')
+                              ->orWhere('course', '')
+                              ->orWhere('course', $this->course);
+                        })
+                        ->where(function ($q) use ($sectionNormalized) {
+                            $q->whereNull('section')->orWhere('section', '');
+
+                            if ($sectionNormalized !== '') {
+                                $q->orWhereRaw('LOWER(TRIM(section)) = ?', [$sectionNormalized]);
+                            }
+                        });
+                });
+            })
+            ->get();
+
+        $result = new EloquentCollection($subjects->unique('id')->values()->all());
+
+        if (!app()->runningUnitTests() && $req) {
+            $req->attributes->set($memoKey, $result);
+        }
+
+        return $result;
     }
 
     /** @return HasMany<ExcuseSubmission, $this> */

@@ -18,7 +18,7 @@
     $totalPresent = 0;
     $totalLate = 0;
     $totalAbsent = 0;
-    if ($user && $user->isStudent()) {
+    if ($user && !$user->isStudent()) {
         $counts = $user->attendances()
             ->selectRaw("COUNT(*) as total_count, SUM(CASE WHEN status = 'Present' THEN 1 ELSE 0 END) as present_count, SUM(CASE WHEN status = 'Late' THEN 1 ELSE 0 END) as late_count, SUM(CASE WHEN status = 'Absent' THEN 1 ELSE 0 END) as absent_count")
             ->first();

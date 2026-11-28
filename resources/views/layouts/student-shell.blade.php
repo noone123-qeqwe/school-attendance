@@ -166,7 +166,7 @@
                     route('student.calendar'),
                     route('excuses'),
                 ],
-                'eagerness' => 'moderate',
+                'eagerness' => 'conservative',
             ]],
         ], JSON_UNESCAPED_SLASHES) !!}
     </script>
@@ -184,6 +184,7 @@
     data-scan-pin-url="{{ route('mobile.scan', ['open_code' => 1]) }}">
 
     <a href="#mainContent" class="sf-skip-link">Skip to main content</a>
+    <div class="sf-nav-progress" id="sfNavProgress" aria-hidden="true"></div>
 
     <div class="sf-shell">
         @unless($isStandaloneScannerRoute)

@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\Event;
 use App\Models\Holiday;
 use App\Models\Attendance;
+use App\Models\Subject;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class CalendarService
 {
@@ -36,14 +38,21 @@ class CalendarService
         });
 
         // Merge auto-populated holidays from the dedicated holidays table
-        $holidayQuery = Holiday::active();
-        if ($start) {
-            $holidayQuery->where('date', '>=', Carbon::parse($start)->toDateString());
-        }
-        if ($end) {
-            $holidayQuery->where('date', '<=', Carbon::parse($end)->toDateString());
-        }
-        $fetchedHolidays = $holidayQuery->get();
+        $startKey = $start ? Carbon::parse($start)->toDateString() : 'all';
+        $endKey = $end ? Carbon::parse($end)->toDateString() : 'all';
+        $holidayResolver = static function () use ($start, $end) {
+            $holidayQuery = Holiday::active();
+            if ($start) {
+                $holidayQuery->where('date', '>=', Carbon::parse($start)->toDateString());
+            }
+            if ($end) {
+                $holidayQuery->where('date', '<=', Carbon::parse($end)->toDateString());
+            }
+            return $holidayQuery->get();
+        };
+        $fetchedHolidays = app()->runningUnitTests()
+            ? $holidayResolver()
+            : Cache::remember("calendar:holidays:{$startKey}:{$endKey}", now()->addSeconds(60), $holidayResolver);
 
         $holidayEvents = $fetchedHolidays->map(function ($holiday) {
             return $this->formatHoliday($holiday);
@@ -74,22 +83,41 @@ class CalendarService
             $events = $events->concat($attendances);
         }
 
-        // If the user is a student, fetch their own attendance records
+        // If the user is a student, reuse cached/memoized StudentScheduleService subjects
+        // instead of re-querying subjects, schedules, and instructors on every calendar load.
         if ($user->isStudent()) {
-            $attendanceQuery = Attendance::with(['subject.schedules', 'subject.instructorUser'])
-                ->where('user_id', $user->id);
-                
+            $subjectsByCode = app(StudentScheduleService::class)->subjectsFor($user)->keyBy('code');
+
+            $attendanceQuery = Attendance::where('user_id', $user->id);
+
             if ($start) {
                 $attendanceQuery->where('date', '>=', Carbon::parse($start)->toDateString());
             }
             if ($end) {
                 $attendanceQuery->where('date', '<=', Carbon::parse($end)->toDateString());
             }
-            
-            $attendances = $attendanceQuery->get()->map(function ($attendance) use ($user) {
+
+            $attendanceRows = $attendanceQuery->get();
+            $missingCodes = $attendanceRows
+                ->pluck('subject_code')
+                ->filter(fn ($code) => filled($code) && !$subjectsByCode->has($code))
+                ->unique()
+                ->values();
+
+            if ($missingCodes->isNotEmpty()) {
+                $subjectsByCode = $subjectsByCode->merge(
+                    Subject::with(['schedules', 'instructorUser'])
+                        ->whereIn('code', $missingCodes->all())
+                        ->get()
+                        ->keyBy('code')
+                );
+            }
+
+            $attendances = $attendanceRows->map(function ($attendance) use ($user, $subjectsByCode) {
+                $attendance->setRelation('subject', $subjectsByCode->get($attendance->subject_code));
                 return $this->formatAttendanceAsEvent($attendance, $user);
             });
-            
+
             $events = $events->concat($attendances);
         }
 
