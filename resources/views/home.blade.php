@@ -283,7 +283,7 @@
                     @endif
                 </div>
 
-                <div class="sf-hero-checkin">
+                <div @class(['sf-hero-checkin', 'sf-desktop-only' => !$peerAvailable])>
                     <div class="sf-hero-checkin-head">
                         <strong>Record attendance</strong>
                         @if($heroSlot->duration_min)
@@ -291,7 +291,7 @@
                         @endif
                     </div>
                     <p>Scan your instructor's rotating QR or enter the 6-digit session PIN.</p>
-                    <div class="sf-hero-cta-row">
+                    <div class="sf-hero-cta-row sf-desktop-only">
                         <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sf-btn sf-btn-primary">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/></svg>
                             <span>Scan QR</span>
@@ -415,7 +415,7 @@
                                         @if($slotStatusText)
                                             <span class="sf-pill {{ $slotPillTone }}">{{ $slotStatusText }}</span>
                                         @elseif($slot->active_session)
-                                            <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sf-btn sf-btn-primary sf-btn-sm">Check in</a>
+                                            <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sf-btn sf-btn-primary sf-btn-sm sf-desktop-only">Check in</a>
                                         @endif
                                         <span class="sf-sched-time">{{ $slot->start_time->format('g:i A') }} – {{ $slot->end_time->format('g:i A') }}</span>
                                     </div>
@@ -500,10 +500,10 @@
                                 </span>
                                 <div>
                                     <strong>No check-ins logged yet</strong>
-                                    <p>Scan your class QR or enter a PIN.</p>
+                                    <p>Your first class check-in will appear here.</p>
                                 </div>
                             </div>
-                            <a href="{{ route('mobile.scan') }}" class="sf-btn sf-btn-secondary sf-btn-sm">Try check-in</a>
+                            <a href="{{ route('mobile.scan') }}" class="sf-btn sf-btn-secondary sf-btn-sm sf-desktop-only">Try check-in</a>
                         </div>
                     @endif
                 </section>
