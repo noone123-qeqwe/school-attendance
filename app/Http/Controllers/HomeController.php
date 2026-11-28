@@ -72,289 +72,128 @@ class HomeController extends Controller
         return redirect()->route('login')->with('error', 'Invalid user role.');
     }
 
-    $now = now(); 
+    $now = now();
     $todayDate = $now->toDateString();
-    $currentTime = $now->format('H:i:s');
-
-    // 1. Day Mapping
-    $dayMap = [
-        'Monday'    => 'M',
-        'Tuesday'   => 'T',
-        'Wednesday' => 'W',
-        'Thursday'  => 'TH',
-        'Friday'    => 'F',
-        'Saturday'  => 'S',
-    ];
-    $currentDayLetter = $dayMap[$now->format('l')] ?? null;
-    $currentDayName   = $now->format('l');
-    // Load a student's subjects and schedules once, then derive today's classes
-    // from that collection instead of repeating subject and schedule queries.
     $subjects = app(\App\Services\StudentScheduleService::class)->subjectsFor($user);
-    $subjectsById = $subjects->keyBy('id');
+    $schoolHolidays = Holiday::getUpcoming($todayDate, $now->copy()->addDays(7)->toDateString());
+    $todayHoliday = $schoolHolidays->first(fn ($holiday) => $holiday->date->isSameDay($now));
+    $todayAttendances = Attendance::where('user_id', $user->id)
+        ->whereDate('date', $todayDate)->get()->keyBy('subject_code');
 
-    $todaySubjects = collect();
-    if ($currentDayLetter) {
-        $todaySubjects = $subjects->map(function ($subject) use ($user, $currentDayName) {
-            $hasExplicitEnrollment = $subject->relationLoaded('pivot')
-                && $subject->getRelation('pivot') !== null;
-            $matchesStudentProfile = $subject->matchesStudentProfile($user)
-                && (!empty($user->section) || empty($subject->section));
-
-            if (!$hasExplicitEnrollment && !$matchesStudentProfile) {
-                return null;
+    // Timetable slots and subject/day attendance are separate concepts.
+    $todaySchedule = collect();
+    if (!$todayHoliday) {
+        foreach ($subjects as $subject) {
+            $slots = $subject->schedules->where('day', $now->format('l'));
+            foreach ($slots as $schedule) {
+                if (blank($schedule->start_time) || blank($schedule->end_time)) {
+                    continue;
+                }
+                $start = Carbon::parse($todayDate.' '.$schedule->start_time);
+                $end = Carbon::parse($todayDate.' '.$schedule->end_time);
+                if ($end->lte($start)) {
+                    continue;
+                }
+                $scheduleStatus = 'upcoming';
+                if ($now->gt($end)) {
+                    $scheduleStatus = 'ended';
+                } elseif ($now->gte($start)) {
+                    $scheduleStatus = 'ongoing';
+                }
+                $todaySchedule->push((object) [
+                    'subject' => $subject,
+                    'schedule' => $schedule,
+                    'start_time' => $start,
+                    'end_time' => $end,
+                    'schedule_status' => $scheduleStatus,
+                    'attendance' => $todayAttendances->get($subject->code),
+                    'has_multiple_slots' => $slots->count() > 1,
+                ]);
             }
-
-            $daySchedules = $subject->schedules->where('day', $currentDayName)->values();
-            if ($daySchedules->isEmpty()) {
-                return null;
-            }
-
-            $todaySubject = clone $subject;
-            $todaySubject->setRelation('schedules', $daySchedules);
-            return $todaySubject;
-        })->filter()->values();
+        }
     }
+    $todaySchedule = $todaySchedule->sortBy('start_time')->values();
+    $currentSlot = $todaySchedule->firstWhere('schedule_status', 'ongoing');
+    $currentClass = $currentSlot?->subject;
+    $alreadyClockedIn = $currentSlot && in_array($currentSlot->attendance?->status, ['Present', 'Late'], true);
 
-    // Reuse today's eager-loaded schedules to locate the active class instead of
-    // issuing a second subject/schedule query for the same student.
-    $currentClass = null;
-    foreach ($todaySubjects as $subject) {
-        $activeSchedule = $subject->schedules->first(function ($schedule) use ($currentTime) {
-            return Carbon::parse($schedule->start_time)->format('H:i:s') <= $currentTime
-                && Carbon::parse($schedule->end_time)->format('H:i:s') >= $currentTime;
-        });
 
-        if (!$activeSchedule) {
+    $upcomingClass = null;
+    $upcomingLimit = $now->copy()->addDays(7);
+    $upcomingHolidays = $schoolHolidays
+        ->pluck('date')
+        ->map(fn ($date) => Carbon::parse($date)->toDateString())
+        ->flip();
+    for ($dayOffset = 0; $dayOffset <= 7; $dayOffset++) {
+        $scheduleDate = $now->copy()->addDays($dayOffset);
+        if ($upcomingHolidays->has($scheduleDate->toDateString())) {
             continue;
         }
 
-        $currentClass = clone $subject;
-        $currentClass->setRelation('schedules', collect([$activeSchedule]));
-        break;
-    }
-
-    // 4. Attendance Status (15-min Grace Period)
-    $attendanceStatus = 'Present';
-    if ($currentClass && $currentClass->schedules->isNotEmpty()) {
-        $currentSchedule = $currentClass->schedules->first();
-        $startTime = Carbon::parse($currentSchedule->start_time);
-        if ($now->diffInMinutes($startTime, false) < -15) {
-            $attendanceStatus = 'Late';
-        }
-    }
-
-    // Pre-fetch today's attendance records for this user in a single query (avoids N+1 DB roundtrips)
-    $todayAttendances = Attendance::where('user_id', $user->id)
-        ->where('date', $todayDate)
-        ->get()
-        ->keyBy('subject_code');
-
-    // 5. Clock-in Check — only Present/Late counts as clocked in
-    $alreadyClockedIn = false;
-    if ($currentClass) {
-        $existingRecord = $todayAttendances->get($currentClass->code);
-        $alreadyClockedIn = $existingRecord && in_array($existingRecord->status, ['Present', 'Late']);
-    }
-
-    // Calendar records and school events are useful detail, but they are not
-    // needed to render the first dashboard screen. They are loaded through a
-    // protected endpoint when opened so an authenticated
-    // student reaches the dashboard without waiting for extra relationships.
-    // Aggregate once in the database, then build the small per-subject summary
-    // in PHP instead of loading every historical row for this dashboard.
-    $attendanceSummaryRows = Attendance::where('user_id', $user->id)
-        ->selectRaw('subject_code, status, COUNT(*) as record_count, SUM(CASE WHEN excused THEN 1 ELSE 0 END) as excused_count')
-        ->groupBy('subject_code', 'status')
-        ->get();
-
-    $stats = [];
-    $subjectAttendanceStats = collect();
-    foreach ($attendanceSummaryRows as $summaryRow) {
-        $recordCount = (int) $summaryRow->record_count;
-        $stats[$summaryRow->status] = ($stats[$summaryRow->status] ?? 0) + $recordCount;
-
-        $subjectCode = (string) ($summaryRow->subject_code ?? '');
-        $subjectStatsRow = $subjectAttendanceStats->get($subjectCode) ?? (object) [
-            'present_count' => 0,
-            'late_count' => 0,
-            'absent_count' => 0,
-            'excused_count' => 0,
-        ];
-
-        if ($summaryRow->status === 'Present') $subjectStatsRow->present_count += $recordCount;
-        if ($summaryRow->status === 'Late') $subjectStatsRow->late_count += $recordCount;
-        if ($summaryRow->status === 'Absent') $subjectStatsRow->absent_count += $recordCount;
-        $subjectStatsRow->excused_count += (int) $summaryRow->excused_count;
-        $subjectAttendanceStats->put($subjectCode, $subjectStatsRow);
-    }
-
-    // 8. Stats Calculation — Option B (overall rate)
-    $attendanceRecordCount = array_sum($stats);
-
-    $totalPresent = $stats['Present'] ?? 0;
-    $totalLate    = $stats['Late'] ?? 0;
-    $totalAbsent  = $stats['Absent'] ?? 0;
-
-    // Build today's schedule before calculating attendance totals.
-    $todaySchedule = collect();
-    $userCreated = $user->created_at ? Carbon::parse($user->created_at)->timezone('Asia/Manila') : null;
-    if ($todaySubjects->isNotEmpty()) {
-        foreach ($todaySubjects as $subject) {
-            $sched = $subject->schedules->first();
-            if (!$sched) continue;
-
-            $classStart = Carbon::parse($todayDate . ' ' . $sched->start_time);
-            $classEnd   = Carbon::parse($todayDate . ' ' . $sched->end_time);
-
-            $existing = $todayAttendances->get($subject->code);
-
-            $joinedAt = $userCreated;
-            if (!$subject->matchesStudentProfile($user)) {
-                $pivotCreatedAt = $subjectsById->get($subject->id)?->pivot?->getAttribute('created_at');
-                if ($pivotCreatedAt) {
-                    $enrolledAt = Carbon::parse($pivotCreatedAt)->timezone('Asia/Manila');
-                    if (!$joinedAt || $enrolledAt->greaterThan($joinedAt)) {
-                        $joinedAt = $enrolledAt;
-                    }
+        foreach ($subjects as $subject) {
+            foreach ($subject->schedules->where('day', $scheduleDate->format('l')) as $schedule) {
+                if (blank($schedule->start_time) || blank($schedule->end_time)) {
+                    continue;
+                }
+                $start = Carbon::parse($scheduleDate->toDateString() . ' ' . $schedule->start_time);
+                $end = Carbon::parse($scheduleDate->toDateString() . ' ' . $schedule->end_time);
+                if ($start->lte($now) || $start->gt($upcomingLimit) || $end->lte($start)) {
+                    continue;
+                }
+                if ($upcomingClass === null || $start->lt($upcomingClass->start_time)) {
+                    $upcomingClass = (object) [
+                        'subject' => $subject,
+                        'schedule' => $schedule,
+                        'start_time' => $start,
+                        'end_time' => $end,
+                    ];
                 }
             }
-            $joinedAfterSessionStarted = $joinedAt && $joinedAt->greaterThanOrEqualTo($classStart);
-
-            $status = 'upcoming';
-            if ($existing && in_array($existing->status, ['Present', 'Late'])) {
-                $status = 'completed';
-            } elseif ($existing && $existing->status === 'Absent') {
-                $status = 'missed';
-            } elseif ($joinedAfterSessionStarted) {
-                // Class started before account registration or explicit enrollment.
-                $status = 'past';
-            } elseif ($now->greaterThan($classEnd)) {
-                $status = 'missed';
-            } elseif ($now->greaterThanOrEqualTo($classStart) && $now->lessThanOrEqualTo($classEnd)) {
-                $status = 'ongoing';
-            }
-
-            $todaySchedule->push((object)[
-                'subject'    => $subject,
-                'schedule'   => $sched,
-                'start_time' => $classStart,
-                'end_time'   => $classEnd,
-                'status'     => $status,
-                'attendance' => $existing,
-            ]);
         }
-        $todaySchedule = $todaySchedule->sortBy('start_time')->values();
-    }
-
-    // ── Historical missed classes calculation ──
-    $historicalMissesPerSubject = app(\App\Actions\Attendance\CalculateMissedAttendanceAction::class)->executePerSubject($user, $subjects);
-    $historicalMissesTotal = array_sum($historicalMissesPerSubject);
-    $totalAbsent += $historicalMissesTotal;
-    $totalRecords = $totalPresent + $totalLate + $totalAbsent;
-    $presentRecords = $totalPresent + $totalLate;
-
-    $attendanceRate = $totalRecords > 0
-        ? round(($presentRecords / $totalRecords) * 100)
-        : null;
-
-    // 8b. Detailed stats for dashboard donut chart
-    // (Already captured above)
-
-    // 8c. Attendance streak (consecutive days present/late, not absent - optimized query)
-    $streakCount = 0;
-    $streakRecords = Attendance::where('user_id', $user->id)
-        ->where('date', '>=', $now->copy()->subDays(60)->toDateString())
-        ->select('date', 'status')
-        ->orderBy('date', 'desc')
-        ->get()
-        ->groupBy(fn($r) => $r->date->toDateString());
-
-    foreach ($streakRecords as $date => $dayRecords) {
-        $allOnTime = $dayRecords->every(fn($r) => in_array($r->status, ['Present', 'Late']));
-        if ($allOnTime) {
-            $streakCount++;
-        } else {
+        if ($upcomingClass !== null) {
             break;
         }
     }
 
-    // 8c-ii. 7-day attendance pulse derived from already-loaded streak records (zero extra queries)
-    $weeklyPulse = collect();
-    for ($dayOffset = 6; $dayOffset >= 0; $dayOffset--) {
-        $pulseDate = $now->copy()->subDays($dayOffset);
-        $pulseKey = $pulseDate->toDateString();
-        $dayRows = $streakRecords->get($pulseKey, collect());
+    $recentAttendance = Attendance::with('subject')
+        ->where('user_id', $user->id)
+        ->whereDate('date', '<=', $todayDate)
+        ->orderByDesc('date')
+        ->orderByDesc('time_in')
+        ->orderByDesc('id')
+        ->limit(5)
+        ->get();
 
-        $pulseStatus = 'empty';
-        if ($dayRows->isNotEmpty()) {
-            if ($dayRows->contains(fn($r) => $r->status === 'Absent')) {
-                $pulseStatus = 'absent';
-            } elseif ($dayRows->contains(fn($r) => $r->status === 'Late')) {
-                $pulseStatus = 'late';
-            } else {
-                $pulseStatus = 'present';
-            }
-        }
+    $unresolvedAbsencesQuery = Attendance::with('subject')
+        ->where('user_id', $user->id)
+        ->where('status', 'Absent')
+        ->where('excused', false)
+        ->whereDate('date', '<=', $todayDate)
+        ->whereDoesntHave('excuseSubmission', function ($query) use ($user) {
+            $query->where('user_id', $user->id)->whereIn('status', ['pending', 'approved']);
+        });
+    $unresolvedAbsencesCount = (clone $unresolvedAbsencesQuery)->count();
+    $unresolvedAbsences = $unresolvedAbsencesQuery
+        ->orderByDesc('date')
+        ->orderByDesc('id')
+        ->limit(3)
+        ->get();
 
-        $weeklyPulse->push((object) [
-            'date_key'   => $pulseKey,
-            'day_num'    => $pulseDate->day,
-            'day_short'  => $pulseDate->format('D'),
-            'day_letter' => substr($pulseDate->format('D'), 0, 1),
-            'label'      => $pulseDate->format('M j'),
-            'is_today'   => $dayOffset === 0,
-            'status'     => $pulseStatus,
-            'count'      => $dayRows->count(),
-        ]);
-    }
+    $recentExcuseRequests = ExcuseSubmission::with('attendance.subject')
+        ->where('user_id', $user->id)
+        ->whereHas('attendance', function ($query) use ($user, $todayDate) {
+            $query->where('user_id', $user->id)
+                ->whereDate('date', '<=', $todayDate);
+        })
+        ->orderByDesc('updated_at')
+        ->orderByDesc('id')
+        ->limit(3)
+        ->get();
 
-    // 8c-iii. Pending excuse counter
-    $pendingExcusesCount = ExcuseSubmission::where('user_id', $user->id)
-        ->where('status', 'pending')
-        ->count();
-
-    // 8d. Today's schedule with status (upcoming, ongoing, completed, missed)
-    // (Already built above to calculate dynamic misses)
-
-
-    // 9. Fetch active warnings. These are actionable and remain part of the
-    // initial response.
     $activeWarnings = \App\Models\Warning::where('user_id', $user->id)
         ->where('created_at', '>=', $now->copy()->subDays(14))
         ->orderBy('created_at', 'desc')
         ->get();
-
-    // 10. Per-subject attendance breakdown
-    $subjectStats = collect();
-    foreach ($subjects as $subjectModel) {
-        $subjectRecords = $subjectAttendanceStats->get($subjectModel->code);
-
-        $present = (int) ($subjectRecords->present_count ?? 0);
-        $late = (int) ($subjectRecords->late_count ?? 0);
-        $absent = (int) ($subjectRecords->absent_count ?? 0);
-        $excused = (int) ($subjectRecords->excused_count ?? 0);
-        
-        // Add historical missed classes (unrecorded absences from past days)
-        $historicalMiss = $historicalMissesPerSubject[$subjectModel->code] ?? 0;
-        $absent += $historicalMiss;
-
-        $total = $present + $late + $absent;
-
-        $effectiveTotal = $total - $excused;
-        $rate = $effectiveTotal > 0 ? round((($present + $late) / $effectiveTotal) * 100) : 0;
-
-        $subjectStats->push((object)[
-            'code' => $subjectModel->code,
-            'name' => $subjectModel->name ?? $subjectModel->code,
-            'total' => $total,
-            'present' => $present,
-            'late' => $late,
-            'absent' => $absent,
-            'excused' => $excused,
-            'rate' => $rate,
-        ]);
-    }
-    $subjectStats = $subjectStats->sortBy('rate')->values();
 
     $announcements = Announcement::with('author')
         ->published()
@@ -365,21 +204,17 @@ class HomeController extends Controller
 
     return view('home', compact(
         'currentClass',
-        'attendanceStatus',
+        'currentSlot',
         'alreadyClockedIn',
         'subjects',
-        'attendanceRecordCount',
-        'attendanceRate',
-        'todaySubjects',
+        'todayHoliday',
         'activeWarnings',
-        'totalPresent',
-        'totalLate',
-        'totalAbsent',
-        'streakCount',
-        'weeklyPulse',
-        'pendingExcusesCount',
         'todaySchedule',
-        'subjectStats',
+        'upcomingClass',
+        'recentAttendance',
+        'unresolvedAbsences',
+        'unresolvedAbsencesCount',
+        'recentExcuseRequests',
         'announcements'
     ));
 }

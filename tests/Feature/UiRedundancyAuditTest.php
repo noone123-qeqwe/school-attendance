@@ -357,9 +357,11 @@ class UiRedundancyAuditTest extends TestCase
             'Date & Reason should precede the subject checklist on the general excuse form.'
         );
 
-        // 4. Dashboard wraps 7-Day Pulse in responsive disclosure
+        // 4. Dashboard prioritizes today's classes and actionable attendance.
         $homeHtml = $this->actingAs($student)->get(route('home'))->assertOk()->getContent();
-        $this->assertStringContainsString('sd-pulse-disclosure', $homeHtml);
+        $this->assertStringContainsString("Today's classes", $homeHtml);
+        $this->assertStringContainsString('Recent attendance', $homeHtml);
+        $this->assertStringNotContainsString('sd-pulse-disclosure', $homeHtml);
 
         // 5. Notifications collapses Search & Category Filters and moves secondary card actions into overflow menus
         $notifHtml = $this->actingAs($student)->get(route('notifications'))->assertOk()->getContent();

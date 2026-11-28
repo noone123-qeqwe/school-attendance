@@ -149,7 +149,7 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertStringContainsString(route('settings'), $headerHtml);
     }
 
-    public function test_student_dashboard_renders_redesigned_sections_and_zero_record_subject_gracefully(): void
+    public function test_student_dashboard_shows_current_and_upcoming_classes_with_actionable_attendance(): void
     {
         $admin = User::create([
             'name' => 'Admin User',
@@ -206,6 +206,13 @@ class StudentDashboardAndSidebarTest extends TestCase
             'end_time' => now()->addMinutes(50)->format('H:i:s'),
             'room' => 'CS Lab 201',
         ]);
+        Schedule::create([
+            'subject_id' => $zeroRecordSubject->id,
+            'day' => $todayDay,
+            'start_time' => now()->addHour()->format('H:i:s'),
+            'end_time' => now()->addHours(2)->format('H:i:s'),
+            'room' => 'CS Lab 202',
+        ]);
 
         Attendance::create([
             'user_id' => $student->id,
@@ -237,23 +244,21 @@ class StudentDashboardAndSidebarTest extends TestCase
 
         $response->assertSee('sd-masthead', false)
             ->assertSee('sd-identity-cluster', false)
-            ->assertSee('sd-hero-grid', false)
             ->assertSee('id="sdHeroSpotlight"', false)
-            ->assertSee('All classes completed today')
-            ->assertSee('View timetable')
-            ->assertSee('Attendance Standing')
-            ->assertSee('7-Day Pulse')
-            ->assertSee("Today's Schedule", false)
-            ->assertSee('Subject Standing')
-            ->assertDontSee('Recent Check-Ins')
-            ->assertSee('Campus &amp; Class Announcements', false)
+            ->assertSee('Operating Systems')
+            ->assertSee('Compiler Design')
+            ->assertSee("Today's classes", false)
+            ->assertSee('Needs your attention')
+            ->assertSee('Recent attendance')
+            ->assertDontSee('Attendance Standing')
+            ->assertDontSee('7-Day Pulse')
+            ->assertDontSee('Subject Standing')
             ->assertSee('Lab Maintenance Notice')
-            ->assertSee('Action Required: Attendance Warning')
-            ->assertSee('id="daySummaryModal"', false)
+            ->assertSee('Please maintain attendance above 85%.')
             ->assertSee('CS302', false)
-            ->assertSee('No sessions recorded yet')
             ->assertDontSee('Enter 6-Digit PIN')
             ->assertDontSee('sd-quick-dock', false)
+            ->assertDontSee('id="daySummaryModal"', false)
             ->assertDontSee('id="subjectBreakdownModal"', false)
             ->assertDontSee('id="attendanceRecordsModal"', false);
     }
@@ -413,7 +418,7 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->actingAs($teacher)->get(route('settings'))->assertRedirect();
     }
 
-    public function test_student_dashboard_renders_interactive_filters_kpi_modals_and_announcement_toggles(): void
+    public function test_student_dashboard_prioritizes_current_class_actions_and_announcements(): void
     {
         $testNow = \Carbon\Carbon::today('Asia/Manila')->setTime(10, 0);
         \Carbon\Carbon::setTestNow($testNow);
@@ -497,15 +502,13 @@ class StudentDashboardAndSidebarTest extends TestCase
 
             $response->assertOk()
                 ->assertSee('id="sdHeroSpotlight"', false)
-                ->assertSee('id="sdSpotlightTimer"', false)
-                ->assertSee('id="sdSpotlightProgressFill"', false)
-                ->assertSee('Check in now', false)
-                ->assertSee('View timetable', false)
-                ->assertSee('Read more', false)
-                ->assertSee('data-sched-filter="all"', false)
-                ->assertSee('data-sched-filter="remaining"', false)
-                ->assertSee('data-sched-filter="done"', false)
-                ->assertSee('id="sdScheduleLiveRegion"', false)
+                ->assertSee('Operating Systems')
+                ->assertSee('Room 202')
+                ->assertSee('Computer Networks')
+                ->assertSee('Important Laboratory Guideline')
+                ->assertSee(route('mobile.scan', ['open_scanner' => 1]), false)
+                ->assertSee(route('mobile.scan', ['open_code' => 1]), false)
+                ->assertDontSee('data-sched-filter=', false)
                 ->assertSee('css/command-palette.css', false)
                 ->assertSee('id="cmdPaletteCategories" role="group"', false);
 
@@ -517,7 +520,7 @@ class StudentDashboardAndSidebarTest extends TestCase
         }
     }
 
-    public function test_reinvented_student_dashboard_renders_standing_gauge_seven_day_pulse_and_pending_excuses(): void
+    public function test_student_dashboard_shows_recent_attendance_and_pending_excuse_requests(): void
     {
         $student = $this->createStudent([
             'email' => 'student.cockpit@gmail.com',
@@ -558,21 +561,17 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertSee('class="sd-cockpit"', false)
             ->assertSee('sd-masthead', false)
             ->assertSee('sd-identity-cluster', false)
-            ->assertSee('sd-hero-grid', false)
-            ->assertSee("Today's Status")
-            ->assertSee('Free schedule today')
-            ->assertSee('Attendance Standing')
-            ->assertSee('7-Day Pulse')
-            ->assertDontSee('Recent Check-Ins')
-            ->assertDontSee('sd-utility-rail', false)
-            ->assertDontSee('aria-label="Workspace shortcuts"', false)
-            ->assertSee('1 pending excuse')
-            ->assertSee('Subject Standing')
+            ->assertSee("Today's classes", false)
+            ->assertSee('Recent attendance')
+            ->assertSee('Excuse requests')
+            ->assertSee('Medical')
+            ->assertSee(route('excuses'), false)
             ->assertSee('CS401', false)
-            ->assertSee('id="daySummaryModal"', false);
+            ->assertDontSee('7-Day Pulse')
+            ->assertDontSee('id="daySummaryModal"', false);
     }
 
-    public function test_reinvented_mobile_home_dashboard_renders_unified_cockpit_sections(): void
+    public function test_mobile_home_redirects_to_actionable_student_dashboard(): void
     {
         $admin = $this->createStudent([
             'name' => 'Admin Mobile',
@@ -630,9 +629,8 @@ class StudentDashboardAndSidebarTest extends TestCase
 
         $response->assertOk()
             ->assertSee('student-dashboard.css', false)
-            ->assertSee('class="sd-masthead-actions d-none d-md-flex"', false)
-            ->assertSee('class="sd-telemetry"', false)
-            ->assertSee('class="sd-panel"', false)
+            ->assertSee("Today's classes", false)
+            ->assertSee('Recent attendance')
             ->assertDontSee('id="quickActionScanBtn"', false)
             ->assertSee('Mobile Systems')
             ->assertSee('Mobile Campus Advisory');
