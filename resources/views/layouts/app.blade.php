@@ -15,7 +15,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    @auth
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    @else
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    @endauth
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
@@ -43,9 +47,6 @@
     <link rel="stylesheet" href="{{ asset('css/desktop-layout.css') }}?v={{ filemtime(public_path('css/desktop-layout.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/portal-layout-refinements.css') }}?v={{ filemtime(public_path('css/portal-layout-refinements.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/system-ui-modern.css') }}?v={{ filemtime(public_path('css/system-ui-modern.css')) }}">
-    @auth
-        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    @endauth
     @if(Auth::user()?->isStudent() || Auth::user()?->isTeacher())
         <link rel="stylesheet" href="{{ asset('css/portal-unified-foundation.css') }}?v={{ filemtime(public_path('css/portal-unified-foundation.css')) }}">
     @endif
@@ -77,6 +78,20 @@
             <link rel="stylesheet" href="{{ asset('css/student-dashboard.css') }}?v={{ filemtime(public_path('css/student-dashboard.css')) }}">
         @endif
         <link rel="stylesheet" href="{{ asset('css/student-motion-craft.css') }}?v={{ filemtime(public_path('css/student-motion-craft.css')) }}">
+        <script type="speculationrules" @cspNonce>
+            {!! json_encode([
+                'prefetch' => [[
+                    'source' => 'list',
+                    'urls' => [
+                        route('home'),
+                        route('student.classes'),
+                        route('student.calendar'),
+                        route('excuses'),
+                    ],
+                    'eagerness' => 'moderate',
+                ]],
+            ], JSON_UNESCAPED_SLASHES) !!}
+        </script>
     @endif
 </head>
 
@@ -338,7 +353,7 @@
                                     @endif
                                 @else
                                 <div class="top-notif-empty">
-                                    <i class="bi bi-bell-slash" aria-hidden="true"></i>
+                                    <span class="spinner-border spinner-border-sm text-warning" role="status" aria-hidden="true"></span>
                                     <span>Loading notifications…</span>
                                 </div>
                                 @endif

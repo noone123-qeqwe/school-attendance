@@ -394,9 +394,17 @@ class UiRedundancyAuditTest extends TestCase
 
         $settingsJs = file_get_contents(public_path('js/student-settings.js'));
         $bioCss = file_get_contents(public_path('css/biometric-flow.css'));
+        $motionCss = file_get_contents(public_path('css/student-motion-craft.css'));
         $this->assertNotFalse($settingsJs);
         $this->assertNotFalse($bioCss);
+        $this->assertNotFalse($motionCss);
         $this->assertStringContainsString('centerActiveMobilePill', $settingsJs);
         $this->assertMatchesRegularExpression('/\.bio-consent-card\s+a\s*\{[^}]*min-height:\s*44px;/s', $bioCss);
+
+        // 10. Interactive state contracts: Classes view switching, no orphan Records table head, single font stylesheet, and student prefetch
+        $this->assertStringNotContainsString('sd-records-thead', $recordsBlade);
+        $this->assertStringContainsString('#corMobileCardsView.d-none', $motionCss);
+        $this->assertStringContainsString('type="speculationrules"', $homeHtml);
+        $this->assertSame(1, substr_count($homeHtml, 'https://fonts.googleapis.com/css2?'));
     }
 }

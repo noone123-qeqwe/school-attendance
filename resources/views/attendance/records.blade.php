@@ -99,12 +99,6 @@
             </details>
         </div>
         <p class="student-results-count px-3">{{ $records->total() }} matching {{ Str::plural('record', $records->total()) }}</p>
-        <div class="sd-records-thead d-none d-lg-grid" aria-hidden="true">
-            <span>Course &amp; Date</span>
-            <span>Session Details</span>
-            <span>Status</span>
-            <span class="text-end">Action</span>
-        </div>
         <!-- Mobile-first Card Layout / Desktop Ledger Rows -->
         <div class="records-container" id="recordsContainer">
             @forelse($records as $record)
