@@ -318,30 +318,6 @@
             cursor: pointer;
         }
         .login-recovery-row button:hover { color: #fff; text-decoration: underline; }
-        .login-install-links {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 4px 18px;
-            padding: 4px 12px;
-            color: rgba(255, 255, 255, .85);
-            font-size: .74rem;
-        }
-        .login-install-links :is(a, button) {
-            min-height: 32px;
-            padding: 6px 0;
-            border: 0;
-            background: none;
-            color: inherit;
-            font: inherit;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .login-install-links :is(a, button):hover { color: #fff; text-decoration: underline; }
-        .login-install-links :focus-visible { outline: 2px solid #ffdae3; outline-offset: 2px; }
         .login-footer {
             position: relative;
             z-index: 1;
@@ -369,12 +345,6 @@
         }
         .login-footer a:hover { color: #fff; text-decoration: underline; }
         .login-footer-version { color: rgba(222, 190, 126, .8); white-space: nowrap; }
-        @media (min-width: 768px) {
-            .login-install-links { display: none !important; }
-        }
-        @media (max-width: 767.98px) {
-            .pwa-install-banner { display: none !important; }
-        }
         @media (max-width: 600px) {
             .login-footer {
                 flex-direction: column;

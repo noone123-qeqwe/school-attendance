@@ -389,11 +389,6 @@ if (document.readyState === 'loading') {
     </div>
 </main>
 
-<div id="smartAppDownloadRow" class="login-install-links">
-    <button id="downloadAppBtn" type="button" class="pwa-install-trigger"><span id="downloadAppBtnText">Install app</span></button>
-    <a href="{{ \Illuminate\Support\Facades\Route::has('pwa.download.apk') ? route('pwa.download.apk') : url('/download/apk') }}" download="SmartAttendance.apk">Download Android APK</a>
-</div>
-
 <footer class="login-footer">
     <small class="login-footer-copyright">&copy; {{ date('Y') }} Osme&ntilde;a Colleges. All rights reserved.</small>
     <div class="login-footer-right">
@@ -524,86 +519,6 @@ if (document.readyState === 'loading') {
 
 <script src="{{ asset('js/device-passkey-capabilities.js') }}?v={{ filemtime(public_path('js/device-passkey-capabilities.js')) }}" @cspNonce></script>
 <script @cspNonce>
-// ── PWA INSTALL BUTTON CONTROLLER (LOGIN PAGE) ──────────────────────────────
-(function() {
-    function checkStandalone() {
-        return Boolean(
-            (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.isNativeApp === 'function' && window.AndroidDeviceBridge.isNativeApp()) ||
-            window.AttendancePasskey ||
-            /SmartAttendanceApp/i.test(navigator.userAgent || '')
-        ) ||
-               window.matchMedia('(display-mode: standalone)').matches ||
-               window.navigator.standalone === true ||
-               document.referrer.includes('android-app://') ||
-               window.matchMedia('(display-mode: fullscreen)').matches;
-    }
-
-    function checkInstalledFlag() {
-        return localStorage.getItem('pwa_app_installed') === 'true' ||
-               localStorage.getItem('pwa_apk_downloaded') === 'true';
-    }
-
-    async function checkRelatedApps() {
-        if ('getInstalledRelatedApps' in navigator) {
-            try {
-                var related = await navigator.getInstalledRelatedApps();
-                if (related && related.length > 0) {
-                    localStorage.setItem('pwa_app_installed', 'true');
-                    return true;
-                }
-            } catch(e) {}
-        }
-        return false;
-    }
-
-    function hideInstallRow() {
-        var mobileRow = document.getElementById('smartAppDownloadRow');
-        if (mobileRow) {
-            mobileRow.style.display = 'none';
-        }
-    }
-
-    async function updateInstallVisibility() {
-        // 1. Immediate checks (synchronous)
-        if (checkStandalone() || checkInstalledFlag()) {
-            hideInstallRow();
-            return;
-        }
-
-        // 2. Async check via getInstalledRelatedApps API
-        var relatedInstalled = await checkRelatedApps();
-        if (relatedInstalled) {
-            hideInstallRow();
-        }
-    }
-
-    // Direct click handlers forwarding to window.triggerPwaInstall if available
-    var downloadBtn = document.getElementById('downloadAppBtn');
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (typeof window.triggerPwaInstall === 'function') {
-                window.triggerPwaInstall(downloadBtn);
-            }
-        });
-    }
-
-    // Hide immediately when PWA is installed during this session
-    window.addEventListener('appinstalled', function() {
-        localStorage.setItem('pwa_app_installed', 'true');
-        hideInstallRow();
-    });
-
-    // Check visibility on load, DOM ready, and focus
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() { updateInstallVisibility(); });
-    } else {
-        updateInstallVisibility();
-    }
-    window.addEventListener('load', function() { updateInstallVisibility(); });
-    window.addEventListener('focus', function() { updateInstallVisibility(); });
-})();
-
 // Reliable Device Fingerprint & Key initialization
 (function() {
     function initDeviceTokens() {

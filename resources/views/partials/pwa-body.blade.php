@@ -9,6 +9,7 @@
     $swQueryVer = $swQueryVer ?? ('v' . preg_replace('/[^0-9]/', '', (string) $swCacheVer) . '_' . $swFileMtime);
     $initialChangelog = $initialChangelog ?? app(\App\Services\ChangelogService::class)->getRelease((string) $latestVersion);
 @endphp
+@unless(request()->routeIs('login'))
 <!-- Floating PWA Install Banner -->
 <div class="pwa-install-banner" id="pwaInstallBanner" style="display: none;" data-alert-controls>
     <div class="pwa-banner-icon">
@@ -29,6 +30,7 @@
         <span aria-hidden="true">&times;</span>
     </button>
 </div>
+@endunless
 
 <!-- Universal PWA Install & Download Modal (Android, iOS & Desktop) -->
 <div class="pwa-ios-modal" id="pwaIosModal" role="dialog" aria-modal="true" aria-labelledby="pwaModalTitle">
