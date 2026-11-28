@@ -389,7 +389,7 @@ function showAttDetail(dateKey, day) {
                 badgesHtml += `<span class="day-summary-chip" style="background:rgba(74,222,128,0.15); color:#4ade80; border:1px solid rgba(74,222,128,0.3);"><i class="bi bi-flag-fill me-1"></i> ${holidays.length === 1 ? 'Holiday' : holidays.length + ' Holidays'}</span>`;
             }
             if (exams.length > 0) {
-                badgesHtml += `<span class="day-summary-chip" style="background:rgba(212,175,55,0.15); color:#d4af37; border:1px solid rgba(212,175,55,0.3);"><i class="bi bi-award-fill me-1"></i> ${exams.length === 1 ? 'Exam' : exams.length + ' Exams'}</span>`;
+                badgesHtml += `<span class="day-summary-chip" style="background:rgba(236,72,153,0.15); color:#ec4899; border:1px solid rgba(236,72,153,0.3);"><i class="bi bi-award-fill me-1"></i> ${exams.length === 1 ? 'Exam' : exams.length + ' Exams'}</span>`;
             }
             if (events.length > 0) {
                 badgesHtml += `<span class="day-summary-chip" style="background:rgba(125,211,252,0.15); color:#7dd3fc; border:1px solid rgba(125,211,252,0.3);"><i class="bi bi-calendar-event-fill me-1"></i> ${events.length === 1 ? 'Event' : events.length + ' Events'}</span>`;
@@ -519,8 +519,8 @@ function showAttDetail(dateKey, day) {
 
                 if (isExam) {
                     badgeText = 'Exam';
-                    badgeStyle = 'background: rgba(212, 175, 55, 0.15); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.35);';
-                    borderStyle = 'border-left: 3px solid #d4af37;';
+                    badgeStyle = 'background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.35);';
+                    borderStyle = 'border-left: 3px solid #ec4899;';
                     iconClass = 'bi-award-fill';
                 } else if (isHoliday) {
                     badgeText = 'Holiday';

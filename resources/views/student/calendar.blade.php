@@ -108,7 +108,7 @@
                         Absent
                     </div>
                     <div class="scal-legend-item">
-                        <span class="scal-legend-dot" style="background:#D4AF37;"></span>
+                        <span class="scal-legend-dot" style="background:#EC4899;"></span>
                         Exam
                     </div>
                     <div class="scal-legend-item">
@@ -350,7 +350,7 @@ function scalRenderDesktopInspector(dateStr, evts, summaryText, summaryBg, summa
         const isAtt = (ev.type || '').toLowerCase() === 'attendance';
         const status = (ev.status || '').toLowerCase();
         const evType = (ev.type || '').toLowerCase();
-        const badgeColor = status === 'present' ? '#4ADE80' : (status === 'late' ? '#FBBF24' : (status === 'absent' ? '#F87171' : (status === 'excused' ? '#7DD3FC' : (evType === 'holiday' ? '#4ADE80' : (evType === 'exam' ? '#D4AF37' : '#7DD3FC')))));
+        const badgeColor = status === 'present' ? '#4ADE80' : (status === 'late' ? '#FBBF24' : (status === 'absent' ? '#F87171' : (status === 'excused' ? '#7DD3FC' : (evType === 'holiday' ? '#4ADE80' : (evType === 'exam' ? '#EC4899' : '#7DD3FC')))));
         const item = document.createElement('div');
         item.className = 'sd-day-inspector-item';
         item.innerHTML = `
@@ -491,7 +491,7 @@ function scalRenderDay(dateStr) {
                 </div>`);
             } else {
                 hasEvent = true;
-                const evColor = t === 'holiday' ? '#4ADE80' : (t === 'exam' ? '#D4AF37' : '#7DD3FC');
+                const evColor = t === 'holiday' ? '#4ADE80' : (t === 'exam' ? '#EC4899' : '#7DD3FC');
                 content.insertAdjacentHTML('beforeend', `
                 <div class="subject-card" style="border-color:${evColor}66;">
                     <div class="subject-card-icon" style="background:transparent;color:${evColor};">
