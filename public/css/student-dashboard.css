@@ -1828,7 +1828,27 @@ a.sd-subject-row:hover {
     .sd-stage-link,
     .sd-panel-link,
     .sd-telemetry-chip,
-    .sd-expand-btn {
+    .sd-expand-btn,
+    .sd-inline-cta,
+    .sd-inline-link,
+    .sd-mobile-pin-btn {
+        min-height: 44px;
+    }
+
+    .sd-telemetry-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+    }
+}
+
+@media screen and (max-width: 1023.98px) {
+    .sd-seg-btn,
+    .sd-telemetry-chip,
+    .sd-expand-btn,
+    .sd-inline-cta,
+    .sd-inline-link,
+    .sd-mobile-pin-btn {
         min-height: 44px;
     }
 

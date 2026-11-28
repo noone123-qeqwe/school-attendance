@@ -121,7 +121,7 @@
                 @endphp
                 <div class="record-header">
                     <div class="record-subject">
-                        <h4>{{ $record->subject->name ?? $record->subject_name ?? $record->subject_code }}</h4>
+                        <h3>{{ $record->subject->name ?? $record->subject_name ?? $record->subject_code }}</h3>
                         <div class="record-meta">
                             @if($record->subject_code)
                                 <span>{{ $record->subject_code }}</span>

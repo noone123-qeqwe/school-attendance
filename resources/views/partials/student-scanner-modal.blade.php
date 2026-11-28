@@ -48,7 +48,7 @@
         <!-- Mode 1: Camera Scanner View -->
         <div id="scannerActiveView" class="scanner-active-content">
             <div class="scanner-hero-heading {{ $scannerPage ? 'visually-hidden' : '' }}">
-                <h4 class="scanner-title">Scan Attendance QR</h4>
+                <h2 class="scanner-title">Scan Attendance QR</h2>
             </div>
 
             <!-- Viewfinder Area with Glowing Corner Reticles -->
@@ -82,7 +82,7 @@
                     <div class="permission-icon-bubble" id="fallbackIconWrap">
                         <i class="bi bi-camera-fill"></i>
                     </div>
-                    <h5 class="permission-headline" id="fallbackTitle">Camera Access Required</h5>
+                    <h3 class="permission-headline" id="fallbackTitle">Camera Access Required</h3>
                     <p id="scannerFallbackText" class="permission-description">Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.</p>
                     <div class="permission-actions">
                         <button type="button" class="permission-primary-btn" id="retryCameraBtn" data-action="allow-camera" onclick="if(typeof requestCameraAgain==='function'){requestCameraAgain()}">
@@ -144,7 +144,7 @@
         <div id="scannerResultView" class="scanner-result-content" style="display: none;">
             <div id="resultStatusIcon" class="result-status-icon-wrap"></div>
             
-            <h4 id="resultTitle" class="result-headline"></h4>
+            <h2 id="resultTitle" class="result-headline"></h2>
             <p id="resultSubtitle" class="result-caption"></p>
 
             <!-- Result Details Box -->
@@ -419,7 +419,7 @@ function refreshStudentLocation(force = false) {
         studentGeoTimestamp = 0;
         const accMsg = Number.isFinite(result.bestRawAccuracy)
             ? `GPS signal weak (±${Math.round(result.bestRawAccuracy)}m) — move near window`
-            : 'GPS signal unavailable — move near window';
+            : 'GPS unavailable — move near window';
         updateScannerGpsStatus('error', accMsg);
         return null;
     });

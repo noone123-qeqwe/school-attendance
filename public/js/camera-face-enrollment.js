@@ -18,6 +18,7 @@
         const guide = document.getElementById('cameraFaceGuide');
         const guideLabel = guide.querySelector('span');
         const done = document.getElementById('cameraFaceDone');
+        const consentCheckbox = document.getElementById('cameraFaceConsentCheckbox');
         const lighting = window.CameraLighting?.mount(document.getElementById('cameraFaceLight'));
         const poses = [
             ['front', 'Look straight at the camera. Keep your face centered and both eyes visible.', 'Look straight ahead'],
@@ -40,6 +41,21 @@
         let front = null;
         let lastStatus = '';
         let captureFeedbackTimer = null;
+
+        function syncFaceConsentState() {
+            if (!consentCheckbox) return;
+            const locked = !consentCheckbox.checked;
+            start.disabled = locked;
+            if (locked && !lastStatus) {
+                status.textContent = 'Confirm biometric consent to start your face scan.';
+                status.style.color = 'var(--text-muted)';
+            } else if (!locked && status.textContent === 'Confirm biometric consent to start your face scan.') {
+                status.textContent = '';
+            }
+        }
+        if (consentCheckbox) {
+            consentCheckbox.addEventListener('change', syncFaceConsentState);
+        }
 
         function setStatus(message, color = 'var(--text-muted)') {
             if (lastStatus === message) return;
@@ -119,12 +135,13 @@
             [retake, save, cancel].forEach(button => { visible(button, false); button.disabled = false; });
             save.removeAttribute('aria-busy');
             save.textContent = 'Register face';
-            start.disabled = false;
+            start.disabled = Boolean(consentCheckbox && !consentCheckbox.checked);
             start.removeAttribute('aria-busy');
             start.innerHTML = '<i class="bi bi-camera" aria-hidden="true"></i> Start face scan';
             visible(start, true);
             if (done) visible(done, false);
             progress();
+            syncFaceConsentState();
         }
         function failScan(attempt, message) {
             if (attempt !== requestId) return;
@@ -341,6 +358,7 @@
             if (captureInProgress) setStatus('Capture closed. Open the camera to begin again.');
         });
         progress();
+        syncFaceConsentState();
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialize, { once: true });

@@ -1370,26 +1370,47 @@ body.student-portal details.sd-action-menu[open] > summary {
     background: rgba(122, 26, 26, 0.3);
 }
 
+body.student-portal details.sd-action-menu:not([open]) > .sd-action-menu-popover {
+    display: none !important;
+}
+
 body.student-portal .sd-action-menu-popover {
     position: absolute;
     right: 0;
     top: calc(100% + 6px);
-    min-width: 184px;
+    min-width: 190px;
     padding: 6px;
     border-radius: 12px;
     background: #1F1616;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(212, 175, 55, 0.24);
     box-shadow: var(--sm-popover-shadow);
-    z-index: 40;
+    z-index: 100025;
     display: flex;
     flex-direction: column;
     gap: 2px;
     transform-origin: top right;
 }
 
+body.student-portal details.sd-action-menu.is-drop-up > .sd-action-menu-popover {
+    top: auto !important;
+    bottom: calc(100% + 6px) !important;
+    transform-origin: bottom right !important;
+}
+
+@media (max-width: 767.98px) {
+    body.student-portal details.sd-action-menu > .sd-action-menu-popover {
+        top: auto;
+        bottom: calc(100% + 6px);
+        transform-origin: bottom right;
+    }
+}
+
 @media (prefers-reduced-motion: no-preference) {
     body.student-portal details.sd-action-menu[open] > .sd-action-menu-popover {
         animation: sm-popover-in 160ms var(--ease-out) both;
+    }
+    body.student-portal details.sd-action-menu.is-drop-up[open] > .sd-action-menu-popover {
+        animation: sm-popover-in-up 160ms var(--ease-out) both;
     }
 }
 
@@ -1397,6 +1418,17 @@ body.student-portal .sd-action-menu-popover {
     from {
         opacity: 0;
         transform: translateY(-4px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes sm-popover-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(4px) scale(0.96);
     }
     to {
         opacity: 1;
@@ -1440,6 +1472,14 @@ body.student-portal .sd-action-menu-item.is-danger {
     color: #FCA5A5;
 }
 
+body.student-portal .sd-action-menu-popover .sd-action-menu-item.btn-notif-delete {
+    width: 100% !important;
+    min-width: 100% !important;
+    justify-content: flex-start !important;
+    white-space: nowrap !important;
+    padding: 8px 12px !important;
+}
+
 @media (hover: hover) and (pointer: fine) {
     body.student-portal .sd-action-menu-item.is-danger:hover {
         background: rgba(248, 113, 113, 0.14);
@@ -1481,7 +1521,7 @@ body.student-portal details.sd-pulse-disclosure[open] > summary .sd-disclosure-c
     color: #D4AF37;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) and (pointer: fine) {
     body.student-portal details.sd-pulse-disclosure > summary {
         min-height: 28px;
     }
@@ -1526,23 +1566,164 @@ body.student-portal details.cor-mobile-filter-disclosure > summary {
     }
 }
 
-/* Notification overflow popover stacking & compact filter bar */
+/* Notification overflow popover stacking & compact inline filter bar */
 body.student-portal .notif-item-card {
     overflow: visible !important;
 }
 
 body.student-portal .notif-item-card:has(details.sd-action-menu[open]) {
     position: relative;
-    z-index: 30;
+    z-index: 100020 !important;
 }
 
-body.student-portal .notif-filter-disclosure {
-    margin-top: 10px;
+body.student-portal .notif-tabs-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
 }
 
-body.student-portal .notif-filter-disclosure .notif-search-box {
+body.student-portal .sd-notif-filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 10px;
+    background: #141010;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #FAF8F5;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+body.student-portal .sd-notif-filter-toggle:hover,
+body.student-portal .sd-notif-filter-toggle.is-open {
+    border-color: rgba(212, 175, 55, 0.36);
+    background: #261B1B;
+}
+
+body.student-portal .sd-notif-filter-toggle.is-open .sd-disclosure-chevron {
+    transform: rotate(180deg);
+    color: #D4AF37;
+}
+
+body.student-portal .notif-filter-panel[hidden] {
+    display: none !important;
+}
+
+body.student-portal .notif-filter-panel {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.student-portal .notif-filter-panel .notif-search-box {
     width: 100%;
     max-width: 440px;
+}
+
+/* ── 12.7 Cycle 10 Strict Live Audit Fixes (Tablet Grid, Touch Targets, Records Anchor, CTA Hierarchy) ── */
+
+/* Anchor scroll offset below sticky top bar */
+body.student-portal #attendance-records {
+    scroll-margin-top: 84px;
+}
+
+/* Match h3 record titles to former h4 visual scale */
+body.student-portal .record-subject h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #FAF8F5;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+/* Flatten redundant outer chrome on Attendance Records card */
+body.student-portal .records-page .table-card {
+    background: #1A1313 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Unlock 2-column Classes grid on Tablet (768px-1199px) while preserving 3-column desktop */
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    body.student-portal .cor-mobile-cards-view:not(.d-none) {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 14px !important;
+    }
+}
+
+/* Match Classes h2 subject titles identically to former h4 visual styling */
+body.student-portal .cor-card-subj-title {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: #FAF8F5;
+    line-height: 1.35;
+}
+
+/* Single Primary CTA Hierarchy on Dashboard: demote row-level Check in from solid white block to crisp crimson-gold accent */
+body.student-portal .sd-inline-cta {
+    background: rgba(122, 26, 26, 0.34) !important;
+    border: 1px solid rgba(212, 175, 55, 0.42) !important;
+    color: #FAF8F5 !important;
+}
+
+body.student-portal .sd-inline-cta:hover {
+    background: #7A1A1A !important;
+    border-color: #D4AF37 !important;
+    color: #FFFFFF !important;
+}
+
+/* Enforce WCAG 2.2 AA 44x44px touch targets across Mobile (320px/390px) & Tablet (768px) */
+@media (max-width: 1023.98px) {
+    body.student-portal .scal-tips-card > summary {
+        min-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    body.student-portal .student-view-switcher button {
+        min-height: 44px !important;
+    }
+
+    body.student-portal .sd-inline-cta,
+    body.student-portal .sd-inline-link,
+    body.student-portal .sd-mobile-pin-btn,
+    body.student-portal .sd-seg-btn,
+    body.student-portal .sd-telemetry-chip,
+    body.student-portal .sd-expand-btn,
+    body.student-portal .sd-view-toggle-btn,
+    body.student-portal #mainContent .sp.student-settings[data-student-settings] .sec-copy-btn {
+        min-height: 44px !important;
+    }
+    body.student-portal #mainContent .sp.student-settings[data-student-settings] .sec-copy-btn {
+        min-width: 44px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+}
+
+/* Ensure all 7-Day Pulse tiles clear 44px width cleanly on 390px phones */
+@media (max-width: 420px) {
+    body.student-portal .sd-telemetry {
+        padding-inline: 12px !important;
+    }
+    body.student-portal .sd-pulse-grid {
+        gap: 3px !important;
+    }
+}
+
+/* Compact mobile Excuse specific subject toggle spacing */
+body.student-portal .sd-subject-card-slot[hidden] {
+    display: none !important;
 }
 
 /* Profile collapsible security cards match desktop matte card tone */

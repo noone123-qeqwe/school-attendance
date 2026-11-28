@@ -5350,7 +5350,7 @@
     }
 
     body.student-portal .record-subject { min-width: 0; flex: 1; }
-    body.student-portal .record-subject h4 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--sdc-text); line-height: 1.35; overflow-wrap: anywhere; }
+    body.student-portal .record-subject :is(h3, h4) { margin: 0; font-size: 1rem; font-weight: 700; color: var(--sdc-text); line-height: 1.35; overflow-wrap: anywhere; }
     body.student-portal .record-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
     body.student-portal .record-date { font-size: 0.82rem; font-weight: 600; color: var(--sdc-text-soft); }
     body.student-portal .record-day { font-size: 0.72rem; font-weight: 700; color: var(--sdc-muted); background: var(--sdc-surface); border: 1px solid var(--sdc-border-subtle); padding: 2px 8px; border-radius: 6px; }
@@ -5574,7 +5574,7 @@
         }
     }
 
-    @media (max-width: 767.98px) {
+    @media (max-width: 1023.98px) {
         body.student-portal .top-header :is(.notif-btn, #headerSearchBar, .mobile-back-btn) {
             width: 44px !important;
             height: 44px !important;
@@ -5595,11 +5595,13 @@
         }
         body.student-portal .top-header .header-title-container {
             min-width: 0;
+            flex: 1 1 auto;
+            overflow: hidden;
         }
         body.student-portal .top-header .header-page-title {
-            font-size: 0.94rem !important;
-            text-overflow: clip !important;
-            overflow: visible !important;
+            font-size: 0.92rem !important;
+            text-overflow: ellipsis !important;
+            overflow: hidden !important;
             white-space: nowrap !important;
         }
         body.student-portal .top-header .header-right {
@@ -5609,11 +5611,11 @@
     }
 
     @media (max-width: 359.98px) {
-        body.student-portal .top-header :is(.notif-btn, #headerSearchBar, .mobile-back-btn) {
-            width: 40px !important;
-            height: 40px !important;
-            min-width: 40px !important;
-            min-height: 40px !important;
+        body.student-portal .top-header {
+            padding-inline: 6px !important;
+        }
+        body.student-portal .top-header .header-page-title {
+            font-size: 0.86rem !important;
         }
         body.student-portal .mobile-bottom-nav .mbn-item span:not(.mbn-featured-btn),
         body.student-mobile-portal .mobile-bottom-nav .nav-item span:not(.mbn-featured-btn) {

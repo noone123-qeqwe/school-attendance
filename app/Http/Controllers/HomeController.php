@@ -1210,9 +1210,17 @@ class HomeController extends Controller
 
         $records = $history->with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission', 'correction'])
             ->orderByDesc('date')->orderByDesc('time_in')->orderByDesc('id')
-            ->paginate(20)->withQueryString()->fragment('attendance-records');
+            ->paginate(10)->withQueryString()->fragment('attendance-records');
 
-        return view('student.calendar', compact('year', 'month', 'records', 'totals', 'filters'));
+        $monthStart = \Carbon\Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+        $monthEnd = \Carbon\Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+        $initialCalendarEvents = app(\App\Services\CalendarService::class)->getEventsForUser(
+            Auth::user(),
+            $monthStart,
+            $monthEnd
+        );
+
+        return view('student.calendar', compact('year', 'month', 'records', 'totals', 'filters', 'initialCalendarEvents'));
     }
 
     public function calendarData(Request $request, \App\Services\CalendarService $calendarService)

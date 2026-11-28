@@ -406,5 +406,27 @@ class UiRedundancyAuditTest extends TestCase
         $this->assertStringContainsString('#corMobileCardsView.d-none', $motionCss);
         $this->assertStringContainsString('type="speculationrules"', $homeHtml);
         $this->assertSame(1, substr_count($homeHtml, 'https://fonts.googleapis.com/css2?'));
+
+        // 11. Cycle 10 strict audit guarantees: popover drop-up, specific excuse disclosure, semantic headings, SSR calendar, standalone scanner slim CSS
+        $classesBlade = file_get_contents(resource_path('views/student/classes.blade.php')) ?: '';
+        $this->assertStringContainsString('is-drop-up', $notifBlade);
+        $this->assertStringContainsString('sd-notif-filter-toggle', $notifHtml);
+        $this->assertStringContainsString('is-drop-up', $motionCss);
+        $this->assertStringContainsString('scroll-margin-top: 84px', $motionCss);
+        $this->assertStringContainsString('<h2 class="cor-card-subj-title">', $classesBlade);
+        $this->assertStringContainsString('<h2>No Enrolled Subjects</h2>', $classesHtml);
+        $this->assertStringContainsString('sd-view-toggle d-none d-md-inline-flex', $classesHtml);
+        $this->assertStringContainsString('<h3>', $recordsBlade);
+        $this->assertStringNotContainsString('<h4>', $recordsBlade);
+        $this->assertStringContainsString('toggleExtraSpecificSubjects', file_get_contents(resource_path('views/excuses/create.blade.php')) ?: '');
+        $this->assertStringContainsString('matchMedia', $excusesIndexBlade);
+        $this->assertStringContainsString('ssrEvents', file_get_contents(resource_path('views/student/calendar.blade.php')) ?: '');
+        $error403 = file_get_contents(resource_path('views/errors/403.blade.php')) ?: '';
+        $this->assertStringContainsString("@section('page-title', 'Access Restricted')", $error403);
+        $this->assertStringContainsString('<h1 ', $error403);
+        $scanHtml = $this->actingAs($student)->get(route('mobile.scan'))->assertOk()->getContent();
+        $this->assertStringContainsString('<h2 class="scanner-title">', $scanHtml);
+        $this->assertStringNotContainsString('dashboard-enterprise.css', $scanHtml);
+        $this->assertStringNotContainsString('student-account-edit-intro', $settingsHtml);
     }
 }

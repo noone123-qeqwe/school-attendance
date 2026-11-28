@@ -82,7 +82,7 @@
         </div>
 
         <div class="sd-masthead-actions d-none d-md-flex">
-            <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sd-cta-primary">
+            <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="{{ ($liveClassItem && empty($alreadyClockedIn)) ? 'sd-cta-secondary' : 'sd-cta-primary' }}">
                 <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
                 <span>Scan QR</span>
             </a>
@@ -222,11 +222,11 @@
                             <i class="bi bi-check2-circle" aria-hidden="true"></i> Checked in
                         </span>
                     @endif
-                    <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-stage-link">
-                        View timetable <i class="bi bi-arrow-right" aria-hidden="true"></i>
-                    </a>
                     <a href="{{ route('mobile.scan', ['open_code' => 1]) }}" class="sd-stage-link is-subtle sd-mobile-pin-btn d-inline-flex d-md-none">
                         <i class="bi bi-123" aria-hidden="true"></i> Enter PIN
+                    </a>
+                    <a href="{{ route('student.schedule', ['view' => 'weekly']) }}" class="sd-stage-link">
+                        View timetable <i class="bi bi-arrow-right" aria-hidden="true"></i>
                     </a>
                     @if($peerAvailable)
                         <a href="{{ route('peer-snap.index') }}" class="sd-stage-link is-subtle">

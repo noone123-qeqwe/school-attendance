@@ -70,7 +70,7 @@
                 <input type="checkbox" id="bioConsentCheckbox">
                 <span>
                     <strong>I consent to registering this device</strong><br>
-                    Your operating system verifies your identity locally (using fingerprint, facial recognition, or screen lock/PIN depending on your hardware). Smart Attendance receives and stores <strong>only a cryptographic public key</strong> — never raw fingerprint images or biometric templates. You can revoke this credential at any time.
+                    Smart Attendance stores only a cryptographic public key — never raw biometric templates. You can revoke this device at any time.
                 </span>
             </label>
 

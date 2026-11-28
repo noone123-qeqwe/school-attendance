@@ -384,15 +384,15 @@
 
             <div class="sec-cards-grid" @if($user->isStudent()) id="studentCredentialFormGrid" @endif>
                 <!-- Card 1: Email address Management -->
-                <div class="sec-card {{ $user->isStudent() ? 'student-account-edit-card' : '' }}" @if($user->isStudent()) data-account-edit-source="email" @endif style="--card-accent: #3b82f6;">
+                <div class="sec-card {{ $user->isStudent() ? 'student-account-edit-card' : '' }}" @if($user->isStudent()) data-account-edit-source="email" @endif style="--card-accent: #D4AF37;">
                     <div class="sec-card-top">
-                        <div class="sec-card-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
-                            <i class="bi bi-envelope-check-fill"></i>
+                        <div class="sec-card-icon" style="background:rgba(212,175,55,0.12);color:#D4AF37;border:1px solid rgba(212,175,55,0.28);">
+                            <i class="bi bi-envelope-check-fill" aria-hidden="true"></i>
                         </div>
                         <div class="sec-card-meta">
                             <div class="sec-card-header-line">
                                 <span class="sec-card-name">Email address</span>
-                                <span class="sec-badge sec-badge-blue"><i class="bi bi-patch-check-fill"></i> Verified</span>
+                                <span class="sec-badge sec-badge-emerald"><i class="bi bi-patch-check-fill" aria-hidden="true"></i> Verified</span>
                             </div>
                             <div class="sec-card-subtitle">Used for account recovery, security codes, and school alerts.</div>
                         </div>
@@ -408,18 +408,18 @@
                         @endif
                         <div id="emailStep1">
                             <div class="sec-input-display mb-2">
-                                <i class="bi bi-envelope-at-fill text-primary me-2"></i>
+                                <i class="bi bi-envelope-at-fill me-2" style="color:#D4AF37;" aria-hidden="true"></i>
                                 <span class="sec-input-val" id="displayUserEmail">{{ Auth::user()->email }}</span>
-                                <button type="button" onclick="navigator.clipboard.writeText('{{ Auth::user()->email }}'); if(typeof showToast==='function') showToast('Email address copied!','info');" class="sec-copy-btn" title="Copy email">
-                                    <i class="bi bi-clipboard"></i>
+                                <button type="button" onclick="navigator.clipboard.writeText('{{ Auth::user()->email }}'); if(typeof showToast==='function') showToast('Email address copied!','info');" class="sec-copy-btn" title="Copy email" aria-label="Copy current email address">
+                                    <i class="bi bi-clipboard" aria-hidden="true"></i>
                                 </button>
                             </div>
                             <div style="margin: 10px 0 12px;">
-                                <label class="sl" for="inputNewEmail" style="font-size:0.82rem;margin-bottom:6px;color:#f3e7cd;display:block;">New email address</label>
+                                <label class="sl" for="inputNewEmail" style="font-size:0.82rem;margin-bottom:6px;color:#f3e7cd;display:block;">New Gmail address</label>
                                 <input type="email" id="inputNewEmail" class="si" placeholder="name@gmail.com" value="{{ old('new_email') }}" autocomplete="email" inputmode="email" maxlength="254" aria-describedby="emailAddressHelp" required style="padding:11px 13px;font-size:0.94rem;width:100%;">
                             </div>
                             <p class="account-edit-help sec-card-hint" id="emailAddressHelp">
-                                Enter a Gmail address you can open. We’ll send a one-time code there to verify the change.
+                                Replacement recovery emails must be an accessible Gmail address. We’ll send a one-time code there to verify the change.
                             </p>
                             <button type="button" onclick="requestEmailOtp()" id="sendEmailOtpBtn" class="sec-action-btn sec-btn-blue">
                                 <i class="bi bi-send-fill me-2" aria-hidden="true"></i>Send code
@@ -1215,15 +1215,12 @@
 
     @if($user->isStudent())
     <div id="tab-account-email" class="spanel student-account-edit-panel" aria-label="Change email address">
-        <div class="student-account-edit-intro">Enter a Gmail address you can open. We’ll send a verification code there before changing your account email.</div>
         <div id="accountEmailFormSlot"></div>
     </div>
     <div id="tab-account-password" class="spanel student-account-edit-panel" aria-label="Change password">
-        <div class="student-account-edit-intro">We’ll send a security code to your current email. Enter it and choose a strong new password.</div>
         <div id="accountPasswordFormSlot"></div>
     </div>
     <div id="tab-account-phone" class="spanel student-account-edit-panel" aria-label="Change phone number">
-        <div class="student-account-edit-intro">Update the phone number listed on your school account.</div>
         @include('partials.settings-phone-card')
     </div>
     @endif

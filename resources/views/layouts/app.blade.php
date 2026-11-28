@@ -24,8 +24,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <link rel="stylesheet" href="{{ asset('css/design-tokens.css') }}?v={{ filemtime(public_path('css/design-tokens.css')) }}">
-    <link rel="stylesheet" href="{{ asset('css/premium.css') }}?v={{ filemtime(public_path('css/premium.css')) }}">
-    <link rel="stylesheet" href="{{ asset('css/dashboard-enterprise.css') }}?v={{ filemtime(public_path('css/dashboard-enterprise.css')) }}">
+    @php
+        $isStandaloneScannerRoute = request()->routeIs('mobile.scan');
+    @endphp
+    @unless($isStandaloneScannerRoute)
+        <link rel="stylesheet" href="{{ asset('css/premium.css') }}?v={{ filemtime(public_path('css/premium.css')) }}">
+        <link rel="stylesheet" href="{{ asset('css/dashboard-enterprise.css') }}?v={{ filemtime(public_path('css/dashboard-enterprise.css')) }}">
+    @endunless
     @auth
         @if(Auth::user()->isAdmin())
             <link rel="stylesheet" href="{{ asset('css/admin-saas.css') }}?v={{ filemtime(public_path('css/admin-saas.css')) }}">
@@ -39,17 +44,19 @@
         @vite(['resources/js/app.js'])
     @endauth
     @stack('styles')
-    <link rel="stylesheet" href="{{ asset('css/experience-refinements.css') }}?v={{ filemtime(public_path('css/experience-refinements.css')) }}">
-    @if(request()->routeIs('settings', 'admin.settings'))
-        <link rel="stylesheet" href="{{ asset('css/settings-polish.css') }}?v={{ filemtime(public_path('css/settings-polish.css')) }}">
-    @endif
-    <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
-    <link rel="stylesheet" href="{{ asset('css/desktop-layout.css') }}?v={{ filemtime(public_path('css/desktop-layout.css')) }}">
-    <link rel="stylesheet" href="{{ asset('css/portal-layout-refinements.css') }}?v={{ filemtime(public_path('css/portal-layout-refinements.css')) }}">
-    <link rel="stylesheet" href="{{ asset('css/system-ui-modern.css') }}?v={{ filemtime(public_path('css/system-ui-modern.css')) }}">
-    @if(Auth::user()?->isStudent() || Auth::user()?->isTeacher())
-        <link rel="stylesheet" href="{{ asset('css/portal-unified-foundation.css') }}?v={{ filemtime(public_path('css/portal-unified-foundation.css')) }}">
-    @endif
+    @unless($isStandaloneScannerRoute)
+        <link rel="stylesheet" href="{{ asset('css/experience-refinements.css') }}?v={{ filemtime(public_path('css/experience-refinements.css')) }}">
+        @if(request()->routeIs('settings', 'admin.settings') && !Auth::user()?->isStudent())
+            <link rel="stylesheet" href="{{ asset('css/settings-polish.css') }}?v={{ filemtime(public_path('css/settings-polish.css')) }}">
+        @endif
+        <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
+        <link rel="stylesheet" href="{{ asset('css/desktop-layout.css') }}?v={{ filemtime(public_path('css/desktop-layout.css')) }}">
+        <link rel="stylesheet" href="{{ asset('css/portal-layout-refinements.css') }}?v={{ filemtime(public_path('css/portal-layout-refinements.css')) }}">
+        <link rel="stylesheet" href="{{ asset('css/system-ui-modern.css') }}?v={{ filemtime(public_path('css/system-ui-modern.css')) }}">
+        @if(Auth::user()?->isStudent() || Auth::user()?->isTeacher())
+            <link rel="stylesheet" href="{{ asset('css/portal-unified-foundation.css') }}?v={{ filemtime(public_path('css/portal-unified-foundation.css')) }}">
+        @endif
+    @endunless
     @if(Auth::check() && Auth::user()->isTeacher() && !request()->routeIs('teacher.*.pdf'))
         @if(!request()->routeIs('teacher.*.preview'))
             <link rel="stylesheet" href="{{ asset('css/teacher-portal-redesign.css') }}?v={{ filemtime(public_path('css/teacher-portal-redesign.css')) }}">
@@ -72,7 +79,9 @@
         @if(request()->routeIs('settings'))
             <link rel="stylesheet" href="{{ asset('css/student-desktop-settings.css') }}?v={{ filemtime(public_path('css/student-desktop-settings.css')) }}">
         @endif
-        <link rel="stylesheet" href="{{ asset('css/student-portal-navigation.css') }}?v={{ filemtime(public_path('css/student-portal-navigation.css')) }}">
+        @unless($isStandaloneScannerRoute)
+            <link rel="stylesheet" href="{{ asset('css/student-portal-navigation.css') }}?v={{ filemtime(public_path('css/student-portal-navigation.css')) }}">
+        @endunless
         <link rel="stylesheet" href="{{ asset('css/student-portal-master.css') }}?v={{ filemtime(public_path('css/student-portal-master.css')) }}">
         @if(request()->routeIs('home'))
             <link rel="stylesheet" href="{{ asset('css/student-dashboard.css') }}?v={{ filemtime(public_path('css/student-dashboard.css')) }}">
@@ -237,9 +246,10 @@
                     </button>
 
                     @php
-                        // Notification data is loaded after the page is visible so the shared
-                        // layout does not block every role's first render on extra DB queries.
-                        $unreadCount = 0;
+                        // Hydrate student unread count on initial render so the bell badge never pops in after navigation.
+                        $unreadCount = (Auth::check() && Auth::user()->isStudent() && !request()->routeIs('mobile.scan'))
+                            ? \App\Models\Notification::where('user_id', Auth::id())->active()->where('is_read', false)->count()
+                            : 0;
                     @endphp
 
                     <div class="dropdown top-notif-dropdown">

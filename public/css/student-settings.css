@@ -76,16 +76,31 @@
     font-weight: 600;
     cursor: pointer;
 }
-@media (max-width: 767.98px) {
-    .student-settings-heading { display: none; }
-}
 @media (max-width: 991.98px) {
+    /* Keep semantic <h1>Your settings</h1> in the accessibility tree while eliminating redundant stacked header chrome on mobile & tablet. */
+    .student-settings-heading {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+    }
     .sp.student-settings[data-student-settings] { padding: 8px 0 20px !important; }
     .sp.student-settings[data-student-settings] .settings-layout-grid { display: block !important; }
-    .student-settings-heading { margin-bottom: 18px; }
-    .student-settings-heading h1 { font-size: 1.5rem !important; }
-    .student-settings-detail-heading { margin-bottom: 20px; }
+    .student-settings-detail-heading { margin-bottom: 18px; }
     .student-settings-detail-heading h2 { font-size: 1.35rem !important; line-height: 1.3; }
+    .sp.student-settings[data-student-settings] .sec-copy-btn {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
     .sp.student-settings[data-student-settings] .sc-head { padding: 18px 18px 14px !important; }
     .sp.student-settings[data-student-settings] .sc-body,
     .sp.student-settings[data-student-settings] .sec-card { padding: 20px 18px !important; }
@@ -294,6 +309,12 @@
 .sp.student-settings[data-student-settings] .account-form-actions .sec-action-btn { flex: 1; }
 .sp.student-settings[data-student-settings] .student-account-edit-card .sec-card-content { min-width: 0; }
 .sp.student-settings[data-student-settings] .student-account-edit-card .si { min-height: 48px; }
+.sp.student-settings[data-student-settings] .student-account-edit-card .sec-input-display {
+    background: #141010 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 10px !important;
+    color: #FAF8F5 !important;
+}
 .sp.student-settings[data-student-settings] .student-account-edit-panel .sec-card,
 .sp.student-settings[data-student-settings] .student-account-edit-panel .sc { margin: 0; }
 .sp.student-settings[data-student-settings] .btn-gold {
@@ -346,6 +367,42 @@
     .settings-mobile-nav {
         margin-bottom: 10px !important;
     }
+    /* Consistent left-aligned card header geometry across all mobile Settings cards (Guardians, Email, Password, Biometrics, Device). */
+    .sp.student-settings[data-student-settings] .sec-card-top {
+        display: grid !important;
+        grid-template-columns: 40px minmax(0, 1fr) !important;
+        align-items: start !important;
+        gap: 12px !important;
+        margin-bottom: 12px !important;
+        text-align: left !important;
+    }
+    .sp.student-settings[data-student-settings] .sec-card-icon {
+        width: 40px !important;
+        height: 40px !important;
+        margin: 0 !important;
+    }
+    .sp.student-settings[data-student-settings] .sec-card-meta,
+    .sp.student-settings[data-student-settings] .sec-card-header-line,
+    .sp.student-settings[data-student-settings] .sec-card-name,
+    .sp.student-settings[data-student-settings] .sec-card-subtitle {
+        min-width: 0;
+        text-align: left !important;
+    }
+    .sp.student-settings[data-student-settings] .sec-card-header-line {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+        margin-bottom: 4px !important;
+    }
+    .sp.student-settings[data-student-settings] .sec-badge {
+        align-self: flex-start;
+        max-width: 100%;
+        white-space: normal !important;
+        line-height: 1.35;
+    }
     /* Keep guardian actions and their status labels readable on narrow screens. */
     .sp.student-settings[data-student-settings] #tab-family .sec-cards-grid {
         grid-template-columns: minmax(0, 1fr) !important;
@@ -356,29 +413,16 @@
         padding: 18px 16px !important;
     }
     .sp.student-settings[data-student-settings] #tab-family .sec-card-top {
-        display: grid !important;
-        grid-template-columns: 44px minmax(0, 1fr);
-        align-items: start !important;
-        gap: 12px !important;
+        grid-template-columns: 44px minmax(0, 1fr) !important;
         margin-bottom: 10px !important;
     }
     .sp.student-settings[data-student-settings] #tab-family .sec-card-icon {
         width: 44px !important;
         height: 44px !important;
-        margin: 0;
-    }
-    .sp.student-settings[data-student-settings] #tab-family .sec-card-meta,
-    .sp.student-settings[data-student-settings] #tab-family .sec-card-header-line,
-    .sp.student-settings[data-student-settings] #tab-family .sec-card-name,
-    .sp.student-settings[data-student-settings] #tab-family .sec-card-subtitle {
-        min-width: 0;
-        text-align: left !important;
     }
     .sp.student-settings[data-student-settings] #tab-family .sec-card-header-line {
-        display: flex !important;
         flex-direction: column !important;
         align-items: flex-start !important;
-        justify-content: flex-start !important;
         gap: 7px !important;
         margin-bottom: 5px !important;
     }
@@ -387,12 +431,6 @@
         font-size: .98rem !important;
         line-height: 1.3 !important;
         overflow-wrap: anywhere;
-    }
-    .sp.student-settings[data-student-settings] #tab-family .sec-badge {
-        align-self: flex-start;
-        max-width: 100%;
-        white-space: normal !important;
-        line-height: 1.35;
     }
     .sp.student-settings[data-student-settings] #tab-family .sec-card-subtitle {
         font-size: .8rem !important;

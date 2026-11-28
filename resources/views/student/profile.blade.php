@@ -140,16 +140,16 @@
                     </div>
 
                     @if($totalAll > 0)
-                    @php $rate = round((($totalPresent + $totalLate) / $totalAll) * 100); @endphp
-                    <div style="margin-top:4px;">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span style="font-size:0.78rem;font-weight:600;color:#ACA099;">Logged Attendance Rate</span>
-                            <span style="font-size:0.84rem;font-weight:700;color:{{ $rate >= 75 ? '#4ADE80' : '#F87171' }};font-variant-numeric:tabular-nums;">{{ $rate }}%</span>
-                        </div>
-                        <div style="height:6px;background:rgba(255, 255, 255,0.08);border-radius:99px;overflow:hidden;">
-                            <div style="height:100%;width:{{ $rate }}%;background:{{ $rate >= 75 ? '#4ADE80' : '#F87171' }};border-radius:99px;transition:width 0.35s ease;"></div>
-                        </div>
-                        <p style="margin:8px 0 0;font-size:0.74rem;color:#ACA099;line-height:1.4;">Based on {{ $totalAll }} recorded entries · see Dashboard for overall standing including missed classes.</p>
+                    @php
+                        $onTimeShare = round(($totalPresent / $totalAll) * 100);
+                    @endphp
+                    <div style="margin-top:6px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                        <p style="margin:0;font-size:0.78rem;color:#ACA099;line-height:1.45;">
+                            <strong style="color:#FAF8F5;">{{ $totalAll }}</strong> logged entries ({{ $onTimeShare }}% on-time check-ins). View your full term standing on Dashboard.
+                        </p>
+                        <a href="{{ route('home') }}" style="display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:6px 0;font-size:0.78rem;font-weight:700;color:#D4AF37;text-decoration:none;white-space:nowrap;">
+                            Overall standing <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                        </a>
                     </div>
                     @endif
                 </div>

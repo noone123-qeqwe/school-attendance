@@ -595,7 +595,36 @@ document.addEventListener('DOMContentLoaded', function () {
             if (targetDate) scalOpenDaySummaryModal(targetDate);
         });
     }
-    scalLoadAndRender('replace');
+    const ssrEvents = @json($initialCalendarEvents ?? null);
+    if (Array.isArray(ssrEvents)) {
+        const key = calendarMonthKey(scalYear, scalMonth);
+        const start = key + '-01';
+        const end = key + '-' + new Date(scalYear, scalMonth, 0).getDate();
+        const mapped = {};
+        for (const ev of ssrEvents) {
+            const d = typeof ev?.start === 'string' ? ev.start.split('T')[0] : '';
+            if (d.length === 10 && d >= start && d <= end) {
+                (mapped[d] ??= []).push(ev);
+            }
+        }
+        scalDataState = 'ready';
+        scalEventMap = mapped;
+        if (calendarLoadStatus) calendarLoadStatus.textContent = '';
+        if (calendarRetry) calendarRetry.hidden = true;
+        syncCalendarRecordsMonth(scalYear, scalMonth);
+        scalRender();
+        if (window.innerWidth >= 1024 && calendarGrid?.dataset.month) {
+            const now = new Date();
+            const nowMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const defaultDate = nowMonth === calendarGrid.dataset.month
+                ? `${nowMonth}-${String(now.getDate()).padStart(2, '0')}`
+                : `${calendarGrid.dataset.month}-01`;
+            if (dsm) dsm.dataset.date = defaultDate;
+            scalRenderDay(defaultDate);
+        }
+    } else {
+        scalLoadAndRender('replace');
+    }
 
     // Touch swipe for mobile
     let tx = 0, ty = 0;

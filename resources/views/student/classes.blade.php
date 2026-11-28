@@ -162,7 +162,7 @@
                     <label class="student-filter-field" for="scheduleSearchInput">Find a class
                         <span class="position-relative d-block w-100">
                             <i class="bi bi-search sd-search-icon" aria-hidden="true"></i>
-                            <input type="search" id="scheduleSearchInput" class="cor-search-input" placeholder="Subject, teacher, or room" aria-label="Filter schedule records">
+                            <input type="search" id="scheduleSearchInput" class="cor-search-input" placeholder="Subject, code, or teacher" aria-label="Filter schedule records">
                         </span>
                     </label>
                     <label class="student-filter-field" for="scheduleDayFilter">Day
@@ -174,7 +174,7 @@
                             @endforeach
                         </select>
                     </label>
-                    <div class="sd-view-toggle d-none d-lg-inline-flex" role="group" aria-label="Classes layout mode">
+                    <div class="sd-view-toggle d-none d-md-inline-flex" role="group" aria-label="Classes layout mode">
                         <button type="button" class="sd-view-toggle-btn is-active" id="corViewCardsBtn" data-cor-view="cards" aria-pressed="true">
                             <i class="bi bi-grid-fill" aria-hidden="true"></i> Cards
                         </button>
@@ -212,9 +212,9 @@
 
                         <!-- Subject Title Block -->
                         <div class="cor-card-subj-block">
-                            <h4 class="cor-card-subj-title">
+                            <h2 class="cor-card-subj-title">
                                 {{ $sched->name }}
-                            </h4>
+                            </h2>
                         </div>
 
                         <!-- 2x2 Mini Schedule Matrix Grid with Borders -->
@@ -261,7 +261,7 @@
                 @empty
                     <div class="cor-empty-state">
                         <i class="bi bi-journal-x cor-empty-icon"></i>
-                        <h5>No Enrolled Subjects</h5>
+                        <h2>No Enrolled Subjects</h2>
                         <p class="mb-0">You are currently not registered for any classes this semester.</p>
                     </div>
                 @endforelse
@@ -389,8 +389,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const weeklyBtn = document.getElementById('corViewWeeklyBtn');
 
     function setCorView(mode) {
-        const isDesktop = window.innerWidth >= 992;
-        const resolved = !isDesktop ? 'cards' : ((mode === 'table' || mode === 'weekly') ? mode : 'cards');
+        const supportsMultiView = window.innerWidth >= 768;
+        const resolved = !supportsMultiView ? 'cards' : ((mode === 'table' || mode === 'weekly') ? mode : 'cards');
         if (cardsWrap) cardsWrap.classList.toggle('d-none', resolved !== 'cards');
         if (tableWrap) tableWrap.classList.toggle('d-none', resolved !== 'table');
         if (weeklyWrap) weeklyWrap.classList.toggle('d-none', resolved !== 'weekly');
@@ -406,7 +406,7 @@ document.addEventListener('DOMContentLoaded', function() {
             weeklyBtn.classList.toggle('is-active', resolved === 'weekly');
             weeklyBtn.setAttribute('aria-pressed', resolved === 'weekly' ? 'true' : 'false');
         }
-        try { if (isDesktop) localStorage.setItem('sdClassesView', resolved); } catch (e) {}
+        try { if (supportsMultiView) localStorage.setItem('sdClassesView', resolved); } catch (e) {}
     }
 
     if (cardsBtn) cardsBtn.addEventListener('click', function() { setCorView('cards'); });
@@ -422,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     } catch (e) {}
     window.addEventListener('resize', function() {
-        if (window.innerWidth < 992) {
+        if (window.innerWidth < 768) {
             setCorView('cards');
         }
     });

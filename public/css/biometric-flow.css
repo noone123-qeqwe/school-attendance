@@ -729,6 +729,31 @@
     min-height: 52px;
 }
 
+/* Mobile Face Studio: place required consent visibly above Start face scan */
+@media (max-width: 959.98px) {
+    .face-registration-page .bio-face-studio-grid {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 14px;
+    }
+
+    .face-registration-page .face-camera-stage:not(.is-active) {
+        min-height: 210px;
+        padding: 18px 16px;
+        gap: 12px;
+    }
+
+    .face-registration-page .bio-privacy-note {
+        margin: 0 0 10px !important;
+        padding: 10px 12px;
+    }
+
+    .face-registration-page .bio-consent-card {
+        margin-bottom: 0;
+        padding: 11px 13px;
+    }
+}
+
 /* Desktop Face Studio 2-Column Split */
 @media (min-width: 960px) {
     .face-registration-page .biometric-flow {

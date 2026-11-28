@@ -50,55 +50,59 @@
                     <span class="notif-tab-badge" id="tabCountArchived">{{ $counts['archived'] ?? 0 }}</span>
                 </a>
             </div>
-        </div>
 
-        {{-- Progressive Search & Category Filter Drawer --}}
-        <details class="sd-filter-disclosure notif-filter-disclosure" @if($notifFilterCount > 0) open @endif>
-            <summary>
+            {{-- Inline Search & Filter Trigger (Desktop/Tablet same row, Mobile wraps cleanly) --}}
+            <button type="button"
+                    class="sd-notif-filter-toggle"
+                    id="notifFilterToggleBtn"
+                    aria-expanded="{{ $notifFilterCount > 0 ? 'true' : 'false' }}"
+                    aria-controls="notifFilterPanel">
                 <i class="bi bi-sliders" aria-hidden="true"></i>
                 <span>Search &amp; Filter</span>
                 @if($notifFilterCount > 0)
                     <span class="sd-disclosure-pill is-accent">{{ $notifFilterCount }} active</span>
                 @endif
                 <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
-            </summary>
-            <div class="sd-filter-disclosure-body">
-                <form method="GET" action="{{ route('notifications') }}" class="notif-search-box mb-3" id="notifSearchForm">
-                    @if(request('status'))
-                        <input type="hidden" name="status" value="{{ request('status') }}">
-                    @endif
-                    @if(request('type'))
-                        <input type="hidden" name="type" value="{{ request('type') }}">
-                    @endif
-                    <i class="bi bi-search notif-search-icon" aria-hidden="true"></i>
-                    <input type="text" 
-                           name="search" 
-                           id="notifSearchInput" 
-                           class="notif-search-input" 
-                           placeholder="Search alerts..." 
-                           aria-label="Search notifications or subjects"
-                           value="{{ request('search') }}"
-                           autocomplete="off">
-                    @if(request('search'))
-                        <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => request('type')])) }}" class="notif-search-clear" title="Clear search">
-                            <i class="bi bi-x-circle-fill"></i>
-                        </a>
-                    @endif
-                </form>
+            </button>
+        </div>
 
-                {{-- Category Pills --}}
-                <div class="notif-cat-pills">
-                    <a href="{{ route('notifications', array_filter(['status' => request('status')])) }}" 
-                       class="notif-pill {{ !request('type') ? 'active' : '' }}">All Types</a>
-                    <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'absence'])) }}" 
-                       class="notif-pill {{ request('type') === 'absence' ? 'active' : '' }}">Absences ({{ $counts['absences'] ?? 0 }})</a>
-                    <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'warning'])) }}" 
-                       class="notif-pill {{ request('type') === 'warning' ? 'active' : '' }}">Warnings ({{ $counts['warnings'] ?? 0 }})</a>
-                    <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'system'])) }}" 
-                       class="notif-pill {{ request('type') === 'system' ? 'active' : '' }}">System Updates</a>
-                </div>
+        {{-- Progressive Search & Category Filter Drawer --}}
+        <div class="sd-filter-disclosure-body notif-filter-panel notif-filter-disclosure" id="notifFilterPanel" @if($notifFilterCount === 0) hidden @endif>
+            <form method="GET" action="{{ route('notifications') }}" class="notif-search-box mb-3" id="notifSearchForm">
+                @if(request('status'))
+                    <input type="hidden" name="status" value="{{ request('status') }}">
+                @endif
+                @if(request('type'))
+                    <input type="hidden" name="type" value="{{ request('type') }}">
+                @endif
+                <i class="bi bi-search notif-search-icon" aria-hidden="true"></i>
+                <input type="text" 
+                       name="search" 
+                       id="notifSearchInput" 
+                       class="notif-search-input" 
+                       placeholder="Search alerts..." 
+                       aria-label="Search notifications or subjects"
+                       value="{{ request('search') }}"
+                       autocomplete="off">
+                @if(request('search'))
+                    <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => request('type')])) }}" class="notif-search-clear" title="Clear search">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </a>
+                @endif
+            </form>
+
+            {{-- Category Pills --}}
+            <div class="notif-cat-pills">
+                <a href="{{ route('notifications', array_filter(['status' => request('status')])) }}" 
+                   class="notif-pill {{ !request('type') ? 'active' : '' }}">All Types</a>
+                <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'absence'])) }}" 
+                   class="notif-pill {{ request('type') === 'absence' ? 'active' : '' }}">Absences ({{ $counts['absences'] ?? 0 }})</a>
+                <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'warning'])) }}" 
+                   class="notif-pill {{ request('type') === 'warning' ? 'active' : '' }}">Warnings ({{ $counts['warnings'] ?? 0 }})</a>
+                <a href="{{ route('notifications', array_filter(['status' => request('status'), 'type' => 'system'])) }}" 
+                   class="notif-pill {{ request('type') === 'system' ? 'active' : '' }}">System Updates</a>
             </div>
-        </details>
+        </div>
     </div>
 
     {{-- Notifications List --}}
@@ -646,6 +650,72 @@
             notifyActionError(err.message);
         });
     };
+
+    // Progressive Search & Filter drawer toggle
+    const filterToggleBtn = document.getElementById('notifFilterToggleBtn');
+    const filterPanel = document.getElementById('notifFilterPanel');
+    if (filterToggleBtn && filterPanel) {
+        filterToggleBtn.addEventListener('click', function () {
+            const willOpen = filterPanel.hidden;
+            filterPanel.hidden = !willOpen;
+            filterToggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+            filterToggleBtn.classList.toggle('is-open', willOpen);
+            if (willOpen) {
+                document.getElementById('notifSearchInput')?.focus({ preventScroll: true });
+            }
+        });
+    }
+
+    // Smart overflow popover placement (flips upward above fixed mobile bottom nav or viewport floor)
+    function positionActionMenu(menu) {
+        if (!menu.open) {
+            menu.classList.remove('is-drop-up');
+            return;
+        }
+        const summary = menu.querySelector('summary');
+        const popover = menu.querySelector('.sd-action-menu-popover');
+        if (!summary || !popover) return;
+        const summaryRect = summary.getBoundingClientRect();
+        const popoverHeight = popover.offsetHeight || 156;
+        const bottomNav = document.querySelector('#mobileBottomNav, .mobile-bottom-nav');
+        const navStyle = bottomNav ? getComputedStyle(bottomNav) : null;
+        const navClearance = (bottomNav && navStyle && navStyle.display !== 'none' && navStyle.visibility !== 'hidden')
+            ? (bottomNav.getBoundingClientRect().height + 16)
+            : 16;
+        const spaceBelow = window.innerHeight - navClearance - summaryRect.bottom;
+        const spaceAbove = summaryRect.top - 72;
+        menu.classList.toggle('is-drop-up', spaceBelow < popoverHeight + 8 && spaceAbove > spaceBelow);
+    }
+
+    document.querySelectorAll('details.sd-action-menu').forEach(menu => {
+        menu.addEventListener('toggle', function () {
+            if (menu.open) {
+                document.querySelectorAll('details.sd-action-menu[open]').forEach(other => {
+                    if (other !== menu) other.open = false;
+                });
+            }
+            positionActionMenu(menu);
+        });
+    });
+
+    window.addEventListener('resize', function () {
+        document.querySelectorAll('details.sd-action-menu[open]').forEach(positionActionMenu);
+    }, { passive: true });
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('details.sd-action-menu')) {
+            document.querySelectorAll('details.sd-action-menu[open]').forEach(menu => { menu.open = false; });
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('details.sd-action-menu[open]').forEach(menu => {
+                menu.open = false;
+                menu.querySelector('summary')?.focus({ preventScroll: true });
+            });
+        }
+    });
 
     // Client-side instant filter on search input keyup
     const searchInput = document.getElementById('notifSearchInput');

@@ -6,7 +6,7 @@
         background: #100d0b;
     }
 
-    body.scanner-page-layout :is(#sidebar, #sidebarOverlay, #topHeader, #mobileBottomNav) {
+    body.scanner-page-layout :is(#sidebar, #sidebarOverlay, #topHeader, #mobileBottomNav, #mobileMoreDrawer, #mobileMoreBackdrop, .premium-drawer, .premium-drawer-backdrop, .pwa-update-modal, .pwa-modal-backdrop) {
         display: none !important;
     }
 

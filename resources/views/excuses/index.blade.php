@@ -212,8 +212,24 @@
         }
     }
     buttons.forEach(button => button.addEventListener('click', () => showExcuseView(button.dataset.excuseView)));
-    const initialView = window.innerWidth >= 992 ? 'all' : @json($absentRecords->isNotEmpty() ? 'needs' : 'history');
-    showExcuseView(initialView);
+    const desktopMedia = window.matchMedia('(min-width: 992px)');
+    const fallbackMobileView = @json($absentRecords->isNotEmpty() ? 'needs' : 'history');
+    let activeView = desktopMedia.matches ? 'all' : fallbackMobileView;
+    const wrappedShow = (view) => {
+        activeView = view;
+        showExcuseView(view);
+    };
+    buttons.forEach(button => button.addEventListener('click', () => { activeView = button.dataset.excuseView; }));
+    const syncViewportView = (matchesDesktop) => {
+        if (!matchesDesktop && activeView === 'all') {
+            wrappedShow(fallbackMobileView);
+        }
+    };
+    if (typeof desktopMedia.addEventListener === 'function') {
+        desktopMedia.addEventListener('change', (e) => syncViewportView(e.matches));
+    }
+    window.addEventListener('resize', () => syncViewportView(desktopMedia.matches), { passive: true });
+    wrappedShow(activeView);
 })();
 </script>
 @endsection

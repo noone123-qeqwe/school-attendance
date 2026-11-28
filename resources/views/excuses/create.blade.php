@@ -23,10 +23,10 @@
                 <h2 style="font-size: 1.18rem; font-weight: 800; color: #FAF8F5; margin: 0 0 4px;">
                     {{ $attendance->subject->name ?? $attendance->subject_code }} ({{ $attendance->subject_code }})
                 </h2>
-                <div style="font-size: 0.84rem; color: #D6CCC6; font-weight: 500;">
-                    <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>{{ \Carbon\Carbon::parse($attendance->date)->format('F j, Y (l)') }}
-                    <span class="mx-2 opacity-50" aria-hidden="true">|</span>
-                    <span style="color: #F87171; font-weight: 700;">Unexcused Absent</span>
+                <div class="d-flex align-items-center flex-wrap gap-2" style="font-size: 0.84rem; color: #D6CCC6; font-weight: 500;">
+                    <span><i class="bi bi-calendar-event me-1" aria-hidden="true"></i>{{ \Carbon\Carbon::parse($attendance->date)->format('F j, Y (l)') }}</span>
+                    <span class="opacity-50 d-none d-sm-inline" aria-hidden="true">|</span>
+                    <span style="color: #F87171; font-weight: 700; white-space: nowrap;">Unexcused Absent</span>
                 </div>
             </div>
             <x-badge variant="danger" size="sm" :dot="true">Awaiting Excuse</x-badge>
@@ -38,34 +38,65 @@
             <input type="hidden" name="date" value="{{ \Carbon\Carbon::parse($attendance->date)->format('Y-m-d') }}">
 
             <div class="sd-excuse-form-body">
-                {{-- STEP 1: CHOOSE SUBJECT(S) COVERED --}}
+                {{-- STEP 1: CHOOSE SUBJECT(S) COVERED (Progressive disclosure: current absence first, additional subjects on demand) --}}
+                @php
+                    $orderedSubjects = collect($subjects)->sortByDesc(function ($s) use ($attendance, $sameDayAttendances) {
+                        if ($s->code === $attendance->subject_code) return 2;
+                        if (isset($sameDayAttendances[$s->code])) return 1;
+                        return 0;
+                    })->values();
+                    $extraSubjectsCount = $orderedSubjects->filter(fn ($s) => $s->code !== $attendance->subject_code && !isset($sameDayAttendances[$s->code]))->count();
+                @endphp
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <div>
                             <label class="sd-form-label mb-1">
                                 <i class="bi bi-journal-check" style="color: #D4AF37;" aria-hidden="true"></i>
-                                Choose Subjects Covered By This Excuse <span class="text-danger">*</span>
+                                Subject(s) Covered By This Excuse <span class="text-danger">*</span>
                             </label>
-                            <span style="font-size: 0.8rem; color: #ACA099;">Select this subject or check additional classes you missed on {{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}</span>
+                            <span style="font-size: 0.8rem; color: #ACA099;">Your missed class is pre-selected. Expand below only if this excuse covers additional classes on {{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}.</span>
                         </div>
                         <div class="student-excuse-selection-actions d-flex align-items-center gap-2 flex-wrap">
                             <span id="subjectCountBadge" class="sub-code-badge" aria-live="polite" style="border-radius: 999px; padding: 4px 11px;">
                                 1 of {{ count($subjects) }} Selected
                             </span>
-                            <button type="button" class="quick-sub-btn" onclick="selectAllSubjects(true)">Select All</button>
-                            <button type="button" class="quick-sub-btn" onclick="selectOnlyCurrentSubject()">Only This Subject</button>
+                            @if($extraSubjectsCount > 0)
+                                <button type="button" class="quick-sub-btn" onclick="selectAllSubjects(true)">Select All</button>
+                                <button type="button" class="quick-sub-btn" onclick="selectOnlyCurrentSubject()">Only This Subject</button>
+                            @endif
                         </div>
                     </div>
 
+                    @if($extraSubjectsCount > 0)
+                        <div id="specificSubjectFilterWrap" class="mb-3 position-relative" hidden>
+                            <i class="bi bi-search" aria-hidden="true" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#ACA099; pointer-events:none;"></i>
+                            <input type="search" id="specificSubjectFilterInput" class="sd-form-input" style="padding-left:38px;" placeholder="Filter {{ count($subjects) }} subjects by code or name..." aria-label="Filter subjects">
+                        </div>
+                    @endif
+
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;" id="subjectsGrid">
-                        @foreach($subjects as $subject)
+                        @foreach($orderedSubjects as $subject)
                             @php
                                 $isPrimary = ($subject->code === $attendance->subject_code);
                                 $hasOtherAbsence = isset($sameDayAttendances[$subject->code]);
+                                $isExtra = !$isPrimary && !$hasOtherAbsence;
                             @endphp
-                            @include('partials.student-excuse-subject', ['subject' => $subject, 'isPrimary' => $isPrimary, 'hasOtherAbsence' => $hasOtherAbsence])
+                            <div class="sd-subject-card-slot {{ $isExtra ? 'is-extra-subject' : '' }}" @if($isExtra) hidden @endif data-subject-search="{{ strtolower($subject->code . ' ' . $subject->name . ' ' . ($subject->instructor ?? '')) }}">
+                                @include('partials.student-excuse-subject', ['subject' => $subject, 'isPrimary' => $isPrimary, 'hasOtherAbsence' => $hasOtherAbsence])
+                            </div>
                         @endforeach
                     </div>
+
+                    @if($extraSubjectsCount > 0)
+                        <button type="button"
+                                id="toggleExtraSpecificSubjectsBtn"
+                                class="quick-sub-btn mt-3"
+                                aria-expanded="false"
+                                onclick="toggleExtraSpecificSubjects()">
+                            <i class="bi bi-chevron-down me-1" aria-hidden="true"></i>
+                            <span>Also cover other classes? (+{{ $extraSubjectsCount }} {{ \Illuminate\Support\Str::plural('subject', $extraSubjectsCount) }})</span>
+                        </button>
+                    @endif
 
                     <div id="subjectError" role="alert" style="display: none; color: #F87171; font-size: 0.8rem; margin-top: 10px; font-weight: 600;">
                         <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i> Please select at least one subject to submit your excuse letter.
@@ -159,8 +190,45 @@
 @push('scripts')
 <script @cspNonce>
 const primarySubjectCode = '{{ $attendance->subject_code }}';
+let specificSubjectsExpanded = false;
+
+function toggleExtraSpecificSubjects(forceOpen) {
+    const slots = document.querySelectorAll('.sd-subject-card-slot.is-extra-subject');
+    const btn = document.getElementById('toggleExtraSpecificSubjectsBtn');
+    const filterWrap = document.getElementById('specificSubjectFilterWrap');
+    specificSubjectsExpanded = typeof forceOpen === 'boolean' ? forceOpen : !specificSubjectsExpanded;
+    slots.forEach(slot => {
+        const cb = slot.querySelector('.subject-checkbox');
+        slot.hidden = !specificSubjectsExpanded && !(cb && cb.checked);
+    });
+    if (filterWrap) filterWrap.hidden = !specificSubjectsExpanded;
+    if (btn) {
+        btn.setAttribute('aria-expanded', specificSubjectsExpanded ? 'true' : 'false');
+        const extraTotal = slots.length;
+        btn.innerHTML = specificSubjectsExpanded
+            ? '<i class="bi bi-chevron-up me-1" aria-hidden="true"></i><span>Show fewer subjects</span>'
+            : `<i class="bi bi-chevron-down me-1" aria-hidden="true"></i><span>Also cover other classes? (+${extraTotal} ${extraTotal === 1 ? 'subject' : 'subjects'})</span>`;
+    }
+}
+
+const specificFilterInput = document.getElementById('specificSubjectFilterInput');
+if (specificFilterInput) {
+    specificFilterInput.addEventListener('input', function () {
+        const q = this.value.trim().toLowerCase();
+        document.querySelectorAll('.sd-subject-card-slot').forEach(slot => {
+            if (!q) {
+                const cb = slot.querySelector('.subject-checkbox');
+                slot.hidden = slot.classList.contains('is-extra-subject') && !specificSubjectsExpanded && !(cb && cb.checked);
+                return;
+            }
+            const haystack = slot.dataset.subjectSearch || slot.textContent.toLowerCase();
+            slot.hidden = !haystack.includes(q);
+        });
+    });
+}
 
 function selectAllSubjects(select) {
+    if (select) toggleExtraSpecificSubjects(true);
     document.querySelectorAll('.subject-checkbox').forEach(cb => { cb.checked = select; });
     updateSubjectSelectionState();
 }
