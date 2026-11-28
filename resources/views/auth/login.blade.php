@@ -19,7 +19,7 @@
 <!-- Background -->
 <div class="bg-scene" aria-hidden="true"></div>
 
-<header class="login-brand-bar">
+<header class="login-brand">
     <i class="bi bi-laptop" aria-hidden="true"></i>
     <span>{{ config('app.name') }}</span>
 </header>

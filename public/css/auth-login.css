@@ -108,31 +108,26 @@
             );
         }
 
-        .login-brand-bar {
-            position: relative;
+        .login-brand {
+            position: absolute;
             z-index: 1;
-            display: flex;
+            top: calc(var(--sat) + 12px);
+            left: max(var(--sal), 20px);
+            display: inline-flex;
             align-items: center;
             gap: 9px;
-            min-height: 44px;
-            width: 100%;
-            padding: calc(var(--sat) + 10px) max(var(--sar), 20px) 10px max(var(--sal), 20px);
-            border-bottom: 1px solid rgba(255, 255, 255, .16);
-            background: linear-gradient(90deg, rgba(10, 49, 82, .7), rgba(16, 24, 31, .5));
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 3px 12px rgba(0, 0, 0, .15);
             color: #fff;
             font: 800 .75rem/1.2 'Inter', sans-serif;
             letter-spacing: 1.1px;
             text-transform: uppercase;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, .55);
             white-space: nowrap;
         }
-        .login-brand-bar i { flex: none; font-size: 1.1rem; }
+        .login-brand i { flex: none; font-size: 1.1rem; }
         @media (max-width: 480px) {
-            .login-brand-bar {
+            .login-brand {
+                left: max(var(--sal), 12px);
                 gap: 7px;
-                padding-inline: max(var(--sal), 12px) max(var(--sar), 12px);
                 font-size: .67rem;
                 letter-spacing: .45px;
             }
@@ -392,7 +387,7 @@
             .login-footer-links { gap: 16px; }
         }
         @media (max-height: 620px) {
-            .auth-scene { min-height: var(--app-height, 100dvh); padding-block: calc(10px + var(--sat)) calc(10px + var(--sab)); }
+            .auth-scene { padding-block: calc(44px + var(--sat)) calc(10px + var(--sab)); }
             .glass-card { padding-block: 24px 10px; }
             .glass-logo { width: 44px; margin-bottom: 18px; }
             .glass-title { font-size: 1.25rem; }
