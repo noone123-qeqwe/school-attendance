@@ -70,6 +70,10 @@
             font-family: 'Inter', sans-serif;
             -webkit-overflow-scrolling: touch;
         }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
 
         /* ── FULL-SCREEN BACKGROUND ── */
         .bg-scene {
@@ -108,7 +112,7 @@
             position: relative;
             display: grid;
             place-items: center;
-            min-height: var(--app-height, 100dvh);
+            flex: 1 0 auto;
             padding: calc(var(--sat) + 16px) max(var(--sar), 12px) calc(var(--sab) + 16px) max(var(--sal), 12px);
         }
         .glass-card {
@@ -307,7 +311,7 @@
             .pwa-install-banner { display: none !important; }
         }
         @media (max-height: 620px) {
-            .auth-scene { padding-block: calc(10px + var(--sat)) calc(10px + var(--sab)); }
+            .auth-scene { min-height: var(--app-height, 100dvh); padding-block: calc(10px + var(--sat)) calc(10px + var(--sab)); }
             .glass-card { padding-block: 24px 10px; }
             .glass-logo { width: 44px; margin-bottom: 18px; }
             .glass-title { font-size: 1.25rem; }
