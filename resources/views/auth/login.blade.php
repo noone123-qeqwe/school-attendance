@@ -24,7 +24,7 @@
         .fp-row { touch-action: manipulation; }
         .fp-row * { pointer-events: none; }
         @media (hover: hover) and (pointer: fine) {
-            .fp-row:hover { border-color: rgba(212, 175, 55, 0.55); }
+            .fp-row:hover { border-color: rgba(243, 178, 192, 0.55); }
         }
     </style>
     <link rel="stylesheet" href="{{ asset('css/biometric-flow.css') }}?v={{ filemtime(public_path('css/biometric-flow.css')) }}">
@@ -436,35 +436,36 @@ if (document.readyState === 'loading') {
         </div>
         
         {{-- Version Badge - Visible on Mobile (when bottom bar is hidden) --}}
-        <div class="d-block d-md-none text-center anim-fade-up anim-d7" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
-            <span style="font-size: 0.7rem; color: rgba(207,164,111,0.5); font-weight: 600; letter-spacing: 0.5px;" id="loginAppVersionMobile" data-app-version-tag>
+        <div class="d-block d-md-none text-center anim-fade-up anim-d7" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.14);">
+            <span style="font-size: 0.7rem; color: rgba(255,255,255,0.62); font-weight: 600; letter-spacing: 0.5px;" id="loginAppVersionMobile" data-app-version-tag>
                 {{ $appInstalledVersionTag ?? $appVersionTag }}
             </span>
         </div>
 
         {{-- Install App Button — Mobile only (hidden on desktop via d-md-none), always visible unless already installed --}}
-        <div id="smartAppDownloadRow" class="d-md-none" style="text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-            <div style="font-size: 0.72rem; color: rgba(207,164,111,0.75); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                <i class="bi bi-phone" style="font-size: 0.85rem; color: var(--gold, #CFA46F);"></i>
+        <div id="smartAppDownloadRow" class="d-md-none" style="text-align: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.14);">
+            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.78); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="bi bi-phone" style="font-size: 0.85rem; color: #f3b2c0;"></i>
                 <span>Install for Quick Access</span>
             </div>
             <div>
                 <button id="downloadAppBtn" type="button" class="pwa-install-trigger"
                     style="display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-                           background: linear-gradient(135deg, rgba(212,175,55,0.22), rgba(207,164,111,0.15));
-                           color: #CFA46F;
-                           border: 1.5px solid rgba(207,164,111,0.55); border-radius: 14px;
-                           padding: 13px 30px; font-size: 0.9rem; font-weight: 700;
-                           cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
-                           box-shadow: 0 4px 16px rgba(0,0,0,0.3); letter-spacing: 0.3px;
+                           background: rgba(16, 10, 13, 0.54);
+                           backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+                           color: #ffffff;
+                           border: 1px solid rgba(255, 255, 255, 0.26); border-radius: 13px;
+                           padding: 12px 28px; font-size: 0.88rem; font-weight: 700;
+                           cursor: pointer; transition: background-color 0.2s ease, border-color 0.2s ease;
+                           box-shadow: 0 6px 18px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.14); letter-spacing: 0.3px;
                            -webkit-tap-highlight-color: transparent;">
-                    <i class="bi bi-arrow-bar-down" style="font-size: 1.1rem;"></i>
+                    <i class="bi bi-arrow-bar-down" style="font-size: 1.05rem; color: #f3b2c0;"></i>
                     <span id="downloadAppBtnText">Install App</span>
                 </button>
             </div>
             <div style="margin-top: 8px;">
                 <a href="{{ \Illuminate\Support\Facades\Route::has('pwa.download.apk') ? route('pwa.download.apk') : url('/download/apk') }}" download="SmartAttendance.apk"
-                   style="font-size: 0.76rem; color: rgba(207,164,111,0.65); text-decoration: underline; font-weight: 500; transition: color 0.2s;">
+                   style="font-size: 0.76rem; color: #f3b2c0; text-decoration: underline; font-weight: 500; transition: color 0.2s;">
                     <i class="bi bi-download me-1"></i>Or download direct Android APK (.apk)
                 </a>
             </div>

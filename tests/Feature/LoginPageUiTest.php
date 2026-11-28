@@ -68,5 +68,11 @@ class LoginPageUiTest extends TestCase
         $this->assertStringContainsString('.bio-method-icon-box--fingerprint', $css);
         $this->assertStringContainsString('.bio-method-icon-box--face', $css);
         $this->assertStringContainsString('.bio-method-icon-box--password', $css);
+
+        // Frosted glassmorphism surface & specular rim on both mobile and desktop, with balanced braces.
+        $this->assertStringContainsString('backdrop-filter: blur(22px) saturate(165%);', $css);
+        $this->assertStringContainsString('border: 1px solid rgba(255, 255, 255, 0.28);', $css);
+        $this->assertStringContainsString('.glass-card::before', $css);
+        $this->assertSame(substr_count($css, '{'), substr_count($css, '}'), 'auth-login.css must keep balanced braces.');
     }
 }
