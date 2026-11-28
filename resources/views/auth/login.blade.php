@@ -19,6 +19,11 @@
 <!-- Background -->
 <div class="bg-scene" aria-hidden="true"></div>
 
+<header class="login-brand-bar">
+    <i class="bi bi-laptop" aria-hidden="true"></i>
+    <span>{{ config('app.name') }}</span>
+</header>
+
 <!-- Footer Info Modals -->
 <div id="footerModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;backdrop-filter:blur(6px);opacity:0;transition:opacity 0.25s;">
     <div id="footerModalContent" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.95);background:linear-gradient(145deg,#1a1218 0%,#0d0a0f 100%);border:1px solid rgba(207,164,111,0.25);border-radius:20px;padding:32px;max-width:520px;width:92%;max-height:80vh;overflow-y:auto;color:#f3e7cd;box-shadow:0 25px 60px rgba(0,0,0,0.5);transition:transform 0.25s;">
