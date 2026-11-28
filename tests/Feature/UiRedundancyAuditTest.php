@@ -339,6 +339,7 @@ class UiRedundancyAuditTest extends TestCase
         $this->assertStringContainsString('id="scalTabRecords"', $calHtml);
         $this->assertStringContainsString('id="scalWorkspaceCalendar"', $calHtml);
         $this->assertStringContainsString('id="scalWorkspaceRecords"', $calHtml);
+        $this->assertStringNotContainsString('id="scalTodayBtn"', $calHtml);
         $this->assertStringContainsString('sd-disclosure-card scal-legend-card', $calHtml);
         $this->assertStringContainsString('sd-filter-disclosure', $calHtml);
 

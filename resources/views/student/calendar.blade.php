@@ -43,9 +43,6 @@
             </button>
             <div class="d-flex align-items-center gap-2 flex-wrap justify-content-center">
                 <span class="scal-nav-title" id="scalMonthLabel" aria-live="polite">{{ \Carbon\Carbon::create($year, $month, 1)->format('F Y') }}</span>
-                <button type="button" class="scal-nav-today-btn d-inline-flex" id="scalTodayBtn" onclick="scalJumpToday()" title="Jump to current month">
-                    <i class="bi bi-calendar2-check" aria-hidden="true"></i> Today
-                </button>
             </div>
             <button class="scal-nav-btn" onclick="scalNextMonth()" title="Next month" aria-label="Next month">
                 <i class="bi bi-chevron-right"></i>
@@ -289,19 +286,6 @@ function scalNextMonth() {
     scalLoadAndRender();
     window.StudentMotion?.animateCalendarShift(calendarGrid, 'next');
 }
-function scalJumpToday() {
-    const now = new Date();
-    scalYear = now.getFullYear();
-    scalMonth = now.getMonth() + 1;
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const todayStr = `${yyyy}-${mm}-${dd}`;
-    const dsm = document.getElementById('daySummaryModal');
-    if (dsm) dsm.dataset.date = todayStr;
-    scalLoadAndRender();
-}
-
 function scalHighlightTile(dateStr) {
     if (!calendarGrid) return;
     calendarGrid.querySelectorAll('button[data-date]').forEach(tile => {
