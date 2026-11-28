@@ -9,38 +9,38 @@
    ========================================================================== */
 
 .biometric-flow-page {
-    --bio-canvas: #141010;
-    --bio-surface: #1e1515;
-    --bio-surface-2: #261b1b;
-    --bio-surface-3: #2f2222;
-    --bio-seal-mid: #7a1a1a;
-    --bio-seal-bright: #982626;
-    --bio-rose: #d4af37;
-    --bio-silver: #FAF8F5;
-    --bio-silver-bright: #ffffff;
-    --bio-cta-grad: #FAF8F5;
-    --bio-cta-ink: #7A1A1A;
-    --bio-border: rgba(255, 255, 255, 0.14);
-    --bio-border-strong: rgba(255, 255, 255, 0.3);
-    --bio-emerald: #4ade80;
-    --bio-amber: #fbbf24;
-    --bio-danger: #f87171;
-    --bio-sky: #7dd3fc;
+    --bio-canvas: var(--sf-bg, #0C0709);
+    --bio-surface: var(--sf-surface, #160D10);
+    --bio-surface-2: var(--sf-surface-2, #1F1317);
+    --bio-surface-3: var(--sf-surface-3, #2A191F);
+    --bio-seal-mid: var(--sf-brand, #7F1D2E);
+    --bio-seal-bright: var(--sf-brand-strong, #9F1239);
+    --bio-rose: var(--sf-rose, #E892A2);
+    --bio-silver: var(--sf-text, #F8F4F5);
+    --bio-silver-bright: var(--sf-text, #F8F4F5);
+    --bio-cta-grad: var(--sf-cta-bg, #F8F5F6);
+    --bio-cta-ink: var(--sf-cta-text, #140A0D);
+    --bio-border: var(--sf-border, rgba(255, 215, 224, 0.085));
+    --bio-border-strong: var(--sf-border-strong, rgba(255, 215, 224, 0.15));
+    --bio-emerald: var(--sf-emerald, #34D399);
+    --bio-amber: var(--sf-amber, #F59E0B);
+    --bio-danger: var(--sf-danger, #FB7185);
+    --bio-sky: var(--sf-sky, #38BDF8);
 
     /* Legacy token aliases mapped cleanly */
-    --gold-primary: #FAF8F5;
-    --gold-border: rgba(255, 255, 255, 0.14);
-    --gold-subtle: rgba(122, 26, 26, 0.24);
-    --surface-card: #1E1515;
-    --text-primary: #FAF8F5;
-    --text-secondary: #D8CEC8;
-    --text-muted: #ACA099;
+    --gold-primary: var(--sf-rose, #E892A2);
+    --gold-border: var(--sf-border, rgba(255, 215, 224, 0.085));
+    --gold-subtle: var(--sf-brand-soft, rgba(127, 29, 46, 0.24));
+    --surface-card: var(--sf-surface, #160D10);
+    --text-primary: var(--sf-text, #F8F4F5);
+    --text-secondary: var(--sf-text-secondary, #A6979B);
+    --text-muted: var(--sf-text-muted, #75676B);
 
     margin: 0;
     min-height: 100dvh;
-    background: #141010;
-    color: var(--text-primary);
-    font: 1rem/1.55 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--sf-bg, #0C0709);
+    color: var(--sf-text, #F8F4F5);
+    font: 1rem/1.55 var(--sf-font-sans, 'Inter', system-ui, sans-serif);
     -webkit-font-smoothing: antialiased;
 }
 
@@ -482,25 +482,28 @@
 
 /* ── Face Registration Studio Layout & Optical HUD ────────────────────────── */
 .biometric-flow #cameraFacePoseInstruction {
-    margin: 0 0 14px;
-    padding: 12px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 13px;
-    background: rgba(28, 18, 18, 0.62);
+    margin: 0 0 12px;
+    padding: 0 2px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     font-weight: 600;
+    line-height: 1.45;
 }
 
 .biometric-flow #cameraFaceStatus {
-    margin: 12px 0;
-    padding: 10px 13px;
-    border: 1px solid rgba(212, 175, 55, 0.3);
-    border-radius: 10px;
-    background: rgba(122, 26, 26, 0.16);
+    margin: 0 0 14px;
+    padding: 2px 0 2px 12px;
+    border: 0;
+    border-left: 2px solid rgba(212, 175, 55, 0.48);
+    border-radius: 0;
+    background: transparent;
     color: var(--text-secondary);
-    font-size: 0.87rem;
-    min-height: 1.5em;
+    font-size: 0.85rem;
+    line-height: 1.48;
+    min-height: 1.4em;
     overflow-wrap: anywhere;
 }
 

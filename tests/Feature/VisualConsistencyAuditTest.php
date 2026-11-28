@@ -32,17 +32,18 @@ class VisualConsistencyAuditTest extends TestCase
         $student = $this->createUser('student');
 
         $homeHtml = $this->actingAs($student)->get(route('home'))->assertOk()->getContent();
-        $this->assertStringContainsString('header-account-trigger', $homeHtml);
-        $this->assertStringContainsString('header-profile-img', $homeHtml);
-        $this->assertStringContainsString('sd-avatar-ring', $homeHtml);
+        $this->assertStringContainsString('id="sfMobileAvatarBtn"', $homeHtml);
+        $this->assertStringContainsString('class="sf-avatar"', $homeHtml);
+        $this->assertStringContainsString('class="sf-brand-logo"', $homeHtml);
+        $this->assertStringNotContainsString('header-avatar-pill', $homeHtml);
 
         $settingsHtml = $this->actingAs($student)->get(route('settings'))->assertOk()->getContent();
-        $this->assertStringContainsString('header-account-trigger', $settingsHtml);
-        $this->assertStringContainsString('sidebar-logo', $settingsHtml);
+        $this->assertStringContainsString('id="sfMobileAvatarBtn"', $settingsHtml);
+        $this->assertStringContainsString('class="sf-brand-logo"', $settingsHtml);
 
         $mobileHomeHtml = $this->actingAs($student)->followingRedirects()->get(route('mobile.home'))->assertOk()->getContent();
-        $this->assertStringContainsString('header-account-trigger', $mobileHomeHtml);
-        $this->assertStringContainsString('header-profile-img', $mobileHomeHtml);
+        $this->assertStringContainsString('id="sfMobileAvatarBtn"', $mobileHomeHtml);
+        $this->assertStringContainsString('class="sf-avatar"', $mobileHomeHtml);
         $this->assertStringNotContainsString('header-avatar-pill', $mobileHomeHtml);
     }
 
@@ -110,9 +111,14 @@ class VisualConsistencyAuditTest extends TestCase
         $this->assertMatchesRegularExpression('/body\.student-portal\s+\.sidebar\s+\.sidebar-logo\s*\{[^}]*border:\s*none;/s', $desktopUxCss);
         $this->assertMatchesRegularExpression('/\.glass-logo\s*\{[^}]*border:\s*none;[^}]*box-shadow:\s*none;/s', $loginCss);
 
-        // Dashboard hero avatar & settings icon containers drop nested frame/bevel boxes.
-        $this->assertMatchesRegularExpression('/\.sd-avatar-ring\s*\{[^}]*padding:\s*0;[^}]*border-radius:\s*50%;/s', $dashboardCss);
-        $this->assertMatchesRegularExpression('/\.sd-avatar-ring\s+img\s*\{[^}]*border-radius:\s*50%;/s', $dashboardCss);
+        // Student frontend stylesheet preserves borderless crest, circular avatars, and clean mobile trigger.
+        $studentFrontendCss = file_get_contents(public_path('css/student-frontend.css'));
+        $this->assertIsString($studentFrontendCss);
+        $this->assertStringContainsString('.sf-brand-logo', $studentFrontendCss);
+        $this->assertStringContainsString('.sf-avatar', $studentFrontendCss);
+        $this->assertStringContainsString('.sf-mobile-avatar-btn', $studentFrontendCss);
+
+        // Non-student settings icon containers drop nested frame/bevel boxes.
         $this->assertMatchesRegularExpression('/\.sc-icon\s*\{[^}]*border:\s*none;/s', $settingsCss);
         $this->assertMatchesRegularExpression('/\.sec-card-icon\s*\{[^}]*border:\s*none\s*!important;/s', $settingsCss);
         $this->assertMatchesRegularExpression('/\.student-biometric-choices\s*>\s*a\s*>\s*i:first-child\s*\{[^}]*border:\s*none;/s', $desktopSettingsCss);

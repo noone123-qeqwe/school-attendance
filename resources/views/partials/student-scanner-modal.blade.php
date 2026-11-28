@@ -1,267 +1,234 @@
-<!-- Student QR & Code Scanner Modal Partial -->
+<!-- Student QR & 6-Digit PIN Attendance Scanner -->
 @php($scannerPage = request()->routeIs('mobile.scan'))
-<div id="studentScannerModal" class="scanner-modal-backdrop {{ $scannerPage ? 'scanner-page-screen' : '' }}" style="display: none;" @if($scannerPage) role="region" aria-labelledby="scannerPageTitle" @else role="dialog" aria-modal="true" aria-label="Student Attendance Scanner" @endif>
-    <div class="scanner-modal-card">
-        
-        <!-- Mobile Bottom Sheet Drag Indicator -->
-        <div class="scanner-drag-handle" aria-hidden="true"></div>
+<div id="studentScannerModal"
+     class="sf-scanner-screen {{ $scannerPage ? 'scanner-page-screen' : '' }}"
+     style="display:none;{{ $scannerPage ? '' : 'position:fixed;inset:0;z-index:1300;' }}"
+     @if($scannerPage) role="region" aria-labelledby="scannerPageTitle" @else role="dialog" aria-modal="true" aria-label="Student Attendance Scanner" @endif>
 
-        <!-- Header & Top Floating Bar -->
-        <div class="scanner-top-bar">
-            @if($scannerPage)
-                <h1 id="scannerPageTitle" class="scanner-page-title">Attendance check-in</h1>
-            @endif
-            <!-- Mobile: Mode Switcher Tabs (QR vs Code) -->
-            <div class="scanner-mode-switcher" id="mobileModeSwitcher" role="group" aria-label="Check-in method">
-                <button type="button" id="tabScanMode" class="scanner-mode-tab active" data-action="switch-scan" aria-pressed="true" aria-controls="scannerActiveView">
-                    <i class="bi bi-qr-code-scan" aria-hidden="true"></i> Scan QR
-                </button>
-                <button type="button" id="tabCodeMode" class="scanner-mode-tab" data-action="switch-code" aria-pressed="false" aria-controls="scannerCodeView">
-                    <i class="bi bi-key-fill" aria-hidden="true"></i> Enter code
-                </button>
-            </div>
+    {{-- Top Floating Bar --}}
+    <div class="sf-scanner-topbar">
+        <span class="sf-live-scanner-pill" id="sfScannerTopPill">
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--sf-rose-bright);display:inline-block;"></span>
+            <span id="sfScannerPillLabel">LIVE QR SCANNER</span>
+        </span>
 
-            <!-- Desktop: Dedicated Header (Code Only) -->
-            <div id="desktopScannerHeader" class="desktop-scanner-header" style="display: none; align-items: center; gap: 10px;">
-                <div style="width: 36px; height: 36px; border-radius: 10px; background: #261B1B; color: #D4AF37; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; border: 1px solid rgba(212, 175, 55,0.28);">
-                    <i class="bi bi-key-fill" aria-hidden="true"></i>
-                </div>
-                <div>
-                    <div style="font-size: 1.02rem; font-weight: 700; color: #FAF8F5; letter-spacing: -0.02em; line-height: 1.2;">Enter Attendance Code</div>
-                    <div style="font-size: 0.72rem; color: #A49890;">Manual attendance check-in</div>
-                </div>
-            </div>
-            
-            <div class="scanner-top-actions">
-                <button type="button" id="torchCameraBtn" data-action="toggle-torch" class="scanner-icon-btn" title="Flashlight" aria-label="Flashlight" aria-pressed="false" style="display: none;">
-                    <i class="bi bi-lightning-charge" aria-hidden="true"></i>
-                </button>
-                <button type="button" id="flipCameraBtn" data-action="flip-camera" class="scanner-icon-btn" title="Flip Camera" aria-label="Flip Camera" style="display: none !important;">
-                    <i class="bi bi-camera-reverse"></i>
-                </button>
-                <button type="button" data-action="close-scanner" class="scanner-icon-btn close-btn" title="{{ $scannerPage ? 'Back to dashboard' : 'Close scanner' }}" aria-label="{{ $scannerPage ? 'Back to dashboard' : 'Close scanner' }}">
-                    <i class="bi bi-x-lg" aria-hidden="true"></i>
-                </button>
-            </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <button type="button" id="torchCameraBtn" data-action="toggle-torch" class="sf-icon-btn" title="Flashlight" aria-label="Flashlight" aria-pressed="false" style="display:none;border-radius:50%;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </button>
+            <button type="button" id="flipCameraBtn" data-action="flip-camera" class="sf-icon-btn" title="Flip Camera" aria-label="Flip Camera" style="display:none !important;border-radius:50%;">
+                <i class="bi bi-camera-reverse" aria-hidden="true"></i>
+            </button>
+            <button type="button" data-action="close-scanner" class="sf-icon-btn" style="border-radius:50%;" title="{{ $scannerPage ? 'Back to dashboard' : 'Close scanner' }}" aria-label="{{ $scannerPage ? 'Back to dashboard' : 'Close scanner' }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
         </div>
-
-        <!-- Mode 1: Camera Scanner View -->
-        <div id="scannerActiveView" class="scanner-active-content">
-            <div class="scanner-hero-heading {{ $scannerPage ? 'visually-hidden' : '' }}">
-                <h2 class="scanner-title">Scan Attendance QR</h2>
-            </div>
-
-            <!-- Viewfinder Area with Glowing Corner Reticles -->
-            <div id="scannerVideoContainer" class="scanner-viewfinder-wrapper">
-                <div id="reader" class="scanner-reader-feed"></div>
-                
-                <!-- 4 Subtle Corner Reticle Accents (shown when camera active) -->
-                <div class="reticle-corner top-left"></div>
-                <div class="reticle-corner top-right"></div>
-                <div class="reticle-corner bottom-left"></div>
-                <div class="reticle-corner bottom-right"></div>
-
-                <!-- Laser scanning beam -->
-                <div id="scannerLaser" class="scanner-laser-line" style="display: none;"></div>
-
-                <!-- Camera Loading Overlay -->
-                <div id="scannerLoadingOverlay" class="scanner-loading-overlay" style="display: flex;" role="status">
-                    <div class="spinner-border text-warning" style="width: 2.4rem; height: 2.4rem; border-width: 2.5px;" aria-hidden="true"></div>
-                    <div class="loading-title">Starting camera…</div>
-                </div>
-
-                <!-- QR Detected / Processing Overlay -->
-                <div id="scannerProcessingOverlay" class="scanner-processing-overlay" style="display: none;" role="status">
-                    <div class="spinner-border text-warning mb-2" style="width: 2.8rem; height: 2.8rem; border-width: 3px;" aria-hidden="true"></div>
-                    <div class="processing-title">Verifying attendance…</div>
-                    <div class="processing-sub"></div>
-                </div>
-
-                <!-- Fallback Notice (Permission Blocked / Unsupported / Inactive) -->
-                <div id="scannerFallbackNotice" class="scanner-permission-empty-state" style="display: none;">
-                    <div class="permission-icon-bubble" id="fallbackIconWrap">
-                        <i class="bi bi-camera-fill"></i>
-                    </div>
-                    <h3 class="permission-headline" id="fallbackTitle">Camera Access Required</h3>
-                    <p id="scannerFallbackText" class="permission-description">Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.</p>
-                    <div class="permission-actions">
-                        <button type="button" class="permission-primary-btn" id="retryCameraBtn" data-action="allow-camera" onclick="if(typeof requestCameraAgain==='function'){requestCameraAgain()}">
-                            <i class="bi bi-camera me-1"></i> <span id="retryCameraBtnText">Allow Camera</span>
-                        </button>
-                        <button type="button" class="permission-secondary-link" data-action="switch-code" onclick="if(typeof switchScannerMode==='function'){switchScannerMode('code')}">
-                            Enter code instead
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Single Clean Guidance Instruction Below Scanner -->
-            <div id="scannerGuideBadge" class="scanner-instruction-container">
-                <span class="scanner-instruction-text">Place your teacher’s QR code inside the frame.</span>
-            </div>
-
-            <div class="scanner-camera-actions">
-                <div id="scannerGpsBadge" class="scanner-gps-badge" data-gps-state="searching" role="status" aria-live="polite">
-                    <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
-                    <span class="scanner-gps-text">Acquiring GPS location…</span>
-                </div>
-                <button type="button" class="scanner-alt-btn" data-action="paste-copied-code" id="cameraPasteBtn">
-                    <i class="bi bi-clipboard-check" aria-hidden="true"></i> Paste code
-                </button>
-            </div>
-        </div>
-
-        <!-- Mode 2: Direct Code / PIN Input View -->
-        <div id="scannerCodeView" class="scanner-active-content" style="display: none;">
-            <div class="code-entry-container">
-                <label class="scanner-code-label" for="directSessionCodeInput">Attendance code</label>
-                <input type="text" id="directSessionCodeInput" class="code-entry-input" inputmode="numeric" placeholder="000 000" maxlength="500" autocomplete="one-time-code" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-describedby="codeEntryHint">
-                <div id="codeEntryHint" class="code-entry-hint mt-2" aria-live="polite">
-                    <i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token
-                </div>
-                <div id="scannerCodeGpsBadge" class="scanner-gps-badge mt-2" data-gps-state="searching" role="status" aria-live="polite">
-                    <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
-                    <span class="scanner-gps-text">Acquiring GPS location…</span>
-                </div>
-            </div>
-
-            <div class="scanner-code-actions d-flex flex-column gap-2">
-                <button type="button" id="codeSubmitBtn" class="btn scanner-primary-action-btn w-100" data-action="submit-code">
-                    <i class="bi bi-check2-circle me-1"></i> Record Attendance
-                </button>
-                <button type="button" id="pasteClipboardBtn" class="btn scanner-paste-action-btn w-100" data-action="paste-copied-code">
-                    <i class="bi bi-clipboard-check me-1" aria-hidden="true"></i> Paste Copied Code
-                </button>
-                @unless($scannerPage)
-                <button type="button" id="switchToCameraBtn" class="btn scanner-secondary-action-btn w-100" data-action="switch-scan">
-                    <i class="bi bi-camera-fill me-1"></i> Switch to Camera Scan
-                </button>
-                @endunless
-            </div>
-        </div>
-
-        <!-- Result View State -->
-        <div id="scannerResultView" class="scanner-result-content" style="display: none;">
-            <div id="resultStatusIcon" class="result-status-icon-wrap"></div>
-            
-            <h2 id="resultTitle" class="result-headline"></h2>
-            <p id="resultSubtitle" class="result-caption"></p>
-
-            <!-- Result Details Box -->
-            <div id="resultDetailsBox" class="result-summary-card">
-                <div class="result-row">
-                    <span class="result-label">Status</span>
-                    <span id="resultBadge" class="badge"></span>
-                </div>
-                <div class="result-row">
-                    <span class="result-label">Subject</span>
-                    <span id="resultSubject" class="result-val highlight"></span>
-                </div>
-                <div class="result-row">
-                    <span class="result-label">Instructor</span>
-                    <span id="resultInstructor" class="result-val"></span>
-                </div>
-                <div class="result-row">
-                    <span class="result-label">Section</span>
-                    <span id="resultSection" class="result-val"></span>
-                </div>
-                <div class="result-row no-border">
-                    <span class="result-label">Recorded At</span>
-                    <span id="resultTimestamp" class="result-val text-gold"></span>
-                </div>
-            </div>
-
-            <!-- Auto Close Countdown Notice (active on successful recording) -->
-            <div id="resultAutoCloseNotice" class="result-autoclose-box" style="display: none;">
-                <div class="autoclose-text">
-                    <i class="bi bi-check2-circle text-success me-1"></i> Auto-closing and updating in <strong id="autoCloseCountdown">3</strong>s
-                </div>
-                <div class="autoclose-progress-bar">
-                    <div id="autoCloseProgressFill" class="autoclose-progress-fill"></div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="d-flex gap-2 w-100 mt-2">
-                <button type="button" id="resultDoneBtn" data-action="result-done" class="btn scanner-primary-action-btn flex-fill">
-                    <i class="bi bi-check-lg me-1"></i> Done (Back to Dashboard)
-                </button>
-                <button type="button" id="resultRetryBtn" data-action="result-retry" class="btn scanner-secondary-action-btn flex-fill" style="display: none;">
-                    <i class="bi bi-arrow-repeat me-1"></i> Try Again
-                </button>
-            </div>
-        </div>
-
     </div>
-</div>
 
-<!-- OUTSIDE RANGE ALERT POPUP MODAL -->
-<div id="outsideRangePopupModal" class="outside-range-popup-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="outsideRangeTitle">
-    <div class="outside-range-popup-card">
-        <!-- Close icon button -->
-        <button type="button" class="outside-range-close-btn" data-action="close-outside-popup" aria-label="Close dialog">
-            <i class="bi bi-x-lg"></i>
+    {{-- Mode Switcher (Compact Segmented Pill) --}}
+    <div class="sf-segmented" id="mobileModeSwitcher" role="group" aria-label="Check-in method" style="margin-top:14px;">
+        <button type="button" id="tabScanMode" class="sf-segmented-btn active" data-action="switch-scan" aria-pressed="true" aria-controls="scannerActiveView">
+            Scan QR
         </button>
+        <button type="button" id="tabCodeMode" class="sf-segmented-btn" data-action="switch-code" aria-pressed="false" aria-controls="scannerCodeView">
+            Enter PIN
+        </button>
+    </div>
 
-        <!-- Animated Warning Icon -->
-        <div class="outside-range-icon-pulse">
-            <div class="outside-range-icon-inner">
-                <i class="bi bi-geo-alt-fill"></i>
+    <div class="sf-scanner-center">
+        @if($scannerPage)
+            <h1 id="scannerPageTitle" class="sf-sr-only">Attendance check-in</h1>
+        @endif
+
+        {{-- Mode 1: Camera QR Scanner --}}
+        <div id="scannerActiveView" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+            <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:var(--sf-text);">Scan Classroom QR</h2>
+            <p class="sf-scanner-sub">Align the instructor's rotating QR code inside the frame</p>
+
+            <div id="scannerVideoContainer" class="sf-viewfinder">
+                <div id="reader"></div>
+                <div class="sf-vf-corner tl" aria-hidden="true"></div>
+                <div class="sf-vf-corner tr" aria-hidden="true"></div>
+                <div class="sf-vf-corner bl" aria-hidden="true"></div>
+                <div class="sf-vf-corner br" aria-hidden="true"></div>
+                <div id="scannerLaser" class="sf-vf-laser" style="display:none;" aria-hidden="true"></div>
+
+                <div id="scannerLoadingOverlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,5,7,0.84);z-index:6;color:var(--sf-text-soft);font-size:12.5px;" role="status">
+                    <div class="spinner-border spinner-border-sm" style="color:var(--sf-rose);width:26px;height:26px;" aria-hidden="true"></div>
+                    <span>Starting camera...</span>
+                </div>
+
+                <div id="scannerProcessingOverlay" style="position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(10,5,7,0.9);z-index:7;color:var(--sf-text);font-size:13px;font-weight:600;" role="status">
+                    <div class="spinner-border spinner-border-sm" style="color:var(--sf-emerald);width:28px;height:28px;" aria-hidden="true"></div>
+                    <span>Verifying attendance...</span>
+                    <div class="processing-sub" style="font-size:11.5px;color:var(--sf-text-muted);font-weight:500;"></div>
+                </div>
+
+                <div id="scannerFallbackNotice" style="position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:22px;background:var(--sf-surface);z-index:8;text-align:center;">
+                    <div id="fallbackIconWrap" style="font-size:26px;color:var(--sf-rose);margin-bottom:8px;"></div>
+                    <h3 id="fallbackTitle" style="margin:0 0 6px;font-size:15px;font-weight:700;color:var(--sf-text);">Camera Access Required</h3>
+                    <p id="scannerFallbackText" style="margin:0 0 14px;font-size:12px;color:var(--sf-text-secondary);line-height:1.45;">Camera access is required to scan the attendance QR code.</p>
+                    <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+                        <button type="button" class="sf-btn sf-btn-primary sf-btn-block" id="retryCameraBtn" data-action="allow-camera">
+                            <span id="retryCameraBtnText">Allow Camera</span>
+                        </button>
+                        <button type="button" class="sf-btn sf-btn-secondary sf-btn-block" data-action="switch-code">
+                            Enter 6-Digit PIN Instead
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="scannerGpsBadge" class="sf-pill" data-gps-state="searching" role="status" aria-live="polite" style="margin-top:16px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span class="scanner-gps-text">Acquiring GPS location...</span>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;width:100%;max-width:310px;margin-top:18px;">
+                <button type="button" class="sf-btn sf-btn-primary sf-btn-lg sf-btn-block" data-action="switch-code">
+                    Enter 6-Digit PIN Instead
+                </button>
+                <button type="button" class="sf-btn sf-btn-secondary sf-btn-block" data-action="paste-copied-code" id="cameraPasteBtn">
+                    Paste Copied Code
+                </button>
             </div>
         </div>
 
-        <!-- Headline & Subtitle -->
-        <div class="outside-range-badge">
-            <i class="bi bi-shield-exclamation me-1"></i> GEOFENCE BOUNDARY EXCEEDED
-        </div>
-        <h3 id="outsideRangeTitle" class="outside-range-headline">Outside Classroom Range</h3>
-        <p id="outsideRangeMessage" class="outside-range-desc">
-            You are too far from the classroom to record attendance. You must be physically inside the room during class.
-        </p>
+        {{-- Mode 2: 6-Digit Instructor PIN View --}}
+        <div id="scannerCodeView" style="display:none;width:100%;">
+            <div class="sf-card" style="padding:22px 20px;text-align:left;">
+                <h2 style="margin:0 0 3px;font-size:17px;font-weight:700;color:var(--sf-text);">Enter Instructor PIN</h2>
+                <p style="margin:0 0 14px;font-size:12px;color:var(--sf-text-muted);">Type the 6-digit session code shown by your instructor</p>
 
-        <!-- Range Metrics Display -->
-        <div class="outside-range-metrics-box">
-            <div class="outside-range-metric-col detected">
-                <div class="metric-label"><i class="bi bi-person-walking me-1"></i> Your Distance</div>
-                <div class="metric-val" id="outsideRangeDetectedDist">--m</div>
-                <div class="metric-sub text-danger">Outside Boundary</div>
+                <label class="sf-label" for="sfPinBox0">6-Digit Session PIN</label>
+                <div class="sf-otp-row" role="group" aria-label="6-digit attendance PIN">
+                    @for($p = 0; $p < 6; $p++)
+                        <input type="text"
+                               id="sfPinBox{{ $p }}"
+                               class="sf-otp-box"
+                               maxlength="1"
+                               inputmode="numeric"
+                               autocomplete="{{ $p === 0 ? 'one-time-code' : 'off' }}"
+                               aria-label="Digit {{ $p + 1 }} of 6"
+                               data-pin-idx="{{ $p }}">
+                    @endfor
+                </div>
+
+                {{-- Backing input kept synchronized for full token paste & existing logic --}}
+                <input type="text" id="directSessionCodeInput" class="sf-sr-only" maxlength="500" autocomplete="off" aria-label="Attendance code">
+
+                <div id="codeEntryHint" style="font-size:11.5px;color:var(--sf-text-muted);margin-bottom:10px;" aria-live="polite">
+                    6-digit session PIN or copied QR token
+                </div>
+
+                <div id="scannerCodeGpsBadge" class="sf-pill" data-gps-state="searching" role="status" aria-live="polite" style="margin-bottom:16px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span class="scanner-gps-text">Acquiring GPS location...</span>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <button type="button" id="codeSubmitBtn" class="sf-btn sf-btn-primary sf-btn-lg sf-btn-block" data-action="submit-code">
+                        Verify &amp; Record Attendance
+                    </button>
+                    <button type="button" id="pasteClipboardBtn" class="sf-btn sf-btn-secondary sf-btn-block" data-action="paste-copied-code">
+                        Paste Copied Code
+                    </button>
+                    <button type="button" id="switchToCameraBtn" class="sf-btn sf-btn-ghost sf-btn-block" data-action="switch-scan">
+                        Switch to Camera Scan
+                    </button>
+                </div>
             </div>
-            <div class="outside-range-divider"></div>
-            <div class="outside-range-metric-col allowed">
-                <div class="metric-label"><i class="bi bi-broadcast me-1"></i> Allowed Radius</div>
-                <div class="metric-val" id="outsideRangeAllowedRadius">50m</div>
-                <div class="metric-sub text-warning">Maximum Limit</div>
+        </div>
+
+        {{-- Mode 3: Verification Result View --}}
+        <div id="scannerResultView" style="display:none;width:100%;">
+            <div class="sf-card" style="padding:24px 20px;text-align:center;">
+                <div id="resultStatusIcon" style="width:60px;height:60px;border-radius:16px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:28px;"></div>
+                <h2 id="resultTitle" style="margin:0 0 6px;font-size:18px;font-weight:700;color:var(--sf-text);"></h2>
+                <p id="resultSubtitle" style="margin:0 0 16px;font-size:12.5px;color:var(--sf-text-secondary);"></p>
+
+                <div id="resultDetailsBox" style="text-align:left;padding:12px 14px;border-radius:11px;background:var(--sf-surface-2);border:1px solid var(--sf-border);margin-bottom:14px;display:flex;flex-direction:column;gap:8px;font-size:12.5px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <span style="color:var(--sf-text-muted);">Status</span>
+                        <span id="resultBadge" class="sf-pill"></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                        <span style="color:var(--sf-text-muted);">Subject</span>
+                        <strong id="resultSubject" style="color:var(--sf-text);text-align:right;"></strong>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                        <span style="color:var(--sf-text-muted);">Instructor</span>
+                        <span id="resultInstructor" style="color:var(--sf-text-soft);text-align:right;"></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                        <span style="color:var(--sf-text-muted);">Section</span>
+                        <span id="resultSection" style="color:var(--sf-text-soft);"></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                        <span style="color:var(--sf-text-muted);">Recorded At</span>
+                        <span id="resultTimestamp" class="sf-mono" style="color:var(--sf-rose);"></span>
+                    </div>
+                </div>
+
+                <div id="resultAutoCloseNotice" style="display:none;margin-bottom:14px;">
+                    <div style="font-size:12px;color:var(--sf-emerald);margin-bottom:6px;">
+                        Redirecting in <strong id="autoCloseCountdown">3</strong>s...
+                    </div>
+                    <div class="sf-progress-track">
+                        <div id="autoCloseProgressFill" class="sf-progress-fill" style="width:100%;"></div>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:8px;">
+                    <button type="button" id="resultRetryBtn" data-action="result-retry" class="sf-btn sf-btn-secondary" style="flex:1;display:none;">Try Again</button>
+                    <button type="button" id="resultDoneBtn" data-action="result-done" class="sf-btn sf-btn-primary" style="flex:1;">Done</button>
+                </div>
             </div>
         </div>
+    </div>
 
-        <!-- Proximity Guidance -->
-        <div class="outside-range-tip-box">
-            <i class="bi bi-info-circle-fill text-warning me-2" style="font-size: 1.1rem; flex-shrink: 0;"></i>
-            <span>Please step into the classroom or move closer to the instructor's display and scan the QR code again.</span>
+    <div style="font-size:11px;color:var(--sf-text-muted);text-align:center;">
+        Protected by campus geofencing &amp; bound device verification
+    </div>
+</div>
+
+{{-- Outside Classroom Range Popup Modal --}}
+<div id="outsideRangePopupModal" class="sf-modal-backdrop" style="display:none;z-index:1400;" role="dialog" aria-modal="true" aria-labelledby="outsideRangeTitle">
+    <div class="sf-modal-card">
+        <div class="sf-modal-head">
+            <div>
+                <span class="sf-pill is-danger" style="margin-bottom:6px;">Geofence Boundary Exceeded</span>
+                <h3 id="outsideRangeTitle">Outside Classroom Range</h3>
+            </div>
+            <button type="button" class="sf-modal-close" data-action="close-outside-popup" aria-label="Close dialog">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
         </div>
-
-        <!-- Action Buttons -->
-        <div class="outside-range-actions">
-            <button type="button" class="outside-range-btn-primary" data-action="outside-retry-scan">
-                <i class="bi bi-qr-code-scan me-1"></i> Scan QR Code Again
-            </button>
-            <button type="button" class="outside-range-btn-secondary" data-action="outside-enter-code">
-                <i class="bi bi-key-fill me-1"></i> Enter 6-Digit Code
-            </button>
-            <button type="button" class="outside-range-btn-text" data-action="close-outside-popup">
-                Dismiss
-            </button>
+        <div class="sf-modal-body" style="display:flex;flex-direction:column;gap:12px;">
+            <p id="outsideRangeMessage" style="margin:0;font-size:12.5px;color:var(--sf-text-secondary);line-height:1.5;">
+                You are too far from the classroom to record attendance. You must be physically inside the room during class.
+            </p>
+            <div class="sf-drawer-info-grid">
+                <div class="sf-info-tile">
+                    <small>Your Distance</small>
+                    <strong id="outsideRangeDetectedDist" class="sf-mono" style="color:var(--sf-danger);">--m</strong>
+                    <span>Outside boundary</span>
+                </div>
+                <div class="sf-info-tile">
+                    <small>Allowed Radius</small>
+                    <strong id="outsideRangeAllowedRadius" class="sf-mono" style="color:var(--sf-amber-text);">50m</strong>
+                    <span>Maximum limit</span>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+                <button type="button" class="sf-btn sf-btn-primary sf-btn-block" data-action="outside-retry-scan">Scan QR Code Again</button>
+                <button type="button" class="sf-btn sf-btn-secondary sf-btn-block" data-action="outside-enter-code">Enter 6-Digit PIN</button>
+                <button type="button" class="sf-btn sf-btn-ghost sf-btn-block" data-action="close-outside-popup">Dismiss</button>
+            </div>
         </div>
     </div>
 </div>
 
-@once
-<link rel="stylesheet" href="{{ asset('css/student-scanner.css') }}?v={{ filemtime(public_path('css/student-scanner.css')) }}">
-@endonce
-
-@if($scannerPage)
-<link rel="stylesheet" href="{{ asset('css/student-scanner-page.css') }}?v={{ filemtime(public_path('css/student-scanner-page.css')) }}">
-@endif
 <script nonce="{{ csp_nonce() }}" src="{{ asset('js/html5-qrcode.min.js') }}?v={{ filemtime(public_path('js/html5-qrcode.min.js')) }}"></script>
 <script nonce="{{ csp_nonce() }}">
 let html5QrScanner = null;
@@ -276,16 +243,37 @@ let studentGeoSamples = [];
 let studentGeoPromise = null;
 let studentGeoRequestSerial = 0;
 let studentLocationWatchId = null;
-let currentScannerMode = 'scan'; // 'scan' | 'code'
+let currentScannerMode = 'scan';
 let autoCloseTimer = null;
 let autoCloseCountdownInterval = null;
 const studentScannerPageUrl = @json(route('mobile.scan'));
 const studentDashboardUrl = @json(route('home'));
 const isDedicatedStudentScannerPage = @json(request()->routeIs('mobile.scan'));
 
+function syncPinBoxesFromBacking() {
+    const backing = document.getElementById('directSessionCodeInput');
+    const clean = (backing?.value || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase().slice(0, 6);
+    for (let i = 0; i < 6; i++) {
+        const box = document.getElementById('sfPinBox' + i);
+        if (box) box.value = clean[i] || '';
+    }
+}
+
+function syncBackingFromPinBoxes() {
+    const backing = document.getElementById('directSessionCodeInput');
+    if (!backing) return;
+    let combined = '';
+    for (let i = 0; i < 6; i++) {
+        const box = document.getElementById('sfPinBox' + i);
+        combined += (box?.value || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+    }
+    backing.value = combined.length > 3 ? (combined.slice(0, 3) + ' ' + combined.slice(3, 6)) : combined;
+}
+
 function updateScannerGpsStatus(state, message) {
     document.querySelectorAll('#scannerGpsBadge, #scannerCodeGpsBadge').forEach(badge => {
         badge.setAttribute('data-gps-state', state);
+        badge.className = 'sf-pill ' + (state === 'ready' ? 'is-emerald' : (state === 'error' ? 'is-danger' : 'is-amber'));
         const textEl = badge.querySelector('.scanner-gps-text');
         if (textEl) textEl.textContent = message;
     });
@@ -297,7 +285,7 @@ function startContinuousLocationWatch() {
         return;
     }
     if (studentLocationWatchId !== null) return;
-    updateScannerGpsStatus('searching', 'Acquiring GPS location…');
+    updateScannerGpsStatus('searching', 'Acquiring GPS location...');
     studentLocationWatchId = navigator.geolocation.watchPosition(
         pos => {
             if (!pos || !pos.coords) return;
@@ -307,45 +295,29 @@ function startContinuousLocationWatch() {
 
             if (window.GpsSampler) {
                 const merged = window.GpsSampler.mergeContinuousSamples(studentGeoSamples, pos, {
-                    windowMs: 15000,
-                    maxAcceptableAccuracy: 50,
-                    maxBufferSize: 5,
+                    windowMs: 15000, maxAcceptableAccuracy: 50, maxBufferSize: 5,
                 });
                 studentGeoSamples = merged.buffer;
                 const candidate = merged.estimate;
                 if (candidate && window.GpsSampler.shouldReplaceContinuousFix(studentGeoCoords, candidate, {
-                    staleAfterMs: 15000,
-                    maxAcceptableAccuracy: 50,
+                    staleAfterMs: 15000, maxAcceptableAccuracy: 50,
                 })) {
-                    studentGeoCoords = {
-                        lat: candidate.lat,
-                        lng: candidate.lng,
-                        acc: candidate.acc,
-                        timestamp: candidate.timestamp,
-                    };
+                    studentGeoCoords = { lat: candidate.lat, lng: candidate.lng, acc: candidate.acc, timestamp: candidate.timestamp };
                     studentGeoTimestamp = candidate.timestamp;
                 }
             } else if (!studentGeoCoords || acc <= (studentGeoCoords.acc || Infinity) || (Date.now() - studentGeoTimestamp > 15000 && acc <= 50)) {
-                studentGeoCoords = {
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                    acc: acc,
-                    timestamp: fixTs,
-                };
+                studentGeoCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: acc, timestamp: fixTs };
                 studentGeoTimestamp = fixTs;
             }
 
             if (studentGeoCoords && studentGeoCoords.acc <= 50) {
                 updateScannerGpsStatus('ready', `Location ready (±${Math.round(studentGeoCoords.acc)}m)`);
             } else {
-                updateScannerGpsStatus('searching', `Refining GPS (±${Math.round(acc)}m)…`);
+                updateScannerGpsStatus('searching', `Refining GPS (±${Math.round(acc)}m)...`);
             }
         },
         err => {
-            console.warn('Continuous GPS watch warning:', err);
-            if (err && err.code === 1) {
-                updateScannerGpsStatus('error', 'Enable location permission to clock in');
-            }
+            if (err && err.code === 1) updateScannerGpsStatus('error', 'Enable location permission to check in');
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -358,57 +330,28 @@ function stopContinuousLocationWatch() {
     }
 }
 
-function normalizeCoordinates(lat, lng) {
-    if (window.GpsSampler) {
-        return window.GpsSampler.normalizeCoordinates(lat, lng);
-    }
-    const latitude = Number(lat);
-    const longitude = Number(lng);
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)
-        || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
-        return null;
-    }
-    return [latitude, longitude];
-}
-
 function refreshStudentLocation(force = false) {
     if (!navigator.geolocation || !window.GpsSampler) return Promise.resolve(null);
     const now = Date.now();
     if (!force && studentGeoCoords && (now - studentGeoTimestamp < 5000) && (studentGeoCoords.acc <= 50)) {
         return Promise.resolve(studentGeoCoords);
     }
-    if (studentGeoPromise && !force) {
-        return studentGeoPromise;
-    }
+    if (studentGeoPromise && !force) return studentGeoPromise;
 
     const requestSerial = ++studentGeoRequestSerial;
     studentGeoPromise = window.GpsSampler.capturePosition({
-        timeoutMs: 14000,
-        settleMs: 3200,
-        targetAccuracy: 15,
-        maxAcceptableAccuracy: 50,
-        minClusterSamples: 2,
-        allowSingleFallback: false,
-        requireClusterIfDisagreeing: true,
-        maxSamples: 5,
+        timeoutMs: 14000, settleMs: 3200, targetAccuracy: 15, maxAcceptableAccuracy: 50,
+        minClusterSamples: 2, allowSingleFallback: false, requireClusterIfDisagreeing: true, maxSamples: 5,
         onSample: ({ estimate, bestRawAccuracy, sampleCount }) => {
             if (requestSerial !== studentGeoRequestSerial) return;
-            if (estimate) {
-                updateScannerGpsStatus('searching', `Locking GPS (±${Math.round(estimate.acc)}m${sampleCount > 1 ? `, ${sampleCount} fixes` : ''})…`);
-            } else if (Number.isFinite(bestRawAccuracy)) {
-                updateScannerGpsStatus('searching', `Refining GPS (±${Math.round(bestRawAccuracy)}m)…`);
-            }
+            if (estimate) updateScannerGpsStatus('searching', `Locking GPS (±${Math.round(estimate.acc)}m${sampleCount > 1 ? `, ${sampleCount} fixes` : ''})...`);
+            else if (Number.isFinite(bestRawAccuracy)) updateScannerGpsStatus('searching', `Refining GPS (±${Math.round(bestRawAccuracy)}m)...`);
         },
     }).then((result) => {
         if (requestSerial !== studentGeoRequestSerial) return null;
         studentGeoPromise = null;
         if (result.ok && result.fix) {
-            const coords = {
-                lat: result.fix.lat,
-                lng: result.fix.lng,
-                acc: result.fix.acc,
-                timestamp: result.fix.timestamp,
-            };
+            const coords = { lat: result.fix.lat, lng: result.fix.lng, acc: result.fix.acc, timestamp: result.fix.timestamp };
             studentGeoCoords = coords;
             studentGeoTimestamp = coords.timestamp;
             studentGeoSamples = [coords];
@@ -423,27 +366,12 @@ function refreshStudentLocation(force = false) {
         updateScannerGpsStatus('error', accMsg);
         return null;
     });
-
     return studentGeoPromise;
 }
 
-// Initial capture quietly for faster validation
-if (navigator.geolocation) {
-    refreshStudentLocation(true);
-}
-
-function isDesktopDevice() {
-    if (isDedicatedStudentScannerPage) {
-        return false;
-    }
-    return window.innerWidth >= 768;
-}
+if (navigator.geolocation) refreshStudentLocation(true);
 
 function switchScannerMode(mode) {
-    const card = document.querySelector('.scanner-modal-card');
-    if (isDesktopDevice() && mode !== 'scan') {
-        mode = 'code';
-    }
     currentScannerMode = mode;
     const tabScan = document.getElementById('tabScanMode');
     const tabCode = document.getElementById('tabCodeMode');
@@ -451,103 +379,39 @@ function switchScannerMode(mode) {
     const codeView = document.getElementById('scannerCodeView');
     const resultView = document.getElementById('scannerResultView');
     const torchBtn = document.getElementById('torchCameraBtn');
-    const flipBtn = document.getElementById('flipCameraBtn');
-    const switchCamBtn = document.getElementById('switchToCameraBtn');
-    const codeInput = document.getElementById('directSessionCodeInput');
+    const pillLabel = document.getElementById('sfScannerPillLabel');
     const codeBtn = document.getElementById('codeSubmitBtn');
     const hint = document.getElementById('codeEntryHint');
 
     tabScan?.setAttribute('aria-pressed', String(mode === 'scan'));
     tabCode?.setAttribute('aria-pressed', String(mode === 'code'));
-
+    tabScan?.classList.toggle('active', mode === 'scan');
+    tabCode?.classList.toggle('active', mode === 'code');
     if (resultView) resultView.style.display = 'none';
 
     if (mode === 'scan') {
-        if (card) { card.classList.add('mode-scan'); card.classList.remove('mode-code'); }
-        if (tabScan) tabScan.classList.add('active');
-        if (tabCode) tabCode.classList.remove('active');
-        if (scanView) scanView.style.display = 'block';
+        if (pillLabel) pillLabel.textContent = 'LIVE QR SCANNER';
+        if (scanView) scanView.style.display = 'flex';
         if (codeView) codeView.style.display = 'none';
-        if (flipBtn) flipBtn.style.display = 'none'; // Keep extra empty button hidden
         startHtml5Scanner();
     } else {
-        if (card) { card.classList.remove('mode-scan'); card.classList.add('mode-code'); }
-        if (tabCode) tabCode.classList.add('active');
-        if (tabScan) tabScan.classList.remove('active');
+        if (pillLabel) pillLabel.textContent = 'SESSION PIN ENTRY';
         if (scanView) scanView.style.display = 'none';
         if (codeView) codeView.style.display = 'block';
         if (torchBtn) torchBtn.style.display = 'none';
-        if (flipBtn) flipBtn.style.display = 'none';
-        if (switchCamBtn) {
-            switchCamBtn.style.display = isDesktopDevice() ? 'none' : 'block';
-        }
-        if (codeBtn) {
-            codeBtn.disabled = false;
-            codeBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Record Attendance';
-        }
-        if (hint) {
-            hint.className = 'code-entry-hint mt-2';
-            hint.innerHTML = '<i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token';
-        }
-
-        // Stop camera while typing to save battery
+        if (codeBtn) { codeBtn.disabled = false; codeBtn.textContent = 'Verify & Record Attendance'; }
+        if (hint) { hint.style.color = 'var(--sf-text-muted)'; hint.textContent = '6-digit session PIN or copied QR token'; }
         safeStopScanner();
-
-        setTimeout(() => {
-            if (currentScannerMode === 'code') codeInput?.focus();
-        }, 80);
+        setTimeout(() => document.getElementById('sfPinBox0')?.focus(), 60);
     }
-
-    if (window.triggerHaptic) window.triggerHaptic('light');
-}
-
-function formatSessionCodeInput(el, e) {
-    if (!el) return;
-    const raw = el.value || '';
-    
-    // If pasted or contains more than 7 characters, or contains url/prefixes like code:, pin:, etc.
-    if (raw.length > 7 || /http|\/qr\/|code|pin|session/i.test(raw)) {
-        handleCopiedCodeInput(raw);
-        return;
-    }
-
-    let val = raw.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
-    if (val.length > 6) {
-        val = val.substring(0, 6);
-    }
-    if (val.length > 3) {
-        el.value = val.substring(0, 3) + ' ' + val.substring(3);
-    } else {
-        el.value = val;
-    }
-
-    el.classList.remove('is-invalid');
-    const hint = document.getElementById('codeEntryHint');
-    if (hint && !hint.classList.contains('text-gold') && !hint.classList.contains('text-success')) {
-        hint.className = 'code-entry-hint mt-2';
-        hint.innerHTML = '<i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token';
-    }
-
-    if (val.length === 6 && window.triggerHaptic) {
-        window.triggerHaptic('light');
-    }
-}
-
-function handleCodeKeydown(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        submitDirectCode();
-    }
+    window.triggerHaptic?.('light');
 }
 
 function handleCopiedCodeInput(rawText) {
     if (!rawText) return;
     const text = String(rawText).trim();
     if (!text) return;
-
-    if (currentScannerMode !== 'code') {
-        switchScannerMode('code');
-    }
+    if (currentScannerMode !== 'code') switchScannerMode('code');
 
     const input = document.getElementById('directSessionCodeInput');
     const hint = document.getElementById('codeEntryHint');
@@ -555,55 +419,23 @@ function handleCopiedCodeInput(rawText) {
 
     if (parsed.code && parsed.code.length === 6) {
         const c = parsed.code.toUpperCase();
-        if (input) {
-            input.value = c.substring(0, 3) + ' ' + c.substring(3);
-            input.classList.remove('is-invalid');
-            input.classList.add('is-valid');
-        }
-        if (hint) {
-            hint.className = 'code-entry-hint mt-2 text-success';
-            hint.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i> Copied code accepted: <strong>' + (input ? input.value : c) + '</strong>';
-        }
-        if (window.triggerHaptic) window.triggerHaptic('success');
-        
-        setTimeout(() => {
-            submitDirectCode();
-        }, 300);
+        if (input) input.value = c.substring(0, 3) + ' ' + c.substring(3);
+        syncPinBoxesFromBacking();
+        if (hint) { hint.style.color = 'var(--sf-emerald)'; hint.textContent = 'Copied code accepted: ' + c; }
+        window.triggerHaptic?.('success');
+        setTimeout(() => submitDirectCode(), 250);
         return;
     }
 
     if (parsed.token || (parsed.code && parsed.code.length >= 4)) {
-        const valToDisplay = parsed.code || (parsed.token.length > 20 ? parsed.token.substring(0, 16) + '…' : parsed.token);
-        if (input) {
-            input.value = valToDisplay;
-            input.classList.remove('is-invalid');
-            input.classList.add('is-valid');
-        }
-        if (hint) {
-            hint.className = 'code-entry-hint mt-2 text-success';
-            hint.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i> Copied attendance code detected!';
-        }
-        if (window.triggerHaptic) window.triggerHaptic('success');
-
-        setTimeout(() => {
-            onQrScanSuccess(parsed.token || parsed.code, 'code');
-        }, 300);
+        if (input) input.value = parsed.token || parsed.code;
+        if (hint) { hint.style.color = 'var(--sf-emerald)'; hint.textContent = 'Copied attendance token detected!'; }
+        window.triggerHaptic?.('success');
+        setTimeout(() => onQrScanSuccess(parsed.token || parsed.code, 'code'), 250);
         return;
     }
 
-    if (input) {
-        const clean = text.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
-        if (clean.length > 3) {
-            input.value = clean.substring(0, 3) + ' ' + clean.substring(3, 6);
-        } else {
-            input.value = clean.substring(0, 6);
-        }
-        input.focus();
-    }
-    if (hint) {
-        hint.className = 'code-entry-hint mt-2 text-warning';
-        hint.innerHTML = '<i class="bi bi-info-circle me-1"></i> Check that your copied code contains a valid 6-digit PIN.';
-    }
+    if (hint) { hint.style.color = 'var(--sf-amber-text)'; hint.textContent = 'Check that your copied text contains a valid 6-digit PIN.'; }
 }
 
 async function pasteCopiedCodeFromClipboard() {
@@ -612,88 +444,37 @@ async function pasteCopiedCodeFromClipboard() {
         if (navigator.clipboard && navigator.clipboard.readText) {
             text = await navigator.clipboard.readText();
         }
-    } catch (err) {
-        console.warn('[Scanner] Clipboard readText error or permission denied:', err);
-    }
-
+    } catch (err) {}
     if (text) {
         handleCopiedCodeInput(text);
     } else {
         switchScannerMode('code');
-        const input = document.getElementById('directSessionCodeInput');
-        if (input) {
-            input.focus();
-            input.select();
-        }
+        document.getElementById('sfPinBox0')?.focus();
         const hint = document.getElementById('codeEntryHint');
-        if (hint) {
-            hint.className = 'code-entry-hint mt-2 text-warning';
-            hint.innerHTML = '<i class="bi bi-clipboard me-1"></i> Please paste your copied code directly into the box (Ctrl+V or long-press).';
-        }
+        if (hint) { hint.style.color = 'var(--sf-amber-text)'; hint.textContent = 'Paste your copied code directly (Ctrl+V or long-press).'; }
     }
 }
 
 function submitDirectCode() {
     if (isScanInFlight) return;
-
     const input = document.getElementById('directSessionCodeInput');
     const rawVal = (input?.value || '').trim();
     const hint = document.getElementById('codeEntryHint');
-    
     const parsed = extractQrToken(rawVal);
     const codeVal = parsed.code || (parsed.token ? '' : rawVal.replace(/[^0-9A-Za-z]/g, ''));
     const tokenVal = parsed.token;
 
     if (!codeVal && !tokenVal) {
-        if (input) {
-            input.classList.add('is-invalid');
-            input.focus();
-        }
-        if (hint) {
-            hint.className = 'code-entry-hint mt-2 text-danger';
-            hint.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> Please enter or paste the 6-digit attendance code (e.g. 849 201).';
-        }
-        if (window.triggerHaptic) window.triggerHaptic('error');
+        if (hint) { hint.style.color = 'var(--sf-danger)'; hint.textContent = 'Please enter the 6-digit attendance PIN.'; }
+        document.getElementById('sfPinBox0')?.focus();
+        window.triggerHaptic?.('error');
         return;
     }
 
-    if (input) input.classList.remove('is-invalid');
-    if (hint) {
-        hint.className = 'code-entry-hint mt-2 text-gold';
-        hint.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Verifying code...';
-    }
-
+    if (hint) { hint.style.color = 'var(--sf-rose)'; hint.textContent = 'Verifying code...'; }
     const codeBtn = document.getElementById('codeSubmitBtn');
-    if (codeBtn) {
-        codeBtn.disabled = true;
-        codeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Verifying Code…';
-    }
-
+    if (codeBtn) { codeBtn.disabled = true; codeBtn.textContent = 'Verifying PIN...'; }
     onQrScanSuccess(tokenVal || codeVal, 'code');
-}
-
-function applyResponsiveScannerLayout() {
-    const isDesktop = isDesktopDevice();
-    const modeSwitcher = document.getElementById('mobileModeSwitcher') || document.querySelector('.scanner-mode-switcher');
-    const desktopHeader = document.getElementById('desktopScannerHeader');
-    const torchBtn = document.getElementById('torchCameraBtn');
-    const flipBtn = document.getElementById('flipCameraBtn');
-    const switchCamBtn = document.getElementById('switchToCameraBtn');
-    const scanTab = document.getElementById('tabScanMode');
-
-    if (isDesktop && currentScannerMode === 'code') {
-        if (modeSwitcher) modeSwitcher.style.display = 'none';
-        if (desktopHeader) desktopHeader.style.display = 'flex';
-        if (torchBtn) torchBtn.style.display = 'none';
-        if (flipBtn) flipBtn.style.display = 'none';
-        if (switchCamBtn) switchCamBtn.style.display = 'none';
-        if (scanTab) scanTab.style.display = 'none';
-    } else {
-        if (modeSwitcher) modeSwitcher.style.display = 'inline-flex';
-        if (desktopHeader) desktopHeader.style.display = 'none';
-        if (switchCamBtn) switchCamBtn.style.display = 'block';
-        if (scanTab) scanTab.style.display = 'inline-block';
-    }
 }
 
 function openStudentScanner(initialMode = 'scan', autoPaste = false) {
@@ -704,501 +485,219 @@ function openStudentScanner(initialMode = 'scan', autoPaste = false) {
         window.location.assign(scanUrl.toString());
         return;
     }
-
     const modal = document.getElementById('studentScannerModal');
     if (!modal) return;
-    
-    // Refresh student location and activate continuous watch so fresh coordinates are ready by scan time
     startContinuousLocationWatch();
     refreshStudentLocation(true);
-
-    if (isDesktopDevice() && initialMode !== 'scan') {
-        initialMode = 'code';
-    }
     currentScannerMode = initialMode;
     modal.style.display = 'flex';
-    
-    applyResponsiveScannerLayout();
     resetScannerView();
     switchScannerMode(initialMode);
-
-    if (autoPaste) {
-        setTimeout(() => {
-            pasteCopiedCodeFromClipboard();
-        }, 120);
-    }
+    if (autoPaste) setTimeout(() => pasteCopiedCodeFromClipboard(), 120);
 }
 
 async function safeStopScanner() {
-    console.log('[Scanner] safeStopScanner called');
     if (html5QrScanner) {
         try {
             const state = typeof html5QrScanner.getState === 'function' ? html5QrScanner.getState() : null;
-            if (state === 2 || state === 3 || isScannerRunning) {
-                await html5QrScanner.stop();
-            }
-        } catch (e) {
-            console.warn("[Scanner] Safe stop warning:", e);
-        }
+            if (state === 2 || state === 3 || isScannerRunning) await html5QrScanner.stop();
+        } catch (e) {}
     }
     isScannerRunning = false;
     isScannerStarting = false;
-    
-    // Stop and release any residual tracks on video elements in reader
     const reader = document.getElementById('reader');
     if (reader) {
-        const videos = reader.querySelectorAll('video');
-        videos.forEach(v => {
+        reader.querySelectorAll('video').forEach(v => {
             if (v.srcObject) {
-                try {
-                    v.srcObject.getTracks().forEach(t => t.stop());
-                } catch(e) {}
+                try { v.srcObject.getTracks().forEach(t => t.stop()); } catch (e) {}
                 v.srcObject = null;
             }
         });
     }
-
-    const container = document.getElementById('scannerVideoContainer');
-    if (container) container.classList.remove('camera-active');
-
     const loadingOverlay = document.getElementById('scannerLoadingOverlay');
     if (loadingOverlay) loadingOverlay.style.display = 'none';
-
     const laser = document.getElementById('scannerLaser');
     if (laser) laser.style.display = 'none';
-
     const torchBtn = document.getElementById('torchCameraBtn');
     torchEnabled = false;
-    if (torchBtn) {
-        torchBtn.style.display = 'none';
-        torchBtn.classList.remove('active-torch');
-        torchBtn.setAttribute('aria-pressed', 'false');
-    }
+    if (torchBtn) { torchBtn.style.display = 'none'; torchBtn.setAttribute('aria-pressed', 'false'); }
 }
 
 async function safeClearScanner() {
-    console.log('[Scanner] safeClearScanner called');
     await safeStopScanner();
     if (html5QrScanner) {
-        try {
-            await html5QrScanner.clear();
-        } catch (e) {
-            console.warn("[Scanner] Safe clear warning:", e);
-        }
+        try { await html5QrScanner.clear(); } catch (e) {}
         html5QrScanner = null;
     }
     const reader = document.getElementById('reader');
-    if (reader) {
-        reader.innerHTML = '';
-    }
+    if (reader) reader.innerHTML = '';
 }
 
 async function waitForHtml5Qrcode(maxWaitMs = 3000) {
     const startTime = Date.now();
     while (typeof Html5Qrcode === 'undefined') {
-        if (Date.now() - startTime > maxWaitMs) {
-            return false;
-        }
+        if (Date.now() - startTime > maxWaitMs) return false;
         await new Promise(r => setTimeout(r, 100));
     }
     return true;
 }
 
 async function startHtml5Scanner() {
-    console.log('[Scanner] startHtml5Scanner called, currentMode:', currentScannerMode);
-    
-    if (currentScannerMode !== 'scan') {
-        console.log('[Scanner] Aborting - not in scan mode');
-        return;
-    }
-
-    if (isDesktopDevice() && currentScannerMode !== 'scan') {
-        console.log('[Scanner] QR camera scanner is disabled on desktop layouts.');
-        return;
-    }
-
+    if (currentScannerMode !== 'scan') return;
     if (isScannerStarting || isScannerRunning) {
         const activeVideo = document.querySelector('#reader video');
-        if (isScannerRunning && activeVideo && !activeVideo.paused && !activeVideo.ended && activeVideo.readyState >= 2) {
-            console.log('[Scanner] Scanner already actively streaming, skipping start');
-            return;
-        }
-        console.log('[Scanner] Scanner flag set but feed not running, resetting state and continuing');
+        if (isScannerRunning && activeVideo && !activeVideo.paused && !activeVideo.ended && activeVideo.readyState >= 2) return;
         isScannerStarting = false;
         isScannerRunning = false;
     }
 
-    console.log('[Scanner] Beginning camera initialization');
     hideCameraError();
-
-    // Show loading state overlay
     const loadingOverlay = document.getElementById('scannerLoadingOverlay');
     if (loadingOverlay) loadingOverlay.style.display = 'flex';
 
-    // 1. Check secure context (HTTPS / localhost required by browsers for camera)
     if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        console.warn('[Scanner] Not in secure context');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
-        showCameraError("unsupported", "Camera access requires a secure connection (HTTPS) or localhost. Please switch to 6-digit Code entry.");
+        showCameraError("unsupported", "Camera access requires HTTPS or localhost. Switch to 6-digit PIN entry.");
         return;
     }
-
-    // 2. Check browser mediaDevices support
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        console.warn('[Scanner] Browser does not support mediaDevices');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
-        showCameraError("unsupported", "Your browser or device does not support live camera scanning. Please enter the 6-digit Code.");
+        showCameraError("unsupported", "Camera scanning is unavailable on this browser. Use the 6-digit PIN instead.");
         return;
     }
-
-    // 3. Wait for Html5Qrcode library to be loaded
-    console.log('[Scanner] Waiting for Html5Qrcode library');
     const libLoaded = await waitForHtml5Qrcode();
     if (!libLoaded) {
-        console.warn('[Scanner] Html5Qrcode library unavailable');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
-        showCameraError("init_failed", "Unable to start the scanner. Please try again.");
+        showCameraError("init_failed", "Unable to initialize the QR scanner. Please retry.");
         return;
     }
-
     if (currentScannerMode !== 'scan') {
-        console.log('[Scanner] Mode changed during library wait, aborting');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
         return;
     }
 
     isScannerStarting = true;
-    console.log('[Scanner] Scanner starting flag set to true');
-
     try {
-        // Clean previous scanner instance cleanly
         await safeClearScanner();
-
-        if (currentScannerMode !== 'scan') {
-            console.log('[Scanner] Mode changed during clear, aborting');
-            isScannerStarting = false;
-            return;
-        }
-
+        if (currentScannerMode !== 'scan') { isScannerStarting = false; return; }
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
         const readerContainer = document.getElementById('reader');
-        if (readerContainer) {
-            readerContainer.innerHTML = '';
-        }
-
-        console.log('[Scanner] Creating new Html5Qrcode instance');
+        if (readerContainer) readerContainer.innerHTML = '';
         html5QrScanner = new Html5Qrcode("reader");
 
         const qrConfig = {
             fps: 15,
-            qrbox: function(viewfinderWidth, viewfinderHeight) {
-                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                const qrboxSize = Math.floor(minEdge * 0.78);
-                return { width: Math.max(qrboxSize, 180), height: Math.max(qrboxSize, 180) };
+            qrbox: (w, h) => {
+                const s = Math.max(Math.floor(Math.min(w, h) * 0.78), 180);
+                return { width: s, height: s };
             },
-            experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
-            }
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
         };
 
         let started = false;
         let lastError = null;
-
-        // Strategy 1: Attempt start with facingMode string (standard mobile back camera)
         try {
-            console.log('[Scanner] Attempting start with facingMode:', currentFacingMode);
-            await html5QrScanner.start(
-                { facingMode: currentFacingMode },
-                qrConfig,
-                onQrScanSuccess
-            );
+            await html5QrScanner.start({ facingMode: currentFacingMode }, qrConfig, onQrScanSuccess);
             started = true;
-            console.log('[Scanner] Camera started successfully with facingMode');
         } catch (err1) {
-            console.warn('[Scanner] Start with facingMode failed:', err1.name, err1.message);
             lastError = err1;
-            // If permission was denied by user, stop trying and present permission error
-            if (err1.name === 'NotAllowedError' || err1.name === 'PermissionDeniedError') {
-                throw err1;
-            }
-            // Clean up any stray video elements left from failed attempt before trying fallback
-            cleanupDuplicateVideos();
-            try { await html5QrScanner.clear(); } catch(e){}
+            if (err1.name === 'NotAllowedError' || err1.name === 'PermissionDeniedError') throw err1;
+            try { await html5QrScanner.clear(); } catch (e) {}
             html5QrScanner = new Html5Qrcode("reader");
         }
 
-        // Strategy 2: Fallback via camera enumeration (handles multi-lens Android/iOS devices)
         if (!started && currentScannerMode === 'scan') {
             try {
-                console.log('[Scanner] Enumerating available cameras for fallback...');
                 const cameras = await Html5Qrcode.getCameras();
-                console.log('[Scanner] Found cameras:', cameras ? cameras.length : 0);
-
                 if (cameras && cameras.length > 0) {
-                    let selectedCamera = cameras[0];
+                    let sel = cameras[0];
                     if (currentFacingMode === 'environment') {
                         const backCam = cameras.find(c => /back|rear|environment|main|world/i.test(c.label));
-                        if (backCam) selectedCamera = backCam;
-                    } else if (currentFacingMode === 'user') {
-                        const frontCam = cameras.find(c => /front|user|selfie|face/i.test(c.label));
-                        if (frontCam) selectedCamera = frontCam;
+                        if (backCam) sel = backCam;
                     }
-
-                    console.log('[Scanner] Starting with selected camera ID:', selectedCamera.id, selectedCamera.label);
-                    await html5QrScanner.start(
-                        selectedCamera.id,
-                        qrConfig,
-                        onQrScanSuccess
-                    );
+                    await html5QrScanner.start(sel.id, qrConfig, onQrScanSuccess);
                     started = true;
-                    console.log('[Scanner] Camera started successfully with camera ID');
                 }
             } catch (err2) {
-                console.warn('[Scanner] Camera enumeration fallback failed:', err2.name, err2.message);
                 lastError = err2;
-                if (err2.name === 'NotAllowedError' || err2.name === 'PermissionDeniedError') {
-                    throw err2;
-                }
-                // Clean up any stray video elements before Strategy 3
-                cleanupDuplicateVideos();
-                try { await html5QrScanner.clear(); } catch(e){}
+                if (err2.name === 'NotAllowedError' || err2.name === 'PermissionDeniedError') throw err2;
+                try { await html5QrScanner.clear(); } catch (e) {}
                 html5QrScanner = new Html5Qrcode("reader");
             }
         }
 
-        // Strategy 3: Basic ideal constraint fallback
         if (!started && currentScannerMode === 'scan') {
-            try {
-                console.log('[Scanner] Trying ideal facingMode constraint fallback...');
-                await html5QrScanner.start(
-                    { facingMode: { ideal: currentFacingMode } },
-                    qrConfig,
-                    onQrScanSuccess
-                );
-                started = true;
-                console.log('[Scanner] Camera started with ideal constraint fallback');
-            } catch (err3) {
-                console.warn('[Scanner] Ideal constraint fallback failed:', err3.name, err3.message);
-                lastError = err3;
-            }
+            await html5QrScanner.start({ facingMode: { ideal: currentFacingMode } }, qrConfig, onQrScanSuccess);
+            started = true;
         }
 
-        if (!started) {
-            throw lastError || new Error("Unable to start scanner");
-        }
-
-        if (currentScannerMode !== 'scan') {
-            console.log('[Scanner] Mode changed after camera start, stopping');
-            safeStopScanner();
-            return;
-        }
-
+        if (!started) throw lastError || new Error("Unable to start scanner");
+        if (currentScannerMode !== 'scan') { safeStopScanner(); return; }
         onScannerSuccessfullyStarted();
     } catch (err) {
-        console.warn("[Scanner] Camera start failed:", err?.name || err);
         isScannerStarting = false;
         isScannerRunning = false;
-        const loadingOverlay = document.getElementById('scannerLoadingOverlay');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
-
         if (currentScannerMode === 'scan') {
             const errName = err ? (err.name || '') : '';
-            const errMsg = err ? (err.message || '') : '';
-            console.log('[Scanner] Handling camera error:', errName, errMsg);
-
-            if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') {
-                showCameraError('permission_denied');
-            } else if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError') {
-                showCameraError('camera_unavailable', 'No camera detected on this device. Please check that your camera is available and try again.');
-            } else if (errName === 'NotReadableError' || errName === 'TrackStartError' || errMsg.includes('Could not start video source')) {
-                showCameraError('camera_unavailable', 'Unable to access your camera. Please check that your camera is available and try again.');
-            } else {
-                showCameraError('init_failed', 'Unable to start the scanner. Please try again.');
-            }
-        }
-    }
-}
-
-function cleanupDuplicateVideos() {
-    const reader = document.getElementById('reader');
-    if (!reader) return;
-    const videos = Array.from(reader.querySelectorAll('video'));
-    if (videos.length > 1) {
-        console.warn('[Scanner] Cleaning up duplicate video feeds, found:', videos.length);
-        // Keep the last active video element and remove earlier duplicates
-        const activeVideo = videos[videos.length - 1];
-        for (let i = 0; i < videos.length - 1; i++) {
-            const v = videos[i];
-            try {
-                if (v.srcObject && v.srcObject !== activeVideo.srcObject) {
-                    v.srcObject.getTracks().forEach(t => t.stop());
-                }
-                v.srcObject = null;
-            } catch(e) {}
-            try {
-                v.remove();
-            } catch(e) {}
+            if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') showCameraError('permission_denied');
+            else if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError') showCameraError('camera_unavailable', 'No camera detected. Switch to 6-digit PIN entry.');
+            else showCameraError('camera_unavailable', 'Unable to access your camera. You can enter the 6-digit PIN instead.');
         }
     }
 }
 
 function onScannerSuccessfullyStarted() {
-    if (currentScannerMode !== 'scan') {
-        safeStopScanner();
-        return;
-    }
+    if (currentScannerMode !== 'scan') { safeStopScanner(); return; }
     isScannerRunning = true;
     isScannerStarting = false;
-
-    // Remove any duplicate or orphaned video tags
-    cleanupDuplicateVideos();
-
-    // Hide all overlays and error states
     const loadingOverlay = document.getElementById('scannerLoadingOverlay');
     if (loadingOverlay) loadingOverlay.style.display = 'none';
-
     hideCameraError();
-
-    const container = document.getElementById('scannerVideoContainer');
-    if (container) container.classList.add('camera-active');
-
     const laser = document.getElementById('scannerLaser');
     if (laser) laser.style.display = 'block';
-
-    // Show torch button only when camera is active and rear facing
     const torchBtn = document.getElementById('torchCameraBtn');
-    if (torchBtn && currentFacingMode === 'environment') {
-        torchBtn.style.display = 'inline-flex';
-    }
-
-    console.log('[Scanner] Camera started successfully and live video feed is now active');
+    if (torchBtn && currentFacingMode === 'environment') torchBtn.style.display = 'inline-flex';
 }
 
 function showCameraError(type = 'init_failed', customMsg = null) {
-    console.log('[Scanner] showCameraError called with type:', type, 'customMsg:', customMsg, 'currentMode:', currentScannerMode);
-    
-    if (currentScannerMode !== 'scan') {
-        console.log('[Scanner] Skipping error display - not in scan mode');
-        return;
-    }
-    
+    if (currentScannerMode !== 'scan') return;
     const notice = document.getElementById('scannerFallbackNotice');
     const text = document.getElementById('scannerFallbackText');
     const title = document.getElementById('fallbackTitle');
-    const iconWrap = document.getElementById('fallbackIconWrap');
     const retryBtn = document.getElementById('retryCameraBtn');
     const laser = document.getElementById('scannerLaser');
     const loadingOverlay = document.getElementById('scannerLoadingOverlay');
-    const container = document.getElementById('scannerVideoContainer');
-
     if (loadingOverlay) loadingOverlay.style.display = 'none';
-    if (container) {
-        container.classList.remove('camera-active');
-        container.classList.add('camera-unavailable');
-    }
     if (laser) laser.style.display = 'none';
-
-    let headline = 'Camera Access Required';
-    let message = 'Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.';
-    let btnText = 'Allow Camera';
-    let btnIcon = 'bi-camera';
-    let iconHtml = '<i class="bi bi-camera-fill text-warning"></i>';
-    let showBtn = true;
-
-    if (type === 'permission_denied') {
-        headline = 'Camera Permission Denied';
-        message = 'Camera permission was denied. Please allow camera access in your device or browser settings.';
-        btnText = 'Retry Camera';
-        btnIcon = 'bi-arrow-repeat';
-        iconHtml = '<i class="bi bi-camera-video-off-fill text-danger"></i>';
-    } else if (type === 'camera_unavailable') {
-        headline = 'Camera Unavailable';
-        message = customMsg || 'Unable to access your camera. Please check that your camera is available and try again.';
-        btnText = 'Retry Camera';
-        btnIcon = 'bi-arrow-repeat';
-        iconHtml = '<i class="bi bi-camera-video-off text-danger"></i>';
-    } else if (type === 'init_failed') {
-        headline = 'Scanner Error';
-        message = customMsg || 'Unable to start the scanner. Please try again.';
-        btnText = 'Retry Camera';
-        btnIcon = 'bi-arrow-repeat';
-        iconHtml = '<i class="bi bi-exclamation-triangle-fill text-warning"></i>';
-    } else if (type === 'unsupported') {
-        headline = 'Camera Not Supported';
-        message = customMsg || 'Your browser or device does not support live camera scanning. Please enter the 6-digit Code.';
-        showBtn = false;
-        iconHtml = '<i class="bi bi-slash-circle text-danger"></i>';
-    } else if (type === 'permission_needed') {
-        headline = 'Camera Access Required';
-        message = 'Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.';
-        btnText = 'Allow Camera';
-        btnIcon = 'bi-camera';
-        iconHtml = '<i class="bi bi-camera-fill text-warning"></i>';
-    }
-
-    if (title) title.textContent = headline;
-    if (text) text.textContent = message;
-    if (iconWrap) iconWrap.innerHTML = iconHtml;
-
-    if (retryBtn) {
-        retryBtn.style.display = showBtn ? 'inline-flex' : 'none';
-        retryBtn.innerHTML = `<i class="bi ${btnIcon} me-1"></i> <span id="retryCameraBtnText">${btnText}</span>`;
-    }
-
-    if (notice) {
-        notice.style.display = 'block';
-        console.log('[Scanner] Fallback notice displayed with headline:', headline);
-    }
+    if (title) title.textContent = type === 'permission_denied' ? 'Camera Permission Denied' : (type === 'unsupported' ? 'Camera Not Supported' : 'Camera Unavailable');
+    if (text) text.textContent = customMsg || 'Please allow camera access in your browser settings or enter the 6-digit PIN instead.';
+    if (retryBtn) retryBtn.style.display = type === 'unsupported' ? 'none' : 'inline-flex';
+    if (notice) notice.style.display = 'flex';
 }
 
 function hideCameraError() {
-    console.log('[Scanner] hideCameraError called');
-    document.getElementById('scannerVideoContainer')?.classList.remove('camera-unavailable');
     const notice = document.getElementById('scannerFallbackNotice');
-    if (notice) {
-        notice.style.display = 'none';
-        console.log('[Scanner] Fallback notice hidden');
-    }
+    if (notice) notice.style.display = 'none';
 }
 
-let lastCameraRequestTime = 0;
 function requestCameraAgain() {
-    const now = Date.now();
-    if (now - lastCameraRequestTime < 500) {
-        console.log('[Scanner] Debouncing rapid requestCameraAgain');
-        return;
-    }
-    lastCameraRequestTime = now;
-    console.log('[Scanner] requestCameraAgain called');
     isScannerStarting = false;
     isScannerRunning = false;
     hideCameraError();
     startHtml5Scanner();
 }
 
-async function toggleCameraFacing() {
-    currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
-    await safeStopScanner();
-    startHtml5Scanner();
-    if (window.triggerHaptic) window.triggerHaptic('light');
-}
-
 async function toggleTorch() {
     if (!html5QrScanner || !isScannerRunning) return;
     const torchBtn = document.getElementById('torchCameraBtn');
     const nextEnabled = !torchEnabled;
-    if (torchBtn) torchBtn.disabled = true;
     try {
         await html5QrScanner.applyVideoConstraints({ advanced: [{ torch: nextEnabled }] });
-        if (!isScannerRunning) return;
         torchEnabled = nextEnabled;
-        torchBtn?.classList.toggle('active-torch', torchEnabled);
         torchBtn?.setAttribute('aria-pressed', String(torchEnabled));
-    } catch (error) {
-        if (typeof showToast === 'function') {
-            showToast('Flashlight is not supported on this camera/browser.', 'info', 2500);
-        }
-    } finally {
-        if (torchBtn) torchBtn.disabled = false;
+    } catch (e) {
+        window.showToast?.('Flashlight is not supported on this device.', 'info', 2500);
     }
 }
 
@@ -1209,74 +708,33 @@ function closeStudentScanner(returnToDashboard = true) {
     if (modal) modal.style.display = 'none';
     safeClearScanner();
     isScanInFlight = false;
-
     if (isDedicatedStudentScannerPage && returnToDashboard) {
         window.location.replace(studentDashboardUrl);
     }
 }
 
 function clearAutoCloseTimer() {
-    if (autoCloseTimer) {
-        clearTimeout(autoCloseTimer);
-        autoCloseTimer = null;
-    }
-    if (autoCloseCountdownInterval) {
-        clearInterval(autoCloseCountdownInterval);
-        autoCloseCountdownInterval = null;
-    }
+    if (autoCloseTimer) { clearTimeout(autoCloseTimer); autoCloseTimer = null; }
+    if (autoCloseCountdownInterval) { clearInterval(autoCloseCountdownInterval); autoCloseCountdownInterval = null; }
 }
 
 function resetScannerView() {
     clearAutoCloseTimer();
     isScanInFlight = false;
-
-    const isDesktop = isDesktopDevice();
-    const activeView = document.getElementById('scannerActiveView');
-    const codeView = document.getElementById('scannerCodeView');
     const resultView = document.getElementById('scannerResultView');
     const overlay = document.getElementById('scannerProcessingOverlay');
-    const loadingOverlay = document.getElementById('scannerLoadingOverlay');
     const codeInput = document.getElementById('directSessionCodeInput');
     const autoCloseNotice = document.getElementById('resultAutoCloseNotice');
-    const codeBtn = document.getElementById('codeSubmitBtn');
-    const hint = document.getElementById('codeEntryHint');
-
     if (resultView) resultView.style.display = 'none';
     if (overlay) overlay.style.display = 'none';
-    if (loadingOverlay) loadingOverlay.style.display = 'none';
     if (autoCloseNotice) autoCloseNotice.style.display = 'none';
-    if (codeInput) {
-        codeInput.value = '';
-        codeInput.classList.remove('is-invalid');
-    }
-    if (hint) {
-        hint.className = 'code-entry-hint mt-2';
-        hint.innerHTML = '<i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token';
-    }
-    if (codeBtn) {
-        codeBtn.disabled = false;
-        codeBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Record Attendance';
-    }
-
-    if (isDesktop) {
-        if (activeView) activeView.style.display = 'none';
-        if (codeView) codeView.style.display = 'block';
-    } else {
-        if (currentScannerMode === 'scan') {
-            if (activeView) activeView.style.display = 'block';
-            if (codeView) codeView.style.display = 'none';
-        } else {
-            if (activeView) activeView.style.display = 'none';
-            if (codeView) codeView.style.display = 'block';
-        }
-    }
+    if (codeInput) codeInput.value = '';
+    syncPinBoxesFromBacking();
 }
 
 function extractQrToken(raw) {
     if (!raw) return { token: '', code: '' };
     let str = typeof raw === 'string' ? raw.trim() : String(raw).trim();
-
-    // 1. Support structured JSON QR payload
     if ((str.startsWith('{') && str.endsWith('}')) || (str.startsWith('[') && str.endsWith(']'))) {
         try {
             const parsed = JSON.parse(str);
@@ -1291,41 +749,33 @@ function extractQrToken(raw) {
                 }
                 return { token: String(token).trim(), code: String(code).trim() };
             }
-        } catch(e) {}
+        } catch (e) {}
     }
 
-    // 2. Support URLs (including URLs embedded in copied text)
     let token = '';
     let code = '';
-
     const urlMatch = str.match(/https?:\/\/[^\s'"<>]+/);
     const candidateUrl = urlMatch ? urlMatch[0] : (str.startsWith('http://') || str.startsWith('https://') ? str : null);
 
     if (str.includes('/qr/scan/')) {
         const parts = str.split('/qr/scan/');
         let tail = parts[1] ? parts[1].split('?')[0].split('#')[0] : '';
-        tail = decodeURIComponent(tail).replace(/['".,;:)\/]+$/, '').trim();
-        token = tail;
+        token = decodeURIComponent(tail).replace(/['".,;:)\/]+$/, '').trim();
     } else if (candidateUrl) {
         try {
             const urlObj = new URL(candidateUrl);
-            if (urlObj.searchParams.has('token')) {
-                token = urlObj.searchParams.get('token').trim();
-            }
+            if (urlObj.searchParams.has('token')) token = urlObj.searchParams.get('token').trim();
             if (urlObj.searchParams.has('code') || urlObj.searchParams.has('session_code')) {
                 code = (urlObj.searchParams.get('code') || urlObj.searchParams.get('session_code')).trim();
             }
             if (!token) {
                 const pathParts = urlObj.pathname.split('/').filter(Boolean);
-                if (pathParts.length > 0) {
-                    token = decodeURIComponent(pathParts[pathParts.length - 1]).replace(/['".,;:)\/]+$/, '').trim();
-                }
+                if (pathParts.length > 0) token = decodeURIComponent(pathParts[pathParts.length - 1]).replace(/['".,;:)\/]+$/, '').trim();
             }
-        } catch(e) {}
+        } catch (e) {}
     }
 
     if (!token && !code) {
-        // Look for 6-digit session PINs from copied strings (e.g. "Code: 849201", "PIN 849 201", "849-201", "Attendance Code: 849 201")
         const pinMatch = str.match(/(?:code|pin|session|attendance)[:\s#\-_]*([0-9]{3})[\s\-_]*([0-9]{3})\b/i) ||
                          str.match(/(?:code|pin|session|attendance)[:\s#\-_]*([0-9]{6})\b/i) ||
                          str.match(/(?<![0-9])([0-9]{3})[\s\-_]+([0-9]{3})(?![0-9])/) ||
@@ -1336,62 +786,41 @@ function extractQrToken(raw) {
             const cleanAlphaNum = str.replace(/[^0-9A-Za-z]/g, '');
             if (cleanAlphaNum.length >= 4 && cleanAlphaNum.length <= 10 && !str.includes('/')) {
                 const endDigits = cleanAlphaNum.match(/[0-9]{6}$/);
-                if (endDigits) {
-                    code = endDigits[0];
-                } else {
-                    code = cleanAlphaNum;
-                }
+                code = endDigits ? endDigits[0] : cleanAlphaNum;
             } else {
                 token = str;
             }
         }
     }
-
     return { token: token.trim(), code: code.trim() };
 }
 
 async function onQrScanSuccess(decodedText, method = 'qr') {
     if (isScanInFlight) return;
     isScanInFlight = true;
-
     safeStopScanner();
 
     const overlay = document.getElementById('scannerProcessingOverlay');
-    const laser = document.getElementById('scannerLaser');
     const codeBtn = document.getElementById('codeSubmitBtn');
     const hint = document.getElementById('codeEntryHint');
 
     if (method === 'code' || currentScannerMode === 'code') {
-        if (codeBtn) {
-            codeBtn.disabled = true;
-            codeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Verifying Code…';
-        }
-        if (hint) {
-            hint.className = 'code-entry-hint mt-2 text-gold';
-            hint.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Verifying code...';
-        }
+        if (codeBtn) { codeBtn.disabled = true; codeBtn.textContent = 'Verifying PIN...'; }
+        if (hint) { hint.style.color = 'var(--sf-rose)'; hint.textContent = 'Verifying code...'; }
     } else {
         if (overlay) overlay.style.display = 'flex';
-        if (laser) laser.style.display = 'none';
-        playScanBeep();
     }
-
-    if (window.triggerHaptic) window.triggerHaptic('medium');
+    window.triggerHaptic?.('medium');
 
     const parsedData = extractQrToken(decodedText);
     const resolvedMethod = (method === 'code' || currentScannerMode === 'code' || (parsedData.code && !parsedData.token)) ? 'code' : 'qr';
-
-    // Reuse a fresh pre-warmed fix (<= 5s old, <= 50m accuracy) so 15s QR tokens do not expire waiting for GPS.
     const processingText = document.querySelector('#scannerProcessingOverlay .processing-sub');
-    if (processingText) processingText.textContent = 'Checking location…';
-    if (hint) hint.textContent = 'Checking location…';
+    if (processingText) processingText.textContent = 'Checking location...';
+    if (hint) hint.textContent = 'Checking location...';
+
     let scanLocation = null;
     if (@json(app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification'))) {
-        try {
-            scanLocation = await refreshStudentLocation(false);
-        } catch (error) {
-            console.warn('Geolocation refresh warning:', error);
-        }
+        try { scanLocation = await refreshStudentLocation(false); } catch (e) {}
         if (!scanLocation) {
             if (overlay) overlay.style.display = 'none';
             renderScanError({ error_type: 'unreliable_gps', message: 'Getting accurate location failed. Enable high-accuracy GPS, move near a window, and retry.' });
@@ -1428,7 +857,6 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
             },
             body: JSON.stringify(payload)
         });
-
         const data = await response.json();
         if (overlay) overlay.style.display = 'none';
 
@@ -1441,27 +869,18 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
             renderScanError({ message: 'Could not open identity verification. Please scan again.' });
             return;
         }
-        if (response.ok && data.success) {
-            renderScanSuccess(data);
-        } else {
-            renderScanError(data);
-        }
+        if (response.ok && data.success) renderScanSuccess(data);
+        else renderScanError(data);
     } catch (error) {
         if (overlay) overlay.style.display = 'none';
-        renderScanError({
-            message: 'Network connection failed. Please verify your internet connection and try again.'
-        });
+        renderScanError({ message: 'Network connection failed. Please check your connection and try again.' });
     }
 }
 
 function renderScanSuccess(data) {
     clearAutoCloseTimer();
-
     const codeBtn = document.getElementById('codeSubmitBtn');
-    if (codeBtn) {
-        codeBtn.disabled = false;
-        codeBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Record Attendance';
-    }
+    if (codeBtn) { codeBtn.disabled = false; codeBtn.textContent = 'Verify & Record Attendance'; }
 
     document.getElementById('scannerActiveView').style.display = 'none';
     document.getElementById('scannerCodeView').style.display = 'none';
@@ -1472,41 +891,30 @@ function renderScanSuccess(data) {
     const title = document.getElementById('resultTitle');
     const subtitle = document.getElementById('resultSubtitle');
     const retryBtn = document.getElementById('resultRetryBtn');
-    const doneBtn = document.getElementById('resultDoneBtn');
     const autoCloseNotice = document.getElementById('resultAutoCloseNotice');
     const detailsBox = document.getElementById('resultDetailsBox');
-
-    if (detailsBox) detailsBox.style.display = 'block';
+    if (detailsBox) detailsBox.style.display = 'flex';
     if (retryBtn) retryBtn.style.display = 'none';
-    if (doneBtn) doneBtn.style.display = 'block';
 
     if (data.already_clocked_in) {
-        iconBox.style.background = 'rgba(59, 130, 246, 0.15)';
-        iconBox.style.border = '2px solid rgba(59, 130, 246, 0.4)';
-        iconBox.innerHTML = '<i class="bi bi-info-circle-fill" style="color: #60a5fa;"></i>';
-        
-        title.textContent = 'Attendance Already Recorded';
-        subtitle.textContent = data.message || 'Attendance already recorded for this session.';
-        
-        badge.className = 'badge bg-info text-dark';
+        iconBox.style.background = 'var(--sf-sky-bg)';
+        iconBox.style.border = '1px solid var(--sf-sky-border)';
+        iconBox.innerHTML = '<i class="bi bi-info-circle-fill" style="color:var(--sf-sky);"></i>';
+        title.textContent = 'Already Recorded';
+        subtitle.textContent = data.message || 'Attendance was already recorded for this session.';
+        badge.className = 'sf-pill is-sky';
         badge.textContent = data.status || 'Present';
-
         if (autoCloseNotice) autoCloseNotice.style.display = 'none';
-        if (window.triggerHaptic) window.triggerHaptic('light');
     } else {
-        iconBox.style.background = 'rgba(16, 185, 129, 0.15)';
-        iconBox.style.border = '2px solid rgba(16, 185, 129, 0.4)';
-        iconBox.innerHTML = '<i class="bi bi-check2-circle" style="color: #34d399;"></i>';
-
-        title.textContent = 'Attendance recorded successfully ✓';
-        subtitle.textContent = data.message || `Your attendance has been confirmed for ${data.subject || 'this class'}.`;
-
-        const isPresent = (data.status || 'Present') === 'Present';
-        badge.className = isPresent ? 'badge bg-success' : 'badge bg-warning text-dark';
+        iconBox.style.background = 'var(--sf-emerald-bg)';
+        iconBox.style.border = '1px solid var(--sf-emerald-border)';
+        iconBox.innerHTML = '<i class="bi bi-check2-circle" style="color:var(--sf-emerald);"></i>';
+        title.textContent = 'Attendance Recorded';
+        subtitle.textContent = data.message || `Confirmed for ${data.subject || 'your class'}.`;
+        badge.className = 'sf-pill ' + ((data.status || 'Present') === 'Present' ? 'is-emerald' : 'is-amber');
         badge.textContent = data.status || 'Present';
-
-        playSuccessChime();
-        if (window.triggerHaptic) window.triggerHaptic('success');
+        window.sfConfettiBurst?.();
+        window.triggerHaptic?.('success');
 
         if (autoCloseNotice) {
             autoCloseNotice.style.display = 'block';
@@ -1515,49 +923,28 @@ function renderScanSuccess(data) {
             const progressFill = document.getElementById('autoCloseProgressFill');
             if (countEl) countEl.textContent = secondsLeft;
             if (progressFill) progressFill.style.width = '100%';
-
             autoCloseCountdownInterval = setInterval(() => {
                 secondsLeft--;
                 if (countEl) countEl.textContent = Math.max(secondsLeft, 0);
-                if (progressFill) {
-                    progressFill.style.width = (secondsLeft / 3 * 100) + '%';
-                }
-                if (secondsLeft <= 0) {
-                    clearInterval(autoCloseCountdownInterval);
-                }
+                if (progressFill) progressFill.style.width = (Math.max(secondsLeft, 0) / 3 * 100) + '%';
+                if (secondsLeft <= 0) clearInterval(autoCloseCountdownInterval);
             }, 1000);
-
-            autoCloseTimer = setTimeout(() => {
-                finishScanAndRefresh();
-            }, 3200);
+            autoCloseTimer = setTimeout(() => finishScanAndRefresh(), 3200);
         }
     }
 
-    if (window.studentPresenceGuardian) {
-        window.studentPresenceGuardian.syncActiveSession();
-    }
-
+    window.studentPresenceGuardian?.syncActiveSession();
     document.getElementById('resultSubject').textContent = (data.subject || 'Subject') + (data.subject_code ? ' (' + data.subject_code + ')' : '');
     document.getElementById('resultInstructor').textContent = data.instructor || 'Instructor';
     document.getElementById('resultSection').textContent = data.section || 'Regular';
-    document.getElementById('resultTimestamp').textContent = (data.date || '') + (data.time ? ' at ' + data.time : '');
+    document.getElementById('resultTimestamp').textContent = (data.date || '') + (data.time ? ' · ' + data.time : '');
 }
 
 function renderScanError(data) {
     clearAutoCloseTimer();
     isScanInFlight = false;
-
     const codeBtn = document.getElementById('codeSubmitBtn');
-    if (codeBtn) {
-        codeBtn.disabled = false;
-        codeBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Record Attendance';
-    }
-
-    const hint = document.getElementById('codeEntryHint');
-    if (hint) {
-        hint.className = 'code-entry-hint mt-2';
-        hint.innerHTML = '<i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token';
-    }
+    if (codeBtn) { codeBtn.disabled = false; codeBtn.textContent = 'Verify & Record Attendance'; }
 
     document.getElementById('scannerActiveView').style.display = 'none';
     document.getElementById('scannerCodeView').style.display = 'none';
@@ -1567,149 +954,59 @@ function renderScanError(data) {
     const title = document.getElementById('resultTitle');
     const subtitle = document.getElementById('resultSubtitle');
     const retryBtn = document.getElementById('resultRetryBtn');
-    const doneBtn = document.getElementById('resultDoneBtn');
     const autoCloseNotice = document.getElementById('resultAutoCloseNotice');
-
     if (autoCloseNotice) autoCloseNotice.style.display = 'none';
 
-    iconBox.style.background = 'rgba(239, 68, 68, 0.15)';
-    iconBox.style.border = '2px solid rgba(239, 68, 68, 0.4)';
-    iconBox.innerHTML = '<i class="bi bi-x-circle-fill" style="color: #f87171;"></i>';
+    iconBox.style.background = 'var(--sf-danger-bg)';
+    iconBox.style.border = '1px solid var(--sf-danger-border)';
+    iconBox.innerHTML = '<i class="bi bi-x-circle-fill" style="color:var(--sf-danger);"></i>';
 
     const errType = data.error_type || '';
     const errDetail = data.error_detail || '';
-
-    if (errType === 'schedule_mismatch') {
-        title.textContent = 'Schedule Mismatch';
-    } else if (errType === 'device_mismatch') {
-        title.textContent = 'Device Not Recognized';
-    } else if (errType === 'proxy_device_detected') {
-        title.textContent = 'Proxy Attendance Detected';
-    } else if (errDetail === 'session_expired' || errType === 'session_expired') {
-        title.textContent = 'Attendance Session Expired';
-    } else if (errDetail === 'session_inactive' || errType === 'session_inactive' || errType === 'session_closed') {
-        title.textContent = 'Attendance Session Ended';
-    } else if (errDetail === 'invalid_code' || errType === 'invalid_code') {
-        title.textContent = 'Invalid Attendance Code';
-    } else if (errDetail === 'invalid_token' || errType === 'invalid_token') {
-        title.textContent = 'Invalid QR Code';
-    } else if (errType === 'invalid_or_expired') {
-        title.textContent = currentScannerMode === 'code' ? 'Invalid Attendance Code' : 'Invalid QR Code';
-    } else if (errType === 'location_required') {
-        iconBox.style.background = 'rgba(234, 179, 8, 0.15)';
-        iconBox.style.border = '2px solid rgba(234, 179, 8, 0.4)';
-        iconBox.innerHTML = '<i class="bi bi-geo-alt-fill" style="color: #fbbf24;"></i>';
-        title.textContent = 'Location Required';
-        if (retryBtn) retryBtn.innerHTML = '<i class="bi bi-geo-alt me-1"></i> Enable Location & Retry';
-    } else if (errType === 'teacher_location_unavailable') {
-        iconBox.style.background = 'rgba(234, 179, 8, 0.15)';
-        iconBox.style.border = '2px solid rgba(234, 179, 8, 0.4)';
-        iconBox.innerHTML = '<i class="bi bi-laptop" style="color: #fbbf24;"></i>';
-        title.textContent = 'Teacher Location Unavailable';
-        if (retryBtn) retryBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Retry Verification';
-    } else if (errType === 'unreliable_gps') {
-        iconBox.style.background = 'rgba(234, 179, 8, 0.15)';
-        iconBox.style.border = '2px solid rgba(234, 179, 8, 0.4)';
-        iconBox.innerHTML = '<i class="bi bi-broadcast" style="color: #fbbf24;"></i>';
-        title.textContent = 'Weak GPS Signal';
-        if (retryBtn) retryBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Retry with High Accuracy';
-    } else if (errType === 'location_uncertain' || errType === 'stale_location') {
-        iconBox.style.background = 'rgba(234, 179, 8, 0.15)';
-        iconBox.style.border = '2px solid rgba(234, 179, 8, 0.4)';
-        iconBox.innerHTML = '<i class="bi bi-geo-alt-fill" style="color: #fbbf24;"></i>';
-        title.textContent = 'Location Needs Another Check';
-        if (retryBtn) retryBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Retry Location Check';
-    } else if (errType === 'outside_classroom') {
-        title.textContent = 'Outside Classroom Range';
-        showOutsideRangePopup(data);
-    } else {
-        title.textContent = 'Unable to Record Attendance';
-    }
-
-    subtitle.textContent = data.message || (currentScannerMode === 'code' ? 'The entered code could not be processed. Please check with your instructor.' : 'The QR code could not be processed. Please check with your instructor.');
-
+    const titleMap = {
+        schedule_mismatch: 'Schedule Mismatch',
+        device_mismatch: 'Device Not Recognized',
+        proxy_device_detected: 'Proxy Attendance Detected',
+        session_expired: 'Session Expired',
+        session_inactive: 'Session Ended',
+        session_closed: 'Session Ended',
+        invalid_code: 'Invalid PIN Code',
+        invalid_token: 'Invalid QR Code',
+        location_required: 'Location Required',
+        unreliable_gps: 'Weak GPS Signal',
+        outside_classroom: 'Outside Classroom Range',
+    };
+    title.textContent = titleMap[errDetail] || titleMap[errType] || 'Unable to Record Attendance';
+    subtitle.textContent = data.message || 'Please check with your instructor and try again.';
     document.getElementById('resultDetailsBox').style.display = 'none';
-    if (retryBtn) retryBtn.style.display = 'block';
-    if (doneBtn) doneBtn.style.display = 'block';
-
-    playErrorTone();
-    if (window.triggerHaptic) window.triggerHaptic('error');
+    if (retryBtn) retryBtn.style.display = 'inline-flex';
+    if (errType === 'outside_classroom') showOutsideRangePopup(data);
+    window.triggerHaptic?.('error');
 }
 
 function showOutsideRangePopup(data) {
     const modal = document.getElementById('outsideRangePopupModal');
     if (!modal) return;
-
-    const rawDist = (data.distance !== undefined && data.distance !== null) ? Number(data.distance) : 
-                    ((data.dist !== undefined && data.dist !== null) ? Number(data.dist) : null);
-    const rawRadius = (data.radius !== undefined && data.radius !== null) ? Number(data.radius) : 
-                      ((data.limit !== undefined && data.limit !== null) ? Number(data.limit) : 50);
-
-    const dist = (rawDist !== null && !isNaN(rawDist)) ? Math.round(rawDist) : null;
-    const radius = !isNaN(rawRadius) ? Math.round(rawRadius) : 50;
-
-    const distEl = document.getElementById('outsideRangeDetectedDist');
-    const radEl = document.getElementById('outsideRangeAllowedRadius');
-    const msgEl = document.getElementById('outsideRangeMessage');
-
-    if (distEl) {
-        distEl.textContent = dist !== null ? (dist.toLocaleString() + 'm away') : 'Out of range';
-    }
-    if (radEl) radEl.textContent = radius + 'm radius';
-    if (msgEl && data.message) {
-        msgEl.textContent = data.message;
-    }
-
+    const rawDist = data.distance ?? data.dist ?? null;
+    const rawRadius = data.radius ?? data.limit ?? 50;
+    const dist = rawDist !== null && !isNaN(Number(rawDist)) ? Math.round(Number(rawDist)) : null;
+    const radius = !isNaN(Number(rawRadius)) ? Math.round(Number(rawRadius)) : 50;
+    document.getElementById('outsideRangeDetectedDist').textContent = dist !== null ? (dist.toLocaleString() + 'm') : 'Out of range';
+    document.getElementById('outsideRangeAllowedRadius').textContent = radius + 'm';
+    if (data.message) document.getElementById('outsideRangeMessage').textContent = data.message;
     modal.style.display = 'flex';
-    if (window.triggerHaptic) window.triggerHaptic('error');
-    playErrorTone();
 }
 
 function closeOutsideRangePopup() {
     const modal = document.getElementById('outsideRangePopupModal');
-    if (!modal) return;
-    modal.style.display = 'none';
-}
-
-function retryScanFromOutsidePopup() {
-    closeOutsideRangePopup();
-    refreshStudentLocation(true);
-    resetScannerView();
-    switchScannerMode('scan');
-}
-
-function useCodeFromOutsidePopup() {
-    closeOutsideRangePopup();
-    refreshStudentLocation(true);
-    resetScannerView();
-    switchScannerMode('code');
+    if (modal) modal.style.display = 'none';
 }
 
 function retryCurrentScanMode() {
     refreshStudentLocation(true);
     resetScannerView();
-    if (currentScannerMode === 'code') {
-        switchScannerMode('code');
-    } else {
-        switchScannerMode('scan');
-    }
+    switchScannerMode(currentScannerMode === 'code' ? 'code' : 'scan');
 }
-
-window.openStudentScanner = openStudentScanner;
-window.closeStudentScanner = closeStudentScanner;
-window.switchScannerMode = switchScannerMode;
-window.submitDirectCode = submitDirectCode;
-window.resetScannerView = resetScannerView;
-window.retryCurrentScanMode = retryCurrentScanMode;
-window.formatSessionCodeInput = formatSessionCodeInput;
-window.handleCodeKeydown = handleCodeKeydown;
-window.showOutsideRangePopup = showOutsideRangePopup;
-window.closeOutsideRangePopup = closeOutsideRangePopup;
-window.requestCameraAgain = requestCameraAgain;
-window.toggleTorch = toggleTorch;
-window.toggleCameraFacing = toggleCameraFacing;
-window.retryScanFromOutsidePopup = retryScanFromOutsidePopup;
-window.useCodeFromOutsidePopup = useCodeFromOutsidePopup;
 
 function finishScanAndRefresh() {
     clearAutoCloseTimer();
@@ -1721,254 +1018,75 @@ function finishScanAndRefresh() {
         window.location.reload();
     }
 }
+
+window.openStudentScanner = openStudentScanner;
+window.closeStudentScanner = closeStudentScanner;
+window.switchScannerMode = switchScannerMode;
+window.submitDirectCode = submitDirectCode;
+window.resetScannerView = resetScannerView;
+window.retryCurrentScanMode = retryCurrentScanMode;
 window.finishScanAndRefresh = finishScanAndRefresh;
 
-function playScanBeep() {
-    try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const ctx = new AudioCtx();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.12);
-    } catch(e) {}
-}
-
-function playSuccessChime() {
-    try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const ctx = new AudioCtx();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
-        osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
-        gain.gain.setValueAtTime(0.15, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.5);
-    } catch(e) {}
-}
-
-function playErrorTone() {
-    try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        const ctx = new AudioCtx();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(220, ctx.currentTime);
-        osc.frequency.setValueAtTime(160, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.35);
-    } catch(e) {}
-}
-
-// Auto open scanner if directed with URL query
 document.addEventListener('DOMContentLoaded', () => {
+    // Wire 6-box OTP PIN inputs
+    const pinBoxes = Array.from(document.querySelectorAll('.sf-otp-box'));
+    pinBoxes.forEach((box, idx) => {
+        box.addEventListener('input', (e) => {
+            const val = box.value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+            box.value = val.slice(-1);
+            syncBackingFromPinBoxes();
+            if (box.value && idx < pinBoxes.length - 1) pinBoxes[idx + 1].focus();
+        });
+        box.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !box.value && idx > 0) {
+                pinBoxes[idx - 1].focus();
+                pinBoxes[idx - 1].value = '';
+                syncBackingFromPinBoxes();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                submitDirectCode();
+            }
+        });
+        box.addEventListener('paste', (e) => {
+            const pasted = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+            if (pasted) {
+                e.preventDefault();
+                handleCopiedCodeInput(pasted);
+            }
+        });
+    });
+
     const urlParams = new URLSearchParams(window.location.search);
     if (isDedicatedStudentScannerPage) {
         const mode = urlParams.get('open_code') === '1' ? 'code' : 'scan';
         openStudentScanner(mode, urlParams.get('paste') === '1');
-    } else if (urlParams.get('open_scanner') === '1') {
-        openStudentScanner('scan');
-    } else if (urlParams.get('open_code') === '1') {
-        openStudentScanner('code');
     }
 
-    const modal = document.getElementById('studentScannerModal');
-    if (modal) {
-        // Backdrop click only closes the legacy in-page dialog. The dedicated scan route is a page.
-        modal.addEventListener('click', (e) => {
-            if (!isDedicatedStudentScannerPage && e.target === modal) {
-                closeStudentScanner();
-            }
-        });
-    }
-
-    // ── CSP-safe delegated event handler for ALL modal actions ──
-    // This handles both click and touchend events via data-action attributes.
-    // Guarantees buttons work on mobile browsers even when CSP Level 3
-    // blocks inline onclick handlers despite 'unsafe-inline' being present
-    // alongside a nonce in script-src.
-    let lastDelegatedAction = null;
-    let lastDelegatedActionTime = 0;
-    function handleModalDelegatedAction(e) {
+    function handleModalAction(e) {
         const trigger = e.target.closest('[data-action]');
         if (!trigger) return;
-
         const action = trigger.getAttribute('data-action');
         if (!action) return;
-
-        const now = Date.now();
-        if (action === lastDelegatedAction && now - lastDelegatedActionTime < 300) {
-            return;
-        }
-        lastDelegatedAction = action;
-        lastDelegatedActionTime = now;
-
-        // Stop propagation to prevent multiple handlers
         e.stopPropagation();
-
         switch (action) {
-            case 'switch-scan':
-                switchScannerMode('scan');
-                break;
-            case 'switch-code':
-                switchScannerMode('code');
-                break;
-            case 'paste-copied-code':
-            case 'paste-code':
-                pasteCopiedCodeFromClipboard();
-                break;
-            case 'allow-camera':
-                requestCameraAgain();
-                break;
-            case 'submit-code':
-                submitDirectCode();
-                break;
-            case 'close-scanner':
-                closeStudentScanner();
-                break;
-            case 'toggle-torch':
-                toggleTorch();
-                break;
-            case 'flip-camera':
-                toggleCameraFacing();
-                break;
-            case 'result-done':
-                finishScanAndRefresh();
-                break;
-            case 'result-retry':
-                retryCurrentScanMode();
-                break;
-            case 'outside-retry-scan':
-                retryScanFromOutsidePopup();
-                break;
-            case 'outside-enter-code':
-                useCodeFromOutsidePopup();
-                break;
-            case 'close-outside-popup':
-                closeOutsideRangePopup();
-                break;
+            case 'switch-scan': switchScannerMode('scan'); break;
+            case 'switch-code': switchScannerMode('code'); break;
+            case 'paste-copied-code': pasteCopiedCodeFromClipboard(); break;
+            case 'allow-camera': requestCameraAgain(); break;
+            case 'submit-code': submitDirectCode(); break;
+            case 'close-scanner': closeStudentScanner(); break;
+            case 'toggle-torch': toggleTorch(); break;
+            case 'result-done': finishScanAndRefresh(); break;
+            case 'result-retry': retryCurrentScanMode(); break;
+            case 'outside-retry-scan': closeOutsideRangePopup(); retryCurrentScanMode(); switchScannerMode('scan'); break;
+            case 'outside-enter-code': closeOutsideRangePopup(); resetScannerView(); switchScannerMode('code'); break;
+            case 'close-outside-popup': closeOutsideRangePopup(); break;
         }
     }
 
-    // Bind delegated handler on scanner modal
-    if (modal) {
-        modal.addEventListener('click', handleModalDelegatedAction, true);
-    }
-
-    // Bind delegated handler on outside-range popup
-    const outsidePopup = document.getElementById('outsideRangePopupModal');
-    if (outsidePopup) {
-        outsidePopup.addEventListener('click', handleModalDelegatedAction, true);
-    }
-
-    // Add input event handlers for code entry
-    const codeInput = document.getElementById('directSessionCodeInput');
-    if (codeInput) {
-        codeInput.addEventListener('input', function(e) {
-            formatSessionCodeInput(this, e);
-        });
-        codeInput.addEventListener('keydown', function(e) {
-            handleCodeKeydown(e);
-        });
-        codeInput.addEventListener('paste', function(e) {
-            const pastedText = (e.clipboardData || window.clipboardData)?.getData('text') || '';
-            if (pastedText) {
-                e.preventDefault();
-                handleCopiedCodeInput(pastedText);
-            }
-        });
-    }
-
-    // Modal-wide paste support (Ctrl+V anywhere while modal is open)
-    document.addEventListener('paste', function(e) {
-        const m = document.getElementById('studentScannerModal');
-        if (!m || m.style.display !== 'flex') return;
-        if (e.target && e.target !== codeInput && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
-            return;
-        }
-        const pastedText = (e.clipboardData || window.clipboardData)?.getData('text') || '';
-        if (pastedText) {
-            e.preventDefault();
-            handleCopiedCodeInput(pastedText);
-        }
-    });
-
-    // Resume or check camera on visibility change (e.g. returning from app permissions in Android Settings)
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            const m = document.getElementById('studentScannerModal');
-            if (m && m.style.display === 'flex' && currentScannerMode === 'scan') {
-                const notice = document.getElementById('scannerFallbackNotice');
-                if (!isScannerRunning && (!isScannerStarting || (notice && notice.style.display !== 'none'))) {
-                    console.log('[Scanner] App visible while scanner open - re-checking camera');
-                    requestCameraAgain();
-                }
-            }
-        }
-    });
-
-    // Safely release camera hardware when leaving or navigating away
-    window.addEventListener('pagehide', () => {
-        safeStopScanner();
-    });
-    window.addEventListener('beforeunload', () => {
-        safeStopScanner();
-    });
-
-    // Ensure inactive overlays don't swallow pointer events
-    const inactiveOverlays = ['scannerLoadingOverlay', 'scannerProcessingOverlay'];
-    inactiveOverlays.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            // Use MutationObserver to toggle pointer-events based on display
-            const observer = new MutationObserver(() => {
-                el.style.pointerEvents = (el.style.display === 'none') ? 'none' : 'auto';
-            });
-            observer.observe(el, { attributes: true, attributeFilter: ['style'] });
-            // Initial state
-            el.style.pointerEvents = (el.style.display === 'none') ? 'none' : 'auto';
-        }
-    });
-});
-
-// Window resize adaptive listener
-window.addEventListener('resize', () => {
-    const modal = document.getElementById('studentScannerModal');
-    if (modal && modal.style.display !== 'none') {
-        applyResponsiveScannerLayout();
-        if (isDesktopDevice() && currentScannerMode !== 'code') {
-            switchScannerMode('code');
-        }
-    }
-});
-
-// Keyboard support: Escape key closes modal on desktop/mobile
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        const modal = document.getElementById('studentScannerModal');
-        if (modal && modal.style.display !== 'none') {
-            closeStudentScanner();
-        }
-    }
+    document.getElementById('studentScannerModal')?.addEventListener('click', handleModalAction, true);
+    document.getElementById('outsideRangePopupModal')?.addEventListener('click', handleModalAction, true);
+    window.addEventListener('pagehide', () => safeStopScanner());
+    window.addEventListener('beforeunload', () => safeStopScanner());
 });
 </script>

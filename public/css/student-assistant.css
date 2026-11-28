@@ -1,11 +1,26 @@
 .assistant-workspace {
-    --assistant-accent: #d4af37;
-    --assistant-curve: 12px;
+    --assistant-accent: var(--sf-rose, #E892A2);
+    --assistant-curve: 14px;
+    --text-primary: var(--sf-text, #F8F4F5);
+    --text-secondary: var(--sf-text-secondary, #A6979B);
+    --surface: var(--sf-surface, #160D10);
+    --surface-soft: var(--sf-surface-2, #1F1317);
+    --surface-hover: var(--sf-surface-3, #2A191F);
+    --surface-border: var(--sf-border, rgba(255, 215, 224, 0.085));
+    --student-border: var(--sf-border, rgba(255, 215, 224, 0.085));
+    --student-border-strong: var(--sf-border-strong, rgba(255, 215, 224, 0.15));
+    --student-surface: var(--sf-surface, #160D10);
+    --student-surface-strong: var(--sf-input-bg, #120A0D);
+    --gold-soft: var(--sf-rose, #E892A2);
+    --ds-success-text: var(--sf-emerald, #34D399);
+    --ds-success-alpha: var(--sf-emerald-bg, rgba(16, 185, 129, 0.12));
+    --ds-success-border: var(--sf-emerald-border, rgba(52, 211, 153, 0.28));
+    --ds-danger-text: var(--sf-danger, #FB7185);
     display: grid;
     gap: clamp(16px, 2.5vw, 24px);
     max-width: 1040px;
     margin: 0 auto;
-    color: var(--text-primary);
+    color: var(--sf-text, #F8F4F5);
     overflow-wrap: anywhere;
 }
 

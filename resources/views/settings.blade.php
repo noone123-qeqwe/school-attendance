@@ -30,9 +30,14 @@
     $rate = $totalRecords > 0 ? round((($totalPresent + $totalLate) / $totalRecords) * 100) : 0;
 @endphp
 
+@if($user?->isStudent())
+    @include('student.settings-content')
+@else
+@if($user?->isAdmin())
 <link rel="stylesheet" href="{{ asset('css/settings-page.css') }}?v={{ filemtime(public_path('css/settings-page.css')) }}">
+@endif
 
-<div class="sp {{ $user?->isStudent() ? 'student-settings' : '' }}" @if($user?->isStudent()) data-student-settings="{{ $user->id }}" data-student-view="profile" data-settings-feedback="{{ $errors->any() || session('success') ? 'true' : 'false' }}" data-settings-phone-error="{{ $errors->has('phone') ? 'true' : 'false' }}" data-settings-phone-error-message="{{ $errors->first('phone') }}" data-settings-email-error="{{ $errors->has('new_email') || $errors->has('otp') ? 'true' : 'false' }}" data-settings-email-address-error="{{ $errors->has('new_email') ? 'true' : 'false' }}" data-settings-email-error-message="{{ $errors->first('new_email') ?: $errors->first('otp') }}" data-settings-password-error="{{ $errors->has('password') || $errors->has('password_confirmation') || $errors->has('otp') ? 'true' : 'false' }}" data-settings-password-error-message="{{ $errors->first('password') ?: $errors->first('password_confirmation') ?: $errors->first('otp') }}" @endif>
+<div class="sp">
 
     @if($user->isStudent())
     <header class="student-settings-heading">
@@ -1227,6 +1232,7 @@
         </section> <!-- /settings-main-content -->
     </div> <!-- /settings-layout-grid -->
 </div>
+@endif
 
 @php
     $settingsJsConfig = [

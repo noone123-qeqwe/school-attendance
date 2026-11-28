@@ -46,178 +46,34 @@ class HomeController extends Controller
         }
         return redirect()->route('home')->with('success', 'Password updated successfully. Welcome!');
     }
-   public function index()
-{
-    $user = Auth::user();
+    public function index(\App\Services\StudentHomeService $studentHome)
+    {
+        $user = Auth::user();
 
-    // Admins don't have a student dashboard — send them to admin panel
-    if ($user->isAdmin()) {
-        return redirect()->route('admin.dashboard');
-    }
-
-    // Teachers don't have a student dashboard — send them to teacher panel
-    if ($user->isTeacher()) {
-        return redirect()->route('teacher.dashboard');
-    }
-
-    // Parents don't have a student dashboard — send them to parent portal
-    if ($user->isParent()) {
-        return redirect()->route('parent.dashboard');
-    }
-
-    // Ensure we're dealing with a student
-    if (!$user->isStudent()) {
-        Auth::logout();
-        request()->session()->flush();
-        return redirect()->route('login')->with('error', 'Invalid user role.');
-    }
-
-    $now = now();
-    $todayDate = $now->toDateString();
-    $subjects = app(\App\Services\StudentScheduleService::class)->subjectsFor($user);
-    $schoolHolidays = Holiday::getUpcoming($todayDate, $now->copy()->addDays(7)->toDateString());
-    $todayHoliday = $schoolHolidays->first(fn ($holiday) => $holiday->date->isSameDay($now));
-    $todayAttendances = Attendance::where('user_id', $user->id)
-        ->whereDate('date', $todayDate)->get()->keyBy('subject_code');
-
-    // Timetable slots and subject/day attendance are separate concepts.
-    $todaySchedule = collect();
-    if (!$todayHoliday) {
-        foreach ($subjects as $subject) {
-            $slots = $subject->schedules->where('day', $now->format('l'));
-            foreach ($slots as $schedule) {
-                if (blank($schedule->start_time) || blank($schedule->end_time)) {
-                    continue;
-                }
-                $start = Carbon::parse($todayDate.' '.$schedule->start_time);
-                $end = Carbon::parse($todayDate.' '.$schedule->end_time);
-                if ($end->lte($start)) {
-                    continue;
-                }
-                $scheduleStatus = 'upcoming';
-                if ($now->gt($end)) {
-                    $scheduleStatus = 'ended';
-                } elseif ($now->gte($start)) {
-                    $scheduleStatus = 'ongoing';
-                }
-                $todaySchedule->push((object) [
-                    'subject' => $subject,
-                    'schedule' => $schedule,
-                    'start_time' => $start,
-                    'end_time' => $end,
-                    'schedule_status' => $scheduleStatus,
-                    'attendance' => $todayAttendances->get($subject->code),
-                    'has_multiple_slots' => $slots->count() > 1,
-                ]);
-            }
-        }
-    }
-    $todaySchedule = $todaySchedule->sortBy('start_time')->values();
-    $currentSlot = $todaySchedule->firstWhere('schedule_status', 'ongoing');
-    $currentClass = $currentSlot?->subject;
-    $alreadyClockedIn = $currentSlot && in_array($currentSlot->attendance?->status, ['Present', 'Late'], true);
-
-
-    $upcomingClass = null;
-    $upcomingLimit = $now->copy()->addDays(7);
-    $upcomingHolidays = $schoolHolidays
-        ->pluck('date')
-        ->map(fn ($date) => Carbon::parse($date)->toDateString())
-        ->flip();
-    for ($dayOffset = 0; $dayOffset <= 7; $dayOffset++) {
-        $scheduleDate = $now->copy()->addDays($dayOffset);
-        if ($upcomingHolidays->has($scheduleDate->toDateString())) {
-            continue;
+        // Admins don't have a student dashboard — send them to admin panel
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
         }
 
-        foreach ($subjects as $subject) {
-            foreach ($subject->schedules->where('day', $scheduleDate->format('l')) as $schedule) {
-                if (blank($schedule->start_time) || blank($schedule->end_time)) {
-                    continue;
-                }
-                $start = Carbon::parse($scheduleDate->toDateString() . ' ' . $schedule->start_time);
-                $end = Carbon::parse($scheduleDate->toDateString() . ' ' . $schedule->end_time);
-                if ($start->lte($now) || $start->gt($upcomingLimit) || $end->lte($start)) {
-                    continue;
-                }
-                if ($upcomingClass === null || $start->lt($upcomingClass->start_time)) {
-                    $upcomingClass = (object) [
-                        'subject' => $subject,
-                        'schedule' => $schedule,
-                        'start_time' => $start,
-                        'end_time' => $end,
-                    ];
-                }
-            }
+        // Teachers don't have a student dashboard — send them to teacher panel
+        if ($user->isTeacher()) {
+            return redirect()->route('teacher.dashboard');
         }
-        if ($upcomingClass !== null) {
-            break;
+
+        // Parents don't have a student dashboard — send them to parent portal
+        if ($user->isParent()) {
+            return redirect()->route('parent.dashboard');
         }
+
+        // Ensure we're dealing with a student
+        if (!$user->isStudent()) {
+            Auth::logout();
+            request()->session()->flush();
+            return redirect()->route('login')->with('error', 'Invalid user role.');
+        }
+
+        return view('home', $studentHome->buildFor($user));
     }
-
-    $recentAttendance = Attendance::with('subject')
-        ->where('user_id', $user->id)
-        ->whereDate('date', '<=', $todayDate)
-        ->orderByDesc('date')
-        ->orderByDesc('time_in')
-        ->orderByDesc('id')
-        ->limit(5)
-        ->get();
-
-    $unresolvedAbsencesQuery = Attendance::with('subject')
-        ->where('user_id', $user->id)
-        ->where('status', 'Absent')
-        ->where('excused', false)
-        ->whereDate('date', '<=', $todayDate)
-        ->whereDoesntHave('excuseSubmission', function ($query) use ($user) {
-            $query->where('user_id', $user->id)->whereIn('status', ['pending', 'approved']);
-        });
-    $unresolvedAbsencesCount = (clone $unresolvedAbsencesQuery)->count();
-    $unresolvedAbsences = $unresolvedAbsencesQuery
-        ->orderByDesc('date')
-        ->orderByDesc('id')
-        ->limit(3)
-        ->get();
-
-    $recentExcuseRequests = ExcuseSubmission::with('attendance.subject')
-        ->where('user_id', $user->id)
-        ->whereHas('attendance', function ($query) use ($user, $todayDate) {
-            $query->where('user_id', $user->id)
-                ->whereDate('date', '<=', $todayDate);
-        })
-        ->orderByDesc('updated_at')
-        ->orderByDesc('id')
-        ->limit(3)
-        ->get();
-
-    $activeWarnings = \App\Models\Warning::where('user_id', $user->id)
-        ->where('created_at', '>=', $now->copy()->subDays(14))
-        ->orderBy('created_at', 'desc')
-        ->get();
-
-    $announcements = Announcement::with('author')
-        ->published()
-        ->visibleTo($user)
-        ->latest()
-        ->take(5)
-        ->get();
-
-    return view('home', compact(
-        'currentClass',
-        'currentSlot',
-        'alreadyClockedIn',
-        'subjects',
-        'todayHoliday',
-        'activeWarnings',
-        'todaySchedule',
-        'upcomingClass',
-        'recentAttendance',
-        'unresolvedAbsences',
-        'unresolvedAbsencesCount',
-        'recentExcuseRequests',
-        'announcements'
-    ));
-}
 
     /**
      * Return the detailed month data used by the dashboard's calendar dialog.
@@ -423,10 +279,24 @@ class HomeController extends Controller
     {
         $user = Auth::user();
         $linkedParents = ($user && $user->isStudent()) ? $user->parents()->get() : collect();
-        $hasCameraFaceEnrollment = $user && $user->isStudent()
-            ? \App\Models\ProfileFacePhoto::where('user_id', $user->id)->exists()
-            : false;
-        return view('settings', compact('linkedParents', 'hasCameraFaceEnrollment'));
+        $faceEnrollmentRecord = $user && $user->isStudent()
+            ? \App\Models\ProfileFacePhoto::where('user_id', $user->id)->first()
+            : null;
+        $hasCameraFaceEnrollment = $faceEnrollmentRecord !== null;
+        $activePasskeys = $user && $user->isStudent()
+            ? $user->webauthnCredentials()->active()->latest()->get()
+            : collect();
+        $unusedRecoveryCodesCount = $user && $user->isStudent()
+            ? \App\Models\RecoveryCode::where('user_id', $user->id)->where('used', false)->count()
+            : 0;
+
+        return view('settings', compact(
+            'linkedParents',
+            'hasCameraFaceEnrollment',
+            'faceEnrollmentRecord',
+            'activePasskeys',
+            'unusedRecoveryCodesCount'
+        ));
     }
 
     public function faceRegistration(Request $request, \App\Services\FeatureFlagService $features)
@@ -742,7 +612,9 @@ class HomeController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('excuses.index', compact('absentRecords', 'excuseSubmissions'));
+        $subjects = app(\App\Services\StudentScheduleService::class)->subjectsFor($user);
+
+        return view('excuses.index', compact('absentRecords', 'excuseSubmissions', 'subjects'));
     }
 
     public function createExcuse(Attendance $attendance)
@@ -1067,6 +939,64 @@ class HomeController extends Controller
                 $request->query('end')
             )
         )->header('Cache-Control', 'private, no-store');
+    }
+
+    /**
+     * Stream a CSV export of the authenticated student's attendance records.
+     */
+    public function exportCalendarCsv(Request $request)
+    {
+        $user = Auth::user();
+        abort_unless($user && $user->isStudent(), 403);
+
+        $records = Attendance::with(['subject.instructorUser', 'excuseSubmission'])
+            ->where('user_id', $user->id)
+            ->orderByDesc('date')
+            ->orderByDesc('time_in')
+            ->get();
+
+        $safeCsvCell = static function (?string $value): string {
+            $str = (string) ($value ?? '');
+            if ($str !== '' && in_array($str[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+                return "'" . $str;
+            }
+            return $str;
+        };
+
+        $filename = 'attendance-log-' . ($user->student_number ?: $user->id) . '-' . now()->format('Y-m-d') . '.csv';
+
+        return response()->streamDownload(function () use ($records, $safeCsvCell): void {
+            $out = fopen('php://output', 'w');
+            if (!$out) {
+                return;
+            }
+            fputcsv($out, ['Date', 'Subject Code', 'Subject Name', 'Instructor', 'Clock In', 'Clock Out', 'Method', 'Status', 'Remarks']);
+            foreach ($records as $record) {
+                $status = ($record->excused || strcasecmp((string) $record->status, 'Excused') === 0)
+                    ? 'Excused'
+                    : (string) $record->status;
+                $timeIn = $record->time_in ? Carbon::parse($record->time_in)->format('g:i A') : ($record->checked_in_at?->format('g:i A') ?? '');
+                $timeOut = $record->time_out ? Carbon::parse($record->time_out)->format('g:i A') : '';
+                $instructor = $record->subject?->instructorUser?->name ?? $record->subject?->instructor ?? '';
+                $remarks = $record->excuse_note ?? $record->excuseSubmission?->reason ?? '';
+
+                fputcsv($out, [
+                    $safeCsvCell(Carbon::parse($record->date)->toDateString()),
+                    $safeCsvCell($record->subject_code),
+                    $safeCsvCell($record->subject?->name ?? $record->subject_name ?? $record->subject_code),
+                    $safeCsvCell($instructor),
+                    $safeCsvCell($timeIn),
+                    $safeCsvCell($timeOut),
+                    $safeCsvCell($record->method),
+                    $safeCsvCell($status),
+                    $safeCsvCell($remarks),
+                ]);
+            }
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     /**

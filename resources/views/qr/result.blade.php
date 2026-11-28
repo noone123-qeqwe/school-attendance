@@ -3,221 +3,58 @@
 @section('title', 'Attendance Status')
 
 @section('content')
-<style>
-    .result-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: calc(100vh - 120px);
-        padding: 24px 16px;
-        background: transparent;
-    }
-    .result-card {
-        max-width: 460px;
-        width: 100%;
-        border-radius: 16px;
-        padding: 34px 28px;
-        background: #1E1515;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-top: 2px solid #7A1A1A;
-        text-align: center;
-        color: #FAF8F5;
-    }
-    .result-icon {
-        width: 68px;
-        height: 68px;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 20px;
-        font-size: 2rem;
-    }
-    .result-title {
-        font-size: 1.38rem;
-        font-weight: 700;
-        color: #FAF8F5;
-        margin-bottom: 8px;
-        letter-spacing: -0.02em;
-    }
-    .result-sub {
-        font-size: 0.88rem;
-        color: #D8CEC8;
-        margin-bottom: 20px;
-        line-height: 1.55;
-    }
-    .result-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        border-radius: 8px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        margin-bottom: 20px;
-        font-variant-numeric: tabular-nums;
-    }
-    .subject-box {
-        background: #141010;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 14px 16px;
-        margin-bottom: 22px;
-        font-size: 0.85rem;
-        color: #D8CEC8;
-    }
-    .subject-box strong {
-        color: #FAF8F5;
-    }
-    .subject-box i {
-        color: #D4AF37 !important;
-    }
-    .action-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        min-height: 46px;
-        padding: 12px 20px;
-        background: #FAF8F5;
-        color: #7A1A1A;
-        border-radius: 10px;
-        text-decoration: none;
-        font-weight: 700;
-        font-size: 0.9rem;
-        transition: background 0.15s ease;
-        border: 1px solid #FAF8F5;
-    }
-    .action-btn:hover {
-        background: #FFFFFF;
-        color: #561313;
-    }
-    .secondary-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        min-height: 44px;
-        padding: 11px 20px;
-        background: #261B1B;
-        color: #FAF8F5;
-        border-radius: 10px;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 0.88rem;
-        transition: background 0.15s ease, border-color 0.15s ease;
-        margin-top: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-    }
-    .secondary-btn:hover {
-        background: #2F2222;
-        border-color: rgba(255, 255, 255, 0.28);
-        color: #FFFFFF;
-    }
-    @media (max-width: 480px) {
-        .result-card {
-            padding: 26px 20px;
-        }
-    }
-</style>
-
-<div class="result-wrapper">
-    <div class="result-card">
+<div style="max-width:460px;margin:32px auto;">
+    <section class="sf-card" style="padding:28px 24px;text-align:center;">
         @if($status === 'success')
-            <div class="result-icon" style="background: rgba(16, 185, 129, 0.15); border: 2px solid rgba(16, 185, 129, 0.4);">
-                <i class="bi bi-check2-circle" style="color: #34d399;"></i>
+            <div class="sf-bio-icon is-emerald" style="width:58px;height:58px;margin:0 auto 16px;font-size:26px;">
+                <i class="bi bi-check2-circle" aria-hidden="true"></i>
             </div>
-            <div class="result-title">Attendance Recorded Successfully!</div>
-            <div class="result-sub">{{ $message ?? 'Your attendance has been recorded for this class session.' }}</div>
-            
-            <div class="result-badge" style="background: {{ ($status_val ?? 'Present') === 'Present' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)' }}; color: {{ ($status_val ?? 'Present') === 'Present' ? '#34d399' : '#fbbf24' }}; border: 1px solid {{ ($status_val ?? 'Present') === 'Present' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)' }};">
-                <i class="bi bi-patch-check-fill me-1"></i> {{ $status_val ?? 'Present' }} @if(!empty($time)) — {{ $time }} @endif
+            <h1 style="margin:0 0 6px;font-size:20px;font-weight:700;color:var(--sf-text);">Attendance Recorded</h1>
+            <p style="margin:0 0 16px;font-size:13px;color:var(--sf-text-secondary);">{{ $message ?? 'Your attendance has been recorded for this class session.' }}</p>
+            <div style="margin-bottom:16px;">
+                <span class="sf-pill {{ ($status_val ?? 'Present') === 'Present' ? 'is-emerald' : 'is-amber' }}">
+                    {{ $status_val ?? 'Present' }} @if(!empty($time)) · {{ $time }} @endif
+                </span>
             </div>
-            
-            <div class="subject-box text-start" style="line-height: 1.8;">
-                @if(!empty($subject))
-                    <div><strong><i class="bi bi-journal-text me-1 text-warning"></i> Subject:</strong> {{ $subject }}</div>
-                @endif
-                @if(!empty($instructor))
-                    <div><strong><i class="bi bi-person-badge me-1 text-warning"></i> Instructor:</strong> {{ $instructor }}</div>
-                @endif
-                @if(!empty($section))
-                    <div><strong><i class="bi bi-people me-1 text-warning"></i> Section:</strong> {{ $section }}</div>
-                @endif
-                @if(!empty($date))
-                    <div><strong><i class="bi bi-calendar-event me-1 text-warning"></i> Date:</strong> {{ $date }}</div>
-                @endif
+            <div style="text-align:left;padding:12px 14px;border-radius:11px;background:var(--sf-surface-2);border:1px solid var(--sf-border);margin-bottom:18px;font-size:12.5px;display:flex;flex-direction:column;gap:6px;">
+                @if(!empty($subject))<div><span style="color:var(--sf-text-muted);">Subject:</span> <strong style="color:var(--sf-text);">{{ $subject }}</strong></div>@endif
+                @if(!empty($instructor))<div><span style="color:var(--sf-text-muted);">Instructor:</span> <span style="color:var(--sf-text-soft);">{{ $instructor }}</span></div>@endif
+                @if(!empty($section))<div><span style="color:var(--sf-text-muted);">Section:</span> <span style="color:var(--sf-text-soft);">{{ $section }}</span></div>@endif
+                @if(!empty($date))<div><span style="color:var(--sf-text-muted);">Date:</span> <span class="sf-mono" style="color:var(--sf-text-soft);">{{ $date }}</span></div>@endif
             </div>
-
+            <script @cspNonce>document.addEventListener('DOMContentLoaded', () => window.sfConfettiBurst?.());</script>
         @elseif($status === 'already')
-            <div class="result-icon" style="background: rgba(59, 130, 246, 0.15); border: 2px solid rgba(59, 130, 246, 0.4);">
-                <i class="bi bi-info-circle-fill" style="color: #60a5fa;"></i>
+            <div class="sf-bio-icon" style="width:58px;height:58px;margin:0 auto 16px;font-size:26px;background:var(--sf-sky-bg);border:1px solid var(--sf-sky-border);color:var(--sf-sky);">
+                <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
             </div>
-            <div class="result-title">Already Clocked In</div>
-            <div class="result-sub">{{ $message ?? 'You have already recorded your attendance for this class today.' }}</div>
-            
+            <h1 style="margin:0 0 6px;font-size:20px;font-weight:700;color:var(--sf-text);">Already Checked In</h1>
+            <p style="margin:0 0 16px;font-size:13px;color:var(--sf-text-secondary);">{{ $message ?? 'You have already recorded attendance for this class today.' }}</p>
             @if(!empty($status_val))
-            <div class="result-badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">
-                Status: {{ $status_val }} @if(!empty($time)) (at {{ $time }}) @endif
-            </div>
+                <div style="margin-bottom:16px;"><span class="sf-pill is-sky">{{ $status_val }} @if(!empty($time)) · {{ $time }} @endif</span></div>
             @endif
-
-            <div class="subject-box text-start" style="line-height: 1.8;">
-                @if(!empty($subject))
-                    <div><strong><i class="bi bi-journal-text me-1 text-info"></i> Subject:</strong> {{ $subject }}</div>
-                @endif
-                @if(!empty($instructor))
-                    <div><strong><i class="bi bi-person-badge me-1 text-info"></i> Instructor:</strong> {{ $instructor }}</div>
-                @endif
-                @if(!empty($section))
-                    <div><strong><i class="bi bi-people me-1 text-info"></i> Section:</strong> {{ $section }}</div>
-                @endif
-            </div>
-
-        @elseif($status === 'outside_classroom')
-            <div class="result-icon" style="background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.4);">
-                <i class="bi bi-geo-slash-fill" style="color: #f87171;"></i>
-            </div>
-            <div class="result-title">Failed to Scan</div>
-            <div class="result-sub">{{ $message ?? 'You are outside of the classroom range. Attendance can only be marked while physically present inside the classroom.' }}</div>
-            
-            <div class="subject-box" style="border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05);">
-                <i class="bi bi-exclamation-triangle me-1 text-danger"></i> Proximity verification required within classroom boundaries.
-            </div>
-
-        @elseif($status === 'expired')
-            <div class="result-icon" style="background: rgba(245, 158, 11, 0.15); border: 2px solid rgba(245, 158, 11, 0.4);">
-                <i class="bi bi-clock-history" style="color: #fbbf24;"></i>
-            </div>
-            <div class="result-title">QR Code Expired</div>
-            <div class="result-sub">{{ $message ?? 'This dynamic QR code has expired. Please scan the newly refreshed QR code from the teacher.' }}</div>
-
-        @elseif($status === 'closed')
-            <div class="result-icon" style="background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.4);">
-                <i class="bi bi-lock-fill" style="color: #f87171;"></i>
-            </div>
-            <div class="result-title">Session Closed</div>
-            <div class="result-sub">{{ $message ?? 'The attendance window for this class session has ended.' }}</div>
-
         @else
-            <div class="result-icon" style="background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.4);">
-                <i class="bi bi-x-circle-fill" style="color: #f87171;"></i>
+            <div class="sf-bio-icon" style="width:58px;height:58px;margin:0 auto 16px;font-size:26px;background:var(--sf-danger-bg);border:1px solid var(--sf-danger-border);color:var(--sf-danger);">
+                <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
             </div>
-            <div class="result-title">Attendance Notice</div>
-            <div class="result-sub">{{ $message ?? 'Unable to process QR attendance.' }}</div>
+            <h1 style="margin:0 0 6px;font-size:20px;font-weight:700;color:var(--sf-text);">
+                {{ match ($status) {
+                    'outside_classroom' => 'Outside Classroom Range',
+                    'expired' => 'QR Code Expired',
+                    'closed' => 'Session Closed',
+                    default => 'Attendance Notice',
+                } }}
+            </h1>
+            <p style="margin:0 0 18px;font-size:13px;color:var(--sf-text-secondary);line-height:1.55;">
+                {{ $message ?? 'Unable to process QR attendance.' }}
+            </p>
         @endif
 
-        <a href="{{ route('home') }}" class="action-btn">
-            <i class="bi bi-house-fill"></i> Go to Dashboard
-        </a>
-
-        @if(in_array($status, ['outside_classroom', 'expired']))
-            <a href="javascript:history.back()" class="secondary-btn">
-                <i class="bi bi-arrow-left"></i> Try Again
-            </a>
-        @endif
-    </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+            <a href="{{ route('home') }}" class="sf-btn sf-btn-primary sf-btn-lg sf-btn-block">Go to Dashboard</a>
+            @if(in_array($status, ['outside_classroom', 'expired']))
+                <a href="{{ route('mobile.scan') }}" class="sf-btn sf-btn-secondary sf-btn-block">Try Again</a>
+            @endif
+        </div>
+    </section>
 </div>
 @endsection

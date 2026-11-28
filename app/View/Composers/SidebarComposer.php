@@ -2,17 +2,20 @@
 
 namespace App\View\Composers;
 
+use App\Models\Attendance;
 use App\Models\AttendanceCorrection;
 use App\Models\ExcuseSubmission;
+use App\Models\Notification;
 use App\Models\Subject;
 use App\Services\FeatureFlagService;
+use App\Services\StudentScheduleService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 /**
  * Provides pre-computed, per-request memoized navigation state for sidebars
- * without embedding Eloquent queries inside Blade templates.
+ * and the student portal shell without embedding Eloquent queries inside Blade templates.
  */
 class SidebarComposer
 {
@@ -20,8 +23,31 @@ class SidebarComposer
     {
         $viewName = $view->name();
 
-        if (in_array($viewName, ['layouts.sidebars.student', 'home', 'student.classes'], true)) {
-            $view->with('hasActiveAssistantAssignment', $this->resolveStudentAssistantStatus());
+        if (
+            in_array($viewName, [
+                'layouts.student-shell',
+                'layouts.sidebars.student',
+                'layouts.sidebars.settings',
+                'home',
+                'student.classes',
+                'student.schedule',
+                'student.calendar',
+                'excuses.index',
+                'excuses.create',
+                'excuses.create_general',
+                'notifications',
+                'settings',
+                'student.profile',
+                'mobile.scan',
+                'mobile.peer-snap',
+            ], true)
+            || str_starts_with($viewName, 'student-assistant.')
+        ) {
+            $shell = $this->resolveStudentShellData();
+            $view->with([
+                'hasActiveAssistantAssignment' => $shell['hasActiveAssistantAssignment'],
+                'studentShellData' => $shell,
+            ]);
             return;
         }
 
@@ -83,44 +109,115 @@ class SidebarComposer
         return $counts;
     }
 
-    private function resolveStudentAssistantStatus(): bool
+    /**
+     * @return array{
+     *     hasActiveAssistantAssignment: bool,
+     *     classesCount: int,
+     *     recordsCount: int,
+     *     excusesCount: int,
+     *     pendingExcusesCount: int,
+     *     unreadNotificationsCount: int,
+     *     initials: string,
+     *     shortName: string,
+     *     subjectsQuickList: list<array{code: string, name: string, room: string, instructor: string}>
+     * }
+     */
+    private function resolveStudentShellData(): array
     {
+        $default = [
+            'hasActiveAssistantAssignment' => false,
+            'classesCount' => 0,
+            'recordsCount' => 0,
+            'excusesCount' => 0,
+            'pendingExcusesCount' => 0,
+            'unreadNotificationsCount' => 0,
+            'initials' => 'ST',
+            'shortName' => 'Student',
+            'subjectsQuickList' => [],
+        ];
+
         $student = Auth::user();
         if (!$student?->isStudent() || !$student->isActive()) {
-            return false;
+            return $default;
         }
 
         $request = request();
-        $attrKey = "sidebar_student_assistant_{$student->id}";
+        $attrKey = "student_shell_data_{$student->id}";
         if ($request->attributes->has($attrKey)) {
-            return (bool) $request->attributes->get($attrKey);
+            return $request->attributes->get($attrKey);
         }
 
-        if (!app(FeatureFlagService::class)->enabled('feature.student_assistant_qr')) {
-            $request->attributes->set($attrKey, false);
+        $nameParts = preg_split('/\s+/', trim((string) $student->name)) ?: [];
+        $firstInitial = mb_strtoupper(mb_substr($nameParts[0] ?? 'S', 0, 1));
+        $lastInitial = count($nameParts) > 1
+            ? mb_strtoupper(mb_substr($nameParts[count($nameParts) - 1], 0, 1))
+            : mb_strtoupper(mb_substr($nameParts[0] ?? 'T', 1, 1));
+        $initials = trim($firstInitial . $lastInitial) ?: 'ST';
 
-            return false;
+        if (count($nameParts) >= 3) {
+            $shortName = $nameParts[0] . ' ' . $nameParts[1] . ' ' . mb_strtoupper(mb_substr($nameParts[count($nameParts) - 1], 0, 1)) . '.';
+        } elseif (count($nameParts) === 2) {
+            $shortName = $nameParts[0] . ' ' . mb_strtoupper(mb_substr($nameParts[1], 0, 1)) . '.';
+        } else {
+            $shortName = (string) ($student->name ?: 'Student');
         }
 
-        $resolver = function () use ($student): bool {
+        $hasAssistant = false;
+        if (app(FeatureFlagService::class)->enabled('feature.student_assistant_qr')) {
             try {
-                return $student->studentAssistantAssignments()
+                $hasAssistant = $student->studentAssistantAssignments()
                     ->whereNotNull('active_slot')
                     ->whereNull('revoked_at')
                     ->where('starts_at', '<=', now())
                     ->where('expires_at', '>=', now())
                     ->exists();
             } catch (\Throwable) {
-                return false;
+                $hasAssistant = false;
             }
-        };
+        }
 
-        $active = app()->runningUnitTests()
-            ? $resolver()
-            : Cache::remember("sidebar:student_assistant:{$student->id}", now()->addSeconds(20), $resolver);
+        try {
+            $subjects = app(StudentScheduleService::class)->subjectsFor($student);
+            $subjectsQuickList = $subjects->map(function (Subject $subject): array {
+                $firstSlot = $subject->schedules->first();
+                $room = trim((string) ($firstSlot?->room ?? ''));
+                return [
+                    'code' => (string) $subject->code,
+                    'name' => (string) $subject->name,
+                    'room' => ($room !== '' && strtoupper($room) !== 'TBA') ? $room : 'Room TBA',
+                    'instructor' => (string) ($subject->instructorUser?->name ?? $subject->instructor ?? 'Instructor TBA'),
+                ];
+            })->values()->all();
 
-        $request->attributes->set($attrKey, $active);
+            $recordsCount = Attendance::where('user_id', $student->id)->count();
+            $excusesCount = ExcuseSubmission::where('user_id', $student->id)->count();
+            $pendingExcusesCount = ExcuseSubmission::where('user_id', $student->id)->where('status', 'pending')->count();
+            $unreadNotificationsCount = Notification::where('user_id', $student->id)
+                ->active()
+                ->where('is_read', false)
+                ->count();
 
-        return $active;
+            $data = [
+                'hasActiveAssistantAssignment' => $hasAssistant,
+                'classesCount' => $subjects->count(),
+                'recordsCount' => $recordsCount,
+                'excusesCount' => $excusesCount,
+                'pendingExcusesCount' => $pendingExcusesCount,
+                'unreadNotificationsCount' => $unreadNotificationsCount,
+                'initials' => $initials,
+                'shortName' => $shortName,
+                'subjectsQuickList' => $subjectsQuickList,
+            ];
+        } catch (\Throwable) {
+            $data = array_merge($default, [
+                'hasActiveAssistantAssignment' => $hasAssistant,
+                'initials' => $initials,
+                'shortName' => $shortName,
+            ]);
+        }
+
+        $request->attributes->set($attrKey, $data);
+
+        return $data;
     }
 }

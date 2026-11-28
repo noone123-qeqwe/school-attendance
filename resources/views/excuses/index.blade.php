@@ -6,230 +6,257 @@
     $pendingCount = $excuseSubmissions->where('status', 'pending')->count();
     $approvedCount = $excuseSubmissions->where('status', 'approved')->count();
     $rejectedCount = $excuseSubmissions->where('status', 'rejected')->count();
+    $totalCount = $excuseSubmissions->count();
+    $enrolledSubjects = $subjects ?? collect();
 @endphp
-<div class="ent-section ent-fade-up student-excuse-page sd-excuse-page">
-    <header class="sd-excuse-hero">
+
+<div>
+    <header class="sf-page-head">
         <div>
             <h1>Excuse Submissions</h1>
-            <p>Submit supporting documentation for absences and track reviewer decisions in real time.</p>
+            <p>Submit supporting documentation for missed classes and track faculty review status</p>
         </div>
-        <a href="{{ route('excuses.create_general') }}" class="ent-btn ent-btn-primary">
-            <i class="bi bi-plus-circle-fill me-1" aria-hidden="true"></i> Submit Excuse Letter
-        </a>
+        <div class="sf-page-actions">
+            <button type="button" class="sf-btn sf-btn-primary" id="sfOpenExcuseModalBtn" onclick="window.openSfModal?.('sfSubmitExcuseModal')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                <span>Submit an excuse</span>
+            </button>
+            <a href="{{ route('excuses.create_general') }}" class="sf-btn sf-btn-ghost sf-desktop-only" title="Open full multi-subject excuse form">
+                Full form
+            </a>
+        </div>
     </header>
 
     @if(session('success'))
-    <x-alert-banner role="status" class="mb-4" data-alert-transient style="background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.32); color: #6ee7b7; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
-        <i class="bi bi-check-circle-fill fs-5" aria-hidden="true"></i>
-        <span class="small fw-semibold">{{ session('success') }}</span>
-    </x-alert-banner>
+        <div class="sf-flash is-success" role="status">{{ session('success') }}</div>
     @endif
-
     @if(session('error'))
-    <x-alert-banner role="alert" class="mb-4" data-alert-transient style="background: rgba(255,107,122,0.12); border: 1px solid rgba(255,107,122,0.34); color: #ffb3bc; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
-        <i class="bi bi-exclamation-triangle-fill fs-5" aria-hidden="true"></i>
-        <span class="small fw-semibold">{{ session('error') }}</span>
-    </x-alert-banner>
+        <div class="sf-flash is-error" role="alert">{{ session('error') }}</div>
+    @endif
+    @if($errors->any())
+        <div class="sf-flash is-error" role="alert">{{ $errors->first() }}</div>
     @endif
 
-    <section class="sd-excuse-kpis" aria-label="Excuse summary">
-        <div class="sd-excuse-kpi {{ $absentRecords->count() > 0 ? 'is-danger' : '' }}">
-            <span class="sd-excuse-kpi-val">{{ $absentRecords->count() }}</span>
-            <span class="sd-excuse-kpi-lbl">Needs Excuse</span>
-        </div>
-        <div class="sd-excuse-kpi is-warning">
-            <span class="sd-excuse-kpi-val">{{ $pendingCount }}</span>
-            <span class="sd-excuse-kpi-lbl">Pending Review</span>
-        </div>
-        <div class="sd-excuse-kpi is-success">
-            <span class="sd-excuse-kpi-val">{{ $approvedCount }}</span>
-            <span class="sd-excuse-kpi-lbl">Approved</span>
-        </div>
-        <div class="sd-excuse-kpi {{ $rejectedCount > 0 ? 'is-danger' : '' }}">
-            <span class="sd-excuse-kpi-val">{{ $rejectedCount }}</span>
-            <span class="sd-excuse-kpi-lbl">Rejected</span>
-        </div>
-    </section>
+    {{-- Action Required: Unexcused Absences (shown only when student has open absences) --}}
+    @if($absentRecords->isNotEmpty())
+        <section class="sf-card" style="margin-bottom:16px;border-color:var(--sf-danger-border);" aria-label="Absences awaiting excuse">
+            <div class="sf-card-head">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <h2 class="sf-card-title">Needs an excuse</h2>
+                    <span class="sf-pill is-danger sf-mono">{{ $absentRecords->count() }}</span>
+                </div>
+                <span style="font-size:11.5px;color:var(--sf-text-muted);">Official absences without a submitted excuse</span>
+            </div>
+            <div>
+                @foreach($absentRecords as $record)
+                    <div class="sf-record-item" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                        <div style="min-width:0;">
+                            <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+                                <span class="sf-code-chip is-rose">{{ $record->subject_code }}</span>
+                                <strong style="font-size:13px;color:var(--sf-text);">{{ $record->subject->name ?? $record->subject_code }}</strong>
+                            </div>
+                            <div class="sf-mono" style="font-size:11.5px;color:var(--sf-text-muted);margin-top:3px;">
+                                Absent · {{ \Carbon\Carbon::parse($record->date)->format('F j, Y') }}
+                            </div>
+                        </div>
+                        <a href="{{ route('excuses.create', $record) }}" class="sf-btn sf-btn-secondary sf-btn-sm">
+                            Submit excuse
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
 
-    <div class="mb-3">
-        <div class="student-view-switcher" role="group" aria-label="Excuse views">
-            <button type="button" class="d-none d-lg-inline-flex" data-excuse-view="all" aria-controls="excuseNeedsPanel excuseHistoryPanel" aria-pressed="false">Side by side</button>
-            <button type="button" data-excuse-view="needs" aria-controls="excuseNeedsPanel" aria-pressed="true">Needs an excuse ({{ $absentRecords->count() }})</button>
-            <button type="button" data-excuse-view="history" aria-controls="excuseHistoryPanel" aria-pressed="false">My submissions ({{ $excuseSubmissions->count() }})</button>
+    {{-- Status Filter Pills --}}
+    <div class="sf-toolbar">
+        <div class="sf-filter-pills" role="tablist" aria-label="Filter excuse submissions by status">
+            <button type="button" class="sf-filter-pill active" data-excuse-status="all" role="tab" aria-selected="true">
+                All <span class="sf-mono" style="opacity:0.75;">{{ $totalCount }}</span>
+            </button>
+            <button type="button" class="sf-filter-pill" data-excuse-status="pending" role="tab" aria-selected="false">
+                Pending <span class="sf-mono" style="opacity:0.75;">{{ $pendingCount }}</span>
+            </button>
+            <button type="button" class="sf-filter-pill" data-excuse-status="approved" role="tab" aria-selected="false">
+                Approved <span class="sf-mono" style="opacity:0.75;">{{ $approvedCount }}</span>
+            </button>
+            <button type="button" class="sf-filter-pill" data-excuse-status="rejected" role="tab" aria-selected="false">
+                Rejected <span class="sf-mono" style="opacity:0.75;">{{ $rejectedCount }}</span>
+            </button>
         </div>
     </div>
 
-    <div class="row g-4 align-items-start">
-        <!-- Absent Records Requiring Excuses -->
-        <div class="col-12 col-lg-5" id="excuseNeedsPanel" data-excuse-panel="needs">
-            <div class="sd-excuse-panel">
-                <div class="sd-excuse-panel-head">
-                    <h2>
-                        <i class="bi bi-person-x-fill text-danger" aria-hidden="true"></i>
-                        Action Required: Absences
-                    </h2>
+    {{-- Submissions Card --}}
+    <section class="sf-card" aria-label="Excuse submission history">
+        @forelse($excuseSubmissions as $excuse)
+            @php
+                $pillTone = match ($excuse->status) {
+                    'approved' => 'is-emerald',
+                    'rejected' => 'is-danger',
+                    default => 'is-amber',
+                };
+                $attachmentCount = is_array($excuse->attachments) ? count($excuse->attachments) : 0;
+            @endphp
+            <article class="sf-record-item sf-excuse-card-row" data-status="{{ $excuse->status }}">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <div style="min-width:0;flex:1;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px;">
+                            @if($excuse->attendance?->subject_code)
+                                <span class="sf-code-chip is-rose">{{ $excuse->attendance->subject_code }}</span>
+                            @endif
+                            <strong style="font-size:13.5px;color:var(--sf-text);">
+                                {{ $excuse->attendance?->subject?->name ?? $excuse->attendance?->subject_code ?? 'Attendance Record' }}
+                            </strong>
+                            <span class="sf-pill {{ $pillTone }}">{{ ucfirst($excuse->status) }}</span>
+                        </div>
+
+                        <div class="sf-mono" style="font-size:11.5px;color:var(--sf-text-muted);margin-bottom:8px;">
+                            Absent: {{ $excuse->attendance?->date ? \Carbon\Carbon::parse($excuse->attendance->date)->format('M j, Y') : 'Date unavailable' }}
+                            · Submitted {{ $excuse->created_at->diffForHumans() }}
+                        </div>
+
+                        <div style="padding:10px 12px;border-radius:10px;background:var(--sf-surface-2);border:1px solid var(--sf-border);font-size:12.5px;">
+                            <div style="font-weight:600;color:var(--sf-text);margin-bottom:3px;">{{ $excuse->reason }}</div>
+                            @if(filled($excuse->description))
+                                <div style="color:var(--sf-text-secondary);line-height:1.45;">{{ $excuse->description }}</div>
+                            @endif
+                        </div>
+
+                        @if($attachmentCount > 0)
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                                @foreach($excuse->attachments ?? [] as $index => $attachment)
+                                    <a href="{{ route('excuse-attachments.show', [$excuse->id, $index]) }}"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       class="sf-btn sf-btn-ghost sf-btn-sm">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                        <span>Attachment {{ $index + 1 }}</span>
+                                    </a>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if($excuse->status === 'rejected' && filled($excuse->admin_notes))
+                            <div style="margin-top:8px;padding:9px 12px;border-radius:9px;background:var(--sf-danger-bg);border:1px solid var(--sf-danger-border);font-size:12px;">
+                                <strong style="color:var(--sf-danger);display:block;margin-bottom:2px;">Reviewer Note</strong>
+                                <span style="color:var(--sf-text-soft);">{{ $excuse->admin_notes }}</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </article>
+        @empty
+            <div class="sf-empty-state">
+                <span class="sf-empty-icon-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                </span>
+                <h3>No excuse submissions</h3>
+                <p>If you missed a class due to illness, family emergency, or an official campus activity, submit a documented excuse for review.</p>
+                <button type="button" class="sf-btn sf-btn-primary" style="margin-top:8px;" onclick="window.openSfModal?.('sfSubmitExcuseModal')">
+                    + Submit an excuse
+                </button>
+            </div>
+        @endforelse
+        <div class="sf-empty-state" id="sfExcuseFilterEmpty" hidden>
+            <h3>No submissions in this category</h3>
+            <p>Select another status filter above to view your excuse history.</p>
+        </div>
+    </section>
+</div>
+
+{{-- Submit Excuse Request Modal (Desktop & Mobile with circular bottom X close button) --}}
+<div class="sf-modal-backdrop" id="sfSubmitExcuseModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sfSubmitExcuseTitle">
+    <div class="sf-modal-card is-wide">
+        <div class="sf-modal-head">
+            <div>
+                <h3 id="sfSubmitExcuseTitle">Submit an Excuse Request</h3>
+                <p>Attach supporting documentation for faculty review</p>
+            </div>
+            <button type="button" class="sf-modal-close" data-close-modal="sfSubmitExcuseModal" aria-label="Close">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+        <form action="{{ route('excuses.store_general') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="sf-modal-body" style="display:flex;flex-direction:column;gap:12px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                        <label class="sf-label" for="sfModalCourse">Course *</label>
+                        <select name="subject_code" id="sfModalCourse" class="sf-select" required>
+                            @forelse($enrolledSubjects as $subj)
+                                <option value="{{ $subj->code }}" @selected(old('subject_code') === $subj->code)>{{ $subj->code }} — {{ $subj->name }}</option>
+                            @empty
+                                <option value="">No enrolled courses</option>
+                            @endforelse
+                        </select>
+                    </div>
+                    <div>
+                        <label class="sf-label" for="sfModalDate">Absence Date *</label>
+                        <input type="date" name="date" id="sfModalDate" class="sf-input" max="{{ today()->toDateString() }}" value="{{ old('date', date('Y-m-d')) }}" required>
+                    </div>
                 </div>
 
                 <div>
-                    @forelse($absentRecords as $record)
-                        <div class="sd-excuse-row d-flex justify-content-between align-items-center flex-wrap gap-3">
-                            <div class="min-w-0">
-                                <h3 class="sd-excuse-row-title">{{ $record->subject->name ?? $record->subject_code }}</h3>
-                                <div class="sd-excuse-row-meta">
-                                    <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>{{ \Carbon\Carbon::parse($record->date)->format('F j, Y') }}
-                                </div>
-                            </div>
-                            <a href="{{ route('excuses.create', $record) }}" class="ent-btn ent-btn-secondary" style="padding: 8px 15px; font-size: 0.82rem;">
-                                <i class="bi bi-plus-circle-fill me-1" aria-hidden="true"></i> Submit Excuse
-                            </a>
-                        </div>
-                    @empty
-                        <div class="sd-excuse-empty">
-                            <i class="bi bi-check2-circle" style="font-size: 2.5rem; color: #4ADE80;" aria-hidden="true"></i>
-                            <h4>All caught up!</h4>
-                            <p>You don't have any unexcused absences right now.</p>
-                        </div>
-                    @endforelse
+                    <label class="sf-label" for="sfModalReason">Reason Category *</label>
+                    <select name="reason" id="sfModalReason" class="sf-select" required>
+                        <option value="Medical/Health Issues" @selected(old('reason') === 'Medical/Health Issues')>Medical / Illness</option>
+                        <option value="Family Emergency" @selected(old('reason') === 'Family Emergency')>Family Emergency</option>
+                        <option value="Official School Activity / Event" @selected(old('reason') === 'Official School Activity / Event')>Official School Activity / Event</option>
+                        <option value="Personal Emergency" @selected(old('reason') === 'Personal Emergency')>Personal Emergency</option>
+                        <option value="Transportation Issues" @selected(old('reason') === 'Transportation Issues')>Transportation Issues</option>
+                        <option value="Weather Conditions" @selected(old('reason') === 'Weather Conditions')>Weather Conditions</option>
+                        <option value="Academic Activity" @selected(old('reason') === 'Academic Activity')>Academic Activity</option>
+                        <option value="Other" @selected(old('reason') === 'Other')>Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="sf-label" for="sfModalAttachment">Supporting Document (Optional)</label>
+                    <input type="file" name="attachments[]" id="sfModalAttachment" class="sf-input" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx">
+                    <div style="font-size:11px;color:var(--sf-text-muted);margin-top:4px;">Medical certificate, letter, or proof (JPG, PNG, PDF, DOC · Max 5MB)</div>
+                </div>
+
+                <div>
+                    <label class="sf-label" for="sfModalDesc">Explanation *</label>
+                    <textarea name="description" id="sfModalDesc" class="sf-textarea" maxlength="500" placeholder="Briefly explain why you missed this class..." required>{{ old('description') }}</textarea>
                 </div>
             </div>
-        </div>
-
-        <!-- Submitted Excuses History -->
-        <div class="col-12 col-lg-7" id="excuseHistoryPanel" data-excuse-panel="history">
-            <div class="sd-excuse-panel">
-                <div class="sd-excuse-panel-head">
-                    <h2>
-                        <i class="bi bi-file-earmark-text-fill" style="color: #7dd3fc;" aria-hidden="true"></i>
-                        Submission History
-                    </h2>
-                </div>
-
-                <div class="excuse-history-scroll" style="max-height: 620px; overflow-y: auto;">
-                    @forelse($excuseSubmissions as $excuse)
-                        <div class="sd-excuse-row">
-                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                                <div class="min-w-0">
-                                    <h3 class="sd-excuse-row-title">{{ $excuse->attendance?->subject?->name ?? $excuse->attendance?->subject_code ?? 'Attendance Record' }}</h3>
-                                    <div class="sd-excuse-row-meta">
-                                        <span style="color: #F87171; font-weight: 700;">Absent:</span> {{ $excuse->attendance?->date ? \Carbon\Carbon::parse($excuse->attendance->date)->format('M d, Y') : 'Date unavailable' }}
-                                        <span class="mx-1 opacity-50" aria-hidden="true">&bull;</span>
-                                        Submitted {{ $excuse->created_at->diffForHumans() }}
-                                    </div>
-                                </div>
-
-                                @if($excuse->status === 'pending')
-                                    <x-badge variant="warning" size="sm" :dot="true">Pending</x-badge>
-                                @elseif($excuse->status === 'approved')
-                                    <x-badge variant="success" size="sm" :dot="true">Approved</x-badge>
-                                @else
-                                    <x-badge variant="danger" size="sm" :dot="true">Rejected</x-badge>
-                                @endif
-                            </div>
-
-                            @php
-                                $descText = trim((string) ($excuse->description ?? ''));
-                                $hasLongDesc = \Illuminate\Support\Str::length($descText) > 110;
-                                $attachmentCount = is_array($excuse->attachments) ? count($excuse->attachments) : 0;
-                                $hasReviewerNote = $excuse->status === 'rejected' && !empty($excuse->admin_notes);
-                                $needsDetailDisclosure = $hasLongDesc || $attachmentCount > 0;
-                            @endphp
-                            <div class="sd-excuse-reason-box">
-                                <div class="sd-excuse-reason-title">Reason: {{ $excuse->reason }}</div>
-                                @if(!$hasLongDesc && $descText !== '')
-                                    <div class="sd-excuse-reason-body">{{ $descText }}</div>
-                                @elseif($hasLongDesc)
-                                    <div class="sd-excuse-reason-body">{{ \Illuminate\Support\Str::limit($descText, 110) }}</div>
-                                @endif
-                            </div>
-
-                            @if($needsDetailDisclosure)
-                                <details class="sd-disclosure-inline">
-                                    <summary>
-                                        <span>
-                                            @if($attachmentCount > 0 && $hasLongDesc)
-                                                Full letter &amp; {{ $attachmentCount }} {{ \Illuminate\Support\Str::plural('attachment', $attachmentCount) }}
-                                            @elseif($attachmentCount > 0)
-                                                {{ $attachmentCount }} {{ \Illuminate\Support\Str::plural('attachment', $attachmentCount) }}
-                                            @else
-                                                Read full explanation
-                                            @endif
-                                        </span>
-                                        <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
-                                    </summary>
-                                    <div class="sd-disclosure-inline-body">
-                                        @if($hasLongDesc)
-                                            <div class="sd-excuse-reason-body mb-2">{{ $descText }}</div>
-                                        @endif
-                                        @if($attachmentCount > 0)
-                                            <div class="d-flex gap-2 flex-wrap">
-                                                @foreach($excuse->attachments ?? [] as $index => $attachment)
-                                                    <a href="{{ route('excuse-attachments.show', [$excuse->id, $index]) }}" target="_blank" rel="noopener noreferrer" class="sd-excuse-attachment">
-                                                        <i class="bi bi-paperclip" aria-hidden="true"></i> View Attachment
-                                                    </a>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                    </div>
-                                </details>
-                            @endif
-
-                            @if($hasReviewerNote)
-                                <div class="sd-excuse-reviewer-note">
-                                    <div style="font-size:0.74rem;font-weight:800;color:#ff8e9b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Reviewer Note</div>
-                                    <p style="font-size:0.84rem;color:#FAF8F5;margin:0;">{{ $excuse->admin_notes }}</p>
-                                </div>
-                            @endif
-                        </div>
-                    @empty
-                        <div class="sd-excuse-empty">
-                            <i class="bi bi-inbox" style="font-size: 3rem; color: rgba(255, 255, 255,0.22);" aria-hidden="true"></i>
-                            <h4>No Submissions Yet</h4>
-                            <p>Submitted excuse letters and reviewer decisions will appear here.</p>
-                        </div>
-                    @endforelse
-                </div>
+            <div class="sf-modal-foot">
+                <button type="button" class="sf-btn sf-btn-ghost" data-close-modal="sfSubmitExcuseModal">Cancel</button>
+                <button type="submit" class="sf-btn sf-btn-primary">Submit Request</button>
             </div>
-        </div>
+        </form>
     </div>
+    <button type="button" class="sf-modal-circle-close sf-mobile-only" data-close-modal="sfSubmitExcuseModal" aria-label="Close modal">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
 </div>
+@endsection
+
+@section('scripts')
 <script @cspNonce>
 (function () {
-    const buttons = document.querySelectorAll('[data-excuse-view]');
-    const panels = document.querySelectorAll('[data-excuse-panel]');
-    const needsPanel = document.getElementById('excuseNeedsPanel');
-    const historyPanel = document.getElementById('excuseHistoryPanel');
-    function showExcuseView(view) {
-        buttons.forEach(button => button.setAttribute('aria-pressed', button.dataset.excuseView === view ? 'true' : 'false'));
-        panels.forEach(panel => panel.hidden = (view !== 'all' && panel.dataset.excusePanel !== view));
-        if (needsPanel && historyPanel) {
-            if (view === 'all') {
-                needsPanel.className = 'col-12 col-lg-5';
-                historyPanel.className = 'col-12 col-lg-7';
-            } else {
-                needsPanel.className = 'col-12';
-                historyPanel.className = 'col-12';
-            }
-        }
-    }
-    buttons.forEach(button => button.addEventListener('click', () => showExcuseView(button.dataset.excuseView)));
-    const desktopMedia = window.matchMedia('(min-width: 992px)');
-    const fallbackMobileView = @json($absentRecords->isNotEmpty() ? 'needs' : 'history');
-    let activeView = desktopMedia.matches ? 'all' : fallbackMobileView;
-    const wrappedShow = (view) => {
-        activeView = view;
-        showExcuseView(view);
-    };
-    buttons.forEach(button => button.addEventListener('click', () => { activeView = button.dataset.excuseView; }));
-    const syncViewportView = (matchesDesktop) => {
-        if (!matchesDesktop && activeView === 'all') {
-            wrappedShow(fallbackMobileView);
-        }
-    };
-    if (typeof desktopMedia.addEventListener === 'function') {
-        desktopMedia.addEventListener('change', (e) => syncViewportView(e.matches));
-    }
-    window.addEventListener('resize', () => syncViewportView(desktopMedia.matches), { passive: true });
-    wrappedShow(activeView);
+    const pills = document.querySelectorAll('[data-excuse-status]');
+    const rows = Array.from(document.querySelectorAll('.sf-excuse-card-row'));
+    const emptyEl = document.getElementById('sfExcuseFilterEmpty');
+
+    pills.forEach((pill) => {
+        pill.addEventListener('click', () => {
+            const status = pill.dataset.excuseStatus || 'all';
+            pills.forEach((p) => {
+                const active = p === pill;
+                p.classList.toggle('active', active);
+                p.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            let shown = 0;
+            rows.forEach((row) => {
+                const match = status === 'all' || row.dataset.status === status;
+                row.hidden = !match;
+                if (match) shown++;
+            });
+            if (emptyEl) emptyEl.hidden = rows.length === 0 || shown > 0;
+        });
+    });
 })();
 </script>
 @endsection

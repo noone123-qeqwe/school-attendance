@@ -2,210 +2,115 @@
 @section('page-title', 'Submit Excuse Letter')
 
 @section('content')
-<div class="ent-section ent-fade-up student-excuse-form" style="max-width: 880px; margin: 0 auto;">
-    <header class="sd-excuse-hero">
+<div style="max-width:820px;margin:0 auto;">
+    <header class="sf-page-head">
         <div>
             <h1>Submit Excuse Letter</h1>
-            <p>Choose the date and subjects for an existing absence, then add your explanation and supporting documents.</p>
+            <p>Choose the absence date and subject(s), then attach supporting documentation for review</p>
         </div>
-        <x-back-link :href="route('excuses')" label="Back to Excuses" variant="entity" />
+        <div class="sf-page-actions">
+            <a href="{{ route('excuses') }}" class="sf-btn sf-btn-ghost">← Back to Excuses</a>
+        </div>
     </header>
 
-    <x-error-summary title="Please review your excuse submission" />
+    @if($errors->any())
+        <div class="sf-flash is-error" role="alert">{{ $errors->first() }}</div>
+    @endif
 
-    <div class="sd-excuse-form-card">
+    <section class="sf-card">
         <form action="{{ route('excuses.store_general') }}" method="POST" enctype="multipart/form-data" id="excuseForm">
             @csrf
 
-            <div class="sd-excuse-form-body">
-                {{-- STEP 1: DATE & REASON FIRST (Immediately actionable above the fold) --}}
-                <div class="student-excuse-fields mb-4">
+            <div class="sf-card-body" style="display:flex;flex-direction:column;gap:18px;">
+                {{-- Date & Reason --}}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                     <div>
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                            <label for="absenceDateInput" class="sd-form-label mb-0">
-                                Absence Date <span class="text-danger">*</span>
-                            </label>
-                            <div class="d-flex gap-1">
-                                <button type="button" class="quick-date-btn" onclick="setDatePreset(0)">Today</button>
-                                <button type="button" class="quick-date-btn" onclick="setDatePreset(-1)">Yesterday</button>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                            <label for="absenceDateInput" class="sf-label" style="margin-bottom:0;">Absence Date *</label>
+                            <div style="display:flex;gap:4px;">
+                                <button type="button" class="sf-btn sf-btn-ghost sf-btn-sm" style="height:24px;font-size:11px;" onclick="setDatePreset(0)">Today</button>
+                                <button type="button" class="sf-btn sf-btn-ghost sf-btn-sm" style="height:24px;font-size:11px;" onclick="setDatePreset(-1)">Yesterday</button>
                             </div>
                         </div>
-                        <input type="date" name="date" id="absenceDateInput" max="{{ today()->toDateString() }}" value="{{ old('date', date('Y-m-d')) }}" class="sd-form-input" required>
-                        @error('date')
-                            <div class="mt-2 small fw-semibold" style="color: #F87171;">{{ $message }}</div>
-                        @enderror
+                        <input type="date" name="date" id="absenceDateInput" max="{{ today()->toDateString() }}" value="{{ old('date', date('Y-m-d')) }}" class="sf-input" required>
                     </div>
 
                     <div>
-                        <label for="excuseReason" class="sd-form-label">
-                            Reason for Absence <span class="text-danger">*</span>
-                        </label>
-                        <select name="reason" id="excuseReason" class="sd-form-input" required>
+                        <label for="excuseReason" class="sf-label">Reason for Absence *</label>
+                        <select name="reason" id="excuseReason" class="sf-select" required>
                             <option value="">Select a reason</option>
-                            <option value="Medical/Health Issues" {{ old('reason') == 'Medical/Health Issues' ? 'selected' : '' }}>Medical / Health Issues</option>
-                            <option value="Family Emergency" {{ old('reason') == 'Family Emergency' ? 'selected' : '' }}>Family Emergency</option>
-                            <option value="Personal Emergency" {{ old('reason') == 'Personal Emergency' ? 'selected' : '' }}>Personal Emergency</option>
-                            <option value="Transportation Issues" {{ old('reason') == 'Transportation Issues' ? 'selected' : '' }}>Transportation Issues</option>
-                            <option value="Weather Conditions" {{ old('reason') == 'Weather Conditions' ? 'selected' : '' }}>Weather Conditions / Calamity</option>
-                            <option value="Official School Activity / Event" {{ old('reason') == 'Official School Activity / Event' ? 'selected' : '' }}>Official School Activity / Event</option>
-                            <option value="Academic Activity" {{ old('reason') == 'Academic Activity' ? 'selected' : '' }}>Academic Activity</option>
-                            <option value="Other" {{ old('reason') == 'Other' ? 'selected' : '' }}>Other</option>
+                            <option value="Medical/Health Issues" @selected(old('reason') == 'Medical/Health Issues')>Medical / Health Issues</option>
+                            <option value="Family Emergency" @selected(old('reason') == 'Family Emergency')>Family Emergency</option>
+                            <option value="Personal Emergency" @selected(old('reason') == 'Personal Emergency')>Personal Emergency</option>
+                            <option value="Transportation Issues" @selected(old('reason') == 'Transportation Issues')>Transportation Issues</option>
+                            <option value="Weather Conditions" @selected(old('reason') == 'Weather Conditions')>Weather Conditions / Calamity</option>
+                            <option value="Official School Activity / Event" @selected(old('reason') == 'Official School Activity / Event')>Official School Activity / Event</option>
+                            <option value="Academic Activity" @selected(old('reason') == 'Academic Activity')>Academic Activity</option>
+                            <option value="Other" @selected(old('reason') == 'Other')>Other</option>
                         </select>
-                        @error('reason')
-                            <div class="mt-2 small fw-semibold" style="color: #F87171;">{{ $message }}</div>
-                        @enderror
                     </div>
                 </div>
 
-                {{-- STEP 2: PROGRESSIVE SUBJECT SELECTOR (Shows first 4 + instant expand/search) --}}
-                <div class="mb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                {{-- Subject Selector --}}
+                <div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
                         <div>
-                            <label class="sd-form-label mb-1">
-                                <i class="bi bi-journal-check" style="color: #D4AF37;" aria-hidden="true"></i>
-                                Choose Subjects <span class="text-danger">*</span>
-                            </label>
-                            <span style="font-size: 0.8rem; color: #ACA099;">Select one or more classes missed on this date</span>
+                            <label class="sf-label" style="margin-bottom:2px;">Choose Subjects *</label>
+                            <div style="font-size:11.5px;color:var(--sf-text-muted);">Select one or more enrolled classes missed on this date</div>
                         </div>
-                        <div class="student-excuse-selection-actions d-flex align-items-center gap-2 flex-wrap">
-                            <span id="subjectCountBadge" class="sub-code-badge" aria-live="polite" style="border-radius: 999px; padding: 4px 11px;">
-                                0 of {{ count($subjects) }} Selected
-                            </span>
-                            <button type="button" class="quick-sub-btn" onclick="selectAllSubjects(true)">Select All</button>
-                            <button type="button" class="quick-sub-btn" onclick="selectAllSubjects(false)">Clear</button>
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                            <span id="subjectCountBadge" class="sf-pill is-rose sf-mono" aria-live="polite">0 of {{ count($subjects) }} Selected</span>
+                            <button type="button" class="sf-btn sf-btn-ghost sf-btn-sm" onclick="selectAllSubjects(true)">Select All</button>
+                            <button type="button" class="sf-btn sf-btn-ghost sf-btn-sm" onclick="selectAllSubjects(false)">Clear</button>
                         </div>
                     </div>
 
                     @if($subjects->isEmpty())
-                        <div class="sd-excuse-empty" style="background: rgba(28, 18, 18,0.45); border-radius: 14px; border: 1px dashed rgba(255, 255, 255,0.2);">
-                            <i class="bi bi-journal-x" style="font-size: 2rem; color: #ACA099;" aria-hidden="true"></i>
-                            <h4>No enrolled subjects found</h4>
+                        <div class="sf-empty-state" style="padding:24px;border:1px dashed var(--sf-border-strong);border-radius:12px;">
+                            <h3>No enrolled subjects found</h3>
                             <p>Enrolled subjects for this semester will appear here once assigned.</p>
                         </div>
                     @else
-                        @if(count($subjects) > 3)
-                            <div class="mb-3 position-relative">
-                                <i class="bi bi-search" style="position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#ACA099; pointer-events:none; font-size:0.86rem;" aria-hidden="true"></i>
-                                <input type="search" id="excuseSubjectFilterInput" class="sd-form-input" style="padding-left:38px; min-height:44px;" placeholder="Filter {{ count($subjects) }} subjects by code or name..." aria-label="Filter subjects">
-                            </div>
-                        @endif
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;" id="subjectsGrid">
+                        <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));gap:10px;" id="subjectsGrid">
                             @foreach($subjects as $subject)
-                                <div class="excuse-subject-slot" @if($loop->index >= 3 && !in_array($subject->id, (array) old('subject_ids', []))) data-extra-subject="1" hidden @endif>
-                                    @include('partials.student-excuse-subject', ['subject' => $subject, 'isPrimary' => false, 'hasOtherAbsence' => false])
-                                </div>
+                                @include('partials.student-excuse-subject', ['subject' => $subject, 'isPrimary' => false, 'hasOtherAbsence' => false])
                             @endforeach
                         </div>
-                        @if(count($subjects) > 3)
-                            <div class="mt-3">
-                                <button type="button"
-                                        id="toggleExtraSubjectsBtn"
-                                        class="quick-sub-btn"
-                                        style="min-height: 44px; padding: 8px 14px;"
-                                        aria-expanded="false"
-                                        data-total-subjects="{{ count($subjects) }}"
-                                        onclick="toggleExtraSubjects()">
-                                    <i class="bi bi-chevron-down me-1" aria-hidden="true"></i>Show all {{ count($subjects) }} subjects
-                                </button>
-                            </div>
-                        @endif
                     @endif
 
-                    <div id="subjectError" role="alert" style="display: none; color: #F87171; font-size: 0.8rem; margin-top: 10px; font-weight: 600;">
-                        <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i> Please select at least one subject to submit your excuse letter.
+                    <div id="subjectError" role="alert" style="display:none;color:var(--sf-danger);font-size:12px;margin-top:8px;font-weight:600;">
+                        Please select at least one subject to submit your excuse letter.
                     </div>
                 </div>
 
-                {{-- STEP 3: DETAILED DESCRIPTION --}}
-                <div class="mb-4">
-                    <div class="d-flex justify-content-between align-items-baseline mb-2">
-                        <label for="descInput" class="sd-form-label mb-0">
-                            Detailed Explanation <span class="text-danger">*</span>
-                        </label>
-                        <span id="charCount" class="sd-tabular" style="font-size: 0.76rem; color: #ACA099;">0 / 500</span>
+                {{-- Detailed Explanation --}}
+                <div>
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+                        <label for="descInput" class="sf-label" style="margin-bottom:0;">Detailed Explanation *</label>
+                        <span id="charCount" class="sf-mono" style="font-size:11px;color:var(--sf-text-muted);">0 / 500</span>
                     </div>
-                    <textarea name="description" id="descInput" rows="4" maxlength="500" class="sd-form-input" style="resize: vertical;" placeholder="Please provide a clear and respectful explanation for your absence in the selected subject(s)..." required>{{ old('description') }}</textarea>
-                    @error('description')
-                        <div class="mt-2 small fw-semibold" style="color: #F87171;">{{ $message }}</div>
-                    @enderror
+                    <textarea name="description" id="descInput" rows="4" maxlength="500" class="sf-textarea" placeholder="Please provide a clear explanation for your absence..." required>{{ old('description') }}</textarea>
                 </div>
 
-                {{-- STEP 4: OPTIONAL SUPPORTING DOCUMENTS (Progressively Disclosed) --}}
-                <details class="sd-disclosure-card" id="excuseAttachmentsDisclosure" @if($errors->has('attachments.*')) open @endif>
-                    <summary>
-                        <span class="sd-disclosure-title-wrap">
-                            <i class="bi bi-paperclip" style="color:#D4AF37;" aria-hidden="true"></i>
-                            <span id="attachmentsLabel">Supporting Documents (Optional)</span>
-                        </span>
-                        <span class="sd-disclosure-meta-wrap">
-                            <span class="sd-disclosure-pill" id="excuseAttachmentCountPill">Optional</span>
-                            <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
-                        </span>
-                    </summary>
-                    <div class="sd-disclosure-body">
-                        <div class="position-relative w-100">
-                            <input type="file" name="attachments[]" id="attachments" multiple
-                                   accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onchange="handleFileSelect(this)"
-                                   aria-labelledby="attachmentsLabel"
-                                   class="visually-hidden">
-
-                            <label for="attachments" id="dropZone" class="sd-dropzone">
-                                <i class="bi bi-cloud-arrow-up" style="font-size: 2.2rem; color: #D4AF37; margin-bottom: 8px;" aria-hidden="true"></i>
-                                <span style="font-size: 0.95rem; font-weight: 700; color: #FAF8F5;">Click or drag &amp; drop files here</span>
-                                <span style="font-size: 0.8rem; color: #ACA099; margin-top: 4px;">Medical certificates, letters, or official receipts</span>
-                            </label>
-                        </div>
-
-                        <div style="font-size: 0.76rem; color: #ACA099; margin-top: 8px;">
-                            Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max 5MB each)
-                        </div>
-
-                        <div id="fileList" class="mt-3 d-flex flex-column gap-2"></div>
-
-                        @error('attachments.*')
-                            <div class="mt-2 small fw-semibold" style="color: #F87171;">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </details>
+                {{-- Attachments --}}
+                <div>
+                    <label for="attachments" class="sf-label">Supporting Documents (Optional)</label>
+                    <input type="file" name="attachments[]" id="attachments" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" class="sf-input">
+                    <div style="font-size:11px;color:var(--sf-text-muted);margin-top:5px;">Accepted formats: JPG, PNG, PDF, DOC, DOCX (Max 5MB each)</div>
+                </div>
             </div>
 
-            <div class="sd-excuse-form-footer">
-                <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary">Cancel</a>
-                <button type="submit" id="submitBtn" class="ent-btn ent-btn-primary" style="padding: 10px 24px;">
-                    <i class="bi bi-send-fill me-1" aria-hidden="true"></i> <span>Submit Excuse Letter</span>
-                </button>
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:14px 16px;border-top:1px solid var(--sf-border);background:var(--sf-surface-2);border-radius:0 0 14px 14px;">
+                <a href="{{ route('excuses') }}" class="sf-btn sf-btn-ghost">Cancel</a>
+                <button type="submit" id="submitBtn" class="sf-btn sf-btn-primary">Submit Excuse Letter</button>
             </div>
         </form>
-    </div>
+    </section>
 </div>
 
 @push('scripts')
 <script @cspNonce>
-let extraSubjectsExpanded = false;
-
-function toggleExtraSubjects(forceExpand) {
-    const slots = document.querySelectorAll('.excuse-subject-slot[data-extra-subject="1"]');
-    const btn = document.getElementById('toggleExtraSubjectsBtn');
-    const nextState = typeof forceExpand === 'boolean' ? forceExpand : !extraSubjectsExpanded;
-    extraSubjectsExpanded = nextState;
-    slots.forEach(slot => {
-        if (!slot.dataset.filterHidden) {
-            slot.hidden = !nextState;
-        }
-    });
-    if (btn) {
-        const total = btn.dataset.totalSubjects || document.querySelectorAll('.excuse-subject-slot').length;
-        btn.setAttribute('aria-expanded', nextState ? 'true' : 'false');
-        btn.innerHTML = nextState
-            ? '<i class="bi bi-chevron-up me-1" aria-hidden="true"></i>Show fewer subjects'
-            : `<i class="bi bi-chevron-down me-1" aria-hidden="true"></i>Show all ${total} subjects`;
-    }
-}
-
 function selectAllSubjects(select) {
-    if (select) {
-        toggleExtraSubjects(true);
-    }
     document.querySelectorAll('.subject-checkbox').forEach(cb => { cb.checked = select; });
     updateSubjectSelectionState();
 }
@@ -215,185 +120,43 @@ function updateSubjectSelectionState() {
     let selectedCount = 0;
     cards.forEach(card => {
         const cb = card.querySelector('.subject-checkbox');
-        if (cb && cb.checked) {
-            card.classList.add('selected');
-            selectedCount++;
-        } else {
-            card.classList.remove('selected');
-        }
+        const checked = Boolean(cb && cb.checked);
+        card.classList.toggle('selected', checked);
+        card.style.borderColor = checked ? 'var(--sf-rose)' : 'var(--sf-border-strong)';
+        card.style.background = checked ? 'var(--sf-brand-soft)' : 'var(--sf-surface-2)';
+        if (checked) selectedCount++;
     });
-
     const badge = document.getElementById('subjectCountBadge');
-    if (badge) badge.textContent = `${selectedCount} of ${cards.length} Selected`;
-
+    if (badge) badge.textContent = selectedCount + ' of ' + cards.length + ' Selected';
     const err = document.getElementById('subjectError');
     if (err && selectedCount > 0) err.style.display = 'none';
-}
-
-const subjectFilterInput = document.getElementById('excuseSubjectFilterInput');
-if (subjectFilterInput) {
-    subjectFilterInput.addEventListener('input', () => {
-        const q = subjectFilterInput.value.trim().toLowerCase();
-        const slots = document.querySelectorAll('.excuse-subject-slot');
-        const toggleBtn = document.getElementById('toggleExtraSubjectsBtn');
-        slots.forEach(slot => {
-            const isExtra = slot.dataset.extraSubject === '1';
-            const cb = slot.querySelector('.subject-checkbox');
-            if (!q) {
-                delete slot.dataset.filterHidden;
-                slot.hidden = isExtra && !extraSubjectsExpanded && !(cb && cb.checked);
-            } else {
-                const match = slot.textContent.toLowerCase().includes(q);
-                if (match) {
-                    delete slot.dataset.filterHidden;
-                    slot.hidden = false;
-                } else {
-                    slot.dataset.filterHidden = '1';
-                    slot.hidden = true;
-                }
-            }
-        });
-        if (toggleBtn) {
-            toggleBtn.hidden = q.length > 0;
-        }
-    });
 }
 
 function setDatePreset(offsetDays) {
     const d = new Date();
     d.setDate(d.getDate() + offsetDays);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
     const el = document.getElementById('absenceDateInput');
-    if (el) el.value = `${yyyy}-${mm}-${dd}`;
+    if (el) {
+        el.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
 }
 
 const descInput = document.getElementById('descInput');
 const charCount = document.getElementById('charCount');
 if (descInput && charCount) {
-    const updateCount = () => {
-        const len = descInput.value.length;
-        charCount.textContent = `${len} / 500`;
-        charCount.style.color = len >= 490 ? '#F87171' : '#ACA099';
-    };
+    const updateCount = () => { charCount.textContent = descInput.value.length + ' / 500'; };
     descInput.addEventListener('input', updateCount);
     updateCount();
 }
 
-const dropZone = document.getElementById('dropZone');
-if (dropZone) {
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
-    });
-    ['dragenter', 'dragover'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.add('is-dragover'), false);
-    });
-    ['dragleave', 'drop'].forEach(eventName => {
-        dropZone.addEventListener(eventName, () => dropZone.classList.remove('is-dragover'), false);
-    });
-    dropZone.addEventListener('drop', (e) => {
-        const input = document.getElementById('attachments');
-        if (e.dataTransfer.files.length) {
-            input.files = e.dataTransfer.files;
-            handleFileSelect(input);
-        }
-    }, false);
-}
-
-function getFileIcon(filename) {
-    const ext = filename.split('.').pop().toLowerCase();
-    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'bi-image text-success';
-    if (ext === 'pdf') return 'bi-file-pdf text-danger';
-    if (['doc', 'docx'].includes(ext)) return 'bi-file-word text-info';
-    return 'bi-file-earmark-text text-secondary';
-}
-
-function handleFileSelect(input) {
-    const fileList = document.getElementById('fileList');
-    const pill = document.getElementById('excuseAttachmentCountPill');
-    const disclosure = document.getElementById('excuseAttachmentsDisclosure');
-    fileList.innerHTML = '';
-
-    if (pill) {
-        if (input.files.length > 0) {
-            pill.textContent = `${input.files.length} ${input.files.length === 1 ? 'file' : 'files'}`;
-            pill.classList.add('is-accent');
-        } else {
-            pill.textContent = 'Optional';
-            pill.classList.remove('is-accent');
-        }
+document.getElementById('excuseForm')?.addEventListener('submit', function (e) {
+    if (!document.querySelectorAll('.subject-checkbox:checked').length) {
+        e.preventDefault();
+        const err = document.getElementById('subjectError');
+        if (err) err.style.display = 'block';
     }
-    if (disclosure && input.files.length > 0) {
-        disclosure.open = true;
-    }
-
-    if (input.files.length > 0) {
-        Array.from(input.files).forEach((file, index) => {
-            const fileItem = document.createElement('div');
-            fileItem.className = 'sd-file-chip';
-            const iconClass = getFileIcon(file.name);
-            const left = document.createElement('div');
-            left.style.cssText = 'display:flex;align-items:center;gap:12px;min-width:0;';
-            const icon = document.createElement('i');
-            icon.className = `bi ${iconClass}`;
-            icon.style.fontSize = '1.2rem';
-            icon.setAttribute('aria-hidden', 'true');
-            const info = document.createElement('div');
-            info.style.cssText = 'display:flex;flex-direction:column;min-width:0;';
-            const nameEl = document.createElement('span');
-            nameEl.style.cssText = 'font-weight:700;line-height:1.25;overflow-wrap:anywhere;';
-            nameEl.textContent = file.name;
-            const sizeEl = document.createElement('span');
-            sizeEl.style.cssText = 'color:#A49890;font-size:0.75rem;line-height:1.2;';
-            sizeEl.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
-            info.append(nameEl, sizeEl);
-            left.append(icon, info);
-
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
-            removeBtn.style.cssText = 'background:none;border:none;color:#F87171;cursor:pointer;padding:6px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;min-width:36px;min-height:36px;';
-            removeBtn.innerHTML = '<i class="bi bi-trash3" aria-hidden="true"></i>';
-            removeBtn.addEventListener('click', () => removeFile(index));
-
-            fileItem.append(left, removeBtn);
-            fileList.appendChild(fileItem);
-        });
-    }
-}
-
-function removeFile(index) {
-    const input = document.getElementById('attachments');
-    const dt = new DataTransfer();
-    Array.from(input.files).forEach((file, i) => { if (i !== index) dt.items.add(file); });
-    input.files = dt.files;
-    handleFileSelect(input);
-}
-
-const form = document.getElementById('excuseForm');
-if (form) {
-    form.addEventListener('submit', function(e) {
-        const selected = document.querySelectorAll('.subject-checkbox:checked');
-        if (selected.length === 0) {
-            e.preventDefault();
-            const err = document.getElementById('subjectError');
-            if (err) err.style.display = 'block';
-            document.getElementById('subjectsGrid')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return false;
-        }
-        const btn = document.getElementById('submitBtn');
-        if (btn) {
-            btn.disabled = true;
-            btn.style.opacity = '0.8';
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> <span>Submitting...</span>';
-        }
-    });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    updateSubjectSelectionState();
 });
+document.addEventListener('DOMContentLoaded', updateSubjectSelectionState);
 </script>
 @endpush
 @endsection

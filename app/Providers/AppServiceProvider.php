@@ -99,9 +99,22 @@ class AppServiceProvider extends ServiceProvider
         View::composer([
             'layouts.sidebars.teacher',
             'partials.teacher-navigation',
+            'layouts.student-shell',
             'layouts.sidebars.student',
+            'layouts.sidebars.settings',
             'home',
             'student.classes',
+            'student.schedule',
+            'student.calendar',
+            'excuses.index',
+            'excuses.create',
+            'excuses.create_general',
+            'notifications',
+            'settings',
+            'student.profile',
+            'mobile.scan',
+            'mobile.peer-snap',
+            'student-assistant.*',
         ], SidebarComposer::class);
 
         // ── CSP nonce Blade directive ─────────────────────────────────────────

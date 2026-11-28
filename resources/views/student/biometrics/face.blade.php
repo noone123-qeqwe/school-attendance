@@ -51,7 +51,7 @@
             </div>
 
             <div class="bio-face-studio-right">
-                @include('partials.camera-light-controls', ['cameraLightId' => 'cameraFaceLight'])
+                @include('partials.camera-light-controls', ['cameraLightId' => 'cameraFaceLight', 'pushAssets' => true])
 
                 <p id="cameraFaceStatus" class="biometric-flow-status" role="status">{{ $hasCameraFaceEnrollment ? 'A face profile is enrolled for attendance matching. Saving new captures will replace it.' : '' }}</p>
 

@@ -63,7 +63,7 @@
             const itemRect = active.getBoundingClientRect();
             if (groupRect.width <= 0 || itemRect.width <= 0) return;
 
-            const x = Math.round((itemRect.left - groupRect.left) * 10) / 10;
+            const x = Math.round((itemRect.left - groupRect.left - (groupEl.clientLeft || 0)) * 10) / 10;
             const w = Math.round(itemRect.width * 10) / 10;
             if (instant) groupEl.setAttribute('data-glide-instant', 'true');
             pill.style.setProperty('--glide-x', `${x}px`);
@@ -76,6 +76,9 @@
 
         // Initial paint without transition so indicator never jumps on load
         requestAnimationFrame(() => syncPosition(true));
+        if (document.fonts && typeof document.fonts.ready?.then === 'function') {
+            document.fonts.ready.then(() => syncPosition(true));
+        }
 
         // Update smoothly when any child tab is clicked or mutated
         groupEl.addEventListener('click', () => {
@@ -541,8 +544,8 @@
             });
             if (calPane) calPane.hidden = mode !== 'calendar';
             if (recPane) recPane.hidden = mode !== 'records';
-            if (shouldScroll && mode === 'records' && recPane) {
-                requestAnimationFrame(() => recPane.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' }));
+            if (shouldScroll && mode === 'records') {
+                requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' }));
             }
         };
 
@@ -560,6 +563,9 @@
         const hasRecordFilter = Boolean(params.get('q') || params.get('status') || params.get('record_date') || params.get('page'));
         const wantsRecords = window.location.hash === '#attendance-records' || hasRecordFilter;
         activate(wantsRecords ? 'records' : 'calendar', false);
+        if (window.location.hash === '#attendance-records') {
+            requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+        }
 
         window.addEventListener('hashchange', () => {
             if (window.location.hash === '#attendance-records') {

@@ -35,25 +35,19 @@ class GlobalSearchCommandPaletteTest extends TestCase
 
         $html = $this->actingAs($student)->get(route('home'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('css/command-palette.css', $html);
+        $this->assertStringContainsString('css/student-frontend.css', $html);
+        $this->assertStringContainsString('js/student-frontend.js', $html);
+        $this->assertStringContainsString('id="headerSearchBar"', $html);
+        $this->assertStringContainsString('id="cmdPaletteOverlay"', $html);
+        $this->assertStringContainsString('id="cmdPaletteInput"', $html);
+        $this->assertStringContainsString('id="cmdPaletteItems"', $html);
+        $this->assertStringContainsString('window.__SF_COMMANDS__', $html);
 
-        $paletteCss = file_get_contents(public_path('css/command-palette.css'));
-        $this->assertIsString($paletteCss);
-        $this->assertStringContainsString('height: min(580px, calc(100dvh - clamp(48px, 12dvh, 104px)));', $paletteCss);
-        $this->assertStringContainsString('height: min(680px, calc(var(--cmd-vv-height, 100dvh) - max(14px, env(safe-area-inset-top, 0px))));', $paletteCss);
-        $this->assertStringContainsString('flex: 1 1 0%;', $paletteCss);
-        $this->assertStringContainsString('overflow-y: auto;', $paletteCss);
-        $this->assertStringContainsString('white-space: normal;', $paletteCss);
-        $this->assertStringContainsString('text-overflow: clip;', $paletteCss);
-        $this->assertStringContainsString('id="cmdPaletteLiveStatus"', $html);
-        $this->assertStringContainsString('id="cmdEmptyClearBtn"', $html);
-        $this->assertStringContainsString('id="cmdEmptyAllCatBtn"', $html);
-        $this->assertStringContainsString('All Pages &amp; Actions', $html);
-        $this->assertStringContainsString("action:     { icon: 'bi-lightning-charge-fill', label: 'Actions'", $html);
-
-        $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
-        $this->assertIsString($masterCss);
-        $this->assertStringContainsString('border-radius: 24px 24px 0 0 !important;', $masterCss);
+        $frontendCss = file_get_contents(public_path('css/student-frontend.css'));
+        $this->assertIsString($frontendCss);
+        $this->assertStringContainsString('.sf-cmd-card', $frontendCss);
+        $this->assertStringContainsString('.sf-cmd-list', $frontendCss);
+        $this->assertStringContainsString('overflow-y: auto;', $frontendCss);
     }
 
     public function test_admin_and_parent_search_items_populate_all_command_palette_categories(): void

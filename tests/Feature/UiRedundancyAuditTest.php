@@ -37,7 +37,8 @@ class UiRedundancyAuditTest extends TestCase
         $html = $response->getContent();
         $this->assertStringNotContainsString('settings-mobile-back-chip', $html);
         $this->assertStringNotContainsString('mobile-sidebar-back-btn', $html);
-        $this->assertStringContainsString('class="mobile-back-btn d-md-none"', $html);
+        $this->assertStringContainsString('id="sfMobileSettingsBackBtn"', $html);
+        $this->assertStringContainsString('class="sf-mobile-settings-hub"', $html);
         $this->assertStringContainsString('id="settingsBackToDashboardLink"', $html);
         $this->assertStringContainsString('id="studentSettingsPageTitle"', $html);
 
@@ -46,11 +47,6 @@ class UiRedundancyAuditTest extends TestCase
         $this->assertIsString($js);
         $this->assertStringContainsString('history.replaceState', $js);
         $this->assertStringNotContainsString('history.pushState', $js);
-
-        $cssPath = public_path('css/student-settings.css');
-        $css = file_get_contents($cssPath);
-        $this->assertIsString($css);
-        $this->assertStringContainsString(':not([data-student-view^="change-"]) .student-settings-detail-heading h2', $css);
     }
 
     public function test_biometrics_fingerprint_setup_omits_duplicate_back_to_settings_link(): void
@@ -128,8 +124,9 @@ class UiRedundancyAuditTest extends TestCase
             $this->assertStringNotContainsString($removedContent, $html);
         }
 
-        $this->assertStringContainsString('id="corCertificateSheet"', $html);
-        $this->assertStringContainsString('id="corMobileCardsView"', $html);
+        $this->assertStringContainsString('id="sfClassesListPanel"', $html);
+        $this->assertStringContainsString('id="sfClassesWeeklyPanel"', $html);
+        $this->assertStringContainsString('id="sfMobileCoursesList"', $html);
         $this->assertStringContainsString('id="scheduleSearchInput"', $html);
     }
 
@@ -223,8 +220,8 @@ class UiRedundancyAuditTest extends TestCase
         $this->actingAs($this->createUser('student', ['email' => 'excuse.audit@example.test', 'student_number' => '2026-AUDIT-2']))
             ->get(route('excuses.create_general'))
             ->assertOk()
-            ->assertSee('ui-back-link', false)
-            ->assertSee('d-none d-md-inline-flex', false);
+            ->assertSee('Back to Excuses', false)
+            ->assertSee(route('excuses'), false);
 
         $this->flushSession();
         auth()->logout();
@@ -243,7 +240,7 @@ class UiRedundancyAuditTest extends TestCase
         $this->assertSame(1, substr_count($settingsHtml, 'for="ppmFileInput"'));
         $this->assertStringNotContainsString('id="ppmCameraBadge"', $settingsHtml);
         $this->assertStringNotContainsString('id="ppmHoverOverlay"', $settingsHtml);
-        $this->assertMatchesRegularExpression('/<div class="d-none d-lg-block">[\s\S]*id="compactToggle"/', $settingsHtml);
+        $this->assertMatchesRegularExpression('/sf-setting-row\s+sf-desktop-only[\s\S]*id="compactToggle"/', $settingsHtml);
 
         preg_match_all('/<style[^>]*>([\s\S]*?)<\/style>/i', $settingsHtml, $settingsStyles);
         $settingsInlineChars = array_sum(array_map('strlen', $settingsStyles[1] ?? []));
@@ -261,15 +258,15 @@ class UiRedundancyAuditTest extends TestCase
         $homeInlineChars = array_sum(array_map('strlen', $homeStyles[1] ?? []));
         $this->assertLessThan(10000, $homeInlineChars, 'Dashboard inline <style> bloat should be extracted to cached stylesheets.');
 
-        // 4. Excuses: single primary button hierarchy & deduplicated panel header counts
+        // 4. Excuses: single primary submit trigger in header & modal trigger present
         $excusesHtml = $this->actingAs($student)->get(route('excuses'))->assertOk()->getContent();
-        $this->assertSame(1, substr_count($excusesHtml, 'ent-btn-primary'));
-        $this->assertStringNotContainsString('Needs an excuse</span>', $excusesHtml);
+        $this->assertStringContainsString('id="sfOpenExcuseModalBtn"', $excusesHtml);
+        $this->assertStringContainsString('id="sfSubmitExcuseModal"', $excusesHtml);
 
         // 5. CSS brace integrity & deep-link / notification counter wiring
-        $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
-        $this->assertNotFalse($masterCss);
-        $this->assertSame(substr_count($masterCss, '{'), substr_count($masterCss, '}'), 'student-portal-master.css must keep balanced braces so screen rules never leak to @media print.');
+        $frontendCss = file_get_contents(public_path('css/student-frontend.css'));
+        $this->assertNotFalse($frontendCss);
+        $this->assertSame(substr_count($frontendCss, '{'), substr_count($frontendCss, '}'), 'student-frontend.css must keep balanced braces.');
 
         $cmdBlade = file_get_contents(resource_path('views/components/command-palette.blade.php'));
         $qrVerifyBlade = file_get_contents(resource_path('views/qr/verify.blade.php'));
@@ -297,20 +294,20 @@ class UiRedundancyAuditTest extends TestCase
         ]);
 
         $studentHome = $this->actingAs($student)->get(route('home'))->assertOk()->getContent();
-        $this->assertStringContainsString('css/student-motion-craft.css', $studentHome);
-        $this->assertStringContainsString('js/student-motion-craft.js', $studentHome);
+        $this->assertStringContainsString('css/student-frontend.css', $studentHome);
+        $this->assertStringContainsString('js/student-frontend.js', $studentHome);
 
         $this->flushSession();
 
         $teacherDash = $this->actingAs($teacher)->get(route('teacher.dashboard'))->assertOk()->getContent();
-        $this->assertStringNotContainsString('css/student-motion-craft.css', $teacherDash);
-        $this->assertStringNotContainsString('js/student-motion-craft.js', $teacherDash);
+        $this->assertStringNotContainsString('css/student-frontend.css', $teacherDash);
+        $this->assertStringNotContainsString('js/student-frontend.js', $teacherDash);
 
         foreach ([
-            'css/student-motion-craft.css',
+            'css/student-frontend.css',
             'css/profile-photo-manager.css',
             'css/pwa-ui.css',
-            'css/student-scanner.css',
+            'css/biometric-flow.css',
         ] as $sheet) {
             $css = file_get_contents(public_path($sheet));
             $this->assertNotFalse($css, "Missing stylesheet {$sheet}");
@@ -333,102 +330,65 @@ class UiRedundancyAuditTest extends TestCase
             'student_number' => '2026-DISC-1',
         ]);
 
-        // 1. Calendar splits Calendar & Records into focused workspace tabs, collapses Legend, and folds Records filters
+        // 1. Calendar splits Calendar & Records into responsive tabs + CSV export + SSR events
         $calHtml = $this->actingAs($student)->get(route('student.calendar'))->assertOk()->getContent();
         $this->assertStringContainsString('id="scalTabCalendar"', $calHtml);
         $this->assertStringContainsString('id="scalTabRecords"', $calHtml);
         $this->assertStringContainsString('id="scalWorkspaceCalendar"', $calHtml);
         $this->assertStringContainsString('id="scalWorkspaceRecords"', $calHtml);
-        $this->assertStringNotContainsString('id="scalTodayBtn"', $calHtml);
-        $this->assertStringContainsString('sd-disclosure-card scal-legend-card', $calHtml);
-        $this->assertStringContainsString('sd-filter-disclosure', $calHtml);
+        $this->assertStringContainsString(route('student.calendar.export-csv'), $calHtml);
+        $this->assertStringContainsString('ssrEvents', file_get_contents(resource_path('views/student/calendar.blade.php')) ?: '');
 
         // 2. Records route redirects seamlessly into Calendar's Records workspace tab
         $this->actingAs($student)->get(route('attendance.records'))->assertRedirect();
 
-        // 3. Excuse form prioritizes Date & Reason first and folds optional attachments behind a disclosure card
+        // 3. Excuse form prioritizes Date & Reason before subject checklist
         $excuseFormHtml = $this->actingAs($student)->get(route('excuses.create_general'))->assertOk()->getContent();
-        $this->assertStringContainsString('id="excuseAttachmentsDisclosure"', $excuseFormHtml);
-        $this->assertStringContainsString('id="excuseAttachmentCountPill"', $excuseFormHtml);
-        $this->assertStringContainsString('toggleExtraSubjects', $excuseFormHtml);
         $this->assertLessThan(
             strpos($excuseFormHtml, 'Choose Subjects'),
             strpos($excuseFormHtml, 'Absence Date'),
             'Date & Reason should precede the subject checklist on the general excuse form.'
         );
 
-        // 4. Dashboard prioritizes today's classes and actionable attendance.
+        // 4. Dashboard prioritizes Class schedule and Recent attendance with speculation rules and single font stylesheet
         $homeHtml = $this->actingAs($student)->get(route('home'))->assertOk()->getContent();
-        $this->assertStringContainsString("Today's classes", $homeHtml);
+        $this->assertStringContainsString('Class schedule', $homeHtml);
         $this->assertStringContainsString('Recent attendance', $homeHtml);
-        $this->assertStringNotContainsString('sd-pulse-disclosure', $homeHtml);
-
-        // 5. Notifications collapses Search & Category Filters and moves secondary card actions into overflow menus
-        $notifHtml = $this->actingAs($student)->get(route('notifications'))->assertOk()->getContent();
-        $this->assertStringContainsString('notif-filter-disclosure', $notifHtml);
-        $notifBlade = file_get_contents(resource_path('views/notifications.blade.php'));
-        $this->assertNotFalse($notifBlade);
-        $this->assertStringContainsString('class="sd-action-menu"', $notifBlade);
-
-        // 6. Classes uses responsive mobile filter disclosure
-        $classesHtml = $this->actingAs($student)->get(route('student.classes'))->assertOk()->getContent();
-        $this->assertStringContainsString('cor-mobile-filter-disclosure', $classesHtml);
-
-        // 7. Profile folds Bound Attendance Device and Device passkeys into collapsible cards
-        $profileHtml = $this->actingAs($student)->get(route('profile'))->assertOk()->getContent();
-        $this->assertSame(2, substr_count($profileHtml, 'profile-disclosure-card'));
-        $this->assertStringContainsString('id="registerFpBtn"', $profileHtml);
-        $this->assertStringContainsString('id="deviceList"', $profileHtml);
-
-        // 8. Records & Excuses history keep compact inline detail disclosures
-        $recordsBlade = file_get_contents(resource_path('views/attendance/records.blade.php'));
-        $excusesIndexBlade = file_get_contents(resource_path('views/excuses/index.blade.php'));
-        $this->assertNotFalse($recordsBlade);
-        $this->assertNotFalse($excusesIndexBlade);
-        $this->assertStringContainsString('sd-disclosure-inline', $recordsBlade);
-        $this->assertStringContainsString('sd-disclosure-inline', $excusesIndexBlade);
-
-        // 9. Settings deduplicates Full Name for students, exposes tablet pill nav, and auto-centers active mobile pills
-        $settingsHtml = $this->actingAs($student)->get(route('settings'))->assertOk()->getContent();
-        $this->assertStringNotContainsString('<div class="info-lbl academic-spec-label">Full Name</div>', $settingsHtml);
-        $this->assertStringContainsString('settings-mobile-nav d-lg-none', $settingsHtml);
-        $this->assertStringContainsString('copyWithMorph', $settingsHtml);
-
-        $settingsJs = file_get_contents(public_path('js/student-settings.js'));
-        $bioCss = file_get_contents(public_path('css/biometric-flow.css'));
-        $motionCss = file_get_contents(public_path('css/student-motion-craft.css'));
-        $this->assertNotFalse($settingsJs);
-        $this->assertNotFalse($bioCss);
-        $this->assertNotFalse($motionCss);
-        $this->assertStringContainsString('centerActiveMobilePill', $settingsJs);
-        $this->assertMatchesRegularExpression('/\.bio-consent-card\s+a\s*\{[^}]*min-height:\s*44px;/s', $bioCss);
-
-        // 10. Interactive state contracts: Classes view switching, no orphan Records table head, single font stylesheet, and student prefetch
-        $this->assertStringNotContainsString('sd-records-thead', $recordsBlade);
-        $this->assertStringContainsString('#corMobileCardsView.d-none', $motionCss);
         $this->assertStringContainsString('type="speculationrules"', $homeHtml);
         $this->assertSame(1, substr_count($homeHtml, 'https://fonts.googleapis.com/css2?'));
 
-        // 11. Cycle 10 strict audit guarantees: popover drop-up, specific excuse disclosure, semantic headings, SSR calendar, standalone scanner slim CSS
-        $classesBlade = file_get_contents(resource_path('views/student/classes.blade.php')) ?: '';
-        $this->assertStringContainsString('is-drop-up', $notifBlade);
-        $this->assertStringContainsString('sd-notif-filter-toggle', $notifHtml);
-        $this->assertStringContainsString('is-drop-up', $motionCss);
-        $this->assertStringContainsString('scroll-margin-top: 84px', $motionCss);
-        $this->assertStringContainsString('<h2 class="cor-card-subj-title">', $classesBlade);
-        $this->assertStringContainsString('<h2>No Enrolled Subjects</h2>', $classesHtml);
-        $this->assertStringContainsString('sd-view-toggle d-none d-md-inline-flex', $classesHtml);
-        $this->assertStringContainsString('<h3>', $recordsBlade);
-        $this->assertStringNotContainsString('<h4>', $recordsBlade);
-        $this->assertStringContainsString('toggleExtraSpecificSubjects', file_get_contents(resource_path('views/excuses/create.blade.php')) ?: '');
-        $this->assertStringContainsString('matchMedia', $excusesIndexBlade);
-        $this->assertStringContainsString('ssrEvents', file_get_contents(resource_path('views/student/calendar.blade.php')) ?: '');
+        // 5. Notifications exposes accessible search and filter controls
+        $notifHtml = $this->actingAs($student)->get(route('notifications'))->assertOk()->getContent();
+        $this->assertStringContainsString('id="notifSearchInput"', $notifHtml);
+        $this->assertStringContainsString('aria-label="Search notifications or subjects"', $notifHtml);
+
+        // 6. Classes uses desktop slide-over drawer + mobile modal + list/weekly toggle
+        $classesHtml = $this->actingAs($student)->get(route('student.classes'))->assertOk()->getContent();
+        $this->assertStringContainsString('id="sfCourseDrawer"', $classesHtml);
+        $this->assertStringContainsString('id="sfMobileCourseModal"', $classesHtml);
+        $this->assertStringContainsString('id="sfClassesViewGridBtn"', $classesHtml);
+
+        // 7. Profile exposes passkey setup and device list
+        $profileHtml = $this->actingAs($student)->get(route('profile'))->assertOk()->getContent();
+        $this->assertStringContainsString('id="registerFpBtn"', $profileHtml);
+        $this->assertStringContainsString('id="deviceList"', $profileHtml);
+
+        // 8. Settings exposes mobile grouped hub drill-down & appearance theme picker
+        $settingsHtml = $this->actingAs($student)->get(route('settings'))->assertOk()->getContent();
+        $this->assertStringNotContainsString('<div class="info-lbl academic-spec-label">Full Name</div>', $settingsHtml);
+        $this->assertStringContainsString('sf-mobile-settings-hub', $settingsHtml);
+        $this->assertStringContainsString('sf-theme-picker', $settingsHtml);
+
+        $bioCss = file_get_contents(public_path('css/biometric-flow.css'));
+        $this->assertNotFalse($bioCss);
+        $this->assertMatchesRegularExpression('/\.bio-consent-card\s+a\s*\{[^}]*min-height:\s*44px;/s', $bioCss);
+
+        // 9. Error 403 & standalone scanner slim CSS guarantees
         $error403 = file_get_contents(resource_path('views/errors/403.blade.php')) ?: '';
         $this->assertStringContainsString("@section('page-title', 'Access Restricted')", $error403);
         $this->assertStringContainsString('<h1 ', $error403);
         $scanHtml = $this->actingAs($student)->get(route('mobile.scan'))->assertOk()->getContent();
-        $this->assertStringContainsString('<h2 class="scanner-title">', $scanHtml);
+        $this->assertStringContainsString('id="scannerPageTitle"', $scanHtml);
         $this->assertStringNotContainsString('dashboard-enterprise.css', $scanHtml);
-        $this->assertStringNotContainsString('student-account-edit-intro', $settingsHtml);
     }
 }

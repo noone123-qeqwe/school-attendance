@@ -2,6 +2,7 @@
 
 @section('portal-title', 'Access Forbidden (403)')
 @section('page-title', 'Access Restricted')
+@section('student-inline-heading', '1')
 
 @section('content')
 <div class="d-flex align-items-center justify-content-center" style="min-height: 65vh; padding: 20px;">
@@ -11,7 +12,7 @@
             <i class="bi bi-shield-x" aria-hidden="true"></i>
         </div>
         
-        <h1 style="color: #FAF8F5; font-weight: 800; font-size: 1.45rem; letter-spacing: -0.02em; margin-bottom: 10px;">Access Restricted</h1>
+        <h1 style="color: #FAF8F5; font-weight: 800; font-size: 1.4rem; letter-spacing: -0.02em; margin-bottom: 10px;">You don't have access to this page</h1>
         <p style="color: #ACA099; font-size: 0.9rem; line-height: 1.55; margin-bottom: 24px;">
             {{ $exception->getMessage() ?: 'You do not have authorization to view this resource, or your security link has expired.' }}
         </p>

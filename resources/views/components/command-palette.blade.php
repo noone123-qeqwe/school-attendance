@@ -110,10 +110,6 @@
     </div>
 </div>
 
-@once
-<link rel="stylesheet" href="{{ asset('css/command-palette.css') }}?v={{ filemtime(public_path('css/command-palette.css')) }}">
-@endonce
-
 <script nonce="{{ csp_nonce() }}">
 (function() {
     'use strict';

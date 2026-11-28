@@ -291,7 +291,7 @@
     body.student-portal .sp.student-settings[data-student-settings] #tab-profile.active {
         display: grid;
         grid-template-columns: minmax(260px, .9fr) minmax(0, 1.35fr);
-        align-items: start;
+        align-items: stretch;
         gap: 22px;
     }
 

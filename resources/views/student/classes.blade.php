@@ -4,455 +4,516 @@
 
 @section('content')
 @php
-    /** @var \App\Models\User $user */
     $user = $user ?? auth()->user();
-
-    // ── SCHEDULE DAY HELPER ──
     $todayName = now()->format('l');
+    $shortDayMap = [
+        'Monday' => 'Mon', 'Tuesday' => 'Tue', 'Wednesday' => 'Wed',
+        'Thursday' => 'Thu', 'Friday' => 'Fri', 'Saturday' => 'Sat', 'Sunday' => 'Sun',
+    ];
+    $dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-    $formatDaysAbbr = function (array $days): string {
-        $order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-        $presentDays = array_values(array_intersect($order, $days));
-        if (empty($presentDays)) return 'TBA';
-
-        if ($presentDays === ['Tuesday', 'Thursday']) return 'TTH';
-        if ($presentDays === ['Monday', 'Wednesday', 'Friday']) return 'MWF';
-        if ($presentDays === ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']) return 'M-F';
-        if ($presentDays === ['Monday', 'Wednesday']) return 'MW';
-        if ($presentDays === ['Tuesday', 'Wednesday', 'Thursday']) return 'TWTH';
-        if ($presentDays === ['Saturday']) return 'SAT';
-        if ($presentDays === ['Sunday']) return 'SUN';
-        if ($presentDays === ['Monday']) return 'MON';
-        if ($presentDays === ['Tuesday']) return 'TUE';
-        if ($presentDays === ['Wednesday']) return 'WED';
-        if ($presentDays === ['Thursday']) return 'THU';
-        if ($presentDays === ['Friday']) return 'FRI';
-
-        $short = [
-            'Monday'=>'M', 'Tuesday'=>'T', 'Wednesday'=>'W',
-            'Thursday'=>'TH', 'Friday'=>'F', 'Saturday'=>'SAT', 'Sunday'=>'SUN'
-        ];
-        return implode('', array_map(fn($d) => $short[$d] ?? $d, $presentDays));
-    };
-
-    // ── FLATTEN / GROUP SUBJECTS & SCHEDULES ──
-    $groupedSchedules = [];
-    $rowNumber = 1;
+    $coursesData = [];
+    $hasSaturday = false;
 
     foreach ($subjects as $subject) {
-        $subjectSchedules = $subject->schedules ?? collect();
-        $instructorName = $subject->instructorUser?->name ?? $subject->instructor ?? 'TBA';
-        $units = (float) ($subject->units ?: 3.0);
-        $rawSection = $subject->section ?: ($user->section ?: 'Not assigned');
-
-        if ($subjectSchedules->count() > 0) {
-            // Group schedule slots by time and room
-            $slots = [];
-            foreach ($subjectSchedules as $sched) {
-                $key = ($sched->start_time ?? '') . '|' . ($sched->end_time ?? '') . '|' . ($sched->room ?? '');
-                if (!isset($slots[$key])) {
-                    $slots[$key] = [
-                        'days'       => [],
-                        'start_time' => $sched->start_time,
-                        'end_time'   => $sched->end_time,
-                        'room'       => $sched->room ?? null,
-                    ];
-                }
-                $slots[$key]['days'][] = $sched->day;
-            }
-
-            $slotIndex = 0;
-            foreach ($slots as $slot) {
-                $daysAbbr = $formatDaysAbbr($slot['days']);
-                $isToday = in_array($todayName, $slot['days']);
-                $classNum = str_pad((string) (20 + (($subject->id * 3 + $slotIndex) % 70)), 2, '0', STR_PAD_LEFT);
-                $currentRow = $rowNumber++;
-
-                // If rawSection already contains leading row numbers, keep it; else prefix row number
-                $sectionLabel = preg_match('/^\d+\s+/', $rawSection) ? $rawSection : ($currentRow . ' ' . $rawSection);
-
-                $groupedSchedules[] = (object) [
-                    'row_num'         => $currentRow,
-                    'subject_id'      => $subject->id,
-                    'section'         => $sectionLabel,
-                    'raw_section'     => $rawSection,
-                    'code'            => $subject->code,
-                    'name'            => $subject->name,
-                    'class_number'    => $classNum,
-                    'units'           => $slotIndex === 0 ? number_format($units, 1) : '—',
-                    'raw_units'       => $slotIndex === 0 ? $units : 0,
-                    'start_time'      => $slot['start_time'],
-                    'end_time'        => $slot['end_time'],
-                    'days'            => $daysAbbr,
-                    'raw_days'        => $slot['days'],
-                    'is_today'        => $isToday,
-                    'room'            => !empty($slot['room']) ? $slot['room'] : 'TBA',
-                    'teacher'         => $instructorName,
-                ];
-                $slotIndex++;
-            }
-        } else {
-            // Subject without specified schedule
-            $currentRow = $rowNumber++;
-            $sectionLabel = preg_match('/^\d+\s+/', $rawSection) ? $rawSection : ($currentRow . ' ' . $rawSection);
-
-            $groupedSchedules[] = (object) [
-                'row_num'         => $currentRow,
-                'subject_id'      => $subject->id,
-                'section'         => $sectionLabel,
-                'raw_section'     => $rawSection,
-                'code'            => $subject->code,
-                'name'            => $subject->name,
-                'class_number'    => str_pad((string) (20 + (($subject->id * 3) % 70)), 2, '0', STR_PAD_LEFT),
-                'units'           => number_format($units, 1),
-                'raw_units'       => $units,
-                'start_time'      => null,
-                'end_time'        => null,
-                'days'            => 'TBA',
-                'raw_days'        => [],
-                'is_today'        => false,
-                'room'            => 'TBA',
-                'teacher'         => $instructorName,
-            ];
+        $slots = collect($subject->schedules ?? []);
+        $rawDays = array_values(array_intersect($dayOrder, $slots->pluck('day')->filter()->unique()->values()->all()));
+        if (in_array('Saturday', $rawDays, true)) {
+            $hasSaturday = true;
         }
+        $daysLabel = !empty($rawDays)
+            ? implode('/', array_map(fn ($d) => $shortDayMap[$d] ?? substr($d, 0, 3), $rawDays))
+            : 'TBA';
+
+        $firstSlot = $slots->sortBy('start_time')->first();
+        $timeRange = ($firstSlot && filled($firstSlot->start_time) && filled($firstSlot->end_time))
+            ? \Carbon\Carbon::parse($firstSlot->start_time)->format('g:i A') . ' – ' . \Carbon\Carbon::parse($firstSlot->end_time)->format('g:i A')
+            : 'Schedule TBA';
+
+        $rawRoom = trim((string) ($firstSlot?->room ?? ''));
+        $room = ($rawRoom !== '' && strtoupper($rawRoom) !== 'TBA') ? $rawRoom : 'Room TBA';
+        $instructor = $subject->instructorUser?->name ?? $subject->instructor ?? 'Instructor TBA';
+        $units = (float) ($subject->units ?: 3.0);
+        $unitsText = fmod($units, 1.0) === 0.0 ? (string) (int) $units : number_format($units, 1);
+        $attInfo = ($subjectAttendanceMap ?? [])[$subject->code] ?? ['count' => 0, 'total' => 0, 'recent' => []];
+
+        $slotList = $slots->map(function ($s) use ($shortDayMap) {
+            $r = trim((string) ($s->room ?? ''));
+            return [
+                'day' => (string) $s->day,
+                'short_day' => $shortDayMap[$s->day] ?? substr((string) $s->day, 0, 3),
+                'start_time' => $s->start_time ? \Carbon\Carbon::parse($s->start_time)->format('g:i A') : 'TBA',
+                'end_time' => $s->end_time ? \Carbon\Carbon::parse($s->end_time)->format('g:i A') : '',
+                'sort_time' => (string) ($s->start_time ?? '99:99:99'),
+                'room' => ($r !== '' && strtoupper($r) !== 'TBA') ? $r : 'Room TBA',
+            ];
+        })->values()->all();
+
+        $coursesData[] = [
+            'id' => $subject->id,
+            'code' => (string) $subject->code,
+            'name' => (string) $subject->name,
+            'instructor' => $instructor,
+            'room' => $room,
+            'section' => (string) ($subject->section ?: ($user->section ?: 'Unassigned')),
+            'units' => $unitsText,
+            'days_label' => $daysLabel,
+            'raw_days' => $rawDays,
+            'is_today' => in_array($todayName, $rawDays, true),
+            'time_range' => $timeRange,
+            'slots' => $slotList,
+            'logged_count' => (int) ($attInfo['count'] ?? 0),
+            'total_records' => (int) ($attInfo['total'] ?? 0),
+            'recent_records' => $attInfo['recent'] ?? [],
+        ];
     }
 
+    $weekColumns = $hasSaturday
+        ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+        : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+    $subtitleMeta = collect([
+        $user->course,
+        $user->year_level ? 'Year ' . $user->year_level : null,
+        $user->semester ? 'Semester ' . $user->semester : null,
+    ])->filter()->implode(' · ');
 @endphp
 
-@if(blank($user->section))
-<x-alert-banner role="status" class="mb-3" alert-key="missing-class-section" version="unassigned"
-                dismiss-label="Dismiss class section notice"
-                style="display:flex;gap:12px;align-items:flex-start;padding:13px 16px;border-radius:10px;border:1px solid rgba(212, 175, 55,0.34);background:#1E1515;color:#FAF8F5;">
-    <i class="bi bi-info-circle-fill" style="color:#D4AF37;margin-top:2px;" aria-hidden="true"></i>
-    <div><strong>Your section is not assigned yet.</strong><br><span style="color:#D6CCC6;">Section-based classes appear after the school assigns your section. Contact the registrar or school administrator to update your student profile.</span></div>
-</x-alert-banner>
-@else
-<span hidden data-alert-resolved="missing-class-section"></span>
-@endif
+<div>
+    @include('partials.missing-section-notice')
 
-<div class="container-fluid p-3 p-md-4 cor-page-wrapper">
-
-    <!-- Screen Action Header -->
-    <div class="cor-actions-bar no-print">
-        <div class="cor-page-title-group">
+    <header class="sf-page-head">
+        <div>
             <h1>Classes &amp; Schedule</h1>
-            <p>Your enrolled subjects and weekly class timetable</p>
+            <p>{{ $subtitleMeta !== '' ? $subtitleMeta . ' · ' : '' }}Enrolled subjects and weekly timetable</p>
         </div>
-        @if(!empty($hasActiveAssistantAssignment))
-            <a href="{{ route('student-assistant.classes') }}" class="btn btn-outline-light d-inline-flex d-md-none align-items-center gap-2 px-3 py-2">
-                <i class="bi bi-person-check" aria-hidden="true"></i>
-                Student Assistant
-            </a>
-        @endif
+        <div class="sf-page-actions">
+            @if(!empty($hasActiveAssistantAssignment))
+                <a href="{{ route('student-assistant.classes') }}" class="sf-btn sf-btn-secondary sf-mobile-only">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/></svg>
+                    <span>Student Assistant</span>
+                </a>
+            @endif
+            <div class="sf-segmented sf-desktop-only" role="group" aria-label="Classes layout mode">
+                <button type="button" class="sf-segmented-btn active" id="sfClassesViewListBtn" data-classes-view="list" aria-pressed="true">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+                    <span>List</span>
+                </button>
+                <button type="button" class="sf-segmented-btn" id="sfClassesViewGridBtn" data-classes-view="weekly" aria-pressed="false">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                    <span>Weekly Grid</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    {{-- Filter Toolbar --}}
+    <div class="sf-toolbar">
+        <div class="sf-filter-pills" role="group" aria-label="Filter by day">
+            <button type="button" class="sf-filter-pill active" data-day-filter="all">All Days</button>
+            @foreach($weekColumns as $dayName)
+                <button type="button" class="sf-filter-pill" data-day-filter="{{ $dayName }}">{{ $shortDayMap[$dayName] }}</button>
+            @endforeach
+        </div>
+
+        <div class="sf-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" id="scheduleSearchInput" class="sf-input" placeholder="Filter courses or rooms..." aria-label="Filter courses or rooms">
+        </div>
     </div>
 
-    <!-- ── THE SCHEDULE SHEET ── -->
-    <div class="cor-sheet" id="corCertificateSheet">
-        <div class="cor-content-relative">
-
-            <!-- 3. Screen Controls Toolbar (Open on Desktop, Progressive Disclosure on Mobile) -->
-            <details class="sd-filter-disclosure cor-mobile-filter-disclosure no-print mb-2" data-open-desktop="true" id="corFilterDisclosure">
-                <summary>
-                    <i class="bi bi-sliders" aria-hidden="true"></i>
-                    <span>Search &amp; Filter</span>
-                    <span class="sd-disclosure-pill is-accent" id="corActiveFilterPill" hidden></span>
-                    <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
-                </summary>
-                <div class="cor-toolbar no-print mt-2 mt-md-0">
-                    <label class="student-filter-field" for="scheduleSearchInput">Find a class
-                        <span class="position-relative d-block w-100">
-                            <i class="bi bi-search sd-search-icon" aria-hidden="true"></i>
-                            <input type="search" id="scheduleSearchInput" class="cor-search-input" placeholder="Subject, code, or teacher" aria-label="Filter schedule records">
+    {{-- Desktop Views (List + Weekly Grid) --}}
+    <div class="sf-desktop-course-views">
+        {{-- List View --}}
+        <section class="sf-card" id="sfClassesListPanel" aria-label="Enrolled courses list">
+            @forelse($coursesData as $course)
+                <div class="sf-course-row"
+                     role="button"
+                     tabindex="0"
+                     data-course-code="{{ $course['code'] }}"
+                     data-days="{{ implode(',', $course['raw_days']) }}"
+                     data-search="{{ strtolower($course['code'] . ' ' . $course['name'] . ' ' . $course['instructor'] . ' ' . $course['room']) }}">
+                    <div class="sf-sched-left">
+                        <span class="sf-code-chip is-rose">{{ $course['code'] }}</span>
+                        <div class="sf-sched-copy">
+                            <strong>{{ $course['name'] }}</strong>
+                            <span>{{ $course['instructor'] }} · {{ $course['room'] }} · {{ $course['units'] }} units</span>
+                        </div>
+                    </div>
+                    <div class="sf-course-meta-right">
+                        <div class="sf-course-time-stack">
+                            <strong>{{ $course['days_label'] }}</strong>
+                            <span>{{ $course['time_range'] }}</span>
+                        </div>
+                        <span class="sf-pill sf-mono {{ $course['logged_count'] > 0 ? 'is-emerald' : '' }}">
+                            {{ $course['logged_count'] }} logged
                         </span>
-                    </label>
-                    <label class="student-filter-field" for="scheduleDayFilter">Day
-                        <select id="scheduleDayFilter">
-                            <option value="all">All days</option>
-                            <option value="today">Today</option>
-                            @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day)
-                            <option value="{{ $day }}">{{ $day }}</option>
-                            @endforeach
-                        </select>
-                    </label>
-                    <div class="sd-view-toggle d-none d-md-inline-flex" role="group" aria-label="Classes layout mode">
-                        <button type="button" class="sd-view-toggle-btn is-active" id="corViewCardsBtn" data-cor-view="cards" aria-pressed="true">
-                            <i class="bi bi-grid-fill" aria-hidden="true"></i> Cards
-                        </button>
-                        <button type="button" class="sd-view-toggle-btn" id="corViewTableBtn" data-cor-view="table" aria-pressed="false">
-                            <i class="bi bi-table" aria-hidden="true"></i> COR Table
-                        </button>
-                        <button type="button" class="sd-view-toggle-btn" id="corViewWeeklyBtn" data-cor-view="weekly" aria-pressed="false">
-                            <i class="bi bi-calendar-week" aria-hidden="true"></i> Weekly
-                        </button>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sf-text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
                     </div>
                 </div>
-            </details>
-            <p class="student-results-count no-print" id="scheduleResultsStatus" role="status">{{ count($groupedSchedules) }} classes</p>
-
-            <!-- 4. Class Schedule Cards View (Primary Mobile Layout) -->
-            <div class="cor-mobile-cards-view" id="corMobileCardsView">
-                @forelse($groupedSchedules as $sched)
-                    <div class="cor-card-item {{ $sched->is_today ? 'is-today' : '' }}" 
-                         data-days="{{ implode(',', $sched->raw_days) }}" 
-                         data-is-today="{{ $sched->is_today ? '1' : '0' }}">
-                        
-                        <!-- Top Meta Bar -->
-                        <div class="cor-card-top-bar">
-                            <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span class="cor-code-badge">{{ $sched->code }}</span>
-                                @if($sched->is_today)
-                                    <span class="cor-today-indicator"><i class="bi bi-dot"></i> Today</span>
-                                @endif
-                            </div>
-                            <span class="cor-card-units-tag">
-                                <span class="cor-card-section-tag">Sec {{ $sched->section }}</span>
-                                · {{ $sched->units !== '—' ? $sched->units . ' Units' : 'Lab/Lec' }}
-                            </span>
-                        </div>
-
-                        <!-- Subject Title Block -->
-                        <div class="cor-card-subj-block">
-                            <h2 class="cor-card-subj-title">
-                                {{ $sched->name }}
-                            </h2>
-                        </div>
-
-                        <!-- 2x2 Mini Schedule Matrix Grid with Borders -->
-                        <div class="cor-card-sched-matrix">
-                            <div class="cor-card-matrix-cell">
-                                <div class="cor-card-matrix-label">Time</div>
-                                <div class="cor-card-matrix-value cor-time-text">
-                                    @if($sched->start_time && $sched->end_time)
-                                        {{ \Carbon\Carbon::parse($sched->start_time)->format('h:i A') }} – {{ \Carbon\Carbon::parse($sched->end_time)->format('h:i A') }}
-                                    @else
-                                        TBA
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="cor-card-matrix-cell">
-                                <div class="cor-card-matrix-label">Day</div>
-                                <div class="cor-card-matrix-value">
-                                    <span class="cor-day-badge">{{ $sched->days }}</span>
-                                </div>
-                            </div>
-
-                            @php
-                                $hasRoom = !empty($sched->room) && strtoupper(trim((string) $sched->room)) !== 'TBA';
-                            @endphp
-                            @if($hasRoom)
-                                <div class="cor-card-matrix-cell">
-                                    <div class="cor-card-matrix-label">Room</div>
-                                    <div class="cor-card-matrix-value">
-                                        <span class="cor-room-badge">{{ $sched->room }}</span>
-                                    </div>
-                                </div>
-                            @endif
-
-                            <div class="cor-card-matrix-cell {{ !$hasRoom ? 'cor-card-matrix-cell--full' : '' }}">
-                                <div class="cor-card-matrix-label">Teacher</div>
-                                <div class="cor-card-matrix-value" title="{{ $sched->teacher }}">
-                                    {{ $sched->teacher }}
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                @empty
-                    <div class="cor-empty-state">
-                        <i class="bi bi-journal-x cor-empty-icon"></i>
-                        <h2>No Enrolled Subjects</h2>
-                        <p class="mb-0">You are currently not registered for any classes this semester.</p>
-                    </div>
-                @endforelse
-                <div id="scheduleFilterEmpty" class="student-filter-empty" hidden><strong>No matching classes</strong>Try a different day, subject, teacher, or room.</div>
+            @empty
+                <div class="sf-empty-state">
+                    <span class="sf-empty-icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    </span>
+                    <h3>No enrolled courses</h3>
+                    <p>You are currently not registered for any subjects this semester.</p>
+                </div>
+            @endforelse
+            <div class="sf-empty-state" id="sfListFilterEmpty" hidden>
+                <h3>No matching courses</h3>
+                <p>Try clearing your day filter or searching for another code, room, or instructor.</p>
             </div>
+        </section>
 
-            <!-- 5. Desktop COR Table View -->
-            <div class="cor-table-wrap d-none no-print" id="corDesktopTableView">
-                <table class="cor-table">
-                    <thead>
-                        <tr>
-                            <th>Code</th>
-                            <th>Subject Description</th>
-                            <th>Units</th>
-                            <th>Day(s)</th>
-                            <th>Time</th>
-                            <th>Room</th>
-                            <th>Instructor</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($groupedSchedules as $sched)
-                            <tr class="cor-table-row" data-days="{{ implode(',', $sched->raw_days) }}" data-is-today="{{ $sched->is_today ? '1' : '0' }}">
-                                <td>
-                                    <div class="d-flex flex-column gap-1">
-                                        <span class="cor-code-badge">{{ $sched->code }}</span>
-                                        <span style="font-size:0.72rem; color:#ACA099;">Sec {{ $sched->section }}</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style="font-weight:700; color:#FAF8F5;">{{ $sched->name }}</div>
-                                    @if($sched->is_today)
-                                        <span class="cor-today-indicator mt-1 d-inline-flex"><i class="bi bi-dot"></i> Today</span>
-                                    @endif
-                                </td>
-                                <td style="font-variant-numeric: tabular-nums; font-weight:700;">{{ $sched->units !== '—' ? $sched->units : '—' }}</td>
-                                <td><span class="cor-day-badge">{{ $sched->days }}</span></td>
-                                <td class="cor-time-text" style="white-space:nowrap; font-variant-numeric: tabular-nums;">
-                                    @if($sched->start_time && $sched->end_time)
-                                        {{ \Carbon\Carbon::parse($sched->start_time)->format('h:i A') }} – {{ \Carbon\Carbon::parse($sched->end_time)->format('h:i A') }}
-                                    @else
-                                        TBA
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($sched->room && $sched->room !== 'TBA')
-                                        <span class="cor-room-badge">{{ $sched->room }}</span>
-                                    @else
-                                        <span class="cor-tba-label">TBA</span>
-                                    @endif
-                                </td>
-                                <td style="color:#D8CEC8;">{{ $sched->teacher }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 6. Desktop Weekly Timetable View -->
-            @php
-                $todayNameCor = now()->format('l');
-                $weekDaysList = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            @endphp
-            <div class="sd-cor-weekly-grid d-none no-print" id="corWeeklyGridView">
-                @foreach($weekDaysList as $wDay)
-                    @php
-                        $dayClasses = collect($groupedSchedules)
-                            ->filter(fn ($s) => in_array($wDay, $s->raw_days ?? [], true))
-                            ->sortBy('start_time')
-                            ->values();
-                    @endphp
-                    <div class="sd-cor-week-day {{ $wDay === $todayNameCor ? 'is-today-day' : '' }}" data-week-day="{{ $wDay }}">
-                        <div class="sd-cor-week-head">
-                            <span>{{ $wDay }}</span>
-                            @if($wDay === $todayNameCor)
-                                <span class="cor-today-indicator"><i class="bi bi-dot"></i> Today</span>
-                            @else
-                                <span style="font-size:0.74rem; color:#ACA099; font-weight:600;">{{ $dayClasses->count() }} {{ Str::plural('class', $dayClasses->count()) }}</span>
-                            @endif
-                        </div>
-                        @forelse($dayClasses as $dc)
-                            <div class="sd-sched-grid-card cor-week-item" data-days="{{ implode(',', $dc->raw_days) }}" data-is-today="{{ $dc->is_today ? '1' : '0' }}">
-                                <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
-                                    <span style="font-size: 0.77rem; font-weight: 700; color: #D4AF37; font-variant-numeric: tabular-nums;">
-                                        @if($dc->start_time && $dc->end_time)
-                                            {{ \Carbon\Carbon::parse($dc->start_time)->format('g:i A') }} – {{ \Carbon\Carbon::parse($dc->end_time)->format('g:i A') }}
-                                        @else
-                                            TBA
-                                        @endif
-                                    </span>
-                                    @if($dc->room && $dc->room !== 'TBA')
-                                        <span class="cor-room-badge" style="padding:2px 8px; font-size:0.7rem;">{{ $dc->room }}</span>
-                                    @endif
-                                </div>
-                                <div style="font-weight: 700; color: #FAF8F5; font-size: 0.9rem; line-height: 1.3;">{{ $dc->name }}</div>
-                                <div class="d-flex align-items-center justify-content-between gap-2 mt-1" style="font-size: 0.76rem; color: #ACA099;">
-                                    <span style="color: #D4AF37; font-weight: 700;">{{ $dc->code }}</span>
-                                    <span class="text-truncate" title="{{ $dc->teacher }}">{{ $dc->teacher }}</span>
-                                </div>
-                            </div>
-                        @empty
-                            <div style="color:#ACA099; font-size:0.82rem; padding:14px 4px; text-align:center;">No scheduled classes</div>
-                        @endforelse
+        {{-- Weekly Grid View --}}
+        <section class="sf-weekly-grid {{ $hasSaturday ? 'has-sat' : '' }}" id="sfClassesWeeklyPanel" aria-label="Weekly schedule grid" hidden>
+            @foreach($weekColumns as $dayCol)
+                @php
+                    $dayItems = collect($coursesData)
+                        ->flatMap(function ($c) use ($dayCol) {
+                            return collect($c['slots'])
+                                ->where('day', $dayCol)
+                                ->map(fn ($slot) => array_merge($c, ['slot' => $slot]));
+                        })
+                        ->sortBy('slot.sort_time')
+                        ->values();
+                @endphp
+                <div class="sf-week-col {{ $dayCol === $todayName ? 'is-today' : '' }}" data-week-col="{{ $dayCol }}">
+                    <div class="sf-week-col-head">
+                        <strong>{{ $dayCol }}</strong>
+                        <span>{{ $dayItems->count() }}</span>
                     </div>
-                @endforeach
-            </div>
-
-        </div>
+                    @forelse($dayItems as $item)
+                        <button type="button"
+                                class="sf-week-card"
+                                data-course-code="{{ $item['code'] }}"
+                                data-days="{{ $dayCol }}"
+                                data-search="{{ strtolower($item['code'] . ' ' . $item['name'] . ' ' . $item['instructor'] . ' ' . $item['slot']['room']) }}">
+                            <div class="sf-week-card-code">{{ $item['code'] }}</div>
+                            <div class="sf-week-card-title">{{ $item['name'] }}</div>
+                            <div class="sf-week-card-meta">
+                                {{ $item['slot']['start_time'] }}{{ $item['slot']['end_time'] ? ' – ' . $item['slot']['end_time'] : '' }}<br>
+                                {{ $item['slot']['room'] }}
+                            </div>
+                        </button>
+                    @empty
+                        <div style="font-size:11.5px;color:var(--sf-text-muted);text-align:center;padding:24px 6px;">
+                            No classes
+                        </div>
+                    @endforelse
+                </div>
+            @endforeach
+        </section>
     </div>
 
+    {{-- Mobile Stacked Course Cards --}}
+    <div class="sf-mobile-course-cards" id="sfMobileCoursesList">
+        @forelse($coursesData as $course)
+            <button type="button"
+                    class="sf-mobile-course-card"
+                    data-course-code="{{ $course['code'] }}"
+                    data-days="{{ implode(',', $course['raw_days']) }}"
+                    data-search="{{ strtolower($course['code'] . ' ' . $course['name'] . ' ' . $course['instructor'] . ' ' . $course['room']) }}">
+                <div class="sf-mobile-course-card-top">
+                    <span class="sf-code-chip is-rose">{{ $course['code'] }}</span>
+                    <span class="sf-mono" style="font-size:11.5px;color:var(--sf-text-muted);">{{ $course['days_label'] }}</span>
+                </div>
+                <h2>{{ $course['name'] }}</h2>
+                <p>{{ $course['room'] }} · {{ $course['instructor'] }}</p>
+                <div class="sf-mono" style="font-size:11.5px;color:var(--sf-text-muted);">{{ $course['time_range'] }}</div>
+            </button>
+        @empty
+            <div class="sf-card sf-empty-state">
+                <h3>No enrolled courses</h3>
+                <p>You are currently not registered for any subjects this semester.</p>
+            </div>
+        @endforelse
+        <div class="sf-card sf-empty-state" id="sfMobileFilterEmpty" hidden>
+            <h3>No matching courses</h3>
+            <p>Try a different day filter or search query.</p>
+        </div>
+    </div>
 </div>
 
-<script @cspNonce>
-document.addEventListener('DOMContentLoaded', function() {
-    const search = document.getElementById('scheduleSearchInput');
-    const day = document.getElementById('scheduleDayFilter');
-    const cards = Array.from(document.querySelectorAll('.cor-card-item'));
-    const tableRows = Array.from(document.querySelectorAll('.cor-table-row'));
-    const weekItems = Array.from(document.querySelectorAll('.cor-week-item'));
-    const cardsWrap = document.getElementById('corMobileCardsView');
-    const tableWrap = document.getElementById('corDesktopTableView');
-    const weeklyWrap = document.getElementById('corWeeklyGridView');
-    const cardsBtn = document.getElementById('corViewCardsBtn');
-    const tableBtn = document.getElementById('corViewTableBtn');
-    const weeklyBtn = document.getElementById('corViewWeeklyBtn');
+{{-- Desktop Slide-Over Course Detail Drawer --}}
+<div class="sf-drawer-backdrop" id="sfCourseDrawerBackdrop"></div>
+<div class="sf-drawer" id="sfCourseDrawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sfDrawerTitle">
+    <div class="sf-drawer-head">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span class="sf-code-chip is-rose" id="sfDrawerCode">CODE</span>
+            <span class="sf-pill" id="sfDrawerUnits">3 units</span>
+        </div>
+        <button type="button" class="sf-modal-close" id="sfDrawerCloseBtn" aria-label="Close course details">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+    </div>
+    <div class="sf-drawer-body">
+        <div>
+            <h2 id="sfDrawerTitle" style="margin:0 0 4px;font-size:18px;font-weight:700;color:var(--sf-text);">Course Title</h2>
+            <div id="sfDrawerInstructor" style="font-size:12.5px;color:var(--sf-text-secondary);">Instructor</div>
+        </div>
 
-    function setCorView(mode) {
-        const supportsMultiView = window.innerWidth >= 768;
-        const resolved = !supportsMultiView ? 'cards' : ((mode === 'table' || mode === 'weekly') ? mode : 'cards');
-        if (cardsWrap) cardsWrap.classList.toggle('d-none', resolved !== 'cards');
-        if (tableWrap) tableWrap.classList.toggle('d-none', resolved !== 'table');
-        if (weeklyWrap) weeklyWrap.classList.toggle('d-none', resolved !== 'weekly');
-        if (cardsBtn) {
-            cardsBtn.classList.toggle('is-active', resolved === 'cards');
-            cardsBtn.setAttribute('aria-pressed', resolved === 'cards' ? 'true' : 'false');
+        <div class="sf-drawer-info-grid">
+            <div class="sf-info-tile">
+                <small>Schedule</small>
+                <strong id="sfDrawerDays">Mon/Wed</strong>
+                <span class="sf-mono" id="sfDrawerTime">8:00 AM – 9:30 AM</span>
+            </div>
+            <div class="sf-info-tile">
+                <small>Location</small>
+                <strong id="sfDrawerRoom">Room</strong>
+                <span id="sfDrawerSection">Section</span>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sf-btn sf-btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/></svg>
+                <span>Scan QR</span>
+            </a>
+            <a href="{{ route('mobile.scan', ['open_code' => 1]) }}" class="sf-btn sf-btn-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>
+                <span>Enter PIN</span>
+            </a>
+        </div>
+
+        <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <span style="font-size:11.5px;font-weight:600;color:var(--sf-text-secondary);" id="sfDrawerLogsHeading">Logged Check-ins (0)</span>
+                <a href="{{ route('student.calendar') }}" id="sfDrawerAllLogsLink" class="sf-link">View in calendar →</a>
+            </div>
+            <div id="sfDrawerLogsList" style="display:flex;flex-direction:column;gap:7px;"></div>
+        </div>
+    </div>
+</div>
+
+{{-- Mobile Centered Course Detail Modal + Signature Circular Bottom Close Button --}}
+<div class="sf-modal-backdrop" id="sfMobileCourseModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sfMobCourseTitle">
+    <div class="sf-modal-card">
+        <div class="sf-modal-head">
+            <div style="min-width:0;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+                    <span class="sf-code-chip is-rose" id="sfMobCourseCode">CODE</span>
+                    <span class="sf-pill" id="sfMobCourseUnits">3 units</span>
+                </div>
+                <h3 id="sfMobCourseTitle">Course Title</h3>
+                <p id="sfMobCourseInstructor">Instructor</p>
+            </div>
+        </div>
+        <div class="sf-modal-body" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="sf-drawer-info-grid">
+                <div class="sf-info-tile">
+                    <small>Schedule</small>
+                    <strong id="sfMobCourseDays">Mon/Wed</strong>
+                    <span class="sf-mono" id="sfMobCourseTime">Time</span>
+                </div>
+                <div class="sf-info-tile">
+                    <small>Room</small>
+                    <strong id="sfMobCourseRoom">Room</strong>
+                    <span id="sfMobCourseLogged">0 logged</span>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <a href="{{ route('mobile.scan', ['open_scanner' => 1]) }}" class="sf-btn sf-btn-primary">Scan QR</a>
+                <a href="{{ route('mobile.scan', ['open_code' => 1]) }}" class="sf-btn sf-btn-secondary">Enter PIN</a>
+            </div>
+            <div id="sfMobCourseLogs" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+    </div>
+    <button type="button" class="sf-modal-circle-close" data-close-modal="sfMobileCourseModal" aria-label="Close course details">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+</div>
+@endsection
+
+@section('scripts')
+<script @cspNonce>
+(function () {
+    'use strict';
+    const courses = @json($coursesData);
+    const byCode = Object.fromEntries(courses.map((c) => [c.code, c]));
+    const calendarBaseUrl = @json(route('student.calendar'));
+
+    let activeDay = 'all';
+    const searchInput = document.getElementById('scheduleSearchInput');
+    const dayBtns = document.querySelectorAll('[data-day-filter]');
+    const listRows = Array.from(document.querySelectorAll('.sf-course-row'));
+    const weekCards = Array.from(document.querySelectorAll('.sf-week-card'));
+    const mobileCards = Array.from(document.querySelectorAll('.sf-mobile-course-card'));
+
+    // View mode switcher (List | Weekly Grid)
+    const listPanel = document.getElementById('sfClassesListPanel');
+    const weeklyPanel = document.getElementById('sfClassesWeeklyPanel');
+    const listBtn = document.getElementById('sfClassesViewListBtn');
+    const gridBtn = document.getElementById('sfClassesViewGridBtn');
+
+    function setClassesView(mode) {
+        const isWeekly = mode === 'weekly';
+        if (listPanel) listPanel.hidden = isWeekly;
+        if (weeklyPanel) weeklyPanel.hidden = !isWeekly;
+        if (listBtn) {
+            listBtn.classList.toggle('active', !isWeekly);
+            listBtn.setAttribute('aria-pressed', !isWeekly ? 'true' : 'false');
         }
-        if (tableBtn) {
-            tableBtn.classList.toggle('is-active', resolved === 'table');
-            tableBtn.setAttribute('aria-pressed', resolved === 'table' ? 'true' : 'false');
+        if (gridBtn) {
+            gridBtn.classList.toggle('active', isWeekly);
+            gridBtn.setAttribute('aria-pressed', isWeekly ? 'true' : 'false');
         }
-        if (weeklyBtn) {
-            weeklyBtn.classList.toggle('is-active', resolved === 'weekly');
-            weeklyBtn.setAttribute('aria-pressed', resolved === 'weekly' ? 'true' : 'false');
-        }
-        try { if (supportsMultiView) localStorage.setItem('sdClassesView', resolved); } catch (e) {}
+        try { localStorage.setItem('sfClassesView', isWeekly ? 'weekly' : 'list'); } catch (e) {}
     }
 
-    if (cardsBtn) cardsBtn.addEventListener('click', function() { setCorView('cards'); });
-    if (tableBtn) tableBtn.addEventListener('click', function() { setCorView('table'); });
-    if (weeklyBtn) weeklyBtn.addEventListener('click', function() { setCorView('weekly'); });
-    const urlView = new URLSearchParams(window.location.search).get('view');
+    listBtn?.addEventListener('click', () => setClassesView('list'));
+    gridBtn?.addEventListener('click', () => setClassesView('weekly'));
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlView = urlParams.get('view');
     try {
-        const saved = localStorage.getItem('sdClassesView');
-        if (urlView === 'weekly' || urlView === 'table' || urlView === 'cards') {
-            setCorView(urlView);
-        } else if (saved === 'table' || saved === 'cards' || saved === 'weekly') {
-            setCorView(saved);
-        }
+        const saved = localStorage.getItem('sfClassesView');
+        if (urlView === 'weekly' || urlView === 'list') setClassesView(urlView);
+        else if (saved === 'weekly') setClassesView('weekly');
     } catch (e) {}
-    window.addEventListener('resize', function() {
-        if (window.innerWidth < 768) {
-            setCorView('cards');
+
+    // Filter engine
+    function applyFilter() {
+        const q = (searchInput?.value || '').trim().toLowerCase();
+        let listVisible = 0;
+        let mobileVisible = 0;
+
+        listRows.forEach((row) => {
+            const days = (row.dataset.days || '').split(',');
+            const matchDay = activeDay === 'all' || days.includes(activeDay);
+            const matchQ = !q || (row.dataset.search || '').includes(q);
+            const ok = matchDay && matchQ;
+            row.hidden = !ok;
+            if (ok) listVisible++;
+        });
+
+        mobileCards.forEach((card) => {
+            const days = (card.dataset.days || '').split(',');
+            const matchDay = activeDay === 'all' || days.includes(activeDay);
+            const matchQ = !q || (card.dataset.search || '').includes(q);
+            const ok = matchDay && matchQ;
+            card.hidden = !ok;
+            if (ok) mobileVisible++;
+        });
+
+        weekCards.forEach((card) => {
+            const days = (card.dataset.days || '').split(',');
+            const matchDay = activeDay === 'all' || days.includes(activeDay);
+            const matchQ = !q || (card.dataset.search || '').includes(q);
+            card.hidden = !(matchDay && matchQ);
+        });
+
+        const listEmpty = document.getElementById('sfListFilterEmpty');
+        if (listEmpty) listEmpty.hidden = listRows.length === 0 || listVisible > 0;
+        const mobEmpty = document.getElementById('sfMobileFilterEmpty');
+        if (mobEmpty) mobEmpty.hidden = mobileCards.length === 0 || mobileVisible > 0;
+    }
+
+    dayBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            activeDay = btn.getAttribute('data-day-filter') || 'all';
+            dayBtns.forEach((b) => b.classList.toggle('active', b === btn));
+            applyFilter();
+        });
+    });
+    searchInput?.addEventListener('input', applyFilter);
+
+    // Course Detail Drawer / Mobile Modal
+    const drawer = document.getElementById('sfCourseDrawer');
+    const drawerBackdrop = document.getElementById('sfCourseDrawerBackdrop');
+
+    function renderLogNodes(container, records) {
+        container.replaceChildren();
+        if (!records || !records.length) {
+            const empty = document.createElement('div');
+            empty.style.cssText = 'padding:14px;border-radius:10px;border:1px dashed var(--sf-border-strong);color:var(--sf-text-muted);font-size:12px;text-align:center;';
+            empty.textContent = 'No check-ins recorded for this course yet.';
+            container.appendChild(empty);
+            return;
         }
+        records.forEach((rec) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;border-radius:9px;background:var(--sf-surface-2);border:1px solid var(--sf-border);font-size:12px;';
+            const left = document.createElement('div');
+            left.className = 'sf-mono';
+            left.style.color = 'var(--sf-text-soft)';
+            left.textContent = rec.date + (rec.time_in ? ' · ' + rec.time_in : '');
+            const pill = document.createElement('span');
+            const tone = rec.status === 'Present' ? 'is-emerald' : (rec.status === 'Late' ? 'is-amber' : (rec.status === 'Excused' ? 'is-sky' : 'is-danger'));
+            pill.className = 'sf-pill ' + tone;
+            pill.textContent = rec.status;
+            row.append(left, pill);
+            container.appendChild(row);
+        });
+    }
+
+    function openCourseDetail(code) {
+        const course = byCode[code];
+        if (!course) return;
+        const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+
+        if (isMobile) {
+            document.getElementById('sfMobCourseCode').textContent = course.code;
+            document.getElementById('sfMobCourseUnits').textContent = course.units + ' units';
+            document.getElementById('sfMobCourseTitle').textContent = course.name;
+            document.getElementById('sfMobCourseInstructor').textContent = course.instructor;
+            document.getElementById('sfMobCourseDays').textContent = course.days_label;
+            document.getElementById('sfMobCourseTime').textContent = course.time_range;
+            document.getElementById('sfMobCourseRoom').textContent = course.room;
+            document.getElementById('sfMobCourseLogged').textContent = course.logged_count + ' logged';
+            renderLogNodes(document.getElementById('sfMobCourseLogs'), course.recent_records);
+            window.openSfModal?.('sfMobileCourseModal');
+            return;
+        }
+
+        document.getElementById('sfDrawerCode').textContent = course.code;
+        document.getElementById('sfDrawerUnits').textContent = course.units + ' units';
+        document.getElementById('sfDrawerTitle').textContent = course.name;
+        document.getElementById('sfDrawerInstructor').textContent = course.instructor;
+        document.getElementById('sfDrawerDays').textContent = course.days_label;
+        document.getElementById('sfDrawerTime').textContent = course.time_range;
+        document.getElementById('sfDrawerRoom').textContent = course.room;
+        document.getElementById('sfDrawerSection').textContent = course.section === 'Unassigned' ? 'Section TBA' : ('Section ' + course.section);
+        document.getElementById('sfDrawerLogsHeading').textContent = 'Logged Check-ins (' + course.logged_count + ')';
+        const logsLink = document.getElementById('sfDrawerAllLogsLink');
+        if (logsLink) logsLink.href = calendarBaseUrl + '?q=' + encodeURIComponent(course.code) + '#attendance-records';
+        renderLogNodes(document.getElementById('sfDrawerLogsList'), course.recent_records);
+
+        drawer?.classList.add('open');
+        drawer?.setAttribute('aria-hidden', 'false');
+        drawerBackdrop?.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    window.closeCourseDrawer = function () {
+        drawer?.classList.remove('open');
+        drawer?.setAttribute('aria-hidden', 'true');
+        drawerBackdrop?.classList.remove('open');
+        if (!document.querySelector('.sf-modal-backdrop.open')) {
+            document.body.style.overflow = '';
+        }
+    };
+
+    document.getElementById('sfDrawerCloseBtn')?.addEventListener('click', window.closeCourseDrawer);
+    drawerBackdrop?.addEventListener('click', window.closeCourseDrawer);
+
+    document.querySelectorAll('[data-course-code]').forEach((el) => {
+        el.addEventListener('click', () => openCourseDetail(el.getAttribute('data-course-code')));
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openCourseDetail(el.getAttribute('data-course-code'));
+            }
+        });
     });
 
-    function applyScheduleFilter() {
-        const query = search.value.trim().toLowerCase();
-        let visible = 0;
-        cards.forEach((card, idx) => {
-            const matchesDay = day.value === 'all' || (day.value === 'today' ? card.dataset.isToday === '1' : (card.dataset.days || '').split(',').includes(day.value));
-            const isMatch = matchesDay && card.textContent.toLowerCase().includes(query);
-            card.hidden = !isMatch;
-            if (tableRows[idx]) tableRows[idx].hidden = !isMatch;
-            if (isMatch) visible++;
-        });
-        weekItems.forEach((item) => {
-            const matchesDay = day.value === 'all' || (day.value === 'today' ? item.dataset.isToday === '1' : (item.dataset.days || '').split(',').includes(day.value));
-            item.hidden = !(matchesDay && item.textContent.toLowerCase().includes(query));
-        });
-        document.getElementById('scheduleResultsStatus').textContent = visible + (visible === 1 ? ' class' : ' classes');
-        document.getElementById('scheduleFilterEmpty').hidden = cards.length === 0 || visible > 0;
-        const activeFilterPill = document.getElementById('corActiveFilterPill');
-        if (activeFilterPill) {
-            const activeCount = (query ? 1 : 0) + (day.value !== 'all' ? 1 : 0);
-            activeFilterPill.hidden = activeCount === 0;
-            activeFilterPill.textContent = activeCount > 0 ? (activeCount + ' active') : '';
-        }
+    // Deep-link from Command Palette (?course=CODE)
+    const deepCourse = urlParams.get('course');
+    if (deepCourse && byCode[deepCourse]) {
+        setTimeout(() => openCourseDetail(deepCourse), 120);
     }
-    search.addEventListener('input', applyScheduleFilter);
-    day.addEventListener('change', applyScheduleFilter);
-    applyScheduleFilter();
-});
+})();
 </script>
 @endsection

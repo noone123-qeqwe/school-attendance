@@ -1,6 +1,15 @@
 @once
+@if(!empty($pushAssets))
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/camera-lighting.css') }}?v={{ filemtime(public_path('css/camera-lighting.css')) }}">
+@endpush
+@push('scripts')
+<script src="{{ asset('js/camera-lighting.js') }}?v={{ filemtime(public_path('js/camera-lighting.js')) }}" @cspNonce defer></script>
+@endpush
+@else
 <link rel="stylesheet" href="{{ asset('css/camera-lighting.css') }}?v={{ filemtime(public_path('css/camera-lighting.css')) }}">
 <script src="{{ asset('js/camera-lighting.js') }}?v={{ filemtime(public_path('js/camera-lighting.js')) }}" @cspNonce></script>
+@endif
 @endonce
 <section id="{{ $cameraLightId }}" class="camera-light-controls" aria-label="Camera lighting" hidden>
     <button type="button" data-light-toggle aria-pressed="false" aria-describedby="{{ $cameraLightId }}-help"><i class="bi bi-lightning-charge" aria-hidden="true"></i> Face light</button>

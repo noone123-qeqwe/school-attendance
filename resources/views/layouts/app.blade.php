@@ -1,3 +1,6 @@
+@if(Auth::check() && Auth::user()->isStudent())
+@include('layouts.student-shell')
+@else
 <!doctype html>
 <html lang="en">
 <head>
@@ -25,13 +28,29 @@
 
     <link rel="stylesheet" href="{{ asset('css/design-tokens.css') }}?v={{ filemtime(public_path('css/design-tokens.css')) }}">
     @php
+        $isStudentUser = (bool) Auth::user()?->isStudent();
         $isStandaloneScannerRoute = request()->routeIs('mobile.scan');
+        $studentNeedsEnterpriseStyles = !$isStudentUser || request()->routeIs('student.calendar', 'student.attendance.calendar', 'excuses*');
+        $studentHasInlinePageHeading = $isStudentUser && (request()->routeIs('student.classes', 'student.schedule', 'student.calendar', 'student.attendance.calendar', 'excuses*', 'notifications*', 'profile*') || View::hasSection('student-inline-heading'));
     @endphp
     @unless($isStandaloneScannerRoute)
         <link rel="stylesheet" href="{{ asset('css/premium.css') }}?v={{ filemtime(public_path('css/premium.css')) }}">
-        <link rel="stylesheet" href="{{ asset('css/dashboard-enterprise.css') }}?v={{ filemtime(public_path('css/dashboard-enterprise.css')) }}">
+        @if($studentNeedsEnterpriseStyles)
+            <link rel="stylesheet" href="{{ asset('css/dashboard-enterprise.css') }}?v={{ filemtime(public_path('css/dashboard-enterprise.css')) }}">
+        @endif
     @endunless
     @auth
+        <link rel="stylesheet" href="{{ asset('css/command-palette.css') }}?v={{ filemtime(public_path('css/command-palette.css')) }}">
+        @if(request()->routeIs('settings'))
+            <link rel="stylesheet" href="{{ asset('css/settings-page.css') }}?v={{ filemtime(public_path('css/settings-page.css')) }}">
+        @endif
+        @if(request()->routeIs('settings', 'profile', 'teacher.profile', 'parent.profile'))
+            <link rel="stylesheet" href="{{ asset('css/profile-photo-manager.css') }}?v={{ filemtime(public_path('css/profile-photo-manager.css')) }}">
+        @endif
+        @if($isStandaloneScannerRoute)
+            <link rel="stylesheet" href="{{ asset('css/student-scanner.css') }}?v={{ filemtime(public_path('css/student-scanner.css')) }}">
+            <link rel="stylesheet" href="{{ asset('css/student-scanner-page.css') }}?v={{ filemtime(public_path('css/student-scanner-page.css')) }}">
+        @endif
         @if(Auth::user()->isAdmin())
             <link rel="stylesheet" href="{{ asset('css/admin-saas.css') }}?v={{ filemtime(public_path('css/admin-saas.css')) }}">
             <link rel="stylesheet" href="{{ asset('css/admin-theme.css') }}?v={{ filemtime(public_path('css/admin-theme.css')) }}">
@@ -45,15 +64,17 @@
     @endauth
     @stack('styles')
     @unless($isStandaloneScannerRoute)
-        <link rel="stylesheet" href="{{ asset('css/experience-refinements.css') }}?v={{ filemtime(public_path('css/experience-refinements.css')) }}">
-        @if(request()->routeIs('settings', 'admin.settings') && !Auth::user()?->isStudent())
+        @unless($isStudentUser)
+            <link rel="stylesheet" href="{{ asset('css/experience-refinements.css') }}?v={{ filemtime(public_path('css/experience-refinements.css')) }}">
+        @endunless
+        @if(request()->routeIs('settings', 'admin.settings') && !$isStudentUser)
             <link rel="stylesheet" href="{{ asset('css/settings-polish.css') }}?v={{ filemtime(public_path('css/settings-polish.css')) }}">
         @endif
         <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/desktop-layout.css') }}?v={{ filemtime(public_path('css/desktop-layout.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/portal-layout-refinements.css') }}?v={{ filemtime(public_path('css/portal-layout-refinements.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/system-ui-modern.css') }}?v={{ filemtime(public_path('css/system-ui-modern.css')) }}">
-        @if(Auth::user()?->isStudent() || Auth::user()?->isTeacher())
+        @if(Auth::user()?->isTeacher())
             <link rel="stylesheet" href="{{ asset('css/portal-unified-foundation.css') }}?v={{ filemtime(public_path('css/portal-unified-foundation.css')) }}">
         @endif
     @endunless
@@ -104,7 +125,7 @@
     @endif
 </head>
 
-<body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher(), 'admin-portal' => Auth::user()?->isAdmin(), 'parent-portal' => Auth::user()?->isParent(), 'attendance-verification-page' => View::hasSection('focused-attendance-verification'), 'scanner-page-layout' => request()->routeIs('mobile.scan')]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
+<body @class(['student-portal' => $isStudentUser, 'student-has-page-title' => $studentHasInlinePageHeading, 'teacher-portal' => Auth::user()?->isTeacher(), 'admin-portal' => Auth::user()?->isAdmin(), 'parent-portal' => Auth::user()?->isParent(), 'attendance-verification-page' => View::hasSection('focused-attendance-verification'), 'scanner-page-layout' => $isStandaloneScannerRoute]) @if($isStudentUser && !request()->routeIs('settings')) data-student-layout="simple" @endif>
 
     @php
         $parentUnreadCount = Auth::user()?->isParent() ? \App\Support\ParentNavigation::unreadCount(Auth::user()) : 0;
@@ -223,7 +244,9 @@
                                 @endif
                             @endif
                         </div>
+                        @if(View::hasSection('page-sub') || !Auth::user()?->isStudent())
                         <div class="header-page-sub">@if(View::hasSection('page-sub'))@yield('page-sub')@elseif(Auth::user()?->isAdmin()){{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['group'] }}@elseif(Auth::user()?->isTeacher()){{ \App\Support\TeacherNavigation::context(request()->route()?->getName())['group'] }}@elseif(Auth::user()?->isParent()){{ \App\Support\ParentNavigation::context(request()->route()?->getName())['group'] }}@else{{ now()->format('l, F j, Y') }}@endif</div>
+                        @endif
                     </div>
                     @endunless
                 </div>
@@ -1407,3 +1430,4 @@
     @include('partials.pwa-body')
 </body>
 </html>
+@endif

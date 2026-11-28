@@ -110,43 +110,48 @@ class StudentDashboardAndSidebarTest extends TestCase
         $xpath = new \DOMXPath($dom);
         $sidebarNode = $xpath->query('//aside[@id="sidebar"]')->item(0);
         $this->assertNotNull($sidebarNode, 'Student sidebar element must exist.');
+        $sidebarNavNode = $xpath->query('.//nav[contains(@class, "sf-sidebar-nav")]', $sidebarNode)->item(0);
+        $this->assertNotNull($sidebarNavNode, 'Student sidebar primary nav must exist.');
 
-        $sidebarText = preg_replace('/\s+/', ' ', $sidebarNode->textContent ?? '');
+        $sidebarNavText = preg_replace('/\s+/', ' ', $sidebarNavNode->textContent ?? '');
         $sidebarHtml = $dom->saveHTML($sidebarNode);
 
         // Kept workspace & attendance items
-        $this->assertStringContainsString('Dashboard', $sidebarText);
-        $this->assertStringContainsString('Classes & Schedule', $sidebarText);
-        $this->assertStringContainsString('Attendance & Calendar', $sidebarText);
-        $this->assertStringContainsString('Excuse Submissions', $sidebarText);
+        $this->assertStringContainsString('Dashboard', $sidebarNavText);
+        $this->assertStringContainsString('Classes & Schedule', $sidebarNavText);
+        $this->assertStringContainsString('Attendance & Calendar', $sidebarNavText);
+        $this->assertStringContainsString('Excuse Submissions', $sidebarNavText);
 
-        // Removed items must not appear inside the sidebar
-        $this->assertStringNotContainsString('My Profile', $sidebarText);
-        $this->assertStringNotContainsString('My profile', $sidebarText);
-        $this->assertStringNotContainsString('Settings', $sidebarText);
-        $this->assertStringNotContainsString('Notifications', $sidebarText);
-        $this->assertStringNotContainsString('Scan QR', $sidebarText);
-        $this->assertStringNotContainsString('PIN', $sidebarText);
-        $this->assertStringNotContainsString('Check in', $sidebarText);
+        // Removed items must not appear inside the primary sidebar navigation list
+        $this->assertStringNotContainsString('My Profile', $sidebarNavText);
+        $this->assertStringNotContainsString('My profile', $sidebarNavText);
+        $this->assertStringNotContainsString('Settings', $sidebarNavText);
+        $this->assertStringNotContainsString('Notifications', $sidebarNavText);
+        $this->assertStringNotContainsString('Scan QR', $sidebarNavText);
+        $this->assertStringNotContainsString('PIN', $sidebarNavText);
+        $this->assertStringNotContainsString('Check in', $sidebarNavText);
         $this->assertStringNotContainsString('sd-scan-dock', $sidebarHtml);
-        $this->assertStringNotContainsString('student-sidebar-account', $sidebarHtml);
-        $this->assertStringNotContainsString('student-nav-account', $sidebarHtml);
         $this->assertStringNotContainsString('studentSidebarNotifBadge', $sidebarHtml);
         $this->assertStringNotContainsString('sidebar-subtitle', $sidebarHtml);
-        $this->assertStringNotContainsString('QR, GPS, and Biometric-Based Attendance Monitoring', $sidebarText);
+        $this->assertStringNotContainsString('QR, GPS, and Biometric-Based Attendance Monitoring', $sidebarHtml);
 
-        $navCss = file_get_contents(public_path('css/student-portal-navigation.css'));
-        $this->assertNotFalse($navCss);
-        $this->assertMatchesRegularExpression('/\.student-sidebar-brand\s+\.sidebar-logo\s*\{[^}]*border:\s*none;/s', $navCss);
-        $this->assertStringNotContainsString('border: 1px solid rgba(223, 184, 121, 0.28);', $navCss);
+        // Pinned Linear sidebar account popover holds Settings & Log out without My Profile
+        $this->assertStringContainsString('id="sfAccountPopover"', $sidebarHtml);
+        $this->assertStringContainsString(route('settings'), $sidebarHtml);
+        $this->assertStringNotContainsString('My Profile', $sidebarHtml);
 
-        // Top header keeps notifications and Settings in the account dropdown, without My Profile
+        $frontendCss = file_get_contents(public_path('css/student-frontend.css'));
+        $this->assertNotFalse($frontendCss);
+        $this->assertStringContainsString('.sf-brand-logo', $frontendCss);
+
+        // Top header keeps notifications, command palette search, and mobile account trigger without My Profile
         $headerNode = $xpath->query('//header[@id="topHeader"]')->item(0);
         $this->assertNotNull($headerNode);
         $headerHtml = $dom->saveHTML($headerNode);
         $this->assertStringContainsString('topNavNotifBtn', $headerHtml);
+        $this->assertStringContainsString('headerSearchBar', $headerHtml);
+        $this->assertStringContainsString('sfMobileAvatarBtn', $headerHtml);
         $this->assertStringNotContainsString('My Profile', $headerHtml);
-        $this->assertStringContainsString(route('settings'), $headerHtml);
     }
 
     public function test_student_dashboard_shows_current_and_upcoming_classes_with_actionable_attendance(): void
@@ -242,12 +247,12 @@ class StudentDashboardAndSidebarTest extends TestCase
         $response = $this->actingAs($student)->get(route('home'));
         $response->assertOk();
 
-        $response->assertSee('sd-masthead', false)
-            ->assertSee('sd-identity-cluster', false)
+        $response->assertSee('sf-identity-strip', false)
+            ->assertSee('sf-hero-card', false)
             ->assertSee('id="sdHeroSpotlight"', false)
             ->assertSee('Operating Systems')
             ->assertSee('Compiler Design')
-            ->assertSee("Today's classes", false)
+            ->assertSee('Class schedule', false)
             ->assertSee('Needs your attention')
             ->assertSee('Recent attendance')
             ->assertDontSee('Attendance Standing')
@@ -309,11 +314,11 @@ class StudentDashboardAndSidebarTest extends TestCase
         $sidebarText = preg_replace('/\s+/', ' ', $sidebarNode->textContent ?? '');
         $sidebarHtml = $dom->saveHTML($sidebarNode);
 
-        // Back to Dashboard sits at top and links to student dashboard
-        $backLinks = $xpath->query('.//a[contains(@class, "settings-sidebar-back-btn")]', $sidebarNode);
+        // Back to app link sits at top and links to student dashboard
+        $backLinks = $xpath->query('.//a[@id="settingsBackToDashboardLink"]', $sidebarNode);
         $this->assertSame(1, $backLinks->length);
         $this->assertSame(route('home'), $backLinks->item(0)->getAttribute('href'));
-        $this->assertStringContainsString('Back to Dashboard', $backLinks->item(0)->textContent ?? '');
+        $this->assertStringContainsString('Back to app', $backLinks->item(0)->textContent ?? '');
 
         // Exact Settings sidebar groups and items
         foreach ([
@@ -338,14 +343,14 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertSame('Profile', trim($xpath->evaluate('string(//h2[@id="studentSettingsPageTitle"])')));
         $this->assertStringContainsString('data-settings-page="recovery"', $sidebarHtml);
 
-        // The settings identify attendance face enrollment and fingerprint registration.
+        // The settings identify fingerprint passkey and facial verification options.
         $settingsResponse->assertSee('id="studentBiometricChoices"', false);
-        $biometricChoices = $xpath->query('//*[@id="studentBiometricChoices"]//strong');
+        $biometricChoices = $xpath->query('//*[@id="studentBiometricChoices"]//h3');
         $choiceTitles = [];
         foreach ($biometricChoices as $choice) {
             $choiceTitles[] = trim($choice->textContent ?? '');
         }
-        $this->assertSame(['Face registration', 'Fingerprint registration'], $choiceTitles);
+        $this->assertSame(['Fingerprint / Device Passkey', 'Face Verification'], $choiceTitles);
 
         // Navigating back to Dashboard restores the default student application sidebar
         $dashboardResponse = $this->actingAs($student)->get(route('home'));
@@ -360,7 +365,7 @@ class StudentDashboardAndSidebarTest extends TestCase
         $dashSidebarText = preg_replace('/\s+/', ' ', $dashSidebar->textContent ?? '');
         $this->assertStringContainsString('Classes & Schedule', $dashSidebarText);
         $this->assertStringContainsString('Excuse Submissions', $dashSidebarText);
-        $this->assertStringNotContainsString('Back to Dashboard', $dashSidebarText);
+        $this->assertStringNotContainsString('Back to app', $dashSidebarText);
     }
 
     public function test_student_phone_editor_is_opened_from_password_and_email_and_can_save(): void
@@ -372,10 +377,8 @@ class StudentDashboardAndSidebarTest extends TestCase
         $dom->loadHTML($response->getContent(), LIBXML_NOERROR | LIBXML_NOWARNING);
         $xpath = new \DOMXPath($dom);
 
-        $this->assertSame(0, $xpath->query('//*[@id="tab-profile"]//input[@name="phone"]')->length);
-        $this->assertSame(0, $xpath->query('//*[@id="tab-profile"]//*[@data-account-page="change-phone"]')->length);
-        $this->assertSame(1, $xpath->query('//*[@id="sec-section-credentials"]//button[@data-account-page="change-phone"]')->length);
-        $this->assertSame(route('settings.update'), $xpath->evaluate('string(//*[@id="tab-account-phone"]//form[@id="personalInfoForm"]/@action)'));
+        $this->assertSame(1, $xpath->query('//*[@id="tab-profile"]//input[@name="phone"]')->length);
+        $this->assertSame(route('settings.update'), $xpath->evaluate('string(//*[@id="tab-profile"]//form[@id="personalInfoForm"]/@action)'));
 
         $phone = '+63 900 000-0012';
         $this->post(route('settings.update'), ['phone' => $phone])->assertRedirect(route('settings'));
@@ -509,12 +512,13 @@ class StudentDashboardAndSidebarTest extends TestCase
                 ->assertSee(route('mobile.scan', ['open_scanner' => 1]), false)
                 ->assertSee(route('mobile.scan', ['open_code' => 1]), false)
                 ->assertDontSee('data-sched-filter=', false)
-                ->assertSee('css/command-palette.css', false)
-                ->assertSee('id="cmdPaletteCategories" role="group"', false);
+                ->assertSee('css/student-frontend.css', false)
+                ->assertSee('id="cmdPaletteOverlay"', false)
+                ->assertSee('id="cmdPaletteInput"', false);
 
-            $cmdCss = file_get_contents(public_path('css/command-palette.css'));
-            $this->assertNotFalse($cmdCss);
-            $this->assertStringContainsString('#cmdPaletteOverlay .cmd-palette-input:focus-visible', $cmdCss);
+            $frontendCss = file_get_contents(public_path('css/student-frontend.css'));
+            $this->assertNotFalse($frontendCss);
+            $this->assertStringContainsString('.sf-cmd-input', $frontendCss);
         } finally {
             \Carbon\Carbon::setTestNow();
         }
@@ -557,11 +561,10 @@ class StudentDashboardAndSidebarTest extends TestCase
         $response = $this->actingAs($student)->get(route('home'));
 
         $response->assertOk()
-            ->assertSee('student-dashboard.css', false)
-            ->assertSee('class="sd-cockpit"', false)
-            ->assertSee('sd-masthead', false)
-            ->assertSee('sd-identity-cluster', false)
-            ->assertSee("Today's classes", false)
+            ->assertSee('student-frontend.css', false)
+            ->assertSee('sf-dash-grid', false)
+            ->assertSee('sf-identity-strip', false)
+            ->assertSee('Class schedule', false)
             ->assertSee('Recent attendance')
             ->assertSee('Excuse requests')
             ->assertSee('Medical')
@@ -628,8 +631,8 @@ class StudentDashboardAndSidebarTest extends TestCase
         $response = $this->followingRedirects()->get(route('mobile.home'));
 
         $response->assertOk()
-            ->assertSee('student-dashboard.css', false)
-            ->assertSee("Today's classes", false)
+            ->assertSee('student-frontend.css', false)
+            ->assertSee('Class schedule', false)
             ->assertSee('Recent attendance')
             ->assertDontSee('id="quickActionScanBtn"', false)
             ->assertSee('Mobile Systems')
@@ -698,14 +701,14 @@ class StudentDashboardAndSidebarTest extends TestCase
             $this->actingAs($student)
                 ->get($url)
                 ->assertOk()
-                ->assertSee('student-portal-master.css', false);
+                ->assertSee('student-frontend.css', false);
         }
 
         $this->actingAs($student)
             ->followingRedirects()
             ->get(route('mobile.home'))
             ->assertOk()
-            ->assertSee('student-portal-master.css', false);
+            ->assertSee('student-frontend.css', false);
 
         $this->actingAs($student)
             ->get(route('mobile.profile'))
@@ -716,27 +719,27 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->get(route('mobile.history'))
             ->assertRedirect(route('student.calendar').'#attendance-records');
 
-        // Verify reinvented semantic classes render on key subpages
+        // Verify rebuilt semantic components render on key subpages
         $this->actingAs($student)
             ->get(route('excuses'))
             ->assertOk()
-            ->assertSee('sd-excuse-hero', false)
-            ->assertSee('sd-excuse-kpis', false);
+            ->assertSee('id="sfOpenExcuseModalBtn"', false)
+            ->assertSee('id="sfSubmitExcuseModal"', false);
 
         $this->actingAs($student)
             ->get(route('excuses.create_general'))
             ->assertOk()
-            ->assertSee('sd-excuse-form-card', false)
-            ->assertSee('sd-dropzone', false);
+            ->assertSee('id="excuseForm"', false)
+            ->assertSee('id="subjectsGrid"', false);
 
         $this->actingAs($student)
             ->get(route('profile'))
             ->assertOk()
             ->assertDontSee('sd-profile-quick-link', false)
-            ->assertSee('Academic Information', false)
+            ->assertSee('Academic Record', false)
             ->assertSee('Attendance Summary', false);
 
-        // Verify non-student portals (Teacher) do NOT load the student portal master stylesheet
+        // Verify non-student portals (Teacher) do NOT load the student frontend stylesheet
         $this->flushSession();
         $teacher = User::create([
             'name' => 'Portal Scope Teacher',
@@ -752,7 +755,7 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertOk()
             ->assertSee('aria-controls="moreSheet"', false)
             ->assertSee('id="moreSheet"', false)
-            ->assertDontSee('student-portal-master.css', false);
+            ->assertDontSee('student-frontend.css', false);
     }
 
     public function test_reinvented_face_and_fingerprint_registration_and_verification_studios_render(): void
@@ -783,10 +786,10 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertSee('id="startBioBtn"', false)
             ->assertSee('id="deviceList"', false);
 
-        // Biometric studio CSS + Login verification modal harmonization
+        // Biometric studio CSS + Oxblood/Porcelain harmonization
         $bioCss = file_get_contents(public_path('css/biometric-flow.css'));
         $this->assertNotFalse($bioCss);
-        $this->assertStringContainsString('--bio-canvas: #141010;', $bioCss);
+        $this->assertStringContainsString('--bio-canvas: var(--sf-bg, #0C0709);', $bioCss);
         $this->assertStringContainsString('.bio-sensor-pad', $bioCss);
         $this->assertStringContainsString('#biometricModal .bio-modal-card', $bioCss);
         $this->assertStringNotContainsString('#0f0407', $bioCss);
@@ -800,14 +803,14 @@ class StudentDashboardAndSidebarTest extends TestCase
             'student_number' => '2310812',
         ]);
 
-        // Calendar page no longer shows stale golden border copy
+        // Calendar page exposes CSV export and has no stale golden border copy
         $this->actingAs($student)
             ->get(route('student.calendar'))
             ->assertOk()
-            ->assertSee('highlighted border', false)
+            ->assertSee(route('student.calendar.export-csv'), false)
             ->assertDontSee('The <strong>golden border</strong> marks today', false);
 
-        // The dedicated scanner shares the app layout without a mobile dashboard shell.
+        // The dedicated scanner shares the student layout in standalone scanner mode without bottom dock.
         $this->actingAs($student)
             ->get(route('mobile.scan'))
             ->assertOk()
@@ -816,12 +819,12 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertDontSee('id="mobileBottomNav"', false)
             ->assertDontSee('class="sd-scan-desktop-bar', false);
 
-        // Schedule route renders unified Classes & Schedule view cleanly with Login-Matched Smoked Charcoal & Warm Gold palette
+        // Schedule route renders unified Classes & Schedule view cleanly
         $this->actingAs($student)
             ->get(route('student.schedule'))
             ->assertOk()
-            ->assertSee('corWeeklyGridView', false)
-            ->assertSee('sd-view-toggle', false);
+            ->assertSee('sfClassesWeeklyPanel', false)
+            ->assertSee('sf-segmented', false);
 
         // Standalone schedule view exposes ARIA tablist and pressed states
         $scheduleView = file_get_contents(resource_path('views/student/schedule.blade.php'));
@@ -835,12 +838,10 @@ class StudentDashboardAndSidebarTest extends TestCase
             ->assertOk()
             ->assertSee('aria-label="Search notifications or subjects"', false);
 
-        // Student pending approval, password change, QR result, and offline fallback use unified Login-Matched Smoked Charcoal & Warm Gold palette
+        // Student password change, pending approval, and QR result render cleanly
         $this->actingAs($student)
             ->get(route('password.change.form'))
             ->assertOk()
-            ->assertSee('#1E1515', false)
-            ->assertDontSee('#14080C', false)
             ->assertDontSee('#6366f1', false);
 
         $this->flushSession();
@@ -853,37 +854,31 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->actingAs($pendingStudent)
             ->get(route('student.pending-approval'))
             ->assertOk()
-            ->assertSee('#1E1515', false)
-            ->assertDontSee('#14080C', false)
+            ->assertSee('student-frontend.css', false)
+            ->assertSee('data-student-theme="dark"', false)
             ->assertDontSee('rgba(25,15,13,.94)', false);
 
         $qrResultHtml = view('qr.result', ['status' => 'success', 'message' => 'Recorded'])->render();
-        $this->assertStringContainsString('#1E1515', $qrResultHtml);
-        $this->assertStringNotContainsString('#14080C', $qrResultHtml);
+        $this->assertStringContainsString('sf-card', $qrResultHtml);
+        $this->assertStringContainsString('sfConfettiBurst', $qrResultHtml);
         $this->assertStringNotContainsString('#0f172a', $qrResultHtml);
 
         auth()->logout();
         $this->flushSession();
         $this->get('/offline')->assertNotFound();
 
-        // Verify fixed selector parity in student-portal-master.css & clean student-dashboard.css
-        $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
-        $this->assertNotFalse($masterCss);
-        $this->assertStringContainsString('.notif-item-card', $masterCss);
-        $this->assertStringContainsString('.notif-pill', $masterCss);
-        $this->assertStringContainsString('#cmdPaletteOverlay .cmd-palette', $masterCss);
-        $this->assertStringContainsString('.cor-table-wrap', $masterCss);
-        $this->assertStringContainsString('.sd-scan-desktop-bar', $masterCss);
-        $this->assertStringNotContainsString('background-attachment: fixed', $masterCss);
-        $this->assertStringNotContainsString('#0b0406', strtolower($masterCss));
-        $this->assertStringNotContainsString('#e898a8', strtolower($masterCss));
+        // Verify Dark Oxblood + Light Porcelain dual-theme tokens in student-frontend.css
+        $frontendCss = file_get_contents(public_path('css/student-frontend.css'));
+        $this->assertNotFalse($frontendCss);
+        $this->assertStringContainsString('--sf-bg: #0C0709;', $frontendCss);
+        $this->assertStringContainsString('--sf-surface: #160D10;', $frontendCss);
+        $this->assertStringContainsString('[data-student-theme="light"]', $frontendCss);
+        $this->assertStringContainsString('--sf-bg: #F7F3F4;', $frontendCss);
+        $this->assertStringContainsString('.sf-cmd-card', $frontendCss);
+        $this->assertStringContainsString('.sf-drawer', $frontendCss);
+        $this->assertStringNotContainsString('background-attachment: fixed', $frontendCss);
 
-        $dashCss = file_get_contents(public_path('css/student-dashboard.css'));
-        $this->assertNotFalse($dashCss);
-        $this->assertStringContainsString('--sdc-canvas: #141010;', $dashCss);
-        $this->assertStringContainsString('--sdc-surface: #1E1515;', $dashCss);
-
-        // Admin, Teacher & Shared design tokens use Login-Matched Smoked Charcoal Glass instead of heavy solid maroon walls
+        // Admin, Teacher & Shared design tokens stay intact
         $tokensCss = file_get_contents(public_path('css/design-tokens.css'));
         $premiumCss = file_get_contents(public_path('css/premium.css'));
         $adminCss = file_get_contents(public_path('css/admin-theme.css'));
@@ -1024,26 +1019,8 @@ class StudentDashboardAndSidebarTest extends TestCase
         ]);
 
         $response = $this->actingAs($student)->get(route('settings'))->assertOk();
-
-        libxml_use_internal_errors(true);
-        $dom = new \DOMDocument();
-        $dom->loadHTML($response->getContent());
-        libxml_clear_errors();
-
-        $xpath = new \DOMXPath($dom);
-        $note = $xpath->query('//*[contains(concat(" ", normalize-space(@class), " "), " student-privacy-note ")]')->item(0);
-        $this->assertNotNull($note);
-
-        // Strong must live inside the text wrapper span, never as a direct flex sibling of text nodes.
-        $this->assertSame(0, $xpath->query('./strong', $note)->length);
-        $textWrap = $xpath->query('./span[contains(concat(" ", normalize-space(@class), " "), " student-privacy-note-text ")]', $note)->item(0);
-        $this->assertNotNull($textWrap);
-        $this->assertSame(1, $xpath->query('./strong[normalize-space()="Privacy safeguard:"]', $textWrap)->length);
-
-        $settingsCss = file_get_contents(public_path('css/student-settings.css'));
-        $this->assertNotFalse($settingsCss);
-        $this->assertStringContainsString('.student-privacy-note-text', $settingsCss);
-        $this->assertStringContainsString('overflow-wrap: break-word;', $settingsCss);
+        $response->assertSee('Privacy safeguard:', false)
+            ->assertSee('Students cannot remove a guardian link', false);
     }
 
     public function test_student_academic_spec_cards_and_pref_tiles_restore_full_borders_padding_and_grid_gap(): void
@@ -1056,44 +1033,16 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->actingAs($student)
             ->get(route('settings'))
             ->assertOk()
-            ->assertSee('aria-label="Copy Student ID"', false);
+            ->assertSee('aria-label="Copy Student ID"', false)
+            ->assertSee('sf-academic-grid', false)
+            ->assertSee('sf-setting-row', false)
+            ->assertSee('sf-theme-picker', false);
 
-        $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
-        $this->assertNotFalse($masterCss);
-        $this->assertMatchesRegularExpression(
-            '/\.sp\.student-settings\[data-student-settings\]\s+\.academic-spec-grid\s*\{[^}]*gap:\s*0\s+28px\s*!important;/s',
-            $masterCss
-        );
-        $this->assertMatchesRegularExpression(
-            '/\.sp\.student-settings\[data-student-settings\]\s+\.sec-status-tile\s*\{[^}]*border:\s*1px\s+solid\s+var\(--sdc-border-subtle\)\s*!important;/s',
-            $masterCss
-        );
-        $this->assertMatchesRegularExpression(
-            '/\.sp\.student-settings\[data-student-settings\]\s+\.academic-spec-card\s*\{[^}]*border-bottom:\s*1px\s+solid\s+var\(--sdc-border-subtle\)\s*!important;[^}]*padding:\s*14px\s+0\s*!important;/s',
-            $masterCss
-        );
-        $this->assertMatchesRegularExpression(
-            '/\.sp\.student-settings\[data-student-settings\]\s+\.pref-tile\s*\{[^}]*border-bottom:\s*1px\s+solid\s+var\(--sdc-border-subtle\)\s*!important;[^}]*padding:\s*16px\s+0\s*!important;/s',
-            $masterCss
-        );
-
-        $polishCss = file_get_contents(public_path('css/settings-polish.css'));
-        $this->assertNotFalse($polishCss);
-        $this->assertMatchesRegularExpression(
-            '/\.pref-tile\s+\.form-check\.form-switch[^{]*\{[^}]*padding-left:\s*0\s*!important;/s',
-            $polishCss
-        );
-        $this->assertMatchesRegularExpression(
-            '/\.pref-tile\s+\.form-check\.form-switch\s+\.form-check-input[^{]*\{[^}]*margin:\s*0\s*!important;\s*float:\s*none\s*!important;/s',
-            $polishCss
-        );
-
-        $studentSettingsCss = file_get_contents(public_path('css/student-settings.css'));
-        $this->assertNotFalse($studentSettingsCss);
-        $this->assertMatchesRegularExpression(
-            '/\.pref-tile\s+\.form-check\.form-switch\s+\.form-check-input\s*\{[^}]*margin:\s*0\s*!important;\s*float:\s*none\s*!important;/s',
-            $studentSettingsCss
-        );
+        $frontendCss = file_get_contents(public_path('css/student-frontend.css'));
+        $this->assertNotFalse($frontendCss);
+        $this->assertStringContainsString('.sf-academic-grid', $frontendCss);
+        $this->assertStringContainsString('.sf-setting-row', $frontendCss);
+        $this->assertStringContainsString('.sf-switch', $frontendCss);
     }
 
     public function test_student_settings_profile_photo_card_avoids_profile_summary_collision_and_provides_change_photo_action(): void
@@ -1103,32 +1052,20 @@ class StudentDashboardAndSidebarTest extends TestCase
             'student_number' => '2310823',
         ]);
 
-        $response = $this->actingAs($student)
+        $this->actingAs($student)
             ->get(route('settings'))
             ->assertOk()
-            ->assertSee('class="student-photo-change-btn"', false)
+            ->assertSee('class="sf-avatar-cam-btn"', false)
             ->assertSee('for="ppmFileInput"', false)
             ->assertSee('Change photo', false)
             ->assertDontSee('id="ppmCameraBadge"', false)
             ->assertDontSee('id="ppmHoverOverlay"', false);
 
-        $masterCss = file_get_contents(public_path('css/student-portal-master.css'));
-        $this->assertNotFalse($masterCss);
-        $this->assertStringContainsString('.student-profile-summary:not(.sc)', $masterCss);
-        $this->assertMatchesRegularExpression(
-            '/\.sp\.student-settings\[data-student-settings\]\s+\.sc\.student-profile-summary\s*\{[^}]*display:\s*block\s*!important;[^}]*padding:\s*0\s*!important;/s',
-            $masterCss
-        );
-        $this->assertMatchesRegularExpression(
-            '/\.sp\.student-settings\[data-student-settings\]\s+\.ppm-badge-btn\s*\{[^}]*background:\s*var\(--sdc-cta-grad\)\s*!important;[^}]*color:\s*var\(--sdc-cta-text\)\s*!important;/s',
-            $masterCss
-        );
-
-        // Standalone student profile page still keeps its summary layout intact
+        // Standalone student profile page still keeps its summary hero intact
         $this->actingAs($student)
             ->get(route('profile'))
             ->assertOk()
-            ->assertSee('<section class="student-profile-summary"', false);
+            ->assertSee('aria-label="Student profile summary"', false);
     }
 
     public function test_student_sidebar_omits_redundant_section_labels(): void
@@ -1138,10 +1075,10 @@ class StudentDashboardAndSidebarTest extends TestCase
             'student_number' => '2310824',
         ]);
 
-        $response = $this->actingAs($student)
+        $this->actingAs($student)
             ->get(route('home'))
             ->assertOk()
-            ->assertSee('student-sidebar-nav', false)
+            ->assertSee('sf-sidebar-nav', false)
             ->assertSee('Classes &amp; Schedule', false)
             ->assertSee('Attendance &amp; Calendar', false)
             ->assertDontSee('My workspace', false)
@@ -1151,5 +1088,53 @@ class StudentDashboardAndSidebarTest extends TestCase
         $sidebarTemplate = file_get_contents(resource_path('views/layouts/sidebars/student.blade.php'));
         $this->assertNotFalse($sidebarTemplate);
         $this->assertStringNotContainsString('nav-section-label', $sidebarTemplate);
+    }
+
+    public function test_student_calendar_csv_export_downloads_sanitized_attendance_rows(): void
+    {
+        $student = $this->createStudent([
+            'email' => 'student.csvexport@gmail.com',
+            'student_number' => '2310890',
+        ]);
+
+        $subject = Subject::create([
+            'code' => 'CS450',
+            'name' => '=HYPERLINK("http://evil.test","Click")',
+            'year_level' => 3,
+            'semester' => 1,
+            'course' => 'BSCS',
+            'section' => 'A',
+        ]);
+
+        Attendance::create([
+            'user_id' => $student->id,
+            'subject_id' => $subject->id,
+            'subject_code' => $subject->code,
+            'date' => now()->toDateString(),
+            'time_in' => '08:15:00',
+            'status' => 'Present',
+            'excused' => false,
+        ]);
+
+        $response = $this->actingAs($student)->get(route('student.calendar.export-csv'));
+        $response->assertOk();
+        $this->assertStringContainsString('text/csv', (string) $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('attachment;', (string) $response->headers->get('Content-Disposition'));
+
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Date,"Subject Code","Subject Name",Instructor,"Clock In","Clock Out",Method,Status,Remarks', $csv);
+        $this->assertStringContainsString('CS450', $csv);
+        // Formula-injection prefix must be neutralized with leading single quote.
+        $this->assertStringContainsString("'=HYPERLINK(", $csv);
+
+        // Non-student cannot access student CSV export.
+        $this->flushSession();
+        $teacher = $this->createStudent([
+            'role' => 'teacher',
+            'student_number' => null,
+            'employee_id' => 'TCH-CSV-1',
+            'email' => 'teacher.csv@gmail.com',
+        ]);
+        $this->actingAs($teacher)->get(route('student.calendar.export-csv'))->assertRedirect();
     }
 }

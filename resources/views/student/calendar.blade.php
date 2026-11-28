@@ -3,222 +3,135 @@
 @section('page-title', 'Attendance & Calendar')
 
 @section('content')
-{{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
-@include('partials.student-page-header', ['title' => 'Attendance & School Calendar', 'description' => 'Check school dates and review your attendance history.'])
+@php
+    $exportParams = array_filter([
+        'year' => $year,
+        'month' => $month,
+        'status' => $filters['status'] ?? null,
+        'q' => $filters['q'] ?? null,
+        'record_date' => $filters['record_date'] ?? null,
+    ]);
+    $hasRecordFilters = !empty(array_filter($filters ?? []));
+@endphp
 
-{{-- Progressive Disclosure Workspace Switcher (Calendar vs Detailed Records) --}}
-<div class="sd-workspace-tabs no-print" role="tablist" aria-label="Attendance workspace view">
-    <button type="button"
-            class="sd-workspace-tab is-active"
-            role="tab"
-            id="scalTabCalendar"
-            aria-controls="scalWorkspaceCalendar"
-            aria-selected="true"
-            data-cal-workspace-tab="calendar">
-        <i class="bi bi-calendar3" aria-hidden="true"></i>
-        <span>Calendar</span>
-    </button>
-    <button type="button"
-            class="sd-workspace-tab"
-            role="tab"
-            id="scalTabRecords"
-            aria-controls="scalWorkspaceRecords"
-            aria-selected="false"
-            data-cal-workspace-tab="records">
-        <i class="bi bi-journal-check" aria-hidden="true"></i>
-        <span><span class="d-none d-sm-inline">Attendance </span>Records</span>
-        <span class="sd-workspace-tab-count">{{ $totals['all'] ?? 0 }}</span>
-    </button>
-</div>
-
-<div id="scalWorkspaceCalendar" role="tabpanel" aria-labelledby="scalTabCalendar">
-<div class="scal-outer">
-
-    {{-- MAIN CALENDAR CARD --}}
-    <div class="scal-card">
-        {{-- Navigation --}}
-        <div class="scal-nav">
-            <button class="scal-nav-btn" onclick="scalPrevMonth()" title="Previous month" aria-label="Previous month">
-                <i class="bi bi-chevron-left"></i>
-            </button>
-            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-center">
-                <span class="scal-nav-title" id="scalMonthLabel" aria-live="polite">{{ \Carbon\Carbon::create($year, $month, 1)->format('F Y') }}</span>
-            </div>
-            <button class="scal-nav-btn" onclick="scalNextMonth()" title="Next month" aria-label="Next month">
-                <i class="bi bi-chevron-right"></i>
-            </button>
+<div>
+    <header class="sf-page-head">
+        <div>
+            <h1>Attendance &amp; Calendar</h1>
+            <p>Monthly attendance overview, holidays, and recorded check-ins</p>
         </div>
-
-        {{-- Weekday headers --}}
-        <div class="scal-weekdays">
-            @foreach(['S','M','T','W','T','F','S'] as $d)
-                <div class="scal-wd">{{ $d }}</div>
-            @endforeach
+        <div class="sf-page-actions">
+            <a href="{{ route('mobile.scan') }}" class="sf-btn sf-btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/></svg>
+                <span>Check in</span>
+            </a>
+            <a href="{{ route('student.calendar.export-csv', $exportParams) }}" class="sf-btn sf-btn-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                <span>Export CSV</span>
+            </a>
         </div>
+    </header>
 
-        @include('partials.calendar-month-grid')
+    {{-- Mobile Segmented Workspace Switcher --}}
+    <div class="sf-cal-workspace-tabs" role="tablist" aria-label="Attendance workspace view">
+        <button type="button"
+                class="sf-cal-workspace-tab {{ !$hasRecordFilters ? 'active' : '' }}"
+                role="tab"
+                id="scalTabCalendar"
+                aria-controls="scalWorkspaceCalendar"
+                aria-selected="{{ !$hasRecordFilters ? 'true' : 'false' }}"
+                data-cal-workspace-tab="calendar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+            <span>Calendar</span>
+        </button>
+        <button type="button"
+                class="sf-cal-workspace-tab {{ $hasRecordFilters ? 'active' : '' }}"
+                role="tab"
+                id="scalTabRecords"
+                aria-controls="scalWorkspaceRecords"
+                aria-selected="{{ $hasRecordFilters ? 'true' : 'false' }}"
+                data-cal-workspace-tab="records">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+            <span>Records</span>
+            <span class="sf-pill sf-mono" style="padding:1px 6px;">{{ $totals['all'] ?? 0 }}</span>
+        </button>
     </div>
 
-    {{-- SIDE PANEL --}}
-    <div class="scal-side">
-        {{-- Desktop Selected-Day Inspector --}}
-        <section class="sd-day-inspector d-none d-lg-block" id="sdDesktopDayInspector" aria-live="polite">
-            <div class="sd-day-inspector-head">
-                <div>
-                    <h2 class="sd-day-inspector-title" id="sdInspectorTitle">Select a day</h2>
-                    <div class="sd-day-inspector-sub" id="sdInspectorSubtitle">Click any date tile to inspect attendance &amp; events</div>
+    <div class="sf-cal-grid-layout">
+        {{-- Left Column: Interactive Monthly Calendar + Selected Date Inspector --}}
+        <div id="scalWorkspaceCalendar" role="tabpanel" aria-labelledby="scalTabCalendar">
+            <section class="sf-card scal-card" aria-label="Monthly attendance calendar">
+                <div class="scal-nav">
+                    <button type="button" class="scal-nav-btn" onclick="scalPrevMonth()" title="Previous month" aria-label="Previous month">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                    <span class="scal-nav-title" id="scalMonthLabel" aria-live="polite">
+                        {{ \Carbon\Carbon::create($year, $month, 1)->format('F Y') }}
+                    </span>
+                    <button type="button" class="scal-nav-btn" onclick="scalNextMonth()" title="Next month" aria-label="Next month">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
                 </div>
-                <span class="badge rounded-pill" id="sdInspectorStatusBadge" style="display:none; font-size:0.72rem; font-weight:700; padding:4px 10px;"></span>
-            </div>
-            <div class="sd-day-inspector-list" id="sdInspectorContent">
-                <p style="color:#ACA099; font-size:0.84rem; margin:0;">Loading calendar activity…</p>
-            </div>
-            <div class="d-flex align-items-center justify-content-between gap-2 mt-3 pt-2" style="border-top: 1px solid rgba(255, 255, 255, 0.08);">
-                <a href="{{ route('student.calendar') }}#attendance-records" id="sdInspectorRecordsLink" class="d-none" style="color:#D4AF37; font-size:0.8rem; font-weight:700; text-decoration:none;">
-                    <i class="bi bi-funnel me-1" aria-hidden="true"></i>Filter records
-                </a>
-                <button type="button" id="sdInspectorModalBtn" class="btn btn-sm ms-auto" style="background: #261B1B; border: 1px solid rgba(255, 255, 255,0.16); color:#FAF8F5; font-size:0.76rem; font-weight:700; border-radius:8px; padding:6px 12px;">
-                    <i class="bi bi-arrows-angle-expand me-1" aria-hidden="true"></i>Details
-                </button>
-            </div>
-        </section>
 
-        {{-- Legend (Open on desktop, collapsed by default on mobile) --}}
-        <details class="sd-disclosure-card scal-legend-card" data-open-desktop="true">
-            <summary>
-                <span class="sd-disclosure-title-wrap">
-                    <span class="scal-legend-title" style="margin:0;">Legend</span>
-                </span>
-                <span class="sd-disclosure-meta-wrap">
-                    <i class="bi bi-chevron-down sd-disclosure-chevron" aria-hidden="true"></i>
-                </span>
-            </summary>
-            <div class="sd-disclosure-body" style="padding-top:12px;">
-                <div class="scal-legend-grid">
-                    <div class="scal-legend-item">
-                        <span class="scal-legend-dot" style="background:#4ADE80;"></span>
-                        Present
-                    </div>
-                    <div class="scal-legend-item">
-                        <span class="scal-legend-dot" style="background:#FBBF24;"></span>
-                        Late
-                    </div>
-                    <div class="scal-legend-item">
-                        <span class="scal-legend-dot" style="background:#F87171;"></span>
-                        Absent
-                    </div>
-                    <div class="scal-legend-item">
-                        <span class="scal-legend-dot" style="background:#EC4899;"></span>
-                        Exam
-                    </div>
-                    <div class="scal-legend-item">
-                        <span class="scal-legend-dot" style="background:#7DD3FC;"></span>
-                        Event
-                    </div>
-                    <div class="scal-legend-item">
-                        <span class="scal-legend-dot" style="background:#2DD4BF;"></span>
-                        Holiday
-                    </div>
+                <div class="scal-weekdays">
+                    @foreach(['Su','Mo','Tu','We','Th','Fr','Sa'] as $d)
+                        <div class="scal-wd">{{ $d }}</div>
+                    @endforeach
                 </div>
-            </div>
-        </details>
 
-        {{-- Tips --}}
-        <details class="scal-tips-card student-calendar-help">
-            <summary>How to read this calendar</summary>
-            <ul class="scal-tips-list">
-                <li>Tap any <strong>day tile</strong> to view your subjects and attendance for that day.</li>
-                <li>Tile color shows your <strong>dominant attendance status</strong> for the day.</li>
-                <li>The <strong>highlighted border</strong> marks today.</li>
-            </ul>
-        </details>
-    </div>
-</div>
-</div>
+                @include('partials.calendar-month-grid')
 
-@include('partials.calendar-records')
-<div id="scalWorkspaceRecords" role="tabpanel" aria-labelledby="scalTabRecords" hidden>
-    @include('attendance.records')
-</div>
+                <div class="sf-minical-legend" style="flex-wrap:wrap;gap:8px 12px;">
+                    <span class="sf-legend-item"><span class="sf-legend-dot" style="background:var(--sf-emerald);"></span> Present</span>
+                    <span class="sf-legend-item"><span class="sf-legend-dot" style="background:var(--sf-amber);"></span> Late</span>
+                    <span class="sf-legend-item"><span class="sf-legend-dot" style="background:var(--sf-danger);"></span> Absent</span>
+                    <span class="sf-legend-item"><span class="sf-legend-dot" style="background:var(--sf-teal);"></span> Holiday</span>
+                    <span class="sf-legend-item"><span class="sf-legend-dot" style="background:var(--sf-sky);"></span> Event</span>
+                </div>
 
-{{-- ── Event Detail Modal ──────────────────────────────────────────────── --}}
-<div class="modal fade" id="eventDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content ent-modal-content w-100">
-            <div class="ent-modal-header position-relative">
-                <h5 class="ent-modal-title" id="eventTitle" style="padding-right: 24px;">Event</h5>
-                <button type="button" class="btn-close btn-close-white" aria-label="Close details" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
-            </div>
-            <div class="ent-modal-body">
-                <div class="ent-modal-row">
-                    <div class="ent-modal-label">Event Type</div>
-                    <div class="ent-modal-value">
-                        <span id="eventTypeBadge" class="ent-badge" style="font-size:0.75rem;padding:4px 10px;border-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,0.3);">Type</span>
+                {{-- Embedded Selected-Date Inspector --}}
+                <div class="sf-cal-inspector" id="sdDesktopDayInspector" aria-live="polite">
+                    <div class="sf-cal-inspector-head">
+                        <div class="sf-cal-inspector-date">
+                            <span id="sdInspectorTitle">Select a day</span>
+                        </div>
+                        <span class="sf-pill" id="sdInspectorStatusBadge" style="display:none;"></span>
+                    </div>
+                    <div id="sdInspectorSubtitle" style="font-size:11.5px;color:var(--sf-text-muted);margin-bottom:8px;">
+                        Click any date tile to inspect attendance &amp; school events.
+                    </div>
+                    <div class="sf-cal-inspector-list" id="sdInspectorContent">
+                        <div style="font-size:12px;color:var(--sf-text-muted);">Loading calendar activity...</div>
+                    </div>
+                    <div style="margin-top:9px;display:flex;justify-content:flex-end;">
+                        <a href="{{ route('student.calendar') }}#attendance-records" id="sdInspectorRecordsLink" class="sf-link" style="display:none;">
+                            Filter records for this date →
+                        </a>
                     </div>
                 </div>
-                <div class="ent-modal-row">
-                    <div class="ent-modal-label">Date &amp; Time</div>
-                    <div class="ent-modal-value">
-                        <i class="bi bi-clock" style="color:#D4AF37;" aria-hidden="true"></i>
-                        <span id="eventTime">Date</span>
-                    </div>
-                </div>
-                <div class="ent-modal-row" id="eventLocationContainer">
-                    <div class="ent-modal-label">Location</div>
-                    <div class="ent-modal-value">
-                        <i class="bi bi-geo-alt" style="color:#D4AF37;" aria-hidden="true"></i>
-                        <span id="eventLocation">Location</span>
-                    </div>
-                </div>
-            </div>
+            </section>
+        </div>
+
+        {{-- Right Column: Attendance History Ledger --}}
+        <div id="scalWorkspaceRecords" role="tabpanel" aria-labelledby="scalTabRecords">
+            @include('partials.calendar-records')
+            @include('attendance.records')
         </div>
     </div>
 </div>
 
-{{-- ── Day Summary Modal ───────────────────────────────────────────────── --}}
-<div class="modal fade" id="daySummaryModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-bottom modal-dialog-scrollable">
-        <div class="modal-content bottom-sheet-content">
-            <div class="bottom-sheet-handle"></div>
-            <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(255, 255, 255,0.08)!important;">
-                <div>
-                    <h3 style="font-weight:700;font-size:1.15rem;color:#FAF8F5;margin:0;padding-right:36px;" id="daySummaryTitle">Date</h3>
-                    <div style="font-size:0.84rem;color:#ACA099;display:flex;align-items:center;gap:6px;margin-top:4px;" id="daySummarySubtitle">
-                        <span id="daySummaryStatusDot" style="width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
-                        <span id="daySummaryStatusText">Status</span>
-                    </div>
-                </div>
-                <button type="button" class="btn-close btn-close-white" aria-label="Close details" data-bs-dismiss="modal" onclick="closeDaySummaryModal()" style="position:absolute;top:16px;right:16px;min-width:44px;min-height:44px;"></button>
-            </div>
-            <div class="px-4 pb-4">
-                <h6 style="font-size:0.76rem;font-weight:700;color:#ACA099;text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px 0;" id="daySummarySectionTitle">Subjects</h6>
-                <div id="daySummaryContent" class="d-flex flex-column gap-2">
-                    <!-- dynamically populated -->
-                </div>
-                <a id="daySummaryRecordsLink" class="ent-btn ent-btn-ghost mt-3 d-none" onclick="closeDaySummaryModal()">View records for this day</a>
-            </div>
-        </div>
-    </div>
-</div>
+{{-- Hidden Day Summary Marker for calendar-month-grid aria-controls --}}
+<div id="daySummaryModal" hidden></div>
 
 <script @cspNonce>
-/* ═══════════════════════════════════════════════════
-   Squircle School Calendar — Vanilla JS Engine
-   ═══════════════════════════════════════════════════ */
 let scalYear  = {{ $year }};
 let scalMonth = {{ $month }};
-
-// Raw events from API: date string → array of event objects
 let scalEventMap = {};
 let scalDataState = 'loading';
 
 const MONTH_NAMES = ['January','February','March','April','May','June',
                      'July','August','September','October','November','December'];
-
-// Dominant status priority (worst-first so we pick the most visible)
 const STATUS_PRIORITY = ['absent','late','present','exam','event','holiday'];
-
-// Status → CSS class & dot colour
 const STATUS_CLASS = {
     present : 'status-present',
     late    : 'status-late',
@@ -228,12 +141,9 @@ const STATUS_CLASS = {
     exam    : 'status-exam',
 };
 
-/* ── Derive dominant status for a day ───────────────────── */
 function scalDominantStatus(dateStr) {
     const evts = scalEventMap[dateStr];
     if (!evts || evts.length === 0) return null;
-
-    // Map raw type/status → our simplified statuses
     const statuses = new Set();
     evts.forEach(ev => {
         const t = (ev.type || '').toLowerCase();
@@ -246,8 +156,6 @@ function scalDominantStatus(dateStr) {
         else if (t === 'holiday')   statuses.add('holiday');
         else                        statuses.add('event');
     });
-
-    // Return highest priority
     for (const p of STATUS_PRIORITY) {
         if (statuses.has(p)) return p;
     }
@@ -273,19 +181,17 @@ function scalRender() {
     }
 }
 
-/* ── Navigate ───────────────────────────────────────────── */
 function scalPrevMonth() {
     scalMonth--;
     if (scalMonth < 1) { scalMonth = 12; scalYear--; }
     scalLoadAndRender();
-    window.StudentMotion?.animateCalendarShift(calendarGrid, 'prev');
 }
 function scalNextMonth() {
     scalMonth++;
     if (scalMonth > 12) { scalMonth = 1; scalYear++; }
     scalLoadAndRender();
-    window.StudentMotion?.animateCalendarShift(calendarGrid, 'next');
 }
+
 function scalHighlightTile(dateStr) {
     if (!calendarGrid) return;
     calendarGrid.querySelectorAll('button[data-date]').forEach(tile => {
@@ -293,75 +199,90 @@ function scalHighlightTile(dateStr) {
     });
 }
 
-function scalRenderDesktopInspector(dateStr, evts, summaryText, summaryBg, summaryColor) {
+function scalRenderDay(dateStr) {
+    scalHighlightTile(dateStr);
+    const evts = scalEventMap[dateStr] || [];
     const titleEl = document.getElementById('sdInspectorTitle');
     const subEl = document.getElementById('sdInspectorSubtitle');
     const badgeEl = document.getElementById('sdInspectorStatusBadge');
     const listEl = document.getElementById('sdInspectorContent');
     const recLink = document.getElementById('sdInspectorRecordsLink');
-    const modalBtn = document.getElementById('sdInspectorModalBtn');
-    if (!listEl) return;
+    const marker = document.getElementById('daySummaryModal');
+    if (marker) marker.dataset.date = dateStr;
 
     const dateObj = new Date(dateStr + 'T00:00:00');
     if (titleEl) {
         titleEl.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
     }
     if (subEl) {
-        subEl.textContent = evts.length > 0 ? `${evts.length} scheduled or recorded ${evts.length === 1 ? 'item' : 'items'}` : 'No items logged';
+        subEl.textContent = evts.length > 0
+            ? (evts.length + ' ' + (evts.length === 1 ? 'item' : 'items') + ' on this date')
+            : 'No attendance records or school events on this date.';
     }
+
+    const dom = scalDominantStatus(dateStr);
     if (badgeEl) {
-        if (summaryText) {
-            badgeEl.textContent = summaryText;
-            badgeEl.style.background = summaryBg;
-            badgeEl.style.color = summaryColor;
-            badgeEl.style.display = 'inline-block';
+        if (dom) {
+            badgeEl.textContent = dom.charAt(0).toUpperCase() + dom.slice(1);
+            badgeEl.className = 'sf-pill ' + (dom === 'present' ? 'is-emerald' : (dom === 'late' ? 'is-amber' : (dom === 'absent' ? 'is-danger' : (dom === 'holiday' ? 'is-teal' : 'is-sky'))));
+            badgeEl.style.display = 'inline-flex';
         } else {
             badgeEl.style.display = 'none';
         }
     }
+
     if (recLink) {
         const hasAtt = evts.some(ev => (ev.type || '').toLowerCase() === 'attendance');
         const recordsUrl = new URL(@json(route('student.calendar')), window.location?.origin || 'http://localhost');
         recordsUrl.search = new URLSearchParams({ year: scalYear, month: scalMonth, record_date: dateStr });
         recordsUrl.hash = 'attendance-records';
         recLink.href = recordsUrl.href;
-        recLink.classList.toggle('d-none', !hasAtt);
-    }
-    if (modalBtn) {
-        modalBtn.dataset.date = dateStr;
-        modalBtn.hidden = scalDataState !== 'ready' || evts.length === 0;
+        recLink.style.display = hasAtt ? 'inline-flex' : 'none';
     }
 
+    if (!listEl) return;
     listEl.replaceChildren();
-    window.StudentMotion?.animateInspectorSwap(listEl);
+
     if (scalDataState === 'loading') {
-        listEl.innerHTML = '<p style="color:#ACA099;font-size:0.83rem;margin:0;">Loading day activity…</p>';
+        listEl.innerHTML = '<div style="font-size:12px;color:var(--sf-text-muted);">Loading day activity...</div>';
         return;
     }
     if (scalDataState === 'error') {
-        listEl.innerHTML = '<p style="color:#F87171;font-size:0.83rem;margin:0;">Unable to load activities.</p>';
+        listEl.innerHTML = '<div style="font-size:12px;color:var(--sf-danger);">Unable to load calendar events.</div>';
         return;
     }
-    if (!evts.length) {
-        listEl.innerHTML = '<p style="color:#ACA099;font-size:0.83rem;margin:0;">No attendance or school events recorded on this date.</p>';
-        return;
-    }
+    if (!evts.length) return;
+
     evts.forEach(ev => {
         const isAtt = (ev.type || '').toLowerCase() === 'attendance';
         const status = (ev.status || '').toLowerCase();
         const evType = (ev.type || '').toLowerCase();
-        const badgeColor = status === 'present' ? '#4ADE80' : (status === 'late' ? '#FBBF24' : (status === 'absent' ? '#F87171' : (status === 'excused' ? '#7DD3FC' : (evType === 'holiday' ? '#4ADE80' : (evType === 'exam' ? '#EC4899' : '#7DD3FC')))));
-        const item = document.createElement('div');
-        item.className = 'sd-day-inspector-item';
-        item.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-                <strong style="color:#FAF8F5;font-size:0.85rem;">${recordText(isAtt ? (ev.subject_name || ev.title) : ev.title)}</strong>
-                <span style="color:${badgeColor};font-size:0.72rem;font-weight:700;text-transform:uppercase;flex-shrink:0;">${recordText(isAtt ? ev.status : (ev.type || 'event').replace('_', ' '))}</span>
-            </div>
-            <div style="color:#ACA099;font-size:0.76rem;margin-top:4px;">${recordText(ev.time_string || (isAtt ? 'Time not set' : 'All Day'))}${ev.instructor_name ? ' · ' + recordText(ev.instructor_name) : ''}</div>
-        `;
-        listEl.appendChild(item);
+        const pillClass = status === 'present' ? 'is-emerald' : (status === 'late' ? 'is-amber' : (status === 'absent' ? 'is-danger' : (status === 'excused' ? 'is-sky' : (evType === 'holiday' ? 'is-teal' : 'is-rose'))));
+
+        const row = document.createElement('div');
+        row.className = 'sf-cal-event-item';
+
+        const left = document.createElement('div');
+        left.style.minWidth = '0';
+        const name = document.createElement('div');
+        name.style.cssText = 'font-weight:600;color:var(--sf-text);';
+        name.textContent = isAtt ? (ev.subject_name || ev.title || 'Class') : (ev.title || 'Event');
+        const meta = document.createElement('div');
+        meta.style.cssText = 'font-size:11px;color:var(--sf-text-muted);';
+        meta.textContent = (ev.time_string || (isAtt ? 'Logged' : 'All Day')) + (ev.instructor_name ? ' · ' + ev.instructor_name : '');
+        left.append(name, meta);
+
+        const pill = document.createElement('span');
+        pill.className = 'sf-pill ' + pillClass;
+        pill.textContent = isAtt ? (ev.status || 'Logged') : (evType.replace('_', ' ') || 'Event');
+
+        row.append(left, pill);
+        listEl.appendChild(row);
     });
+}
+
+function scalDayClick(dateStr) {
+    scalRenderDay(dateStr);
 }
 
 function scalLoadAndRender(historyMode = 'push') {
@@ -370,24 +291,22 @@ function scalLoadAndRender(historyMode = 'push') {
         scalDataState = state;
         scalEventMap = events;
         scalRender();
-        const modalEl = document.getElementById('daySummaryModal');
-        const selectedDate = modalEl?.dataset.date;
+        const marker = document.getElementById('daySummaryModal');
+        const selectedDate = marker?.dataset.date;
         if (selectedDate?.slice(0, 7) === calendarGrid.dataset.month) {
             scalRenderDay(selectedDate);
-        } else if (window.innerWidth >= 1024 && calendarGrid?.dataset.month) {
+        } else if (calendarGrid?.dataset.month) {
             const now = new Date();
             const nowMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const defaultDate = nowMonth === calendarGrid.dataset.month
                 ? `${nowMonth}-${String(now.getDate()).padStart(2, '0')}`
                 : `${calendarGrid.dataset.month}-01`;
-            if (modalEl) modalEl.dataset.date = defaultDate;
             scalRenderDay(defaultDate);
         }
     });
 
-    // Update URL
     const url = new URL(window.location);
-    url.searchParams.set('year',  scalYear);
+    url.searchParams.set('year', scalYear);
     url.searchParams.set('month', scalMonth);
     if (historyMode === 'push') window.history.pushState({}, '', url);
     else if (historyMode === 'replace') window.history.replaceState({}, '', url);
@@ -395,206 +314,42 @@ function scalLoadAndRender(historyMode = 'push') {
 
 window.addEventListener('popstate', () => {
     const params = new URL(location.href).searchParams;
-    const year = Number(params.get('year'));
-    const month = Number(params.get('month'));
+    const y = Number(params.get('year'));
+    const m = Number(params.get('month'));
     const today = new Date();
-    scalYear = Number.isInteger(year) && year >= 1900 && year <= 2200 ? year : today.getFullYear();
-    scalMonth = Number.isInteger(month) && month >= 1 && month <= 12 ? month : today.getMonth() + 1;
+    scalYear = Number.isInteger(y) && y >= 1900 && y <= 2200 ? y : today.getFullYear();
+    scalMonth = Number.isInteger(m) && m >= 1 && m <= 12 ? m : today.getMonth() + 1;
     scalLoadAndRender('none');
 });
 
-/* ── Day click → Day Summary Modal ─────────────────────── */
-function scalRenderDay(dateStr) {
-    scalHighlightTile(dateStr);
-    const evts = scalEventMap[dateStr] || [];
-    const recordsLink = document.getElementById('daySummaryRecordsLink');
-    if (recordsLink) {
-        const recordsUrl = new URL(@json(route('student.calendar')), window.location?.origin || 'http://localhost');
-        recordsUrl.search = new URLSearchParams({ year: scalYear, month: scalMonth, record_date: dateStr });
-        recordsUrl.hash = 'attendance-records';
-        recordsLink.href = recordsUrl.href;
-        recordsLink.classList.toggle('d-none', scalDataState === 'ready' && !evts.some(event => event.type === 'attendance'));
-    }
-    const dateObj = new Date(dateStr + 'T00:00:00');
-    const titleEl = document.getElementById('daySummaryTitle');
-    if (titleEl) {
-        titleEl.textContent =
-            dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    }
-
-    const content = document.getElementById('daySummaryContent');
-    content.innerHTML = '';
-
-    let hasAbsent = false, hasPresent = false, hasLate = false, hasEvent = false;
-
-    if (scalDataState !== 'ready' || evts.length === 0) {
-        const subEl = document.getElementById('daySummarySubtitle');
-        const secEl = document.getElementById('daySummarySectionTitle');
-        if (subEl) subEl.style.display = 'none';
-        if (secEl) secEl.style.display = 'none';
-        const message = scalDataState === 'loading'
-            ? 'Loading attendance and events for this date…'
-            : scalDataState === 'error'
-                ? 'Attendance and events couldn’t load. Close this window to retry the month.'
-                : 'No activities recorded for this day.';
-        const notice = document.createElement('p');
-        notice.className = 'text-center my-3';
-        notice.textContent = message;
-        content.append(notice);
-    } else {
-        const secEl = document.getElementById('daySummarySectionTitle');
-        if (secEl) secEl.style.display = 'block';
-
-        evts.forEach(ev => {
-            const t  = (ev.type || '').toLowerCase();
-            const s  = (ev.status || '').toLowerCase();
-
-            if (t === 'attendance') {
-                if (s === 'absent')  hasAbsent  = true;
-                if (s === 'present') hasPresent = true;
-                if (s === 'late')    hasLate    = true;
-
-                const statusColorMap = {
-                    absent: '#F87171',
-                    present: '#4ADE80',
-                    late: '#FBBF24',
-                    excused: '#7DD3FC',
-                };
-                const iconColor = statusColorMap[s] || '#D4AF37';
-                const sn = ev.subject_name || ev.title || 'Subject';
-
-                let iconCls = 'bi-journal-bookmark';
-                const lc = sn.toLowerCase();
-                if (lc.includes('code')||lc.includes('web')||lc.includes('prog')) iconCls = 'bi-code-slash';
-                else if (lc.includes('math')||lc.includes('discrete'))            iconCls = 'bi-bar-chart-fill';
-                else if (lc.includes('science')||lc.includes('physics'))          iconCls = 'bi-lightbulb';
-
-                const badgeMap = {
-                    absent:  { bg:'rgba(248,113,113,0.16)', color:'#F87171' },
-                    present: { bg:'rgba(74,222,128,0.16)',  color:'#4ADE80' },
-                    late:    { bg:'rgba(251,191,36,0.16)',  color:'#FBBF24' },
-                    excused: { bg:'rgba(125,211,252,0.16)', color:'#7DD3FC' },
-                };
-                const badge = badgeMap[s] || { bg:'rgba(255,255,255,0.08)', color:'#FAF8F5' };
-
-                content.insertAdjacentHTML('beforeend', `
-                <div class="subject-card">
-                    <div class="subject-card-icon" style="background:transparent;color:${iconColor};">
-                        <i class="bi ${iconCls}"></i>
-                    </div>
-                    <div class="subject-card-info">
-                        <div class="subject-card-title">${recordText(ev.subject_name || ev.title)}</div>
-                        <div class="subject-card-time">${recordText(ev.time_string || 'Time not set')}</div>
-                        <div class="subject-card-teacher">${recordText(ev.instructor_name || 'No Instructor')}</div>
-                    </div>
-                    <div class="subject-card-badge" style="background:${badge.bg};color:${badge.color};">${recordText(ev.status)}</div>
-                </div>`);
-            } else {
-                hasEvent = true;
-                const evColor = t === 'holiday' ? '#4ADE80' : (t === 'exam' ? '#EC4899' : '#7DD3FC');
-                content.insertAdjacentHTML('beforeend', `
-                <div class="subject-card" style="border-color:${evColor}66;">
-                    <div class="subject-card-icon" style="background:transparent;color:${evColor};">
-                        <i class="bi bi-calendar-event"></i>
-                    </div>
-                    <div class="subject-card-info">
-                        <div class="subject-card-title">${recordText(ev.title)}</div>
-                        <div class="subject-card-time">${recordText(ev.time_string || 'All Day')}</div>
-                        <div class="subject-card-teacher" style="text-transform:capitalize;">${recordText((ev.type || '').replace('_', ' '))}</div>
-                    </div>
-                </div>`);
-            }
-        });
-
-        // Status summary
-        const subEl = document.getElementById('daySummarySubtitle');
-        if (subEl) subEl.style.display = 'flex';
-        const dot  = document.getElementById('daySummaryStatusDot');
-        const txt  = document.getElementById('daySummaryStatusText');
-        if (dot && txt) {
-            if (hasAbsent)       { dot.style.background = '#F87171'; txt.textContent = 'Absent'; }
-            else if (hasLate)    { dot.style.background = '#FBBF24'; txt.textContent = 'Late'; }
-            else if (hasPresent) { dot.style.background = '#4ADE80'; txt.textContent = 'Present'; }
-            else if (hasEvent)   { dot.style.background = '#7DD3FC'; txt.textContent = 'School Event'; }
-            else                 { dot.style.background = '#ACA099'; txt.textContent = 'No Status'; }
-        }
-    }
-
-    const summaryLabel = hasAbsent ? 'Absent' : (hasLate ? 'Late' : (hasPresent ? 'Present' : (hasEvent ? 'Event' : '')));
-    const summaryBg = hasAbsent ? 'rgba(248,113,113,0.16)' : (hasLate ? 'rgba(251,191,36,0.16)' : (hasPresent ? 'rgba(74,222,128,0.16)' : 'rgba(125,211,252,0.16)'));
-    const summaryColor = hasAbsent ? '#F87171' : (hasLate ? '#FBBF24' : (hasPresent ? '#4ADE80' : '#7DD3FC'));
-    scalRenderDesktopInspector(dateStr, evts, summaryLabel, summaryBg, summaryColor);
-}
-
-function scalOpenDaySummaryModal(dateStr) {
-    scalRenderDay(dateStr);
-    const modalEl = document.getElementById('daySummaryModal');
-    if (modalEl) {
-        modalEl.dataset.date = dateStr;
-        if (modalEl.parentNode !== document.body) {
-            document.body.appendChild(modalEl);
-        }
-        try {
-            bootstrap.Modal.getOrCreateInstance(modalEl).show();
-        } catch (err) {
-            console.warn('scalDayClick fallback:', err);
-            modalEl.classList.add('show');
-            modalEl.style.display = 'block';
-            modalEl.setAttribute('aria-modal', 'true');
-            modalEl.removeAttribute('aria-hidden');
-            document.body.classList.add('modal-open');
-            let fb = document.querySelector('.scal-fallback-backdrop');
-            if (!fb) {
-                fb = document.createElement('div');
-                fb.className = 'modal-backdrop fade show scal-fallback-backdrop';
-                fb.style.zIndex = '10050';
-                document.body.appendChild(fb);
-                fb.onclick = closeDaySummaryModal;
-            }
-        }
-    }
-}
-
-function scalDayClick(dateStr) {
-    scalRenderDay(dateStr);
-    const modalEl = document.getElementById('daySummaryModal');
-    if (modalEl) modalEl.dataset.date = dateStr;
-    if (window.innerWidth < 1024) {
-        scalOpenDaySummaryModal(dateStr);
-    }
-}
-
-function closeDaySummaryModal() {
-    const m = document.getElementById('daySummaryModal');
-    if (m) {
-        delete m.dataset.date;
-        try { bootstrap.Modal.getOrCreateInstance(m).hide(); } catch (e) {}
-        m.classList.remove('show');
-        m.style.display = 'none';
-        m.setAttribute('aria-hidden', 'true');
-        m.removeAttribute('aria-modal');
-    }
-    document.body.classList.remove('modal-open');
-    const fb = document.querySelector('.scal-fallback-backdrop');
-    if (fb) fb.remove();
-}
-
-/* ── Init ───────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', function () {
-    const edm = document.getElementById('eventDetailModal');
-    if (edm && edm.parentNode !== document.body) document.body.appendChild(edm);
-    const dsm = document.getElementById('daySummaryModal');
-    if (dsm) {
-        if (dsm.parentNode !== document.body) document.body.appendChild(dsm);
-        dsm.addEventListener('hidden.bs.modal', () => delete dsm.dataset.date);
-    }
-    const inspectorModalBtn = document.getElementById('sdInspectorModalBtn');
-    if (inspectorModalBtn) {
-        inspectorModalBtn.addEventListener('click', () => {
-            const targetDate = inspectorModalBtn.dataset.date || document.getElementById('daySummaryModal')?.dataset.date;
-            if (targetDate) scalOpenDaySummaryModal(targetDate);
+    // Mobile segmented tabs (Calendar | Records)
+    const tabBtns = document.querySelectorAll('[data-cal-workspace-tab]');
+    const calPanel = document.getElementById('scalWorkspaceCalendar');
+    const recPanel = document.getElementById('scalWorkspaceRecords');
+    let mobileTab = (window.location.hash === '#attendance-records' || @json($hasRecordFilters)) ? 'records' : 'calendar';
+
+    function syncWorkspaceTabs() {
+        const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+        tabBtns.forEach((b) => {
+            const active = b.dataset.calWorkspaceTab === mobileTab;
+            b.classList.toggle('active', active);
+            b.setAttribute('aria-selected', active ? 'true' : 'false');
         });
+        if (calPanel) calPanel.hidden = isMobile && mobileTab !== 'calendar';
+        if (recPanel) recPanel.hidden = isMobile && mobileTab !== 'records';
     }
+
+    tabBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            mobileTab = btn.dataset.calWorkspaceTab || 'calendar';
+            syncWorkspaceTabs();
+        });
+    });
+    window.addEventListener('resize', syncWorkspaceTabs);
+    syncWorkspaceTabs();
+
+    // Hydrate SSR events or fetch
     const ssrEvents = @json($initialCalendarEvents ?? null);
     if (Array.isArray(ssrEvents)) {
         const key = calendarMonthKey(scalYear, scalMonth);
@@ -613,28 +368,27 @@ document.addEventListener('DOMContentLoaded', function () {
         if (calendarRetry) calendarRetry.hidden = true;
         syncCalendarRecordsMonth(scalYear, scalMonth);
         scalRender();
-        if (window.innerWidth >= 1024 && calendarGrid?.dataset.month) {
-            const now = new Date();
-            const nowMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const defaultDate = nowMonth === calendarGrid.dataset.month
-                ? `${nowMonth}-${String(now.getDate()).padStart(2, '0')}`
-                : `${calendarGrid.dataset.month}-01`;
-            if (dsm) dsm.dataset.date = defaultDate;
-            scalRenderDay(defaultDate);
-        }
+        const now = new Date();
+        const nowMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const defaultDate = nowMonth === calendarGrid?.dataset.month
+            ? `${nowMonth}-${String(now.getDate()).padStart(2, '0')}`
+            : `${calendarGrid?.dataset.month}-01`;
+        scalRenderDay(defaultDate);
     } else {
         scalLoadAndRender('replace');
     }
 
-    // Touch swipe for mobile
+    // Touch swipe month navigation
     let tx = 0, ty = 0;
     const card = document.querySelector('.scal-card');
-    card.addEventListener('touchstart', e => { tx = e.changedTouches[0].screenX; ty = e.changedTouches[0].screenY; }, { passive: true });
-    card.addEventListener('touchend', e => {
-        const dx = tx - e.changedTouches[0].screenX;
-        const dy = Math.abs(ty - e.changedTouches[0].screenY);
-        if (Math.abs(dx) > 70 && dy < 60) { dx > 0 ? scalNextMonth() : scalPrevMonth(); }
-    }, { passive: true });
+    if (card) {
+        card.addEventListener('touchstart', e => { tx = e.changedTouches[0].screenX; ty = e.changedTouches[0].screenY; }, { passive: true });
+        card.addEventListener('touchend', e => {
+            const dx = tx - e.changedTouches[0].screenX;
+            const dy = Math.abs(ty - e.changedTouches[0].screenY);
+            if (Math.abs(dx) > 70 && dy < 60) { dx > 0 ? scalNextMonth() : scalPrevMonth(); }
+        }, { passive: true });
+    }
 });
 </script>
 @endsection

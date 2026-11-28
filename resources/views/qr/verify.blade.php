@@ -3,8 +3,8 @@
 @section('content')
 <style>
     body.attendance-verification-page :is(#sidebar, #sidebarOverlay, #topHeader, #mobileBottomNav) { display: none !important; }
-    body.attendance-verification-page .main-wrapper { margin: 0 !important; width: 100% !important; }
-    body.attendance-verification-page #mainContent.main-content { margin: 0 !important; padding: 0 !important; }
+    body.attendance-verification-page :is(.main-wrapper, .sf-main-wrap) { margin: 0 !important; width: 100% !important; padding: 0 !important; }
+    body.attendance-verification-page #mainContent { margin: 0 !important; padding: 0 !important; max-width: none !important; }
     body.attendance-verification-page #mainContent.main-content > .page-enter { padding: 0 !important; }
 
     .verify-wrapper {
@@ -13,9 +13,9 @@
         align-items: center;
         min-height: 100dvh;
         padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-        background: #141010;
-        color: #FAF8F5;
-        font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+        background: var(--sf-bg, #0C0709);
+        color: var(--sf-text, #F8F4F5);
+        font-family: var(--sf-font-sans, 'Inter', system-ui, sans-serif);
     }
 
     .verify-navigation {

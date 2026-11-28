@@ -42,8 +42,6 @@ class SidebarBrandUnificationTest extends TestCase
             ['parent', route('parent.profile'), 'parent-sidebar-brand'],
             ['teacher', route('teacher.dashboard'), 'teacher-sidebar-brand'],
             ['teacher', route('teacher.profile'), 'settings-sidebar-brand'],
-            ['student', route('home'), 'student-sidebar-brand'],
-            ['student', route('settings'), 'settings-sidebar-brand'],
         ];
 
         foreach ($cases as [$role, $url, $expectedClass]) {
@@ -68,6 +66,25 @@ class SidebarBrandUnificationTest extends TestCase
             $this->assertStringNotContainsString('admin-workspace-role', $sidebarHtml, "Unexpected admin-workspace-role on {$url}");
             $this->assertStringContainsString('Plus+Jakarta+Sans', $html, "Missing Plus Jakarta Sans font on {$url}");
             $this->assertStringContainsString('portal-layout-refinements.css', $html, "Missing unified CSS on {$url}");
+        }
+
+        // Student portal uses the dedicated Oxblood/Porcelain shell sidebar brand & Inter + JetBrains Mono typography.
+        foreach ([route('home'), route('settings')] as $studentUrl) {
+            $this->flushSession();
+            $student = $this->createSyntheticUser('student');
+            $html = $this->actingAs($student)->get($studentUrl)->assertOk()->getContent();
+
+            $this->assertMatchesRegularExpression('/<aside\b[^>]*\bid="sidebar"/', $html, "Missing sidebar on {$studentUrl}");
+            preg_match('/<aside\b[^>]*\bid="sidebar"[^>]*>(.*?)<\/aside>/s', $html, $matches);
+            $sidebarHtml = $matches[1] ?? '';
+
+            $this->assertNotEmpty($sidebarHtml, "Empty sidebar content on {$studentUrl}");
+            $this->assertStringContainsString('class="sf-brand"', $sidebarHtml);
+            $this->assertStringContainsString('class="sf-brand-logo"', $sidebarHtml);
+            $this->assertStringContainsString('<span class="sf-brand-title">' . $appName . '</span>', $sidebarHtml);
+            $this->assertStringContainsString('family=Inter', $html);
+            $this->assertStringContainsString('JetBrains+Mono', $html);
+            $this->assertStringContainsString('css/student-frontend.css', $html);
         }
     }
 
@@ -140,7 +157,6 @@ class SidebarBrandUnificationTest extends TestCase
             ['admin', route('admin.dashboard')],
             ['parent', route('parent.dashboard')],
             ['teacher', route('teacher.dashboard')],
-            ['student', route('home')],
         ] as [$role, $url]) {
             $this->flushSession();
             $user = $this->createSyntheticUser($role);
@@ -153,5 +169,15 @@ class SidebarBrandUnificationTest extends TestCase
             $this->assertStringContainsString('css/premium.css', $html, "Missing premium.css on {$url}");
             $this->assertStringContainsString('css/portal-layout-refinements.css', $html, "Missing portal-layout-refinements.css on {$url}");
         }
+
+        $this->flushSession();
+        $student = $this->createSyntheticUser('student');
+        $studentHtml = $this->actingAs($student)->get(route('home'))->assertOk()->getContent();
+        $this->assertStringContainsString('css/student-frontend.css', $studentHtml);
+        $this->assertStringContainsString('js/student-frontend.js', $studentHtml);
+        $frontendCss = file_get_contents(public_path('css/student-frontend.css'));
+        $this->assertIsString($frontendCss);
+        $this->assertStringContainsString('--sf-sidebar-w:', $frontendCss);
+        $this->assertStringContainsString('--sf-sidebar-mini-w:', $frontendCss);
     }
 }

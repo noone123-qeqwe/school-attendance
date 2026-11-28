@@ -1,250 +1,154 @@
+/**
+ * Student Settings Navigation — Desktop Single-Column & Mobile iOS-Style Grouped Hub Drill-Down
+ */
 (function () {
     'use strict';
+
     const root = document.querySelector('[data-student-settings]');
     if (!root) return;
 
-    const pages = {
-        profile: ['Profile', 'Manage your photo and review your student information.', 'profile'],
-        family: ['Guardians', 'Choose who can view your attendance and share a link code with your guardian.', 'family'],
-        credentials: ['Password & email', 'Manage your password, email address, and phone number.', 'security', 'credentials'],
-        'change-email': ['Change email address', 'Verify the new address before it becomes your account email.', 'account-email'],
-        'change-password': ['Change password', 'Confirm your email and choose a new password.', 'account-password'],
-        'change-phone': ['Change phone number', 'Update the phone number listed on your school account.', 'account-phone'],
-        biometrics: ['Biometrics', 'Manage face registration for attendance and fingerprint registration for sign-in.', 'security', 'biometrics'],
-        device: ['Attendance device', 'Manage the phone or computer you use to record attendance.', 'security', 'device'],
-        recovery: ['Recovery codes', 'Save backup codes somewhere safe in case you lose access to your account.', 'security', 'recovery'],
-        preferences: ['Notifications & app', 'Choose how you receive alerts, adjust your display, and check for updates.', 'preferences'],
-    };
+    const validPages = ['profile', 'family', 'credentials', 'biometrics', 'device', 'recovery', 'preferences'];
     const aliases = {
-        security: 'credentials', 'security-all': 'credentials', 'security-credentials': 'credentials',
-        passkeys: 'fingerprint', 'security-biometrics': 'biometrics',
-        'security-device': 'device', 'security-recovery': 'recovery', cameraFaceEnrollment: 'face',
+        security: 'credentials',
+        'security-all': 'credentials',
+        'security-credentials': 'credentials',
+        'change-email': 'credentials',
+        'change-password': 'credentials',
+        'change-phone': 'profile',
+        passkeys: 'biometrics',
+        fingerprint: 'biometrics',
+        face: 'biometrics',
+        'security-biometrics': 'biometrics',
+        'security-device': 'device',
+        'security-recovery': 'recovery',
     };
-    const heading = document.getElementById('studentSettingsPageTitle');
-    const description = document.getElementById('studentSettingsPageDescription');
-    const backBtn = document.querySelector('[data-account-back]');
+
     const returnKey = 'student_settings_return_' + root.dataset.studentSettings;
+    const isMobile = () => window.matchMedia('(max-width: 767.98px)').matches;
     let started = false;
 
-    function placeAccountEditForms() {
-        const sources = [
-            ['email', 'accountEmailFormSlot'],
-            ['password', 'accountPasswordFormSlot'],
-        ];
-        let moved = 0;
-        sources.forEach(([name, slotId]) => {
-            const source = document.querySelector('[data-account-edit-source="' + name + '"]');
-            const slot = document.getElementById(slotId);
-            if (source && slot) {
-                slot.appendChild(source);
-                moved++;
-            }
-        });
-
-        if (moved === sources.length) {
-            const formGrid = document.getElementById('studentCredentialFormGrid');
-            const credentialShortcuts = document.getElementById('studentCredentialShortcuts');
-            if (formGrid) formGrid.hidden = true;
-            if (credentialShortcuts) credentialShortcuts.hidden = false;
-            root.dataset.accountFormsReady = 'true';
-        }
-    }
-
-    placeAccountEditForms();
-
-    function defaultPage() { return 'profile'; }
-
-    function resolveActiveNavKey(page) {
-        return page.startsWith('change-') ? 'credentials' : page;
-    }
-
-    window.studentSettingsRememberReturn = function() {
-        try { sessionStorage.setItem(returnKey, root.dataset.studentView); } catch (e) {}
+    window.studentSettingsRememberReturn = function () {
+        try {
+            sessionStorage.setItem(returnKey, root.dataset.studentView || 'profile');
+        } catch (e) {}
     };
-
-    function centerActiveMobilePill(instant) {
-        const activeMobilePill = document.querySelector('.settings-mobile-pill.active');
-        const nav = activeMobilePill?.closest('.settings-mobile-nav');
-        if (!activeMobilePill || !nav || nav.clientWidth === 0) return;
-        const navRect = nav.getBoundingClientRect();
-        const pillRect = activeMobilePill.getBoundingClientRect();
-        const maxScroll = Math.max(0, nav.scrollWidth - nav.clientWidth);
-        const rawTarget = nav.scrollLeft + (pillRect.left - navRect.left) - (navRect.width - pillRect.width) / 2;
-        const targetLeft = Math.max(0, Math.min(maxScroll, Math.round(rawTarget)));
-        const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (instant || reduced) {
-            const prevSnap = nav.style.scrollSnapType;
-            nav.style.scrollSnapType = 'none';
-            nav.scrollLeft = targetLeft;
-            requestAnimationFrame(() => {
-                nav.style.scrollSnapType = prevSnap;
-            });
-        } else {
-            nav.scrollTo({ left: targetLeft, behavior: 'smooth' });
-        }
-    }
 
     function navigate(requested, options = {}) {
         let page = aliases[requested] || requested;
-        // Older bookmarks still open the corresponding standalone registration page.
-        if (page === 'face' || page === 'fingerprint') {
-            const link = document.getElementById(page === 'face' ? 'studentFaceRegistrationLink' : 'studentFingerprintRegistrationLink');
-            if (link?.href) {
-                location.replace(link.href);
-                return page;
-            }
-            page = 'biometrics';
-        }
-        if (!pages[page]) page = defaultPage();
-        if (options.fromHistory && started && root.dataset.studentView === page) return page;
+        if (!validPages.includes(page)) page = 'profile';
+
         root.dataset.studentView = page;
 
-        const activeNavKey = resolveActiveNavKey(page);
-        document.querySelectorAll('[data-settings-page]').forEach(button => {
-            const isMatch = button.dataset.settingsPage === activeNavKey;
-            button.classList.toggle('active', isMatch);
-            if (isMatch) {
-                button.setAttribute('aria-current', 'page');
-            } else {
-                button.removeAttribute('aria-current');
-            }
+        // Update desktop sidebar & mobile triggers active state
+        document.querySelectorAll('[data-settings-page]').forEach((btn) => {
+            const match = btn.dataset.settingsPage === page;
+            btn.classList.toggle('active', match);
+            if (match) btn.setAttribute('aria-current', 'page');
+            else btn.removeAttribute('aria-current');
         });
 
-        root.querySelectorAll('.spanel').forEach(panel => {
-            panel.classList.toggle('active', panel.id === 'tab-' + pages[page][2]);
-        });
-        root.querySelectorAll('.sec-group-panel').forEach(panel => {
-            panel.style.display = pages[page]?.[3] && panel.id === 'sec-section-' + pages[page][3] ? 'block' : 'none';
+        // Show active panel
+        root.querySelectorAll('.sf-settings-panel').forEach((panel) => {
+            const match = panel.dataset.panelKey === page || panel.id === 'tab-' + page;
+            panel.classList.toggle('active', match);
         });
 
-        if (backBtn) {
-            backBtn.hidden = !page.startsWith('change-');
-        }
-
-        if (pages[page]) {
-            if (heading) heading.textContent = pages[page][0];
-            if (description) description.textContent = pages[page][1];
+        // Mobile drill-down into detail view when explicitly navigated or deep-linked
+        if (options.openDetail !== false && (options.fromClick || options.fromHash || options.fromFeedback)) {
+            root.dataset.mobileView = 'detail';
         }
 
         if (page === 'device' && typeof window.checkDeviceBindingStatus === 'function') {
             window.checkDeviceBindingStatus();
         }
 
-        requestAnimationFrame(() => centerActiveMobilePill(!started || Boolean(options.fromHistory)));
-
-        if ((options.push || (!options.fromHistory && started))) {
-            history.replaceState(null, '', '#tab-' + page);
+        if (options.push || (started && !options.fromHistory)) {
+            try {
+                history.replaceState(null, '', '#tab-' + page);
+            } catch (e) {}
         }
 
-        if (options.focus && heading) {
-            heading.focus({ preventScroll: true });
-            root.scrollIntoView({ block: 'start', behavior: 'instant' });
-        } else if ((!started || options.fromHistory) && location.hash) {
-            requestAnimationFrame(() => {
-                window.scrollTo({ top: 0, behavior: 'instant' });
-                centerActiveMobilePill(true);
-            });
+        if (options.scrollTop) {
+            window.scrollTo({ top: 0, behavior: 'instant' });
         }
+
         started = true;
         return page;
     }
+
     window.studentSettingsNavigate = navigate;
 
-    document.addEventListener('click', event => {
-        const accountLink = event.target.closest('[data-account-page]');
-        if (accountLink && root.contains(accountLink)) {
-            event.preventDefault();
-            navigate(accountLink.dataset.accountPage, { push: true, focus: true });
-            return;
-        }
-        const accountBack = event.target.closest('[data-account-back]');
-        if (accountBack && root.contains(accountBack)) {
-            event.preventDefault();
-            navigate('credentials', { push: true, focus: true });
-            return;
-        }
+    // Sidebar and Mobile Hub item clicks
+    document.addEventListener('click', (event) => {
         const navBtn = event.target.closest('[data-settings-page]');
         if (!navBtn) return;
         event.preventDefault();
-        navigate(navBtn.dataset.settingsPage, { push: true, focus: true });
-        if (typeof window.closeSidebar === 'function' && window.matchMedia('(max-width: 767.98px)').matches) {
-            window.closeSidebar();
-        }
+        navigate(navBtn.dataset.settingsPage, { push: true, fromClick: true, scrollTop: true });
     });
 
-    root.addEventListener('submit', event => {
+    // Mobile "Back to Settings" button
+    const mobileBackBtn = document.getElementById('sfMobileSettingsBackBtn');
+    if (mobileBackBtn) {
+        mobileBackBtn.addEventListener('click', () => {
+            root.dataset.mobileView = 'hub';
+            try {
+                history.replaceState(null, '', window.location.pathname);
+            } catch (e) {}
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        });
+    }
+
+    // Remember active section across form POST redirects
+    root.addEventListener('submit', (event) => {
         if (event.target instanceof HTMLFormElement && event.target.checkValidity()) {
             window.studentSettingsRememberReturn();
-            if (event.target.id === 'personalInfoForm') {
-                const button = document.getElementById('savePhoneBtn');
-                if (button && !button.disabled) {
-                    if (typeof window.setAccountEditStatus === 'function') {
-                        window.setAccountEditStatus('phoneFormStatus', 'Saving your phone number…', 'info');
-                    }
-                    button.disabled = true;
-                    button.setAttribute('aria-busy', 'true');
-                    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Saving…';
-                }
-            }
         }
     });
 
-    function syncHistory() { navigate(location.hash.replace(/^#(?:tab-)?/, '') || defaultPage(), { fromHistory: true }); }
-    window.addEventListener('popstate', syncHistory);
-    window.addEventListener('hashchange', syncHistory);
+    function syncFromHash() {
+        const raw = location.hash.replace(/^#(?:tab-)?/, '');
+        if (raw) {
+            navigate(raw, { fromHistory: true, fromHash: true });
+        } else if (isMobile()) {
+            root.dataset.mobileView = 'hub';
+        }
+    }
+
+    window.addEventListener('hashchange', syncFromHash);
+    window.addEventListener('popstate', syncFromHash);
 
     document.addEventListener('DOMContentLoaded', () => {
         let returned = null;
-        try { returned = sessionStorage.getItem(returnKey); sessionStorage.removeItem(returnKey); } catch (e) {}
-        // Preserve the section after a form redirects with validation or success feedback.
-        if (root.dataset.settingsFeedback === 'true') {
-            const destination = root.dataset.settingsPhoneError === 'true' ? 'change-phone' : (returned || 'credentials');
-            navigate(destination);
+        try {
+            returned = sessionStorage.getItem(returnKey);
+            sessionStorage.removeItem(returnKey);
+        } catch (e) {}
 
-            if (destination === 'change-email' && root.dataset.settingsEmailError === 'true') {
-                const addressError = root.dataset.settingsEmailAddressError === 'true';
-                const firstStep = document.getElementById('emailStep1');
-                const secondStep = document.getElementById('emailStep2');
-                if (firstStep && secondStep) {
-                    firstStep.style.display = addressError ? 'block' : 'none';
-                    secondStep.style.display = addressError ? 'none' : 'block';
-                    setAccountEditProgress('emailEditProgress', addressError ? 1 : 2);
-                    setAccountEditStatus('emailFormStatus', root.dataset.settingsEmailErrorMessage || 'Check the address or code and try again.', 'error');
-                    document.getElementById(addressError ? 'inputNewEmail' : 'ed1')?.focus();
-                }
+        if (root.dataset.settingsFeedback === 'true') {
+            const dest = root.dataset.settingsPhoneError === 'true'
+                ? 'profile'
+                : ((root.dataset.settingsEmailError === 'true' || root.dataset.settingsPasswordError === 'true')
+                    ? 'credentials'
+                    : (returned || 'profile'));
+            navigate(dest, { fromFeedback: true });
+
+            if (root.dataset.settingsEmailError === 'true' && root.dataset.settingsEmailAddressError !== 'true') {
+                const s1 = document.getElementById('emailStep1');
+                const s2 = document.getElementById('emailStep2');
+                if (s1 && s2) { s1.style.display = 'none'; s2.style.display = 'block'; }
             }
-            if (destination === 'change-password' && root.dataset.settingsPasswordError === 'true') {
-                document.getElementById('otpStep1').style.display = 'none';
-                document.getElementById('otpStep2').style.display = 'block';
-                setAccountEditProgress('passwordEditProgress', 2);
-                setAccountEditStatus('passwordFormStatus', root.dataset.settingsPasswordErrorMessage || 'Check your code and password details, then try again.', 'error');
-                document.getElementById('sd1')?.focus();
-            }
-            if (root.dataset.settingsPhoneError === 'true') {
-                setAccountEditStatus('phoneFormStatus', root.dataset.settingsPhoneErrorMessage || 'Check the phone number and try again.', 'error');
-                document.getElementById('phoneInput')?.focus();
+            if (root.dataset.settingsPasswordError === 'true') {
+                const p1 = document.getElementById('otpStep1');
+                const p2 = document.getElementById('otpStep2');
+                if (p1 && p2) { p1.style.display = 'none'; p2.style.display = 'block'; }
             }
         } else if (location.hash) {
-            syncHistory();
-        }
-        requestAnimationFrame(() => centerActiveMobilePill(true));
-        setTimeout(() => centerActiveMobilePill(true), 120);
-        if (document.fonts && document.fonts.ready) {
-            document.fonts.ready.then(() => centerActiveMobilePill(true));
-        }
-        window.addEventListener('load', () => centerActiveMobilePill(true), { once: true });
-        window.addEventListener('resize', () => centerActiveMobilePill(true), { passive: true });
-        const mobileNav = document.querySelector('.settings-mobile-nav');
-        if (mobileNav && typeof ResizeObserver !== 'undefined') {
-            let lastWidth = mobileNav.clientWidth;
-            const ro = new ResizeObserver(() => {
-                const w = mobileNav.clientWidth;
-                if (w > 0 && w !== lastWidth) {
-                    lastWidth = w;
-                    centerActiveMobilePill(true);
-                }
-            });
-            ro.observe(mobileNav);
+            syncFromHash();
+        } else {
+            navigate('profile', { openDetail: false });
+            if (isMobile()) {
+                root.dataset.mobileView = 'hub';
+            }
         }
     }, { once: true });
 })();

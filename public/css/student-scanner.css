@@ -399,13 +399,17 @@
     box-shadow: none;
 }
 
-.scanner-viewfinder-wrapper:not(.camera-active)::before {
+.scanner-viewfinder-wrapper:not(.camera-active):not(.camera-unavailable)::before {
     content: "";
     position: absolute;
     inset: 14px;
-    border: 1px dashed rgba(212, 175, 55, 0.24);
+    border: 1px dashed rgba(212, 175, 55, 0.18);
     border-radius: 10px;
     pointer-events: none;
+}
+
+.scanner-viewfinder-wrapper.camera-unavailable .reticle-corner {
+    display: none !important;
 }
 
 .scanner-reader-feed {

@@ -202,7 +202,9 @@
 </div>
 
 @once
+@if(Auth::user()?->isAdmin())
 <link rel="stylesheet" href="{{ asset('css/profile-photo-manager.css') }}?v={{ filemtime(public_path('css/profile-photo-manager.css')) }}">
+@endif
 @endonce
 
 <script @cspNonce>

@@ -226,13 +226,13 @@ class TeacherPortalRedesignTest extends TestCase
         $response->assertOk();
 
         $html = $response->getContent();
-        $this->assertStringContainsString('portal-unified-foundation.css', $html);
-        $this->assertStringContainsString('student-portal-master.css', $html);
-        $this->assertStringContainsString('student-dashboard.css', $html);
-        $this->assertStringContainsString('header-title-container', $html);
-        preg_match('/<header\b[^>]*\bid="topHeader"[^>]*>(.*?)<\/header>/s', $html, $headerMatch);
-        $this->assertStringContainsString('id="burgerBtn"', $headerMatch[1] ?? '');
+        $this->assertStringContainsString('student-frontend.css', $html);
+        $this->assertStringContainsString('student-frontend.js', $html);
+        $this->assertStringContainsString('sf-topbar', $html);
+        preg_match('/<aside\b[^>]*\bid="sidebar"[^>]*>(.*?)<\/aside>/s', $html, $asideMatch);
+        $this->assertStringContainsString('id="burgerBtn"', $asideMatch[1] ?? '');
         $this->assertStringNotContainsString('sidebar-edge-toggle', $html);
         $this->assertStringNotContainsString('teacher-portal-master.css', $html);
+        $this->assertStringNotContainsString('portal-unified-foundation.css', $html);
     }
 }
