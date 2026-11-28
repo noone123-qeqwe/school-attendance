@@ -87,6 +87,7 @@
                     <span class="sf-legend-item"><span class="sf-legend-dot" style="background:var(--sf-danger);"></span> Absent</span>
                     <span class="sf-legend-item"><span class="sf-legend-dot" style="background:var(--sf-teal);"></span> Holiday</span>
                     <span class="sf-legend-item"><span class="sf-legend-dot" style="background:var(--sf-sky);"></span> Event</span>
+                    <span class="sf-legend-item"><span class="sf-legend-dot" style="background:var(--sf-rose);"></span> Exam</span>
                 </div>
 
                 {{-- Embedded Selected-Date Inspector --}}

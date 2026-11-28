@@ -12,47 +12,12 @@
     <link rel="preload" as="image" href="/images/815973132_28114561508245819_4078090034639789685_n.jpg">
     @include('partials.pwa-tags')
     <link rel="stylesheet" href="{{ asset('css/auth-login.css') }}?v={{ filemtime(public_path('css/auth-login.css')) }}">
-    <style>
-        :root {
-            --sat: env(safe-area-inset-top, 0px);
-            --sab: env(safe-area-inset-bottom, 0px);
-            --sal: env(safe-area-inset-left, 0px);
-            --sar: env(safe-area-inset-right, 0px);
-            --app-height: 100dvh;
-        }
-        html, body { overscroll-behavior: none; }
-        .fp-row { touch-action: manipulation; }
-        .fp-row * { pointer-events: none; }
-        @media (hover: hover) and (pointer: fine) {
-            .fp-row:hover { border-color: rgba(243, 178, 192, 0.55); }
-        }
-    </style>
     <link rel="stylesheet" href="{{ asset('css/biometric-flow.css') }}?v={{ filemtime(public_path('css/biometric-flow.css')) }}">
 </head>
 <body>
 
 <!-- Background -->
-<div class="bg-scene"></div>
-
-<!-- Top bar -->
-<div class="top-bar">
-    <div class="top-bar-brand">
-        <i class="bi bi-laptop"></i>
-        {{ config('app.name') }}
-    </div>
-</div>
-
-<!-- Bottom bar -->
-<div class="bottom-bar">
-    <span>&copy; {{ date('Y') }} Osmeña Colleges. All rights reserved.</span>
-    <div class="bottom-links">
-        <a href="{{ route('privacy') }}">Privacy Policy</a>
-        <a href="{{ route('terms') }}">Terms & Conditions</a>
-        <span style="color: rgba(207,164,111,0.6); font-weight: 600; margin-left: 12px; pointer-events: all;" id="loginAppVersionDesktop" data-app-version-tag>
-            {{ $appInstalledVersionTag ?? $appVersionTag }}
-        </span>
-    </div>
-</div>
+<div class="bg-scene" aria-hidden="true"></div>
 
 <!-- Footer Info Modals -->
 <div id="footerModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;backdrop-filter:blur(6px);opacity:0;transition:opacity 0.25s;">
@@ -197,9 +162,8 @@ function toggleEye(inputId, btn, e) {
     if (button) {
         const icon = button.querySelector('i');
         if (icon) {
-            // Password hidden: Eye-off icon (bi bi-eye-slash)
-            // Password visible: Eye icon (bi bi-eye)
-            icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
+            // Show a crossed-out eye after revealing the password.
+            icon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
         }
         const isConf = input.name === 'password_confirmation' || (input.id && (input.id.includes('2') || input.id.includes('conf') || input.id.endsWith('_confirmation')));
         const label = isPassword 
@@ -301,20 +265,18 @@ if (document.readyState === 'loading') {
 
 
 <!-- Auth scene -->
-<div class="auth-scene">
+<main class="auth-scene" aria-labelledby="loginTitle">
     <div class="glass-card">
 
-        <!-- Logo + heading -->
-        <div class="text-center">
+        <header class="login-heading">
             <div class="glass-logo-wrap">
                 <div class="glass-logo">
-                    <img src="{{ asset('images/logo.png') }}" alt="Logo">
+                    <img src="{{ asset('images/logo.png') }}" alt="Osme&ntilde;a Colleges">
                 </div>
             </div>
-            <div class="glass-badge anim-fade-up anim-d2">Attendance Checker</div>
-            <div class="glass-title anim-fade-up anim-d2">Welcome back</div>
-            <div class="glass-sub anim-fade-up anim-d3">Sign in with your Student ID, Email, or Mobile</div>
-        </div>
+            <h1 class="glass-title" id="loginTitle">Welcome back</h1>
+            <p class="glass-sub">Sign in with your Student ID, Email, or Mobile</p>
+        </header>
 
         <!-- Errors -->
         @if(session('error'))
@@ -337,73 +299,60 @@ if (document.readyState === 'loading') {
             @endif
 
 
-            <!-- ID, Email, or Mobile  -  system detects role automatically -->
-            <div class="glass-input-wrap anim-fade-up anim-d4" style="position: relative;">
-                <i class="bi bi-person-fill g-icon"></i>
+            <label class="login-field-label" for="idInput">Student ID, Email, or Mobile</label>
+            <div class="glass-input-wrap">
+                <i class="bi bi-person g-icon" aria-hidden="true"></i>
                 <input type="text" name="identifier" id="idInput"
-                       class="glass-input @error('identifier') is-invalid @enderror"
-                       placeholder="Student ID, Email, or Mobile Number"
-                       required autocomplete="username"
-                       value="{{ old('identifier') }}"
-                       style="padding-right: 42px;">
-                <button type="button" id="clearIdBtn" title="Switch account / Clear" aria-label="Switch account or clear input"
-                        style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.6); font-size: 0.85rem; cursor: pointer; padding: 4px 7px; border-radius: 6px; display: none; transition: all 0.2s;">
-                    <i class="bi bi-x-lg"></i>
+                       class="glass-input has-action @error('identifier') is-invalid @enderror"
+                       autocomplete="username" autocapitalize="none" spellcheck="false"
+                       value="{{ old('identifier') }}" required
+                       @error('identifier') aria-invalid="true" aria-describedby="identifierError" @enderror>
+                <button type="button" id="clearIdBtn" class="field-clear" aria-label="Clear account" hidden>
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
                 </button>
             </div>
             @error('identifier')
-                <div class="invalid-feedback-custom anim-fade-up anim-d4">{{ $message }}</div>
+                <div class="invalid-feedback-custom" id="identifierError">{{ $message }}</div>
             @enderror
 
-            <!-- Biometric Authentication (WebAuthn supported) -->
-            <div id="fingerprintSection">
-                <!-- Inline message area for biometric feedback -->
-                <div id="fpMessage" role="status" style="display:none;"></div>
-                <p class="fp-row-hint" id="passkeyAvailability" role="status" hidden></p>
-                <div id="passkeyControls">
-                    <button type="button" class="fp-row anim-fade-up anim-d5" id="fpRowBtn" aria-label="Sign in with biometrics" aria-haspopup="dialog" aria-controls="biometricModal">
-                        <div class="fp-row-left">
-                            <div class="fp-icon-wrap">
-                                <i class="bi bi-shield-lock" id="fpIcon"></i>
-                            </div>
-                            <div>
-                                <div class="fp-row-label" id="fpLabel">Sign in with biometrics</div>
-                                <div class="fp-row-hint" id="fpHint">Use fingerprint, face verification, or your password</div>
-                            </div>
-                        </div>
-                        <i class="bi bi-chevron-right fp-row-arrow" id="fpArrow"></i>
-                    </button>
-                    <div class="glass-divider anim-fade-up anim-d5">or use password</div>
-                </div>
+            <div class="login-label-row">
+                <label class="login-field-label" for="loginPassword">Password</label>
+                <a href="{{ route('otp.forgot.form') }}" id="forgotPasswordLink" class="glass-forgot-link">Forgot password?</a>
             </div>
-
-            <!-- Password -->
-            <div class="glass-input-wrap glass-input-wrap--password anim-fade-up anim-d5">
-                <i class="bi bi-lock-fill g-icon"></i>
+            <div class="glass-input-wrap glass-input-wrap--password">
+                <i class="bi bi-lock g-icon" aria-hidden="true"></i>
                 <input type="password" name="password" id="loginPassword"
-                       class="glass-input has-eye @error('password') is-invalid @enderror"
-                       placeholder="Password" required autocomplete="current-password">
+                       class="glass-input has-action @error('password') is-invalid @enderror"
+                       required autocomplete="current-password"
+                       @error('password') aria-invalid="true" aria-describedby="passwordError" @enderror>
                 <button type="button" class="eye-toggle" data-toggle-password="loginPassword" aria-controls="loginPassword" aria-label="Show password" title="Show password" aria-pressed="false">
-                    <i class="bi bi-eye-slash"></i>
+                    <i class="bi bi-eye" aria-hidden="true"></i>
                 </button>
             </div>
             @error('password')
-                <div class="invalid-feedback-custom anim-fade-up anim-d5" style="margin-top:-10px;margin-bottom:12px;">{{ $message }}</div>
+                <div class="invalid-feedback-custom" id="passwordError">{{ $message }}</div>
             @enderror
-            <!-- Remember Me & Forgot Password Row -->
-            <div class="d-flex align-items-center justify-content-between glass-remember-row anim-fade-up anim-d5">
-                <label class="glass-remember-label">
-                    <input type="checkbox" name="remember" id="rememberMe" value="1" checked class="glass-remember-check">
-                    <span>Remember me</span>
-                </label>
-                <a href="{{ route('otp.forgot.form') }}" id="forgotPasswordLink" class="glass-forgot-link">
-                    Forgot password?
-                </a>
-            </div>
 
-            <button type="submit" class="glass-btn glass-btn-primary anim-fade-up anim-d6" id="loginSubmitBtn">
-                <i class="bi bi-box-arrow-in-right me-2"></i>SIGN IN
+            <label class="glass-remember-label" for="rememberMe">
+                <input type="checkbox" name="remember" id="rememberMe" value="1" checked class="glass-remember-check">
+                <span>Keep me signed in on this device</span>
+            </label>
+            <button type="submit" class="glass-btn glass-btn-primary" id="loginSubmitBtn">
+                Sign in <i class="bi bi-arrow-right" aria-hidden="true"></i>
             </button>
+
+            <div id="fingerprintSection">
+                <div id="fpMessage" role="status" style="display:none;"></div>
+                <p class="fp-row-hint" id="passkeyAvailability" role="status" hidden></p>
+                <div id="passkeyControls">
+                    <div class="glass-divider">OR</div>
+                    <button type="button" class="fp-row" id="fpRowBtn" aria-labelledby="fpLabel" aria-describedby="fpHint" aria-haspopup="dialog" aria-controls="biometricModal">
+                        <i class="bi bi-fingerprint" id="fpIcon" aria-hidden="true"></i>
+                        <span class="fp-row-label" id="fpLabel">Sign in with Biometrics</span>
+                    </button>
+                    <span class="visually-hidden" id="fpHint">Use fingerprint, face verification, or your password</span>
+                </div>
+            </div>
         </form>
 
         <form method="POST" action="{{ route('recovery.login') }}" id="recoveryForm" style="display:none;">
@@ -426,55 +375,24 @@ if (document.readyState === 'loading') {
             </button>
         </form>
 
-        <div class="glass-recovery-row anim-fade-up anim-d7">
-            <a href="#" id="useRecoveryCodeLink" class="glass-note-link">
-                <i class="bi bi-key me-1"></i>Use Recovery Code
-            </a>
-        </div>
-        <div class="glass-link-row anim-fade-up anim-d7">
+        <div class="glass-link-row">
             Don't have an account? <a href="{{ route('register') }}">Register here</a>
         </div>
-        
-        {{-- Version Badge - Visible on Mobile (when bottom bar is hidden) --}}
-        <div class="d-block d-md-none text-center anim-fade-up anim-d7" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.14);">
-            <span style="font-size: 0.7rem; color: rgba(255,255,255,0.62); font-weight: 600; letter-spacing: 0.5px;" id="loginAppVersionMobile" data-app-version-tag>
-                {{ $appInstalledVersionTag ?? $appVersionTag }}
-            </span>
-        </div>
-
-        {{-- Install App Button — Mobile only (hidden on desktop via d-md-none), always visible unless already installed --}}
-        <div id="smartAppDownloadRow" class="d-md-none" style="text-align: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.14);">
-            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.78); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                <i class="bi bi-phone" style="font-size: 0.85rem; color: #f3b2c0;"></i>
-                <span>Install for Quick Access</span>
-            </div>
-            <div>
-                <button id="downloadAppBtn" type="button" class="pwa-install-trigger"
-                    style="display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-                           background: rgba(16, 10, 13, 0.54);
-                           backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-                           color: #ffffff;
-                           border: 1px solid rgba(255, 255, 255, 0.26); border-radius: 13px;
-                           padding: 12px 28px; font-size: 0.88rem; font-weight: 700;
-                           cursor: pointer; transition: background-color 0.2s ease, border-color 0.2s ease;
-                           box-shadow: 0 6px 18px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.14); letter-spacing: 0.3px;
-                           -webkit-tap-highlight-color: transparent;">
-                    <i class="bi bi-arrow-bar-down" style="font-size: 1.05rem; color: #f3b2c0;"></i>
-                    <span id="downloadAppBtnText">Install App</span>
-                </button>
-            </div>
-            <div style="margin-top: 8px;">
-                <a href="{{ \Illuminate\Support\Facades\Route::has('pwa.download.apk') ? route('pwa.download.apk') : url('/download/apk') }}" download="SmartAttendance.apk"
-                   style="font-size: 0.76rem; color: #f3b2c0; text-decoration: underline; font-weight: 500; transition: color 0.2s;">
-                    <i class="bi bi-download me-1"></i>Or download direct Android APK (.apk)
-                </a>
-            </div>
-        </div>
-
     </div>
-</div>
+</main>
 
-
+<footer class="login-footer">
+    <div class="login-footer-links">
+        <button type="button" id="useRecoveryCodeLink" aria-controls="recoveryForm">Use recovery code</button>
+        <span id="smartAppDownloadRow" class="login-install-links">
+            <button id="downloadAppBtn" type="button" class="pwa-install-trigger"><span id="downloadAppBtnText">Install app</span></button>
+            <a href="{{ \Illuminate\Support\Facades\Route::has('pwa.download.apk') ? route('pwa.download.apk') : url('/download/apk') }}" download="SmartAttendance.apk">Download Android APK</a>
+        </span>
+        <a href="{{ route('privacy') }}">Privacy Policy</a>
+        <a href="{{ route('terms') }}">Terms &amp; Conditions</a>
+    </div>
+    <small>&copy; {{ date('Y') }} Osme&ntilde;a Colleges &middot; <span data-app-version-tag>{{ $appInstalledVersionTag ?? $appVersionTag }}</span></small>
+</footer>
 
 <!-- Biometric Not Registered / Setup & Status Modal -->
 <div id="biometricModal" class="bio-modal-overlay" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bioModalTitle" aria-describedby="bioModalDesc"
@@ -558,7 +476,7 @@ if (document.readyState === 'loading') {
                     <i class="bi bi-lock-fill g-icon"></i>
                     <input type="password" id="bioModalPasswordInput" class="glass-input has-eye" placeholder="Enter your password" autocomplete="current-password">
                     <button type="button" class="eye-toggle" data-toggle-password="bioModalPasswordInput" aria-controls="bioModalPasswordInput" aria-label="Show password" title="Show password" aria-pressed="false">
-                        <i class="bi bi-eye-slash"></i>
+                        <i class="bi bi-eye"></i>
                     </button>
                 </div>
             </div>
@@ -854,11 +772,7 @@ function updateAccountBanner() {
 
 function updateClearBtnVisibility() {
     if (!clearIdBtn || !idInput) return;
-    if (idInput.value && idInput.value.trim().length > 0) {
-        clearIdBtn.style.display = 'block';
-    } else {
-        clearIdBtn.style.display = 'none';
-    }
+    clearIdBtn.hidden = !idInput.value.trim();
 }
 
 function clearSavedAccount() {
@@ -973,7 +887,10 @@ if (useRecoveryCodeLink) {
         var lf = document.getElementById('loginForm');
         var rf = document.getElementById('recoveryForm');
         if (lf) lf.style.display = 'none';
-        if (rf) rf.style.display = 'block';
+        if (rf) {
+            rf.style.display = 'block';
+            rf.querySelector('input[name="identifier"]').focus();
+        }
     });
 }
 
@@ -1007,7 +924,10 @@ if (backToLoginBtn) {
         var lf = document.getElementById('loginForm');
         var rf = document.getElementById('recoveryForm');
         if (rf) rf.style.display = 'none';
-        if (lf) lf.style.display = 'block';
+        if (lf) {
+            lf.style.display = 'block';
+            idInput.focus();
+        }
     });
 }
 
@@ -1017,7 +937,6 @@ var fpRowBtn = document.getElementById('fpRowBtn');
 var fpLabel = document.getElementById('fpLabel');
 var fpHint = document.getElementById('fpHint');
 var fpIcon = document.getElementById('fpIcon');
-var fpArrow = document.getElementById('fpArrow');
 var biometricQrToken = document.querySelector('#loginForm input[name="qr_token"]')?.value;
 
 var bioAbortController = null;
@@ -1261,7 +1180,6 @@ function completeBiometricLogin(result) {
     if (fpLabel) fpLabel.textContent = '✓ Authenticated! Opening dashboard...';
     if (fpHint) fpHint.textContent = 'Loading your dashboard';
     if (fpIcon) fpIcon.className = 'bi bi-check-circle-fill text-success';
-    if (fpArrow) fpArrow.className = 'bi bi-check2 fp-row-arrow text-success';
     if (fpRowBtn) {
         fpRowBtn.disabled = true;
         fpRowBtn.style.opacity = '1';
@@ -1294,10 +1212,9 @@ function resetBiometricButton() {
     fpRowBtn.style.opacity = '1';
     fpRowBtn.style.cursor = 'pointer';
     fpRowBtn.removeAttribute('title');
-    if (fpLabel) fpLabel.textContent = 'Sign in with biometrics';
+    if (fpLabel) fpLabel.textContent = 'Sign in with Biometrics';
     updateBiometricHint();
-    if (fpIcon) fpIcon.className = 'bi bi-shield-lock';
-    if (fpArrow) fpArrow.className = 'bi bi-chevron-right fp-row-arrow';
+    if (fpIcon) fpIcon.className = 'bi bi-fingerprint';
 }
 
 function biometricText(copy) {
@@ -2658,7 +2575,6 @@ function setupBiometricListeners() {
     fpLabel = document.getElementById('fpLabel');
     fpHint = document.getElementById('fpHint');
     fpIcon = document.getElementById('fpIcon');
-    fpArrow = document.getElementById('fpArrow');
     if (!isBioPending && !biometricRedirectStarted) refreshPasskeySignIn();
 
     if (fpRowBtn && fpRowBtn.dataset.biometricBound !== 'true') {

@@ -104,444 +104,226 @@
             );
         }
 
-        /* background video removed from login - intro handled separately */
-
-        /* ── TOP BAR ── */
-        .top-bar {
-            position: fixed; top: 0; left: 0; right: 0;
-            z-index: 100;
-            display: flex; align-items: center; justify-content: space-between;
-            padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
-            padding-bottom: 10px;
-            padding-left: calc(env(safe-area-inset-left, 0px) + 24px);
-            padding-right: calc(env(safe-area-inset-right, 0px) + 24px);
-            background: linear-gradient(180deg, rgba(12, 7, 10, 0.52) 0%, rgba(12, 7, 10, 0.16) 72%, transparent 100%);
-            backdrop-filter: blur(10px) saturate(140%);
-            -webkit-backdrop-filter: blur(10px) saturate(140%);
-            pointer-events: auto;
-            /* locked against status bar jitter */
-        }
-        .top-bar-brand {
-            font-size: 0.78rem; font-weight: 800;
-            color: white; letter-spacing: 1.5px;
-            text-transform: uppercase; opacity: 0.92;
-            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
-            display: flex; align-items: center; gap: 10px;
-        }
-        .top-bar-brand i { font-size: 1.1rem; }
-
-        /* ── BOTTOM BAR ── */
-        .bottom-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            z-index: 25;
-            display: flex; align-items: center; justify-content: space-between;
-            padding-top: 10px;
-            padding-bottom: calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 12px);
-            padding-left: calc(var(--sal, env(safe-area-inset-left, 0px)) + 24px);
-            padding-right: calc(var(--sar, env(safe-area-inset-right, 0px)) + 24px);
-            font-size: 0.74rem; color: rgba(255,255,255,0.68);
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
-            pointer-events: none;
-            background: linear-gradient(0deg, rgba(12, 7, 10, 0.62) 0%, rgba(12, 7, 10, 0.22) 70%, transparent 100%);
-            transition: opacity 0.2s ease;
-        }
-        .bottom-bar a {
-            color: rgba(255,255,255,0.78); text-decoration: none;
-            transition: color 0.2s; pointer-events: all;
-        }
-        .bottom-bar a:hover { color: #f3b2c0; }
-        .bottom-bar span { pointer-events: none; }
-        .bottom-links { display: flex; align-items: center; gap: 20px; }
-
-        body.keyboard-open .bottom-bar {
-            display: none !important;
-        }
-
-        /* ── CENTERED RESPONSIVE LAYOUT (allows natural scroll & password autofill) ── */
         .auth-scene {
             position: relative;
-            z-index: 10;
-            width: 100%;
-            min-height: 100%;
+            display: grid;
+            place-items: center;
             min-height: var(--app-height, 100dvh);
-            display: flex; 
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding-top: calc(var(--sat, env(safe-area-inset-top, 0px)) + 52px);
-            padding-bottom: calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 50px);
-            padding-left: calc(var(--sal, env(safe-area-inset-left, 0px)) + 16px);
-            padding-right: calc(var(--sar, env(safe-area-inset-right, 0px)) + 16px);
-            box-sizing: border-box;
-            overflow-x: hidden;
-            overscroll-behavior: none !important;
+            padding: calc(var(--sat) + 16px) max(var(--sar), 12px) calc(var(--sab) + 16px) max(var(--sal), 12px);
         }
-
-        /* ── GLASS CARD (True Frosted Glassmorphism — Mobile & Desktop) ── */
         .glass-card {
-            width: 100%; 
-            max-width: 440px;
-            min-width: 280px;
-            background: linear-gradient(
-                155deg,
-                rgba(22, 13, 18, 0.42) 0%,
-                rgba(16, 10, 14, 0.34) 52%,
-                rgba(12, 8, 11, 0.46) 100%
-            );
-            backdrop-filter: blur(22px) saturate(165%);
-            -webkit-backdrop-filter: blur(22px) saturate(165%);
+            width: min(100%, 29rem);
+            margin: 0;
+            padding: clamp(24px, 5vw, 36px) clamp(20px, 6vw, 36px);
+            border: 1px solid rgba(255, 255, 255, .4);
             border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.28);
-            box-shadow:
-                0 24px 60px rgba(0, 0, 0, 0.44),
-                0 2px 12px rgba(0, 0, 0, 0.22),
-                inset 0 1px 0 rgba(255, 255, 255, 0.34),
-                inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-            padding: 26px 24px 22px;
-            color: white;
-            position: relative;
-            z-index: 20;
-            margin: auto 0;
-            transition: transform 0.2s ease, padding 0.2s ease;
-            overflow: hidden;
-            isolation: isolate;
-        }
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            background: linear-gradient(
-                135deg,
-                rgba(255, 255, 255, 0.14) 0%,
-                rgba(255, 255, 255, 0.04) 32%,
-                rgba(255, 255, 255, 0) 60%
-            );
-            pointer-events: none;
-            z-index: 0;
-        }
-        .glass-card > * {
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Logo */
-        .glass-logo-wrap {
-            display: flex;
-            justify-content: center;
-        }
-        .glass-logo {
-            width: 56px; height: 56px;
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 10px;
-        }
-        .glass-logo img {
-            width: 100%; height: 100%; object-fit: contain;
-            filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.38));
-        }
-
-        /* Badge */
-        .glass-badge {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.24);
+            background: linear-gradient(160deg, rgba(10, 20, 32, .40), rgba(20, 12, 15, .56) 68%, rgba(12, 18, 12, .48));
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            color: rgba(255, 255, 255, 0.94);
-            font-size: 0.62rem; font-weight: 700;
-            letter-spacing: 1.4px; text-transform: uppercase;
-            padding: 3px 11px; border-radius: 99px;
-            margin-bottom: 6px;
+            box-shadow: 0 10px 34px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255, 255, 255, .1);
+            color: white;
+        }
+        .login-heading { text-align: center; }
+        .glass-logo {
+            width: clamp(50px, 8vw, 64px);
+            aspect-ratio: 1;
+            margin: 0 auto 16px;
+            border: none;
+            box-shadow: none;
+        }
+        .glass-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 3px 8px rgba(0, 0, 0, .35));
         }
         .glass-title {
-            font-size: 1.48rem; font-weight: 800;
-            color: #ffffff; letter-spacing: -0.025em;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
-            margin-bottom: 3px;
+            margin: 0 0 6px;
+            font: 800 clamp(1.45rem, 3vw, 1.8rem)/1.12 'Inter', sans-serif;
+            letter-spacing: -.04em;
+            color: white;
         }
         .glass-sub {
-            font-size: 0.82rem; color: rgba(255, 255, 255, 0.84);
-            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.32);
-            margin-bottom: 16px;
+            margin: 0 0 clamp(18px, 3vw, 25px);
+            font-size: .875rem;
+            line-height: 1.45;
+            color: #f0eef1;
         }
-
-        /* Role toggle */
-        .role-toggle {
+        .login-field-label, .login-label-row {
             display: flex;
-            background: rgba(0,0,0,0.25);
-            border-radius: 12px;
-            padding: 5px; gap: 5px; /* Increased padding */
-            margin-bottom: 18px; /* Increased margin */
-            border: 1px solid rgba(255,255,255,0.12);
+            align-items: baseline;
+            margin-bottom: 6px;
+            font-size: .81rem;
+            font-weight: 650;
+            line-height: 1.45;
         }
-        .role-btn {
-            flex: 1; padding: 10px 12px; /* Increased padding */
-            border: none; border-radius: 9px;
-            font-size: 0.88rem; font-weight: 600; /* Increased font size */
-            cursor: pointer;
-            transition: all 0.25s ease;
-            background: transparent;
-            color: rgba(255,255,255,0.55);
-            display: flex; align-items: center; justify-content: center; gap: 7px;
+        .login-label-row { flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+        .login-label-row .login-field-label { margin: 0; }
+        .glass-forgot-link, .glass-link-row a {
+            color: #ffd9e1;
+            text-decoration: none;
+            font-weight: 650;
         }
-        .role-btn.active {
-            background: rgba(255,255,255,0.95);
-            color: #800000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-        .role-btn:hover:not(.active) { color: white; background: rgba(255,255,255,0.1); }
-
-        /* Inputs (Smoky Translucent Glass Pills) */
-        .glass-input-wrap { position: relative; margin-bottom: 11px; width: 100%; }
+        .glass-forgot-link:hover, .glass-link-row a:hover { color: white; text-decoration: underline; }
+        .glass-input-wrap { position: relative; margin-bottom: 15px; }
+        .glass-input-wrap--password { margin-bottom: 0; }
         .glass-input-wrap .g-icon {
-            position: absolute; left: 15px !important; top: 50%;
+            position: absolute;
+            left: 15px;
+            top: 50%;
             transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.58); font-size: 0.95rem !important;
-            pointer-events: none; transition: color 0.2s;
-            z-index: 2;
+            color: rgba(255, 255, 255, .67);
+            pointer-events: none;
         }
         .glass-input {
+            display: block;
             width: 100%;
-            padding: 12px 14px 12px 42px;
+            min-height: 48px;
+            padding: 10px 14px 10px 42px;
+            border: 1px solid rgba(255, 255, 255, .29);
             border-radius: 13px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            background: rgba(16, 10, 13, 0.56);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            color: #ffffff;
-            font-size: 0.89rem;
-            font-family: 'Inter', sans-serif;
-            outline: none;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-            transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+            background: rgba(17, 12, 14, .55);
+            color: white;
+            font: 500 1rem/1.5 'Inter', sans-serif;
+            color-scheme: dark;
         }
-        .glass-input::placeholder { color: rgba(255, 255, 255, 0.56); }
-        .glass-input:hover {
-            border-color: rgba(255, 255, 255, 0.30);
-            background: rgba(16, 10, 13, 0.66);
+        .glass-input::placeholder { color: #c7bfc3; }
+        .glass-input.has-action, .glass-input.has-eye { padding-right: 48px; }
+        .glass-input:focus, .glass-card :is(button, a, input):focus-visible, .login-footer :focus-visible {
+            outline: 2px solid #ffdae3;
+            outline-offset: 2px;
         }
-        .glass-input:focus {
-            border-color: rgba(243, 178, 192, 0.72);
-            background: rgba(14, 9, 12, 0.76);
-            box-shadow: 0 0 0 3px rgba(232, 146, 162, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-        }
-        .glass-input-wrap:focus-within .g-icon { color: rgba(255, 255, 255, 0.92); }
-        .glass-input.has-eye { padding-right: 46px !important; }
-        .eye-toggle {
-            position: absolute; right: 6px; top: 50%;
+        .eye-toggle, .field-clear {
+            display: grid;
+            place-items: center;
+            position: absolute;
+            top: 50%;
+            right: 2px;
             transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.68); font-size: 1rem;
-            cursor: pointer; background: none; border: none; padding: 0;
-            transition: color 0.2s; line-height: 1;
-            z-index: 10 !important;
-            min-width: 38px !important;
-            min-height: 38px !important;
-            width: 38px !important;
-            height: 38px !important;
-            display: inline-flex; align-items: center; justify-content: center;
-            user-select: none !important;
-            -webkit-user-select: none !important;
-            -webkit-touch-callout: none !important;
-            -webkit-tap-highlight-color: transparent !important;
-            touch-action: manipulation !important;
-            border-radius: 9px;
-        }
-        .eye-toggle:hover { color: #ffffff; }
-        .eye-toggle:focus-visible {
-            outline: 2px solid rgba(243, 178, 192, 0.8) !important;
-            outline-offset: 2px !important;
-            color: #ffffff !important;
-        }
-        .eye-toggle i { pointer-events: none !important; font-size: 1.05rem !important; }
-
-
-        /* Fingerprint/Biometric row (Frosted Glass Pill) */
-        .fp-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 13px;
-            border-radius: 13px;
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            background: rgba(16, 10, 13, 0.54);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 0;
+            border-radius: 10px;
+            background: transparent;
+            color: #e0d8dc;
             cursor: pointer;
-            transition: background-color 0.22s ease, border-color 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
-            margin-bottom: 6px;
-            width: 100%;
-            font-family: inherit;
-            color: inherit;
-            outline: none;
-            text-align: left;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
             touch-action: manipulation;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.10);
-            position: relative;
-            overflow: hidden;
         }
-        .fp-row * { pointer-events: none; }
-        @media (hover: hover) and (pointer: fine) {
-            .fp-row:hover {
-                background: rgba(24, 14, 18, 0.68);
-                border-color: rgba(243, 178, 192, 0.52);
-                transform: translateY(-1px);
-                box-shadow: 0 10px 26px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-            }
-        }
-        .fp-row:active {
-            transform: scale(0.985);
-            background: rgba(34, 18, 24, 0.76);
-            border-color: rgba(243, 178, 192, 0.65);
-        }
-        .fp-row:focus { outline: none; }
-        .fp-row:focus-visible { outline: 2px solid rgba(243, 178, 192, 0.75); outline-offset: 2px; }
-        .fp-row-left { display: flex; align-items: center; gap: 10px; text-align: left; }
-        .fp-row-left .fp-icon-wrap {
-            width: 34px;
-            height: 34px;
-            border-radius: 9px;
-            background: rgba(255, 255, 255, 0.10);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #f3b2c0;
-            font-size: 1.05rem;
-            flex-shrink: 0;
-            transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
-        }
-        .fp-row:hover .fp-icon-wrap {
-            border-color: rgba(243, 178, 192, 0.55);
-            background: rgba(159, 18, 57, 0.28);
-            transform: scale(1.04);
-        }
-        .fp-row-left i { font-size: 1.05rem; color: #f3b2c0; transition: color 0.2s ease; }
-        .fp-row-label { font-size: 0.84rem; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; }
-        .fp-row-hint { font-size: 0.69rem; color: rgba(255, 255, 255, 0.72); margin-top: 1px; }
-        #passkeyAvailability { margin: 0 0 8px; font-size: 0.78rem; line-height: 1.45; }
-        #passkeyAvailability:empty { display: none; }
-        .fp-row-arrow { color: rgba(255, 255, 255, 0.55); font-size: 0.8rem; transition: color 0.2s ease, transform 0.2s ease; }
-        .fp-row:hover .fp-row-arrow { color: #f3b2c0; transform: translateX(2px); }
-
-        /* Divider */
-        #reEnrollBioLink, [id*='reEnrollBio'] { display: none !important; pointer-events: none !important; opacity: 0 !important; visibility: hidden !important; }
-
-        .glass-divider {
-            display: flex; align-items: center; gap: 10px;
-            margin: 8px 0; color: rgba(255, 255, 255, 0.72); font-size: 0.7rem; font-weight: 600;
-            letter-spacing: 0.04em;
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-        }
-        .glass-divider::before, .glass-divider::after {
-            content: ''; flex: 1; height: 1px; background: rgba(255, 255, 255, 0.22);
-        }
-
-        /* Submit button (Crisp Luminous White CTA Pill) */
-        .glass-btn {
-            width: 100%; padding: 12px 16px;
-            background: #ffffff;
-            color: #1f1115;
-            font-weight: 700; font-size: 0.93rem;
-            letter-spacing: 0.02em;
-            border: 1px solid rgba(255, 255, 255, 0.92);
-            border-radius: 13px;
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.95);
-            margin-top: 4px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .glass-btn-primary {
-            background: #ffffff;
-            color: #1f1115;
-        }
-        .glass-btn-secondary {
-            background: rgba(16, 10, 13, 0.54);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            color: rgba(255, 255, 255, 0.94);
-            border: 1px solid rgba(255, 255, 255, 0.24);
-        }
-        .glass-btn:hover {
-            background: #f8f5f6;
-            transform: translateY(-1px);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34), 0 0 18px rgba(255, 255, 255, 0.16);
-        }
-        .glass-btn-secondary:hover {
-            background: rgba(24, 14, 18, 0.72);
-            border-color: rgba(243, 178, 192, 0.5);
-        }
-        .glass-btn:active { transform: translateY(0); }
-        .glass-btn.admin-variant { background: rgba(107,0,32,0.9); color: white; border: 1px solid rgba(255,255,255,0.2); }
-        .glass-btn.admin-variant:hover { background: rgba(107,0,32,1); }
-
-        .glass-input-wrap--password { margin-bottom: 8px; }
-
-        .glass-remember-row {
-            font-size: 0.82rem;
-            padding: 0 2px;
-            margin-bottom: 11px;
-        }
+        .field-clear[hidden] { display: none; }
+        .field-clear i { font-size: .83rem; }
+        .eye-toggle i, .field-clear i, .fp-row * { pointer-events: none; }
         .glass-remember-label {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 9px;
+            min-height: 44px;
+            margin: 2px 0 4px;
+            font-size: .81rem;
+            line-height: 1.4;
+            font-weight: 550;
             cursor: pointer;
-            user-select: none;
-            margin: 0;
-            color: rgba(255, 255, 255, 0.92);
-            font-weight: 500;
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
         }
-        .glass-remember-check {
-            width: 16px;
-            height: 16px;
-            accent-color: #9f1239;
+        .glass-remember-check { width: 16px; height: 16px; accent-color: #861b38; }
+        .glass-btn, .fp-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 9px;
+            width: 100%;
+            min-height: 48px;
+            padding: 10px 16px;
+            border: 1px solid transparent;
+            border-radius: 13px;
+            font: 700 .93rem/1.4 'Inter', sans-serif;
             cursor: pointer;
-            border-radius: 4px;
+            touch-action: manipulation;
         }
-        .glass-forgot-link {
-            color: #f3b2c0;
-            text-decoration: none;
-            font-weight: 600;
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-            transition: color 0.2s;
+        .glass-btn-primary { background: #fff; color: #22191c; }
+        .glass-btn-primary:hover { background: #f5eff1; }
+        .fp-row, .glass-btn-secondary {
+            background: rgba(19, 14, 16, .55);
+            border-color: rgba(255, 255, 255, .35);
+            color: white;
         }
-        .glass-forgot-link:hover {
-            color: #fce7f3;
-            text-decoration: underline;
+        .fp-row:hover, .glass-btn-secondary:hover { background: rgba(25, 18, 21, .76); }
+        #fpIcon { color: #f5eef1; font-size: 1.14rem; }
+        .fp-row-hint { color: #f5eaf0; font-size: .8rem; }
+        .glass-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 18px 0;
+            color: #f2e9ec;
+            font: 700 .69rem/1 'Inter', sans-serif;
+            letter-spacing: .05em;
         }
-
-        .glass-recovery-row {
-            text-align: center;
-            margin-top: 8px;
+        .glass-divider::before, .glass-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, .28);
         }
-
-        .glass-note-link {
-            display: inline-flex; align-items: center; justify-content: center;
-            font-size: 0.76rem; color: rgba(255, 255, 255, 0.78);
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-            text-decoration: none; transition: color 0.2s ease;
-            padding: 2px 0;
-        }
-        .glass-note-link:hover {
-            color: #f3b2c0;
-            text-decoration: underline;
-        }
-
-        /* Links */
         .glass-link-row {
-            text-align: center; font-size: 0.8rem; color: rgba(255, 255, 255, 0.82);
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.38);
-            margin-top: 6px;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, .28);
+            text-align: center;
+            font-size: .84rem;
+            color: #faf4f6;
         }
-        .glass-link-row a { color: #f3b2c0; font-weight: 700; text-decoration: none; transition: color 0.2s; }
-        .glass-link-row a:hover { color: #fce7f3; text-decoration: underline; }
+        .glass-link-row a { margin-inline-start: 3px; }
+        .login-footer {
+            position: relative;
+            display: grid;
+            justify-items: center;
+            gap: 4px;
+            padding: 8px max(16px, var(--sar)) calc(12px + var(--sab)) max(16px, var(--sal));
+            background: rgba(14, 12, 13, .78);
+            color: #ece5e8;
+            font-size: .76rem;
+            text-align: center;
+        }
+        .login-footer-links, .login-install-links {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0 16px;
+        }
+        .login-footer :is(a, button) {
+            padding: 8px 0;
+            border: none;
+            background: none;
+            color: inherit;
+            font: inherit;
+            text-decoration: none;
+        }
+        .login-footer :is(a, button):hover { color: white; text-decoration: underline; }
+        @media (min-width: 768px) {
+            .login-install-links { display: none; }
+        }
+        @media (max-width: 767.98px) {
+            .pwa-install-banner { display: none !important; }
+        }
+        @media (max-height: 620px) {
+            .auth-scene { padding-block: calc(10px + var(--sat)) calc(10px + var(--sab)); }
+            .glass-card { padding-block: 24px 10px; }
+            .glass-logo { width: 44px; margin-bottom: 18px; }
+            .glass-title { font-size: 1.25rem; }
+            .glass-sub { font-size: .73rem; margin-bottom: 10px; }
+            .login-field-label, .login-label-row { font-size: .75rem; margin-bottom: 4px; }
+            .glass-input-wrap { margin-bottom: 0; }
+            .glass-input-wrap--password { margin-bottom: 0; }
+            .glass-input { min-height: 38px; padding-block: 7px; font-size: .85rem; }
+            .login-label-row { margin-top: 8px; margin-bottom: 3px; }
+            .eye-toggle, .field-clear { width: 38px; height: 38px; }
+            .glass-remember-label { min-height: 34px; margin: 0; font-size: .73rem; }
+            .glass-btn { min-height: 34px; padding-block: 7px; font-size: .79rem; }
+            .fp-row { min-height: 36px; padding-block: 7px; font-size: .78rem; }
+            .glass-divider { margin: 9px 0; }
+            .glass-link-row { margin-top: 14px; padding-top: 12px; font-size: .75rem; }
+        }
 
         /* Error alert */
         .glass-alert {
@@ -1336,120 +1118,7 @@
             text-align: left;
         }
 
-        /* Desktop elevation and generous proportions for larger screens */
         @media (min-width: 769px) {
-            .auth-scene {
-                padding-top: calc(var(--sat, env(safe-area-inset-top, 0px)) + 56px);
-                padding-bottom: calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 56px);
-            }
-            .glass-card {
-                max-width: 520px;
-                padding: 36px 40px 30px;
-                border-radius: 26px;
-            }
-            .glass-logo {
-                width: 68px;
-                height: 68px;
-                margin-bottom: 14px;
-            }
-            .glass-badge {
-                font-size: 0.7rem;
-                letter-spacing: 1.6px;
-                padding: 4px 12px;
-                margin-bottom: 8px;
-            }
-            .glass-title {
-                font-size: 1.75rem;
-                margin-bottom: 4px;
-            }
-            .glass-sub {
-                font-size: 0.94rem;
-                margin-bottom: 22px;
-            }
-            .glass-input-wrap {
-                margin-bottom: 14px;
-            }
-            .glass-input-wrap--password {
-                margin-bottom: 12px;
-            }
-            .glass-input-wrap .g-icon {
-                left: 16px !important;
-                font-size: 1.05rem !important;
-            }
-            .glass-input {
-                padding: 14px 16px 14px 46px;
-                font-size: 0.96rem;
-                border-radius: 13px;
-            }
-            .glass-input.has-eye {
-                padding-right: 52px !important;
-            }
-            .eye-toggle {
-                right: 8px;
-                width: 42px !important;
-                height: 42px !important;
-                min-width: 42px !important;
-                min-height: 42px !important;
-            }
-            .eye-toggle i {
-                font-size: 1.12rem !important;
-            }
-            .fp-row {
-                padding: 11px 15px;
-                border-radius: 13px;
-                margin-bottom: 8px;
-            }
-            .fp-row-left {
-                gap: 12px;
-            }
-            .fp-row-left .fp-icon-wrap {
-                width: 38px;
-                height: 38px;
-                border-radius: 10px;
-            }
-            .fp-row-left i {
-                font-size: 1.2rem;
-            }
-            .fp-row-label {
-                font-size: 0.92rem;
-            }
-            .fp-row-hint {
-                font-size: 0.76rem;
-            }
-            #passkeyAvailability {
-                font-size: 0.84rem;
-                margin-bottom: 10px;
-            }
-            .glass-divider {
-                margin: 10px 0;
-                font-size: 0.74rem;
-            }
-            .glass-remember-row {
-                font-size: 0.9rem;
-                margin-bottom: 16px;
-            }
-            .glass-remember-check {
-                width: 17px;
-                height: 17px;
-            }
-            .glass-btn {
-                padding: 14px 18px;
-                font-size: 1rem;
-                border-radius: 13px;
-                margin-top: 6px;
-                letter-spacing: 0.6px;
-            }
-            .glass-recovery-row {
-                margin-top: 14px;
-            }
-            .glass-note-link {
-                font-size: 0.84rem;
-                padding: 4px 0;
-            }
-            .glass-link-row {
-                font-size: 0.86rem;
-                margin-top: 8px;
-            }
             .bio-modal-dialog {
                 max-width: 470px;
             }
@@ -1463,139 +1132,3 @@
                 font-size: 0.78rem;
             }
         }
-        @media (min-width: 1200px) {
-            .glass-card {
-                max-width: 540px;
-                padding: 40px 44px 32px;
-            }
-        }
-
-        /* Mobile and Responsive */
-        @media (max-width: 767.98px) {
-            /* Login card already renders an inline Install App section on mobile; avoid overlapping duplicate banner. */
-            .pwa-install-banner {
-                display: none !important;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .auth-scene {
-                padding-top: calc(env(safe-area-inset-top, 0px) + 52px);
-                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
-                padding-left: calc(env(safe-area-inset-left, 0px) + 16px);
-                padding-right: calc(env(safe-area-inset-right, 0px) + 16px);
-            }
-            .glass-card { 
-                max-width: 100%;
-                padding: 24px 20px 20px; 
-                border-radius: 24px; 
-                transform: none;
-            }
-            .top-bar {
-                padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
-                padding-bottom: 10px;
-                padding-left: calc(env(safe-area-inset-left, 0px) + 18px);
-                padding-right: calc(env(safe-area-inset-right, 0px) + 18px);
-            }
-            .bottom-bar {
-                padding-top: 8px;
-                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
-                padding-left: calc(env(safe-area-inset-left, 0px) + 18px);
-                padding-right: calc(env(safe-area-inset-right, 0px) + 18px);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .auth-scene {
-                padding-top: calc(env(safe-area-inset-top, 0px) + 48px);
-                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
-                padding-left: calc(env(safe-area-inset-left, 0px) + 12px);
-                padding-right: calc(env(safe-area-inset-right, 0px) + 12px);
-            }
-            .glass-card { 
-                max-width: 100%;
-                min-width: 260px;
-                padding: 22px 18px 18px; 
-                border-radius: 22px; 
-                margin: auto 0;
-            }
-            .glass-title { font-size: 1.35rem; }
-            .glass-sub { font-size: 0.8rem; margin-bottom: 14px; }
-            .bottom-bar { display: none; }
-            .top-bar {
-                padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
-                padding-bottom: 8px;
-                padding-left: calc(env(safe-area-inset-left, 0px) + 14px);
-                padding-right: calc(env(safe-area-inset-right, 0px) + 14px);
-            }
-            .top-bar-brand { font-size: 0.72rem; }
-        }
-
-        @media (max-width: 360px) {
-            .glass-card { 
-                padding: 16px 12px 14px; 
-                border-radius: 16px;
-            }
-            .glass-title { font-size: 1.18rem; }
-            .glass-sub { font-size: 0.74rem; }
-            .glass-input { font-size: 0.82rem; padding: 9px 10px 9px 36px; }
-            .glass-btn { font-size: 0.84rem; padding: 10px; }
-        }
-
-        /* Compact vertical spacing for short mobile viewports */
-        @media (max-height: 760px) and (max-width: 768px) {
-            .auth-scene {
-                padding-top: calc(env(safe-area-inset-top, 0px) + 44px);
-                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 44px);
-            }
-            .glass-card {
-                padding: 18px 20px 14px;
-            }
-            .glass-logo { width: 44px; height: 44px; margin-bottom: 6px; }
-            .glass-title { font-size: 1.28rem; margin-bottom: 2px; }
-            .glass-sub { font-size: 0.76rem; margin-bottom: 8px; }
-            .glass-input-wrap { margin-bottom: 7px; }
-            .glass-input { padding: 9px 12px 9px 38px; font-size: 0.84rem; }
-            .fp-row { padding: 6px 10px; margin-bottom: 4px; }
-            .glass-divider { margin: 4px 0; }
-            .glass-btn { padding: 10px; font-size: 0.86rem; }
-        }
-
-        /* Medium/short desktop heights (e.g. 768p or 125%-scaled 1080p laptops) — preserve wide form */
-        @media (max-height: 760px) and (min-width: 769px) {
-            .auth-scene {
-                padding-top: calc(var(--sat, env(safe-area-inset-top, 0px)) + 44px);
-                padding-bottom: calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 44px);
-            }
-            .glass-card {
-                padding: 26px 38px 22px;
-            }
-            .glass-logo { width: 58px; height: 58px; margin-bottom: 10px; }
-            .glass-title { font-size: 1.62rem; margin-bottom: 3px; }
-            .glass-sub { font-size: 0.9rem; margin-bottom: 16px; }
-            .glass-input-wrap { margin-bottom: 11px; }
-            .glass-input-wrap--password { margin-bottom: 9px; }
-            .glass-input { padding: 12px 15px 12px 44px; font-size: 0.94rem; }
-            .fp-row { padding: 9px 14px; margin-bottom: 6px; }
-            .glass-divider { margin: 7px 0; }
-            .glass-remember-row { margin-bottom: 12px; }
-            .glass-btn { padding: 12px 16px; font-size: 0.96rem; margin-top: 4px; }
-            .glass-recovery-row { margin-top: 10px; }
-        }
-
-        /* Landscape orientation adjustments & short screen heights */
-        @media (max-height: 620px) {
-            .auth-scene {
-                padding-top: calc(env(safe-area-inset-top, 0px) + 36px);
-                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
-            }
-            .glass-card { padding: 14px 18px 12px; }
-            .glass-logo { width: 40px; height: 40px; margin-bottom: 4px; }
-            .glass-title { font-size: 1.2rem; margin-bottom: 2px; }
-            .glass-sub { font-size: 0.72rem; margin-bottom: 6px; }
-            .role-toggle { margin-bottom: 6px; padding: 2px; }
-            .role-btn { padding: 5px 8px; font-size: 0.76rem; }
-            .top-bar { display: none; }
-            .bottom-bar { display: none; }
-        }
-
