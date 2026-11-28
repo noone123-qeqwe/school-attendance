@@ -16,7 +16,8 @@
     $featuredRoom = trim((string) ($featuredClass?->schedule?->room ?? ''));
     $featuredInstructor = trim((string) ($featuredClass?->subject?->instructorUser?->name ?? $featuredClass?->subject?->instructor ?? ''));
 
-    $greetHour = now()->hour;
+    $campusNow = now();
+    $greetHour = $campusNow->hour;
     $greeting = $greetHour < 12 ? 'Good Morning' : ($greetHour < 17 ? 'Good Afternoon' : 'Good Evening');
     $greetIcon = $greetHour < 12 ? 'bi-brightness-alt-high-fill' : ($greetHour < 17 ? 'bi-sun-fill' : 'bi-moon-stars-fill');
 
@@ -42,43 +43,42 @@
     $pendingExcuses = (int) ($pendingExcusesCount ?? 0);
     $peerAvailable = app(\App\Services\PeerBiometricAttendanceService::class)->isAvailable();
 
-    $metaParts = [];
-    if (!empty($studentUser?->student_number)) {
-        $metaParts[] = ['label' => 'ID ' . $studentUser->student_number, 'mono' => true];
-    }
-    $metaParts[] = ['label' => $studentUser?->course ?: 'BSCS', 'mono' => false];
-    $metaParts[] = ['label' => 'Yr ' . ($studentUser?->year_level ?: '1') . ' · Sem ' . ($studentUser?->semester ?: '1'), 'mono' => false];
-    if (!empty($studentUser?->section)) {
-        $metaParts[] = ['label' => 'Sec ' . $studentUser->section, 'mono' => false];
-    }
+    $academicDetails = array_filter([
+        $studentUser->course,
+        filled($studentUser->year_level) ? 'Year ' . $studentUser->year_level : null,
+        filled($studentUser->semester) ? 'Sem ' . $studentUser->semester : null,
+        filled($studentUser->section) ? 'Sec ' . $studentUser->section : null,
+    ], 'filled');
 @endphp
 
 <div class="sd-cockpit">
-    {{-- ── 1. Open Editorial Masthead ────────────────────────────────────── --}}
-    <header class="sd-masthead" aria-label="Student overview">
+    <header class="sd-masthead" aria-labelledby="sdStudentName">
         <div class="sd-identity-cluster">
-            <div class="sd-avatar-ring">
-                <img src="{{ $studentUser->profile_photo_url_with_version }}" alt="{{ $studentUser->name }}">
+            <div class="sd-avatar-ring" aria-hidden="true">
+                <img src="{{ $studentUser->profile_photo_url_with_version }}" alt="">
             </div>
             <div class="sd-identity-copy">
-                <div class="sd-kicker-line">
-                    <span class="sd-kicker-greeting">
-                        <i class="bi {{ $greetIcon }}" aria-hidden="true"></i>
-                        <span>{{ $greeting }}</span>
-                    </span>
-                    <span class="sd-kicker-sep d-md-none" aria-hidden="true">&middot;</span>
-                    <span class="d-md-none">{{ now()->format('l, M j') }}</span>
-                    <span class="sd-kicker-sep" aria-hidden="true">&middot;</span>
-                    <span id="studentClock" class="sd-kicker-clock sd-mono" title="Campus Local Time">{{ now()->format('g:i A') }}</span>
+                <div class="sd-kicker-greeting">
+                    <i class="bi {{ $greetIcon }}" aria-hidden="true"></i>
+                    {{ $greeting }}
                 </div>
-                <h1 class="sd-student-name">{{ $studentUser->name }}</h1>
-                <div class="sd-meta-ribbon">
-                    @foreach($metaParts as $metaPart)
-                        @if(!$loop->first)<span class="sd-meta-sep" aria-hidden="true">&middot;</span>@endif
-                        <span class="sd-meta-item {{ $metaPart['mono'] ? 'sd-mono is-id' : '' }}">{{ $metaPart['label'] }}</span>
-                    @endforeach
-                </div>
+                <h1 id="sdStudentName" class="sd-student-name">{{ $studentUser->name }}</h1>
             </div>
+            @if(filled($studentUser->student_number) || $academicDetails)
+                <ul class="sd-meta-ribbon" aria-label="Student details">
+                    @if(filled($studentUser->student_number))
+                        <li class="sd-student-id sd-mono">ID {{ $studentUser->student_number }}</li>
+                    @endif
+                    @foreach($academicDetails as $detail)
+                        <li>{{ $detail }}</li>
+                    @endforeach
+                </ul>
+            @endif
+        </div>
+
+        <div class="sd-campus-time" title="Campus local time">
+            <span><i class="bi bi-calendar3" aria-hidden="true"></i> {{ $campusNow->format('D, M j') }}</span>
+            <span id="studentClock">{{ $campusNow->format('g:i A') }}</span>
         </div>
 
         <div class="sd-masthead-actions d-none d-md-flex">
@@ -604,15 +604,15 @@
         return mins > 0 ? (hours + 'h ' + mins + 'm') : (hours + 'h');
     }
 
+    const campusClock = new Intl.DateTimeFormat('en-US', {
+        timeZone: @json(config('app.timezone')), hour: 'numeric', minute: '2-digit',
+    });
+
     function tick() {
         if (document.hidden) return;
         const now = new Date();
-        let h = now.getHours();
-        const m = now.getMinutes();
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
         const clockEl = document.getElementById('studentClock');
-        if (clockEl) clockEl.textContent = h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+        if (clockEl) clockEl.textContent = campusClock.format(now);
 
         const spotlight = document.getElementById('sdHeroSpotlight');
         if (spotlight) {

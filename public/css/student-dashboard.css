@@ -67,19 +67,22 @@ body.student-portal #mainContent .sd-cockpit,
     font-variant-numeric: tabular-nums;
 }
 
-/* ── 1. Open Editorial Masthead ────────────────────────────────────────── */
+/* Student identity and campus time */
 .sd-masthead {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 4px 0 18px;
-    border-bottom: 1px solid var(--sdc-border-subtle);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: clamp(14px, 2vw, 24px);
+    background: linear-gradient(115deg, var(--sdc-surface-2), var(--sdc-surface) 65%);
+    border: 1px solid var(--sdc-border);
+    border-radius: var(--sdc-radius-lg);
 }
 
 .sd-identity-cluster {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     min-width: 0;
 }
 
@@ -87,7 +90,6 @@ body.student-portal #mainContent .sd-cockpit,
     position: relative;
     width: 50px;
     height: 50px;
-    flex: 0 0 50px;
     padding: 0;
     border-radius: 50%;
     border: none;
@@ -105,18 +107,6 @@ body.student-portal #mainContent .sd-cockpit,
 
 .sd-identity-copy {
     min-width: 0;
-    flex: 1 1 auto;
-}
-
-.sd-kicker-line {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.76rem;
-    font-weight: 600;
-    color: var(--sdc-muted);
-    margin-bottom: 3px;
 }
 
 .sd-kicker-greeting {
@@ -124,7 +114,8 @@ body.student-portal #mainContent .sd-cockpit,
     align-items: center;
     gap: 5px;
     color: var(--sdc-champagne);
-    font-weight: 700;
+    font-size: 0.8125rem;
+    font-weight: 600;
 }
 
 .sd-kicker-greeting i {
@@ -132,19 +123,10 @@ body.student-portal #mainContent .sd-cockpit,
     font-size: 0.78rem;
 }
 
-.sd-kicker-clock {
-    color: var(--sdc-text-soft);
-}
-
-.sd-kicker-sep,
-.sd-meta-sep {
-    opacity: 0.45;
-}
-
 .sd-student-name {
-    margin: 0;
-    font-size: clamp(1.26rem, 2.2vw, 1.62rem);
-    font-weight: 800;
+    margin: 3px 0 0;
+    font-size: clamp(1.3rem, 2.3vw, 1.8rem);
+    font-weight: 700;
     letter-spacing: -0.025em;
     line-height: 1.18;
     color: var(--sdc-silver-bright);
@@ -152,18 +134,55 @@ body.student-portal #mainContent .sd-cockpit,
 }
 
 .sd-meta-ribbon {
+    grid-column: 1 / -1;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    margin-top: 4px;
-    font-size: 0.79rem;
+    gap: 4px 12px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.8125rem;
     color: var(--sdc-text-soft);
 }
 
-.sd-meta-item.is-id {
-    color: var(--sdc-gold);
+.sd-meta-ribbon li {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.sd-student-id {
+    padding: 2px 7px;
+    border: 1px solid var(--sdc-border);
+    border-radius: 5px;
+    color: var(--sdc-champagne);
     font-weight: 600;
+}
+
+.sd-campus-time {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--sdc-border-subtle);
+    color: var(--sdc-muted);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.sd-campus-time span {
+    white-space: nowrap;
+}
+
+.sd-campus-time i {
+    margin-inline-end: 3px;
+}
+
+.sd-campus-time #studentClock {
+    padding-inline-start: 10px;
+    border-inline-start: 1px solid var(--sdc-border-strong);
+    color: var(--sdc-text-soft);
 }
 
 .sd-masthead-actions {
@@ -1612,11 +1631,21 @@ body.student-portal #mainContent .sd-cockpit .sd-notice-copy span,
 /* ── Tablet & Desktop Responsive Breakpoints ───────────────────────────── */
 @media screen and (min-width: 768px) {
     .sd-masthead {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        padding: 4px 0 20px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-content: center;
+        column-gap: 20px;
+    }
+
+    .sd-identity-cluster {
+        grid-row: span 2;
+        align-self: center;
+    }
+
+    .sd-campus-time {
+        justify-content: flex-end;
+        align-self: end;
+        padding: 0;
+        border: 0;
     }
 
     .sd-masthead-actions {
@@ -1759,15 +1788,9 @@ a.sd-subject-row:hover {
         gap: 14px;
     }
 
-    .sd-masthead {
-        padding: 2px 0 14px;
-        gap: 12px;
-    }
-
     .sd-avatar-ring {
         width: 44px;
         height: 44px;
-        flex: 0 0 44px;
     }
 
     .sd-stage,
@@ -2195,11 +2218,6 @@ a.sd-subject-row:hover {
 }
 
 @media screen and (max-width: 359px) {
-    .sd-kicker-line {
-        font-size: 0.7rem;
-        gap: 4px;
-    }
-
     .sd-masthead-actions {
         grid-template-columns: minmax(0, 1fr);
     }
