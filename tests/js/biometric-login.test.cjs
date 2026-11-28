@@ -535,3 +535,30 @@ test('revoked credential response during login clears remembered passkey and off
     assert.equal(login.redirects.length, 0);
     assert.equal(login.modal.methods.some(m => m.id === 'setup_device'), true);
 });
+
+test('clicking Sign in with Biometrics never flashes a Checking biometric options modal and opens instantly when preloaded', async () => {
+    const login = createLogin();
+    const modalStates = [];
+    const origOpen = login.context.openBiometricModal;
+    login.context.openBiometricModal = config => {
+        modalStates.push(config);
+        origOpen(config);
+    };
+
+    // Simulate the preloaded server attribute on #biometricModal and warmed capability check on page load.
+    const origGetById = login.context.document.getElementById;
+    login.context.document.getElementById = id => {
+        if (id === 'biometricModal') return { dataset: { faceLoginEnabled: 'true' } };
+        return origGetById(id);
+    };
+    await login.context.refreshPasskeySignIn();
+
+    await login.context.handleBiometricLogin();
+    assert.equal(login.requests.length, 0, 'Preloaded choices should not block on /webauthn/available-methods');
+    assert.equal(modalStates.length, 1, 'Modal should open once directly with all choices');
+    assert.equal(modalStates[0].progress, undefined);
+    assert.deepEqual(
+        Array.from(modalStates[0].methods, method => method.id),
+        ['fingerprint', 'face', 'password']
+    );
+});

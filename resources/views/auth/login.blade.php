@@ -405,11 +405,16 @@ if (document.readyState === 'loading') {
     </div>
 </footer>
 
+@php
+    $loginFaceReady = app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification')
+        && app(\App\Services\LiveProfileFaceMatcher::class)->attendanceReady();
+@endphp
 <!-- Biometric Not Registered / Setup & Status Modal -->
 <div id="biometricModal" class="bio-modal-overlay" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="bioModalTitle" aria-describedby="bioModalDesc"
      data-face-guidance-url="{{ Vite::asset('resources/js/attendance-face-guidance.js') }}"
      data-face-options-url="{{ route('webauthn.face.options') }}"
      data-face-login-url="{{ route('webauthn.face.login') }}"
+     data-face-login-enabled="{{ $loginFaceReady ? 'true' : 'false' }}"
      data-apk-download-url="{{ \Illuminate\Support\Facades\Route::has('pwa.download.apk') ? route('pwa.download.apk') : url('/download/apk') }}">
     <div class="bio-modal-backdrop" id="bioModalBackdrop"></div>
     <div class="bio-modal-dialog">
@@ -959,6 +964,8 @@ var biometricPreviousOverflow = '';
 var isBioPending = false;
 var biometricRedirectStarted = false;
 var passkeySignInCheck = null;
+var cachedPasskeyCapability = null;
+var cachedServerMethods = null;
 var bioFaceStream = null;
 var bioFaceDetector = null;
 var bioFaceLighting = null;
@@ -1171,6 +1178,7 @@ function refreshPasskeySignIn() {
     if (controls) controls.hidden = false;
     if (fpRowBtn) fpRowBtn.disabled = isBioPending;
     passkeySignInCheck = checkPasskeyAvailability('get').then(function(result) {
+        cachedPasskeyCapability = result;
         if (status) {
             status.hidden = true;
             status.textContent = '';
@@ -1919,6 +1927,22 @@ function promptFingerprintIdentifier(prefill, errorMessage) {
     }, prefill, errorMessage);
 }
 
+function getPreloadedServerMethods() {
+    if (cachedServerMethods) return cachedServerMethods;
+    var attr = document.getElementById('biometricModal')?.dataset?.faceLoginEnabled;
+    if (attr === 'true' || attr === 'false') {
+        var faceEnabled = attr === 'true';
+        cachedServerMethods = {
+            success: true,
+            discoverable: true,
+            available_methods: faceEnabled ? ['fingerprint', 'face'] : ['fingerprint'],
+            face_login_enabled: faceEnabled
+        };
+        return cachedServerMethods;
+    }
+    return null;
+}
+
 async function fetchAvailableBiometricMethods(attemptObj) {
     try {
         var resFetch = await fetchJsonWithTimeout('{{ route("webauthn.available.methods") }}', {
@@ -1932,6 +1956,7 @@ async function fetchAvailableBiometricMethods(attemptObj) {
             body: JSON.stringify({})
         }, 10000, attemptObj);
         if (resFetch.response.ok && resFetch.data && resFetch.data.success) {
+            cachedServerMethods = resFetch.data;
             return resFetch.data;
         }
     } catch (err) {
@@ -2293,17 +2318,8 @@ async function openBiometricSignInChoices(identifier) {
         });
     }
 
-    showChoices('Choose how to verify your identity.', [], null, 'Checking biometric options…');
-    try {
-        var results = await Promise.all([
-            refreshPasskeySignIn(),
-            fetchAvailableBiometricMethods(attemptObj)
-        ]);
-        if (isStaleBiometricAttempt(attemptObj)) return;
-
-        var capability = results[0];
-        var serverMethods = results[1];
-        var hasDevicePasskeys = capability.available;
+    function renderResolvedChoices(capability, serverMethods) {
+        var hasDevicePasskeys = Boolean(capability && capability.available);
         var cameraFaceSupported = canRequestFaceSignIn(serverMethods);
 
         if (!hasDevicePasskeys && !cameraFaceSupported) {
@@ -2328,12 +2344,28 @@ async function openBiometricSignInChoices(identifier) {
             methods.push(faceSignInOption);
         }
 
-        const choiceMessage = hasDevicePasskeys ? 'Choose how to verify your identity.' : passkeyAvailabilityMessage(capability, 'get');
+        var choiceMessage = hasDevicePasskeys ? 'Choose how to verify your identity.' : passkeyAvailabilityMessage(capability, 'get');
         showChoices(choiceMessage, methods, function(method) {
             if (method.id === 'fingerprint') {
                 startFingerprintWithIdentifier(identifier);
             }
         });
+    }
+
+    var preloadedServerMethods = getPreloadedServerMethods();
+    if (cachedPasskeyCapability && preloadedServerMethods) {
+        renderResolvedChoices(cachedPasskeyCapability, preloadedServerMethods);
+        return;
+    }
+
+    try {
+        var results = await Promise.all([
+            cachedPasskeyCapability ? Promise.resolve(cachedPasskeyCapability) : refreshPasskeySignIn(),
+            preloadedServerMethods ? Promise.resolve(preloadedServerMethods) : fetchAvailableBiometricMethods(attemptObj)
+        ]);
+        if (isStaleBiometricAttempt(attemptObj)) return;
+
+        renderResolvedChoices(results[0], results[1]);
     } catch (err) {
         if (!isStaleBiometricAttempt(attemptObj)) handleBiometricSignInError(err, identifier, null);
     }
