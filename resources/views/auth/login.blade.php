@@ -358,6 +358,9 @@ if (document.readyState === 'loading') {
                     <span class="visually-hidden" id="fpHint">Use fingerprint, face verification, or your password</span>
                 </div>
             </div>
+            <div class="login-recovery-row">
+                <button type="button" id="useRecoveryCodeLink" aria-controls="recoveryForm">Use recovery code</button>
+            </div>
         </form>
 
         <form method="POST" action="{{ route('recovery.login') }}" id="recoveryForm" style="display:none;">
@@ -386,17 +389,20 @@ if (document.readyState === 'loading') {
     </div>
 </main>
 
+<div id="smartAppDownloadRow" class="login-install-links">
+    <button id="downloadAppBtn" type="button" class="pwa-install-trigger"><span id="downloadAppBtnText">Install app</span></button>
+    <a href="{{ \Illuminate\Support\Facades\Route::has('pwa.download.apk') ? route('pwa.download.apk') : url('/download/apk') }}" download="SmartAttendance.apk">Download Android APK</a>
+</div>
+
 <footer class="login-footer">
-    <div class="login-footer-links">
-        <button type="button" id="useRecoveryCodeLink" aria-controls="recoveryForm">Use recovery code</button>
-        <span id="smartAppDownloadRow" class="login-install-links">
-            <button id="downloadAppBtn" type="button" class="pwa-install-trigger"><span id="downloadAppBtnText">Install app</span></button>
-            <a href="{{ \Illuminate\Support\Facades\Route::has('pwa.download.apk') ? route('pwa.download.apk') : url('/download/apk') }}" download="SmartAttendance.apk">Download Android APK</a>
-        </span>
-        <a href="{{ route('privacy') }}">Privacy Policy</a>
-        <a href="{{ route('terms') }}">Terms &amp; Conditions</a>
+    <small class="login-footer-copyright">&copy; {{ date('Y') }} Osme&ntilde;a Colleges. All rights reserved.</small>
+    <div class="login-footer-right">
+        <nav class="login-footer-links" aria-label="Legal links">
+            <a href="{{ route('privacy') }}">Privacy Policy</a>
+            <a href="{{ route('terms') }}">Terms &amp; Conditions</a>
+        </nav>
+        <span class="login-footer-version" data-app-version-tag>{{ $appInstalledVersionTag ?? $appVersionTag }}</span>
     </div>
-    <small>&copy; {{ date('Y') }} Osme&ntilde;a Colleges &middot; <span data-app-version-tag>{{ $appInstalledVersionTag ?? $appVersionTag }}</span></small>
 </footer>
 
 <!-- Biometric Not Registered / Setup & Status Modal -->
