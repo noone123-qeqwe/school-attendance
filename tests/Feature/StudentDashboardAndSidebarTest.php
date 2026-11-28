@@ -133,6 +133,7 @@ class StudentDashboardAndSidebarTest extends TestCase
         $this->assertStringNotContainsString('sd-scan-dock', $sidebarHtml);
         $this->assertStringNotContainsString('studentSidebarNotifBadge', $sidebarHtml);
         $this->assertStringNotContainsString('sidebar-subtitle', $sidebarHtml);
+        $this->assertStringNotContainsString('Classroom Portal', $sidebarHtml);
         $this->assertStringNotContainsString('QR, GPS, and Biometric-Based Attendance Monitoring', $sidebarHtml);
 
         // Pinned Linear sidebar account popover holds Settings & Log out without My Profile

@@ -24,7 +24,6 @@
         <img src="{{ asset('images/logo.png') }}" class="sf-brand-logo" alt="School logo">
         <span class="sf-brand-text">
             <span class="sf-brand-title">{{ config('app.name') }}</span>
-            <span class="sf-brand-sub">Classroom Portal</span>
         </span>
     </a>
     <button type="button" class="sf-sidebar-toggle" id="burgerBtn" onclick="window.toggleSidebar?.()" aria-controls="sidebar" aria-expanded="true" aria-label="Collapse sidebar" title="Toggle sidebar">
